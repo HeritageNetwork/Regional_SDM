@@ -24,7 +24,7 @@ names(gridlist)<-nm
 # make the brick, writing it out at the same time
 envBrick <- brick(stack(gridlist),filename = paste(pathToTifs,"/brick.grd",sep = ""))
   
-# ## To look at the brick, use the following lines:
+# ## To look at the brick, use these commands:
 # plot(envBrick) #plots all the layers in the brick
 # plot(envBrick,nm[1]) #plots only layer 1, for example
 
