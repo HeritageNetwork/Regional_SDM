@@ -5,7 +5,6 @@ library(spsurvey)
 library(RSQLite)
 library(sp)
 library(rgdal)
-library(spsurvey)
 
 ####
 # Assumptions
@@ -16,18 +15,19 @@ library(spsurvey)
 
 #set the working directory  
 setwd("G:/SDM_test/ElementData")
+setwd("~/Documents/SDM/GIS/ElementData")
 
 #  make a connection to the information-tracking database to allow writing 
 #  to it within the loop. 
 db_file<-"F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
+db_file<-"~/Documents/SDM/Regional_SDM/SDM_lookupAndTracking.sqlite"
 db<-dbConnect(SQLite(),dbname=db_file)
 
 #get a list of what's in the directory
 fileList <- dir( pattern = ".shp$")
 
+fileName <- fileList[1]
 
-library(sp)
-library(rgdal)
 shapef <- readOGR(fileName, layer = shpName)
 
 length(shapef)
@@ -67,7 +67,7 @@ for (fileName in fileList){
 
       #tell the console what's up
       print(paste("Beginning on ", 
-                   elemName, ", ", i , " of ", length(all.expl), sep = ""))
+                   sppCode, ", ", grep(fileName, fileList) , " of ", length(fileList), sep = ""))
       #send all the coming GRTS info messages to a file, so it's easier to 
       #track progress on the terminal
       # sinkName <- paste("RunMsgs_",Sys.Date(), ".txt",sep="")
