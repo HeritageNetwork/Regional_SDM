@@ -1,5 +1,5 @@
 # File: randomPointsInPolys.r
-# Purpose: GRTS sampling of EDM polygons for training/validation
+# Purpose: GRTS sampling of EDM polygons to create spatially balanced random points
 
 library(spsurvey)
 library(RSQLite)
@@ -12,34 +12,32 @@ library(rgdal)
 # - the shapefile is named with the species code that is used in the lookup table
 #   in the sqlite database to link to other element information (full name, common name, etc.)
 #   e.g. glypmuhl.shp
+# - the polygon shapefile has these fields EO_ID, SCIEN_NAME, COMMONNAME
 
-#set the working directory  
-setwd("G:/SDM_test/ElementData")
+######
+## these are the lines you need to change
+
+### This is the directory that has your species polygon data. One shapefile for each species   
+#setwd("G:/SDM_test/ElementData")
 setwd("~/Documents/SDM/GIS/ElementData")
 
-#  make a connection to the information-tracking database to allow writing 
-#  to it within the loop. 
-db_file<-"F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
+### This is the full path and name of the information-tracking database
+#db_file<-"F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
 db_file<-"~/Documents/SDM/Regional_SDM/SDM_lookupAndTracking.sqlite"
 db<-dbConnect(SQLite(),dbname=db_file)
+
+## should not need to change anything else
+#######
+
+
 
 #get a list of what's in the directory
 fileList <- dir( pattern = ".shp$")
 
-fileName <- fileList[1]
-
-shapef <- readOGR(fileName, layer = shpName)
-
-length(shapef)
-
-shp_expl <- disaggregate(shapef)
-length(shp_expl)
-
-#loop through everything in d
+#loop through all species (having only one is ok)
 for (fileName in fileList){
   shpName <- strsplit(fileName,"\\.")[[1]][[1]]
   sppCode <- shpName
-    #nm.PtFile <- shpName
 
 	shapef <- readOGR(fileName, layer = shpName)
 	#explode multi-part polys
@@ -49,21 +47,20 @@ for (fileName in fileList){
 		   grep("SCIEN_NAME",names(shp_expl@data)),
 		   grep("COMMONNAME",names(shp_expl@data)))
 	shp_expl@data <- shp_expl@data[,colList]
-	#add some columns (explode id and area)
+
+		#add some columns (explode id and area)
 	shp_expl@data <- cbind(shp_expl@data, 
 			EXPL_ID = rownames(shp_expl@data), 
-			AREA = sapply(slot(shp_expl, "polygons"), slot, "area"))
+			AREAM2 = sapply(slot(shp_expl, "polygons"), slot, "area"))
 			
 	
-      #polygon shapefile  -- usually the exploded (multi-part to single part) one
+      #write out the exploded polygon set
     nm.PyFile <- paste(sppCode, "_expl", sep = "")
-
-
-	writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
+  	writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
 	  
 
-      #name of output shapefile for random points within polygons
-      nm.RanPtFile <- paste(sppCode, "_RanPts", sep = "")
+    #name of output shapefile for random points within polygons
+    nm.RanPtFile <- paste(sppCode, "_RanPts", sep = "")
 
       #tell the console what's up
       print(paste("Beginning on ", 
@@ -78,13 +75,12 @@ for (fileName in fileList){
       #####
       ###############################
       
-      #get the table from the output shapefile from the above GRTS run, as it has
-      #important attribute info.
+      #get the attribute table from above 
       #att.pt <- read.dbf(nm.PtFile)
 	  att.pt <- shp_expl@data
 	  
 		#just in case convert to upper
-		names(att.pt) <- toupper(names(att.pt))	
+		#names(att.pt) <- toupper(names(att.pt))	
       #need to clean up colnames some more (remove extranneous from above),
       #find the locations of the varying named columms (straight grep).
       # colList <- c(grep("^EO_ID$",names(att.pt)),
@@ -95,31 +91,32 @@ for (fileName in fileList){
       #do the extract (colList is a list of column numbers)
       # att.pt <- att.pt[,colList]
       #rename
-      names(att.pt) <- c("EO_ID", "SCI_NAME",
-                         "COMMNAME", "expl_ID", "AreaM2")
+      # names(att.pt) <- c("EO_ID", "SCI_NAME",
+      #                    "COMMNAME", "expl_ID", "AreaM2")
       #order the dataframe by expl_ID (=the way polygon shapefile is ordered).
           # Note that now that it is sorted the same way as the polygon shapefile, 
           # we'll use this attribute table for the final output, rather than the 
           # attribute table of the polygon shapefile. This, in effect provides the 
           # 'join' so that extra attributes from the above GRTS run can be joined 
           # to the output from this GRTS run.
-      att.pt <- att.pt[order(att.pt$expl_ID),]
+      # att.pt <- att.pt[order(att.pt$expl_ID),]
       #add another copy of the expl_ID field - the original becomes 'mdcaty' in 
       #the final output
-      att.pt <- cbind(att.pt, expl_ID2=att.pt$expl_ID)
-#### here would be a good place (I think) to add a name field and attribute with elemname
+      att.pt$EXPL_ID2 <- att.pt$EXPL_ID
+
+      #### here would be a good place (I think) to add a name field and attribute with elemname
 #### use "cbind" e.g. cbind(att.pt, elemCode = elemName)
       #calculate Number of points for each poly
       #calc values into a new field
-      att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"AreaM2"]/900+1)*0.004)))-1))
+      att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"AREAM2"]/900+1)*0.004)))-1))
       #make a new field for the design, providing a stratum name
-      att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$expl_ID, sep=""))
+      att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$EXPL_ID, sep=""))
 
       #create the vector for indicating how many points to put in each polygon, 
       #then each value in the vector needs to be attributed to the sampling unit 
       #(either EO_ID or Shape_ID)
       sampNums <- c(att.pt[,"PolySampNum"])
-      names(sampNums) <- att.pt[,"expl_ID"]
+      names(sampNums) <- att.pt[,"EXPL_ID"]
       # sample MUST be larger than 1 for any single polygon use OVER to increase 
       # sample sizes in these. To handle this, create a vector that contains 
       # 2 when sample size = 1, otherwise 0
@@ -135,7 +132,7 @@ for (fileName in fileList){
       # 'over' for each entry of SampDesign
       for (i in 1:length(sampNums)){
         #build a vector of names to apply after the for loop
-        namesVec[i] <- paste("poly_",i-1,sep="")
+        namesVec[i] <- paste("poly_",i,sep="")
         #initialize the internal list
         SampDesign[[i]] <- vector("list",3)
         #populate the internal list
@@ -161,7 +158,7 @@ for (fileName in fileList){
                      att.frame=att.pt,      #a data frame of attributes associated with elements in the frame
                      type.frame="area",     #type of frame:"finite", "linear", "area"
                      stratum="panelNum",
-                     mdcaty="expl_ID",
+                     mdcaty="EXPL_ID",
                      DesignID= sppCode,  #name for the design, which is used to create a site ID for each site.
                      shapefile=TRUE,
                      prj=nm.PyFile,
@@ -177,10 +174,8 @@ for (fileName in fileList){
       # prep the data
       OutPut <- data.frame(SciName = paste(att.pt[1,"SCI_NAME"]),
                    CommName=paste(att.pt[1,"COMMNAME"]),
-                   ElemCode=elemName,
+                   ElemCode=sppCode,
                    RandomPtFile=nm.RanPtFile,
-                   TrainPolys = NA, #no longer defining these here... we are bootstrapping instead.
-                   EvalPolys = NA,
                    date = paste(Sys.Date()),
                    time = format(Sys.time(), "%X"),
                    Loc_Use=""
@@ -198,7 +193,7 @@ for (fileName in fileList){
       #stop the sink
       # sink()
       #tell the console what's up
-      print(paste("Finished with ", elemName, sep=""))
+      print(paste("Finished with ", sppCode, sep=""))
 #close the for loop
 }
 
