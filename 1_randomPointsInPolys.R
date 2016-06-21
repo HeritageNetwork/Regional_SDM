@@ -1,4 +1,4 @@
-# File: randomPointsInPolys.r
+# File: 1_randomPointsInPolys.r
 # Purpose: GRTS sampling of EDM polygons to create spatially balanced random points
 
 library(spsurvey)
@@ -12,24 +12,26 @@ library(rgdal)
 # - the shapefile is named with the species code that is used in the lookup table
 #   in the sqlite database to link to other element information (full name, common name, etc.)
 #   e.g. glypmuhl.shp
-# - the polygon shapefile has these fields EO_ID, SCIEN_NAME, COMMONNAME
+# - the polygon shapefile has these fields EO_ID, SCIEN_NAME, COMMONNAME, ERACCURACY
 
 ######
 ## these are the lines you need to change
 
 ### This is the directory that has your species polygon data. One shapefile for each species   
-#setwd("G:/SDM_test/ElementData")
-setwd("~/Documents/SDM/GIS/ElementData")
+setwd("G:/SDM_test/ElementData")
+#setwd("~/Documents/SDM/GIS/ElementData")
+
+### This is the directory you want the output data (random point shapefile, exploded polys) written to
+
+outdir <- "G:/SDM_test/output"
 
 ### This is the full path and name of the information-tracking database
-#db_file<-"F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
-db_file<-"~/Documents/SDM/Regional_SDM/SDM_lookupAndTracking.sqlite"
+db_file<-"F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
+#db_file<-"~/Documents/SDM/Regional_SDM/SDM_lookupAndTracking.sqlite"
 db<-dbConnect(SQLite(),dbname=db_file)
 
-## should not need to change anything else
+## should not need to change anything else below here
 #######
-
-
 
 #get a list of what's in the directory
 fileList <- dir( pattern = ".shp$")
@@ -45,69 +47,47 @@ for (fileName in fileList){
 	#strip some columns
 	colList <- c(grep("^EO_ID$",names(shp_expl@data)),
 		   grep("SCIEN_NAME",names(shp_expl@data)),
-		   grep("COMMONNAME",names(shp_expl@data)))
+		   grep("COMMONNAME",names(shp_expl@data)),
+			   grep("ERACCURACY",names(shp_expl@data)))
 	shp_expl@data <- shp_expl@data[,colList]
 
-		#add some columns (explode id and area)
+	#add some columns (explode id and area)
 	shp_expl@data <- cbind(shp_expl@data, 
 			EXPL_ID = rownames(shp_expl@data), 
 			AREAM2 = sapply(slot(shp_expl, "polygons"), slot, "area"))
 			
-	
-      #write out the exploded polygon set
-    nm.PyFile <- paste(sppCode, "_expl", sep = "")
-  	writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
+	#write out the exploded polygon set
+	nm.PyFile <- paste(sppCode, "_expl", sep = "")
+	writeOGR(shp_expl, dsn = outdir, layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
 	  
-
     #name of output shapefile for random points within polygons
-    nm.RanPtFile <- paste(sppCode, "_RanPts", sep = "")
+    nm.RanPtFile <- paste(outdir,"/", sppCode, "_RanPts", sep = "")
 
-      #tell the console what's up
-      print(paste("Beginning on ", 
-                   sppCode, ", ", grep(fileName, fileList) , " of ", length(fileList), sep = ""))
-      #send all the coming GRTS info messages to a file, so it's easier to 
-      #track progress on the terminal
-      # sinkName <- paste("RunMsgs_",Sys.Date(), ".txt",sep="")
-      # sink(file = sinkName, append=TRUE, type="output")
+	#tell the console what's up
+	print(paste("Beginning on ", 
+		sppCode, ", ", grep(fileName, fileList) , " of ", length(fileList), sep = ""))
 
-      ###############################
-      #####     Placing random points within each sample unit (polygon/EO)
-      #####
-      ###############################
+	# send all the coming GRTS info messages to a file, so it's easier to 
+	# track progress on the terminal. This is optional.
+	# sinkName <- paste("RunMsgs_",Sys.Date(), ".txt",sep="")
+	# sink(file = sinkName, append=TRUE, type="output")
+
+	###############################
+	#####     Placing random points within each sample unit (polygon/EO)
+	#####
+	###############################
       
       #get the attribute table from above 
-      #att.pt <- read.dbf(nm.PtFile)
 	  att.pt <- shp_expl@data
 	  
-		#just in case convert to upper
-		#names(att.pt) <- toupper(names(att.pt))	
-      #need to clean up colnames some more (remove extranneous from above),
-      #find the locations of the varying named columms (straight grep).
-      # colList <- c(grep("^EO_ID$",names(att.pt)),
-                   # grep("SCIEN_NAME",names(att.pt)),
-                   # grep("COMMONNAME",names(att.pt)),
-                   # grep("EXPL_ID",names(att.pt)),                                      
-                   # grep("PY_AREAM2",names(att.pt)))
-      #do the extract (colList is a list of column numbers)
-      # att.pt <- att.pt[,colList]
-      #rename
-      # names(att.pt) <- c("EO_ID", "SCI_NAME",
-      #                    "COMMNAME", "expl_ID", "AreaM2")
-      #order the dataframe by expl_ID (=the way polygon shapefile is ordered).
-          # Note that now that it is sorted the same way as the polygon shapefile, 
-          # we'll use this attribute table for the final output, rather than the 
-          # attribute table of the polygon shapefile. This, in effect provides the 
-          # 'join' so that extra attributes from the above GRTS run can be joined 
-          # to the output from this GRTS run.
-      # att.pt <- att.pt[order(att.pt$expl_ID),]
+	# just in case convert to upper
+	names(att.pt) <- toupper(names(att.pt))
+	
       #add another copy of the expl_ID field - the original becomes 'mdcaty' in 
       #the final output
       att.pt$EXPL_ID2 <- att.pt$EXPL_ID
 
-      #### here would be a good place (I think) to add a name field and attribute with elemname
-#### use "cbind" e.g. cbind(att.pt, elemCode = elemName)
-      #calculate Number of points for each poly
-      #calc values into a new field
+      #calculate Number of points for each poly, stick into new field
       att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"AREAM2"]/900+1)*0.004)))-1))
       #make a new field for the design, providing a stratum name
       att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$EXPL_ID, sep=""))
