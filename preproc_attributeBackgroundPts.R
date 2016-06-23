@@ -24,7 +24,7 @@ envBrick <- brick("brick.grd")
 ## Set working directory to the random points location
 setwd("G:/SDM_test/output")
 
-ranPtsFiles <- list.files(pattern = ".RanPts.shp$")
+ranPtsFiles <- "testArea_RanPts.shp"
 ranPtsFilesNoExt <- sub(".shp","",ranPtsFiles)
 
 ##Read these files into a list of SpatialPoints dataframes
