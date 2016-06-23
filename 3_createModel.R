@@ -44,6 +44,7 @@ df.abs<-df.abs[complete.cases(df.abs),]
 df.in<-df.in[complete.cases(df.in),]
 
 #this is the full list of fields, arranged appropriately
+## TODO: obviously this will change (and be very long) when we have all env. variables
 colList <- c("scien_name","eo_id","pres","stratum", "eraccuracy",
 	"awc_mm09","canopy01","discal09", 
 	"tmin13n09"
