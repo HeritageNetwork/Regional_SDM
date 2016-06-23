@@ -47,6 +47,6 @@ names(list_shpf)<-code_names
 for(j in 1:length(list_shpf)){
 	x <- extract(envBrick,list_shpf[[j]],method="bilinear", sp=TRUE)
 	layername <- paste(names(list_shpf)[[j]], "_att", sep="")
-	writeOGR(x, ".", layer=paste(layername), driver="ESRI Shapefile")
+	writeOGR(x, ".", layer=paste(layername), driver="ESRI Shapefile", overwrite_layer=TRUE)
 }
 
