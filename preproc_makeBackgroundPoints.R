@@ -2,7 +2,7 @@
 # Purpose: GRTS sampling of study area polygon to generate background random points
 
 library(spsurvey)
-library(sp)
+#library(sp)
 library(rgdal)
 
 # This is the directory that has your study area polygon.
@@ -36,5 +36,9 @@ sites <- grts(design=dsgn,
 			prjfilename=layer,
 			out.shape=nm.RanPtFile)
 			
-			
-# the random points shapefile should now be written to the working directory			
+# Open the new shapefile, remove extranneous fields, write it out again
+fullName <- paste(nm.RanPtFile,".shp",sep="")
+shapef <- readOGR(fullName, layer = nm.RanPtFile)
+colsToKeep <- c("stratum")
+shapef <- shapef[,colsToKeep]
+writeOGR(shapef, dsn = ".", layer = nm.RanPtFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
