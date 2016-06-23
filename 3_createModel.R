@@ -88,8 +88,25 @@ SQLquery <- paste("SELECT ELEMTYPE FROM lkpSpecies WHERE SCIEN_NAME = '",
 	ElementNames[1],"';", sep="")
 ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
-
 dbDisconnect(db)
+
+##
+# modify point counts based on representational accuracy (RA)
+# polygons with higher RA get higher probability of sampling (more points in dataset)
+# polygons with lower RA get lower probability of sampling (fewer points on per-area basis)
+# this is, in effect, weighting the sampling within the modeling effort - we are simply 
+# doing it here a-priori
+##
+
+library(sampling)
+
+#assign values to eraccuracy
+raVals <- c("very high", "high", "medium", "low", "very low")
+df.in$eraccuracy <- tolower(df.in$eraccuracy)
+df.in$eraccuracy <- factor(df.in$eraccuracy, levels = raVals)
+
+
+###### to here ######
 
 	
 ##row bind the pseudo-absences with the presence points
