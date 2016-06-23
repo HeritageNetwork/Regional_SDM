@@ -26,19 +26,18 @@ numpts <- 1000
 dsgn <- list(None=list(panel=c(Panel=numpts), seltype="Equal"))
 
 # Call the grts function
-sites <- grts(design=dsgn,
+grtsResult <- grts(design=dsgn,
 			src.frame="shapefile",
 			in.shape=layer,
 			att.frame=att.pt,
 			type.frame="area",
 			DesignID="bkgrndRanPts",
-			shapefile=TRUE,
 			prjfilename=layer,
 			out.shape=nm.RanPtFile)
 			
-# Open the new shapefile, remove extranneous fields, write it out again
-fullName <- paste(nm.RanPtFile,".shp",sep="")
-shapef <- readOGR(fullName, layer = nm.RanPtFile)
+# remove extranneous fields, write it out
+ranPts <- as(grtsResult, "SpatialPointsDataFrame")
+#fullName <- paste(nm.RanPtFile,".shp",sep="")
 colsToKeep <- c("stratum")
-shapef <- shapef[,colsToKeep]
-writeOGR(shapef, dsn = ".", layer = nm.RanPtFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
+ranPts <- ranPts[,colsToKeep]
+writeOGR(ranPts, dsn = ".", layer = nm.RanPtFile, driver="ESRI Shapefile", overwrite_layer=TRUE)

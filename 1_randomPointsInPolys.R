@@ -53,6 +53,9 @@ for (fileName in fileList){
 		grep("ERACCURACY",names(shp_expl@data)))
 	shp_expl@data <- shp_expl@data[,colList]
 
+	#get projection info for later
+	projInfo <- shp_expl@proj4string
+	
 	#add some columns (explode id and area)
 	shp_expl@data <- cbind(shp_expl@data, 
 		EXPL_ID = rownames(shp_expl@data), 
@@ -134,7 +137,7 @@ for (fileName in fileList){
 	#summary(SampDesign)  ##str(SampDesign) is even more thorough
 
 	# Create the GRTS survey design
-	Unequalsites <- grts(design=SampDesign,
+	grtsResult <- grts(design=SampDesign,
 				 src.frame="shapefile", #source of the frame
 				 in.shape=nm.PyFile,    #name of input shapefile no extension
 				 att.frame=att.pt,      #attributes associated with elements in the frame
@@ -142,9 +145,18 @@ for (fileName in fileList){
 				 stratum="panelNum",	#stratum field in att.pt
 				 mdcaty="EXPL_ID",		#categories for random pt probabilities
 				 DesignID= sppCode,  	#name for the design, used to create a site ID
-				 shapefile=TRUE,
 				 prj=nm.PyFile,
 				 out.shape=nm.RanPtFile)
+
+	ranPts <- as(grtsResult, "SpatialPointsDataFrame")
+	# projection info didn't stick, apply from what we grabbed earlier
+	ranPts@proj4string <- projInfo
+	# remove extranneous fields, write it out
+	fullName <- paste(nm.RanPtFile,".shp",sep="")
+	colsToKeep <- c("stratum","EO_ID","SCIEN_NAME","ERACCURACY")
+	ranPts <- ranPts[,colsToKeep]
+	writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile, 
+				driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 	###############################
 	#####     Write out various stats and data to the database
