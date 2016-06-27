@@ -98,11 +98,32 @@ for (fileName in fileList){
 	#make a new field for the design, providing a stratum name
 	att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$EXPL_ID, sep=""))
 
+	##
+	# modify point counts based on representational accuracy (RA)
+	# polygons with higher RA get higher probability of sampling (more points in dataset)
+	# polygons with lower RA get lower probability of sampling (fewer points on per-area basis)
+	# this is, in effect, weighting the sampling within the modeling effort - we are simply 
+	# doing it here a-priori
+	##
+	
+	#assign values to eraccuracy
+	raVals <- c("very high", "high", "medium", "low", "very low")
+	att.pt$ERACCURACY <- tolower(att.pt$ERACCURACY)
+	att.pt$ERACCURACY <- factor(att.pt$ERACCURACY, levels = raVals)
+	####################### these values should be discussed ###################################
+	### right now, the numbers are treated as mulitpliers, so very high gets 2X the number of
+	### points, high get 1.5X and very low gets 1/2 the number of points
+	ERA_wgt <- c("very high" = 2, "high" = 1.5, "medium" = 1, "low" = 0.75, "very low" = 0.5)
+	
+	att.pt$ERAWT <- unname(ERA_wgt[att.pt$ERACCURACY])
+	att.pt$PSampNum <- att.pt$ERAWT * att.pt$PolySampNum
+	
 	#create the vector for indicating how many points to put in each polygon, 
 	#then each value in the vector needs to be attributed to the sampling unit 
 	#(either EO_ID or Shape_ID)
-	sampNums <- c(att.pt[,"PolySampNum"])
+	sampNums <- c(att.pt[,"PSampNum"])
 	names(sampNums) <- att.pt[,"EXPL_ID"]
+	
 	# sample MUST be larger than 1 for any single polygon use OVER to increase 
 	# sample sizes in these. To handle this, create a vector that contains 
 	# 2 when sample size = 1, otherwise 0

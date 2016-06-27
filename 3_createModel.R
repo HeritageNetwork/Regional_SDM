@@ -90,39 +90,9 @@ ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
 dbDisconnect(db)
 
-##
-# modify point counts based on representational accuracy (RA)
-# polygons with higher RA get higher probability of sampling (more points in dataset)
-# polygons with lower RA get lower probability of sampling (fewer points on per-area basis)
-# this is, in effect, weighting the sampling within the modeling effort - we are simply 
-# doing it here a-priori
-##
-
-library(sampling)
-
-#assign values to eraccuracy
-raVals <- c("very high", "high", "medium", "low", "very low")
-df.in$eraccuracy <- tolower(df.in$eraccuracy)
-df.in$eraccuracy <- factor(df.in$eraccuracy, levels = raVals)
-
-#set weights for sampling
-#
-
-dummy <- data.frame(eoid = c(1,1,2,2,2,3), stratum = c(1,1,2,3,3,4), weight = c(0.6,0.6,0.5,1,1,2))
-
-x <- mstage(data=dummy, stage=
-
-y <- strata(data=dummy, stratanames=c("stratum"), 
-	size=c(2,1,2,1),method="srswr",pik=dummy$weight)
-
-dumm_samp <- dummy[rownames(dummy)[x$ID_unit],]
-	
-## when sampling same number of pts, take all. When sampling fewer, subsample without replacement, when sampling more, sample with replacement. 
-	
 ##row bind the pseudo-absences with the presence points
 df.abs$eo_id <- factor(df.abs$eo_id)
 df.full <- rbind(df.in, df.abs)
-
 
 # ##make factors using definitions set up earlier
 # for(colName in names(factor.defs)) {
