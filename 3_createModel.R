@@ -105,10 +105,19 @@ raVals <- c("very high", "high", "medium", "low", "very low")
 df.in$eraccuracy <- tolower(df.in$eraccuracy)
 df.in$eraccuracy <- factor(df.in$eraccuracy, levels = raVals)
 
-# add some text to test new git workflow ...
-# add a bit more text ...
-###### to here ######
+#set weights for sampling
+#
 
+dummy <- data.frame(eoid = c(1,1,2,2,2,3), stratum = c(1,1,2,3,3,4), weight = c(0.6,0.6,0.5,1,1,2))
+
+x <- mstage(data=dummy, stage=
+
+y <- strata(data=dummy, stratanames=c("stratum"), 
+	size=c(2,1,2,1),method="srswr",pik=dummy$weight)
+
+dumm_samp <- dummy[rownames(dummy)[x$ID_unit],]
+	
+## when sampling same number of pts, take all. When sampling fewer, subsample without replacement, when sampling more, sample with replacement. 
 	
 ##row bind the pseudo-absences with the presence points
 df.abs$eo_id <- factor(df.abs$eo_id)
