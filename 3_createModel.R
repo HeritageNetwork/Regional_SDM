@@ -88,14 +88,11 @@ SQLquery <- paste("SELECT ELEMTYPE FROM lkpSpecies WHERE SCIEN_NAME = '",
 	ElementNames[1],"';", sep="")
 ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
-
 dbDisconnect(db)
 
-	
 ##row bind the pseudo-absences with the presence points
 df.abs$eo_id <- factor(df.abs$eo_id)
 df.full <- rbind(df.in, df.abs)
-
 
 # ##make factors using definitions set up earlier
 # for(colName in names(factor.defs)) {
