@@ -106,6 +106,7 @@ df.in$eraccuracy <- tolower(df.in$eraccuracy)
 df.in$eraccuracy <- factor(df.in$eraccuracy, levels = raVals)
 
 # add some text to test new git workflow ...
+# add a bit more text ...
 ###### to here ######
 
 	
