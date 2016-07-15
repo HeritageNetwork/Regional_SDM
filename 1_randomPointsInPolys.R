@@ -70,7 +70,7 @@ for (fileName in fileList){
 			
 	#write out the exploded polygon set
 	nm.PyFile <- paste(sppCode, "_expl", sep = "")
-	writeOGR(shp_expl, dsn = ., layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
+	writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
 	  
     #name of random points output shapefile; add path to (now input) polygon file
     nm.RanPtFile <- paste(outdir,"/", sppCode, "_RanPts", sep = "")
