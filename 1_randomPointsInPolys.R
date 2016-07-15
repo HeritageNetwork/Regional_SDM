@@ -12,24 +12,23 @@ library(rgdal)
 # - the shapefile is named with the species code that is used in the lookup table
 #   in the sqlite database to link to other element information (full name, common name, etc.)
 #   e.g. glypmuhl.shp
-# - the polygon shapefile has these fields EO_ID, SCIEN_NAME, COMMONNAME, ERACCURACY
+# - the polygon shapefile has at least these fields EO_ID, SCIEN_NAME, COMMONNAME, ERACCURACY
 
 #######
 ######
 ## these are the lines you need to change
 
 ### This is the directory that has your species polygon data. One shapefile for each species   
-setwd("G:/SDM_test/ElementData")
-#setwd("~/Documents/SDM/GIS/ElementData")
+setwd("G:/RegionalSDM/inputs/species/glypmuhl/polygon_data")
 
-### This is the directory you want the output data (random point shapefile, exploded polys) written to
+### This is the directory you want the output data (random point shapefile) written to
 
-outdir <- "G:/SDM_test/output"
+outdir <- "G:/RegionalSDM/inputs/species/glypmuhl/point_data"
 
 ### This is the full path and name of the information-tracking database
-db_file<-"F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
-#db_file<-"~/Documents/SDM/Regional_SDM/SDM_lookupAndTracking.sqlite"
-db<-dbConnect(SQLite(),dbname=db_file)
+db_file <- "F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
+
+db <- dbConnect(SQLite(),dbname=db_file)
 
 ## should not need to change anything else below here
 #######
@@ -43,19 +42,27 @@ for (fileName in fileList){
 	shpName <- strsplit(fileName,"\\.")[[1]][[1]]
 	sppCode <- shpName
 
-	shapef <- readOGR(fileName, layer = shpName)
-	#explode multi-part polys
-	shp_expl <- disaggregate(shapef)
-	#strip some columns
-	colList <- c(grep("^EO_ID$",names(shp_expl@data)),
-		grep("SCIEN_NAME",names(shp_expl@data)),
-		grep("COMMONNAME",names(shp_expl@data)),
-		grep("ERACCURACY",names(shp_expl@data)))
-	shp_expl@data <- shp_expl@data[,colList]
+	shapef <- readOGR(fileName, layer = shpName, pointDropZ = TRUE)
+	#check for proper column names
+	shpColNms <- names(shapef@data)
+	desiredCols <- c("EO_ID", "SCIEN_NAME", "COMMONNAME", "ERACCURACY")
+	if("FALSE" %in% c(desiredCols %in% shpColNms)) {
+		stop("at least one column is missing or incorrectly named")
+		}
+
+	#pare down columns
+	colList <- c(grep("^EO_ID$",names(shapef@data)),
+		grep("SCIEN_NAME",names(shapef@data)),
+		grep("COMMONNAME",names(shapef@data)),
+		grep("ERACCURACY",names(shapef@data)))
+	shapef@data <- shapef@data[,colList]
 
 	#get projection info for later
 	projInfo <- shp_expl@proj4string
 	
+	#explode multi-part polys
+	shp_expl <- disaggregate(shapef)
+
 	#add some columns (explode id and area)
 	shp_expl@data <- cbind(shp_expl@data, 
 		EXPL_ID = rownames(shp_expl@data), 
