@@ -3,7 +3,6 @@
 
 library(spsurvey)
 library(RSQLite)
-library(sp)
 library(rgdal)
 
 ####
@@ -19,10 +18,10 @@ library(rgdal)
 ## these are the lines you need to change
 
 ### This is the directory that has your species polygon data. One shapefile for each species   
-setwd("G:/RegionalSDM/inputs/species/glypmuhl/polygon_data")
+polydir <- "G:/RegionalSDM/inputs/species/glypmuhl/polygon_data"
+setwd(polydir)
 
 ### This is the directory you want the output data (random point shapefile) written to
-
 outdir <- "G:/RegionalSDM/inputs/species/glypmuhl/point_data"
 
 ### This is the full path and name of the information-tracking database
@@ -42,8 +41,8 @@ for (fileName in fileList){
 	shpName <- strsplit(fileName,"\\.")[[1]][[1]]
 	sppCode <- shpName
 
-	shapef <- readOGR(fileName, layer = shpName, pointDropZ = TRUE)
-	#check for proper column names
+	shapef <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
+	#check for proper column names. If no error in next three lines, then good to go
 	shpColNms <- names(shapef@data)
 	desiredCols <- c("EO_ID", "SCIEN_NAME", "COMMONNAME", "ERACCURACY")
 	if("FALSE" %in% c(desiredCols %in% shpColNms)) {
@@ -58,7 +57,7 @@ for (fileName in fileList){
 	shapef@data <- shapef@data[,colList]
 
 	#get projection info for later
-	projInfo <- shp_expl@proj4string
+	projInfo <- shapef@proj4string
 	
 	#explode multi-part polys
 	shp_expl <- disaggregate(shapef)
@@ -72,9 +71,9 @@ for (fileName in fileList){
 	nm.PyFile <- paste(sppCode, "_expl", sep = "")
 	writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
 	  
-    #name of random points output shapefile; add path to (now input) polygon file
-    nm.RanPtFile <- paste(outdir,"/", sppCode, "_RanPts", sep = "")
-	nm.PyFile <- paste(outdir,"/", sppCode, "_expl", sep = "")
+  #name of random points output shapefile; add path to (now input) polygon file
+  nm.RanPtFile <- paste(outdir,"/", sppCode, "_RanPts", sep = "")
+	nm.PyFile <- paste(polydir,"/", sppCode, "_expl", sep = "")
 	
 	#tell the console what's up
 	print(paste("Beginning on ", 
@@ -98,7 +97,7 @@ for (fileName in fileList){
 	
 	#add another copy of the expl_ID field - the original becomes 'mdcaty' in 
 	#the final output
-	att.pt$EXPL_ID2 <- att.pt$EXPL_ID
+	#att.pt$EXPL_ID2 <- att.pt$EXPL_ID
 
 	#calculate Number of points for each poly, stick into new field
 	att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"AREAM2"]/900+1)*0.004)))-1))
@@ -174,7 +173,8 @@ for (fileName in fileList){
 				 mdcaty="EXPL_ID",		#categories for random pt probabilities
 				 DesignID= sppCode,  	#name for the design, used to create a site ID
 				 prj=nm.PyFile,
-				 out.shape=nm.RanPtFile)
+				 out.shape=nm.RanPtFile,
+				 shapefile=FALSE)
 
 	ranPts <- as(grtsResult, "SpatialPointsDataFrame")
 	# projection info didn't stick, apply from what we grabbed earlier
@@ -205,11 +205,11 @@ for (fileName in fileList){
 	dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
 	###############################
 
-	#stop the sink
-	# sink()
-	#tell the console what's up
+	# stop the sink - MUST do this if used sink around line 85, above.
+	#sink()
+	# tell the console what's up
 	print(paste("Finished with ", sppCode, sep=""))
-#close the for loop
+# close the for loop
 }
 
 #Close Connection to the SQL DB
