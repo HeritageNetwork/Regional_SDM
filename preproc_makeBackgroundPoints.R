@@ -2,18 +2,17 @@
 # Purpose: GRTS sampling of study area polygon to generate background random points
 
 library(spsurvey)
-#library(sp)
 library(rgdal)
 
 # This is the directory that has your study area polygon.
-setwd("G:/SDM_test/")
+setwd("G:/RegionalSDM/inputs/background")
 
 # the name of the study area polygon
-fileName <- "testArea.shp"
+StudyAreaPoly <- "testArea.shp"
 
 # read in the shapefile, get the attribute data
-layer <- strsplit(fileName,"\\.")[[1]][[1]]
-shapef <- readOGR(fileName, layer = layer)
+layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
+shapef <- readOGR(StudyAreaPoly, layer = layer)
 att.pt <- shapef@data
 
 # name of random points output shapefile
@@ -37,7 +36,6 @@ grtsResult <- grts(design=dsgn,
 			
 # remove extranneous fields, write it out
 ranPts <- as(grtsResult, "SpatialPointsDataFrame")
-#fullName <- paste(nm.RanPtFile,".shp",sep="")
 colsToKeep <- c("stratum")
 ranPts <- ranPts[,colsToKeep]
 writeOGR(ranPts, dsn = ".", layer = nm.RanPtFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
