@@ -37,9 +37,7 @@ code_names <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))
 names(list_shpf) <- code_names
 
 ## If we have any categorical data sets, then we need to extract the cell values
-## directly. If not, then we can (should) apply bilinear interpolation. 
-## These next set of lines handle the scenario if we have categorical
-##  (bricks can't handle a vector of methods, hence the the most internal for loop)
+## directly. If continuous data, then we can (should) apply bilinear interpolation. 
 
 ### get categorical/continuous info from the lookup database
 db_file <- "F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
@@ -50,32 +48,31 @@ query <- paste("Select dataType from lkpEnvVars where code in ('", layerList, "'
 dataTypes <- dbGetQuery(db,query)
 dataTypes <- cbind(dataTypes, layer = names(envBrick))
 dataTypes$method <- ifelse(dataTypes$dataType == "categorical", "simple", "bilinear")
+dbDisconnect(db)
+rm(db)
 
-#if there are any categorical vars, do it the slow way
-if("simple" %in% dataTypes$method){
-  # step through list of shapefiles (probably only one)
-  for(j in 1:length(list_shpf)){
-    # step through layers (need to call "method" one by one)
-    for(k in 1:nrow(dataTypes)){
-      x <- extract(envBrick[[k]],list_shpf[[j]],method=dataTypes$method[[k]], sp=TRUE)
-      if(k == 1){
-        y <- x
-      } else {
-        layerName <- names(x@data)[ncol(x@data)]
-        y@data <- cbind(y@data, x@data[,layerName])
-        names(y@data)[length(names(y@data))] <- layerName
-      }
-    }
-    filename <- paste(names(list_shpf)[[j]], "_att", sep="")
-    writeOGR(y, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
-  }  
-} else {
-  # loop through the list, extracting to points, then writing each attributed shapefile
-  for(j in 1:length(list_shpf)){
-    x <- extract(envBrick,list_shpf[[j]],method="bilinear", sp=TRUE)
-    filename <- paste(names(list_shpf)[[j]], "_att", sep="")
-    writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+# step through list of shapefiles (probably only one)
+for(j in 1:length(list_shpf)){
+  # assume mixed simple/bilinear or bilinear only
+  if("simple" %in% dataTypes$method){
+      # clean vector method suggested by Robert Hijmans
+      k <- dataTypes$method == "simple"
+      x1 <- extract(envBrick[[which(k), drop=FALSE]], list_shpf[[j]], sp=TRUE)
+      x2 <- extract(envBrick[[which(!k), drop=FALSE]], list_shpf[[j]], method='bilinear') 
+      x1@data <- cbind(x1@data, x2) 
+      filename <- paste(names(list_shpf)[[j]], "_att", sep="")
+      writeOGR(x1, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+  } else {
+      x <- extract(envBrick,list_shpf[[j]],method="bilinear", sp=TRUE)
+      filename <- paste(names(list_shpf)[[j]], "_att", sep="")
+      writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
   }
 }
 
+# final result is a point shapefile (or point shapefiles if you had more than one) 
+# written to the same folder as the original point shapefile that is fully attributed
+# with all layers of the brick.
 
+# note that when there are categorical types, they end up sorted as the 
+# first env columns in the output shapefile. Columns will need re-sorting
+# at a later step. 
