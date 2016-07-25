@@ -6,6 +6,8 @@
 # Modified from a script written by Emilie Henderson
 ####
 
+#Test edit by RG
+
 library(raster)
 
 # set this path to the folder where the environmental rasters reside
