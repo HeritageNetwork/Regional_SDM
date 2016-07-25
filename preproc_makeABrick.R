@@ -6,6 +6,9 @@
 # Modified from a script written by Emilie Henderson
 ####
 
+#### Random line change by krh
+#### Adding another comment by krh
+
 library(raster)
 
 # set this path to the folder where the environmental rasters reside
