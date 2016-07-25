@@ -13,6 +13,8 @@ pathToTifs <- "G:/RegionalSDM/env_vars/geotiffs"
 
 setwd(pathToTifs)
 
+# Joe was here.
+
 # set the output path
 outPath <- "G:/RegionalSDM/env_vars/nativeR"
 
