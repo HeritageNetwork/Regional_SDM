@@ -3,6 +3,7 @@
 # write them out in native R raster format
 #
 ####
+### Kirsten is playing around on GitHub
 
 library(raster)
 
