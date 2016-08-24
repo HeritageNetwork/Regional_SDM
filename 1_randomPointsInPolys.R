@@ -79,10 +79,6 @@ writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwr
 nm.RanPtFile <- paste(outdir,"/", sppCode, "_RanPts", sep = "")
 nm.PyFile <- paste(polydir,"/", sppCode, "_expl", sep = "")
 
-#tell the console what's up
-print(paste("Beginning on ", 
-	sppCode, ", ", grep(fileName, fileList) , " of ", length(fileList), sep = ""))
-
 ###############################
 #####     Placing random points within each sample unit (polygon/EO)
 #####
@@ -93,10 +89,6 @@ att.pt <- shp_expl@data
 
 # just in case convert to upper
 names(att.pt) <- toupper(names(att.pt))
-
-#add another copy of the expl_ID field - the original becomes 'mdcaty' in 
-#the final output
-#att.pt$EXPL_ID2 <- att.pt$EXPL_ID
 
 #calculate Number of points for each poly, stick into new field
 att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"AREAM2"]/900+1)*0.004)))-1))
@@ -176,11 +168,11 @@ grtsResult <- grts(design=SampDesign,
 			 shapefile=FALSE)
 
 ranPts <- as(grtsResult, "SpatialPointsDataFrame")
-# projection info didn't stick, apply from what we grabbed earlier
+# projection info doesn't stick, apply from what we grabbed earlier
 ranPts@proj4string <- projInfo
 # remove extranneous fields, write it out
 fullName <- paste(nm.RanPtFile,".shp",sep="")
-colsToKeep <- c("stratum","EO_ID","SCIEN_NAME","ERACCURACY")
+colsToKeep <- c("stratum", desiredCols)
 ranPts <- ranPts[,colsToKeep]
 writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile, 
 			driver="ESRI Shapefile", overwrite_layer=TRUE)
@@ -191,8 +183,8 @@ writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile,
 ###############################
 
 # prep the data
-OutPut <- data.frame(SciName = paste(att.pt[1,"SCIEN_NAME"]),
-	CommName=paste(att.pt[1,"COMMONNAME"]),
+OutPut <- data.frame(SciName = paste(att.pt[1,"SNAME"]),
+	CommName=paste(att.pt[1,"SCOMNAME"]),
 	ElemCode=sppCode,
 	RandomPtFile=nm.RanPtFile,
 	date = paste(Sys.Date()),
