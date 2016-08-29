@@ -32,26 +32,18 @@ ranPtsFiles
 #enter its location in the list (first = 1, second = 2, etc)
 n <- 1
 
-
 ranPtsFilesNoExt <- sub(".shp","",ranPtsFiles)
+shpf <- readOGR(".", layer = ranPtsFilesNoExt[n])
 
-##Read these files into a list of SpatialPoints dataframes
-list_shpf <- lapply(ranPtsFilesNoExt,function(x)
-  readOGR(".",layer=x)
-  )
-  
 #Get a list of the codes (this assumes all the input files had '_RanPts.shp' that shall be stripped)
-code_names <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))
-
-##Add names to the list
-names(list_shpf) <- code_names
+code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))[[n]]
 
 ####
 ##  Bilinear interpolation is a *huge* memory hog. We 
 ##  may need to just do it all as 'simple'. geez.
 ####
-x <- extract(envStack,list_shpf[[1]],method="simple", sp=TRUE)
-filename <- paste(names(list_shpf)[[j]], "_att", sep="")
+x <- extract(envStack, shpf, method="simple", sp=TRUE)
+filename <- paste(code_name, "_att", sep="")
 writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 ####
@@ -73,24 +65,20 @@ writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer
 # dbDisconnect(db)
 # rm(db)
 
-# # step through list of shapefiles (probably only one)
-# for(j in 1:length(list_shpf)){
 #   # assume mixed simple/bilinear or bilinear only
 #   if("simple" %in% dataTypes$method){
 #       # clean vector method suggested by Robert Hijmans
 #       k <- dataTypes$method == "simple"
-#       x1 <- extract(envStack[[which(k), drop=FALSE]], list_shpf[[j]], sp=TRUE)
-#       x2 <- extract(envStack[[which(!k), drop=FALSE]], list_shpf[[j]], method='bilinear') 
+#       x1 <- extract(envStack[[which(k), drop=FALSE]], shpf, sp=TRUE)
+#       x2 <- extract(envStack[[which(!k), drop=FALSE]], shpf, method='bilinear') 
 #       x1@data <- cbind(x1@data, x2) 
-#       filename <- paste(names(list_shpf)[[j]], "_att", sep="")
+#       filename <- paste(code_name, "_att", sep="")
 #       writeOGR(x1, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 #   } else {
-#       x <- extract(envStack,list_shpf[[j]],method="bilinear", sp=TRUE)
-#       filename <- paste(names(list_shpf)[[j]], "_att", sep="")
+#       x <- extract(envStack,shpf,method="bilinear", sp=TRUE)
+#       filename <- paste(code_name, "_att", sep="")
 #       writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 #   }
-# }
-# 
 
 # final result is a point shapefile (or point shapefiles if you had more than one) 
 # written to the same folder as the original point shapefile that is fully attributed
@@ -105,13 +93,13 @@ writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer
 ## this code below will subset the point layers into groups by state
 ## and extract by these smaller subsets. 
 # numgroups <- 10
-# groupSize <- floor(nrow(list_shpf[[1]])/numgroups)
+# groupSize <- floor(nrow(shpf)/numgroups)
 # 
 # for (i in 1:(numgroups+1)){
 #   begin <- ((i-1)*groupSize) + 1
-#   end <- min(c((groupSize * i), nrow(list_shpf[[1]])))
+#   end <- min(c((groupSize * i), nrow(shpf)))
 #   #print(paste(c(begin, end),sep = ", "))
-#   y <- extract(envStack,list_shpf[[1]][begin:end, ],method="bilinear", sp=TRUE)
+#   y <- extract(envStack,shpf[begin:end, ],method="bilinear", sp=TRUE)
 #   if (i == 1){
 #     z <- y
 #   } else {
@@ -119,6 +107,6 @@ writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer
 #   }
 # }
 # 
-# filename <- paste(names(list_shpf)[[1]], "_att", sep="")
+# filename <- paste(code_name, "_att", sep="")
 # writeOGR(z, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 # 
