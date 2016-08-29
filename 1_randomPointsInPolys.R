@@ -9,8 +9,8 @@ library(rgdal)
 # Assumptions
 # - there is one shapefile for each element in the working directory listed below
 # - the shapefile is named with the species code that is used in the lookup table
-#   in the sqlite database to link to other element information (full name, common name, etc.)
 #   e.g. glypmuhl.shp
+# - There is lookup data in the sqlite database to link to other element information (full name, common name, etc.)
 # - the polygon shapefile has at least these fields EO_ID_ST, SNAME, SCOMNAME, RA
 
 #######
@@ -18,15 +18,14 @@ library(rgdal)
 ## these are the lines you need to change
 
 ### This is the shapefile that has your species polygon data. 
-polydir <- "G:/RegionalSDM/inputs/species/glypmuhl/polygon_data"
+polydir <- "D:/RegionalSDM/inputs/species/glypmuhl/polygon_data"
 setwd(polydir)
 
-
 ### This is the directory you want the output data (random point shapefile) written to
-outdir <- "G:/RegionalSDM/inputs/species/glypmuhl/point_data"
+outdir <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
 
 ### This is the full path and name of the information-tracking database
-db_file <- "F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
+db_file <- "D:/RegionalSDM/scripts/Regional_SDM/SDM_lookupAndTracking.sqlite"
 db <- dbConnect(SQLite(),dbname=db_file)
 
 #get a list of what's in the directory
@@ -154,7 +153,7 @@ names(SampDesign) <- namesVec
 # show something about the structure of the list
 #summary(SampDesign)  ##str(SampDesign) is even more thorough
 
-# Create the GRTS survey design
+# Create the GRTS survey design [might take a while]
 grtsResult <- grts(design=SampDesign,
 			 src.frame="shapefile", #source of the frame
 			 in.shape=nm.PyFile,    #name of input shapefile no extension
