@@ -85,11 +85,7 @@ for(j in 1:length(list_shpf)){
 #### if we have problems running out of memory,
 ## this code below will subset the point layers into groups by state
 ## and extract by these smaller subsets. 
-x <- as.character(list_shpf[[1]]$EO_ID_ST)
-groupMembership <- read.table(textConnection(x), sep = "_")[1]
-groups <- unique(groupMembership)
 numgroups <- 10
-groupSize <- floor(nrow(groupMembership)/numgroups)
 groupSize <- floor(nrow(list_shpf[[1]])/numgroups)
 
 for (i in 1:(numgroups+1)){
@@ -103,16 +99,6 @@ for (i in 1:(numgroups+1)){
     z <- spRbind(z, y)
   }
 }
-
-# 
-# for (i in 1:nrow(groups)){
-#   y <- extract(envStack,list_shpf[[1]][grepl(groups[i,1], groupMembership[,1]), ],method="bilinear", sp=TRUE)
-#   if (i == 1){
-#     z <- y
-#   } else {
-#     z <- spRbind(z, y)
-#   }
-# }
 
 filename <- paste(names(list_shpf)[[1]], "_att", sep="")
 writeOGR(z, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
