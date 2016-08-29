@@ -5,22 +5,26 @@
 library(raster)
 library(rgdal)
 library(RSQLite)
+library(maptools)
 
 ## Set Working Directory to the rasters location
-setwd("G:/RegionalSDM/env_vars/brick")
+#setwd("D:/RegionalSDM/env_vars/brick")
+setwd("D:/RegionalSDM/env_vars/geotiffs")
+
+pathToTifs <- "D:/RegionalSDM/env_vars/geotiffs"
 
 ## Option 1: load the brick
-envBrick <- brick("brick.grd")
+#envBrick <- brick("brick.grd")
 
 ## Option 2: create a stack
-# tiflist <- list.files(pattern = ".tif$")
-# gridlist<-as.list(paste(pathToTifs,tiflist,sep = "/"))
-# nm <- substr(tiflist,1,nchar(tiflist) - 4)
-# names(gridlist)<-nm
-# envStack <- stack(gridlist)
+tiflist <- list.files(pattern = ".tif$")
+gridlist <- as.list(paste(pathToTifs,tiflist,sep = "/"))
+nm <- substr(tiflist,1,nchar(tiflist) - 4)
+names(gridlist) <- nm
+envStack <- stack(gridlist)
 
 ## Set working directory to the random points location
-setwd("G:/RegionalSDM/inputs/species/glypmuhl/point_data")
+setwd("D:/RegionalSDM/inputs/species/glypmuhl/point_data")
 
 ranPtsFiles <- list.files(pattern = ".RanPts.shp$")
 ranPtsFilesNoExt <- sub(".shp","",ranPtsFiles)
@@ -40,13 +44,13 @@ names(list_shpf) <- code_names
 ## directly. If continuous data, then we can (should) apply bilinear interpolation. 
 
 ### get categorical/continuous info from the lookup database
-db_file <- "F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
+db_file <- "D:/RegionalSDM/scripts/Regional_SDM/SDM_lookupAndTracking.sqlite"
 db <- dbConnect(SQLite(),dbname=db_file)
 # get list of layers, select from the db, put into a dataframe
-layerList <- paste(names(envBrick), collapse = "', '")
+layerList <- paste(names(envStack), collapse = "', '")
 query <- paste("Select dataType from lkpEnvVars where code in ('", layerList, "');", sep="")
 dataTypes <- dbGetQuery(db,query)
-dataTypes <- cbind(dataTypes, layer = names(envBrick))
+dataTypes <- cbind(dataTypes, layer = names(envStack))
 dataTypes$method <- ifelse(dataTypes$dataType == "categorical", "simple", "bilinear")
 dbDisconnect(db)
 rm(db)
@@ -57,13 +61,13 @@ for(j in 1:length(list_shpf)){
   if("simple" %in% dataTypes$method){
       # clean vector method suggested by Robert Hijmans
       k <- dataTypes$method == "simple"
-      x1 <- extract(envBrick[[which(k), drop=FALSE]], list_shpf[[j]], sp=TRUE)
-      x2 <- extract(envBrick[[which(!k), drop=FALSE]], list_shpf[[j]], method='bilinear') 
+      x1 <- extract(envStack[[which(k), drop=FALSE]], list_shpf[[j]], sp=TRUE)
+      x2 <- extract(envStack[[which(!k), drop=FALSE]], list_shpf[[j]], method='bilinear') 
       x1@data <- cbind(x1@data, x2) 
       filename <- paste(names(list_shpf)[[j]], "_att", sep="")
       writeOGR(x1, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
   } else {
-      x <- extract(envBrick,list_shpf[[j]],method="bilinear", sp=TRUE)
+      x <- extract(envStack,list_shpf[[j]],method="bilinear", sp=TRUE)
       filename <- paste(names(list_shpf)[[j]], "_att", sep="")
       writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
   }
@@ -76,3 +80,40 @@ for(j in 1:length(list_shpf)){
 # note that when there are categorical types, they end up sorted as the 
 # first env columns in the output shapefile. Columns will need re-sorting
 # at a later step. 
+
+
+#### if we have problems running out of memory,
+## this code below will subset the point layers into groups by state
+## and extract by these smaller subsets. 
+x <- as.character(list_shpf[[1]]$EO_ID_ST)
+groupMembership <- read.table(textConnection(x), sep = "_")[1]
+groups <- unique(groupMembership)
+numgroups <- 10
+groupSize <- floor(nrow(groupMembership)/numgroups)
+groupSize <- floor(nrow(list_shpf[[1]])/numgroups)
+
+for (i in 1:(numgroups+1)){
+  begin <- ((i-1)*groupSize) + 1
+  end <- min(c((groupSize * i), nrow(groupMembership)))
+  #print(paste(c(begin, end),sep = ", "))
+  y <- extract(envStack,list_shpf[[1]][begin:end, ],method="simple", sp=TRUE)
+  if (i == 1){
+    z <- y
+  } else {
+    z <- spRbind(z, y)
+  }
+}
+
+# 
+# for (i in 1:nrow(groups)){
+#   y <- extract(envStack,list_shpf[[1]][grepl(groups[i,1], groupMembership[,1]), ],method="bilinear", sp=TRUE)
+#   if (i == 1){
+#     z <- y
+#   } else {
+#     z <- spRbind(z, y)
+#   }
+# }
+
+filename <- paste(names(list_shpf)[[1]], "_att", sep="")
+writeOGR(z, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+
