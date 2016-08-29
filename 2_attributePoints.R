@@ -27,6 +27,12 @@ envStack <- stack(gridlist)
 setwd("D:/RegionalSDM/inputs/species/glypmuhl/point_data")
 
 ranPtsFiles <- list.files(pattern = ".RanPts.shp$")
+ranPtsFiles
+#look at the output and choose which shapefile you want to run
+#enter its location in the list (first = 1, second = 2, etc)
+n <- 1
+
+
 ranPtsFilesNoExt <- sub(".shp","",ranPtsFiles)
 
 ##Read these files into a list of SpatialPoints dataframes
@@ -40,38 +46,51 @@ code_names <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))
 ##Add names to the list
 names(list_shpf) <- code_names
 
+####
+##  Bilinear interpolation is a *huge* memory hog. We 
+##  may need to just do it all as 'simple'. geez.
+####
+x <- extract(envStack,list_shpf[[1]],method="simple", sp=TRUE)
+filename <- paste(names(list_shpf)[[j]], "_att", sep="")
+writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+
+####
+# The remaining code explores bilinear interpolation options
+####
+
 ## If we have any categorical data sets, then we need to extract the cell values
 ## directly. If continuous data, then we can (should) apply bilinear interpolation. 
 
-### get categorical/continuous info from the lookup database
-db_file <- "D:/RegionalSDM/scripts/Regional_SDM/SDM_lookupAndTracking.sqlite"
-db <- dbConnect(SQLite(),dbname=db_file)
-# get list of layers, select from the db, put into a dataframe
-layerList <- paste(names(envStack), collapse = "', '")
-query <- paste("Select dataType from lkpEnvVars where code in ('", layerList, "');", sep="")
-dataTypes <- dbGetQuery(db,query)
-dataTypes <- cbind(dataTypes, layer = names(envStack))
-dataTypes$method <- ifelse(dataTypes$dataType == "categorical", "simple", "bilinear")
-dbDisconnect(db)
-rm(db)
+# ### get categorical/continuous info from the lookup database
+# db_file <- "D:/RegionalSDM/scripts/Regional_SDM/SDM_lookupAndTracking.sqlite"
+# db <- dbConnect(SQLite(),dbname=db_file)
+# # get list of layers, select from the db, put into a dataframe
+# layerList <- paste(names(envStack), collapse = "', '")
+# query <- paste("Select dataType from lkpEnvVars where code in ('", layerList, "');", sep="")
+# dataTypes <- dbGetQuery(db,query)
+# dataTypes <- cbind(dataTypes, layer = names(envStack))
+# dataTypes$method <- ifelse(dataTypes$dataType == "categorical", "simple", "bilinear")
+# dbDisconnect(db)
+# rm(db)
 
-# step through list of shapefiles (probably only one)
-for(j in 1:length(list_shpf)){
-  # assume mixed simple/bilinear or bilinear only
-  if("simple" %in% dataTypes$method){
-      # clean vector method suggested by Robert Hijmans
-      k <- dataTypes$method == "simple"
-      x1 <- extract(envStack[[which(k), drop=FALSE]], list_shpf[[j]], sp=TRUE)
-      x2 <- extract(envStack[[which(!k), drop=FALSE]], list_shpf[[j]], method='bilinear') 
-      x1@data <- cbind(x1@data, x2) 
-      filename <- paste(names(list_shpf)[[j]], "_att", sep="")
-      writeOGR(x1, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
-  } else {
-      x <- extract(envStack,list_shpf[[j]],method="bilinear", sp=TRUE)
-      filename <- paste(names(list_shpf)[[j]], "_att", sep="")
-      writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
-  }
-}
+# # step through list of shapefiles (probably only one)
+# for(j in 1:length(list_shpf)){
+#   # assume mixed simple/bilinear or bilinear only
+#   if("simple" %in% dataTypes$method){
+#       # clean vector method suggested by Robert Hijmans
+#       k <- dataTypes$method == "simple"
+#       x1 <- extract(envStack[[which(k), drop=FALSE]], list_shpf[[j]], sp=TRUE)
+#       x2 <- extract(envStack[[which(!k), drop=FALSE]], list_shpf[[j]], method='bilinear') 
+#       x1@data <- cbind(x1@data, x2) 
+#       filename <- paste(names(list_shpf)[[j]], "_att", sep="")
+#       writeOGR(x1, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+#   } else {
+#       x <- extract(envStack,list_shpf[[j]],method="bilinear", sp=TRUE)
+#       filename <- paste(names(list_shpf)[[j]], "_att", sep="")
+#       writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+#   }
+# }
+# 
 
 # final result is a point shapefile (or point shapefiles if you had more than one) 
 # written to the same folder as the original point shapefile that is fully attributed
@@ -85,21 +104,21 @@ for(j in 1:length(list_shpf)){
 #### if we have problems running out of memory,
 ## this code below will subset the point layers into groups by state
 ## and extract by these smaller subsets. 
-numgroups <- 10
-groupSize <- floor(nrow(list_shpf[[1]])/numgroups)
-
-for (i in 1:(numgroups+1)){
-  begin <- ((i-1)*groupSize) + 1
-  end <- min(c((groupSize * i), nrow(groupMembership)))
-  #print(paste(c(begin, end),sep = ", "))
-  y <- extract(envStack,list_shpf[[1]][begin:end, ],method="simple", sp=TRUE)
-  if (i == 1){
-    z <- y
-  } else {
-    z <- spRbind(z, y)
-  }
-}
-
-filename <- paste(names(list_shpf)[[1]], "_att", sep="")
-writeOGR(z, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
-
+# numgroups <- 10
+# groupSize <- floor(nrow(list_shpf[[1]])/numgroups)
+# 
+# for (i in 1:(numgroups+1)){
+#   begin <- ((i-1)*groupSize) + 1
+#   end <- min(c((groupSize * i), nrow(list_shpf[[1]])))
+#   #print(paste(c(begin, end),sep = ", "))
+#   y <- extract(envStack,list_shpf[[1]][begin:end, ],method="bilinear", sp=TRUE)
+#   if (i == 1){
+#     z <- y
+#   } else {
+#     z <- spRbind(z, y)
+#   }
+# }
+# 
+# filename <- paste(names(list_shpf)[[1]], "_att", sep="")
+# writeOGR(z, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+# 
