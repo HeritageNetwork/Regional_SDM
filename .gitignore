@@ -1,0 +1,2 @@
+# have git ignore the sqlite database 
+*.sqlite
