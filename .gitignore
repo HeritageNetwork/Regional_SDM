@@ -1,2 +1,11 @@
 # have git ignore the sqlite database 
 *.sqlite
+
+# History files
+.Rhistory
+.Rapp.history
+
+# Session Data files
+.RData
+
+
