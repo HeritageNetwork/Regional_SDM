@@ -1,0 +1,382 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc} 
+\usepackage{geometry}
+\usepackage{fancyhdr}     %for headers,footers
+\usepackage{underscore}  %needed if any text has underscores
+\pagestyle{fancy} \fancyhf{} \renewcommand\headrulewidth{0pt} %strip default header/footer stuff
+%add a center footer
+\cfoot{\small   %small font
+\includegraphics{logo_2inch_sm.jpg}   %logo image
+The New York Natural Heritage Program, 625 Broadway, Albany NY 12233-4757. www.nynhp.org
+\normalsize} %return the font to normal
+\geometry{letterpaper, top=0.45in, bottom=0.75in, left=0.75in, right=0.75in}
+
+
+\begin{document}
+
+\noindent
+\begin{minipage}[b]{4.75in}   %everything in this minipage will be adjacent, left of the thermometer
+  \LARGE \textit{\Sexpr{as.character(ElementNames[[1]])}} \\ 
+  \normalsize Element Distribution Model (EDM) assessment metrics and metadata \\
+  Common name: \Sexpr{as.character(ElementNames[[2]])} \\ 
+  Date: \Sexpr{format(Sys.Date(), "%d %b %Y")} \\  
+  Code: \Sexpr{as.character(ElementNames[[3]])} 
+\end{minipage}  \hfill   
+\begin{minipage}[b]{2in}   %minipage for thermometer  
+<<thermometer1, fig.height=1, fig.width=1, include=FALSE, echo=FALSE>>=
+  par(mar=c(0.9,0.2,0.2,0.2))
+  temp <- tss.summ$mean
+  thermTemp <- vector("list")
+  if (temp < .33){
+              thermTemp <- c("red", "poor")
+              } else if (temp < .66){
+              thermTemp <- c("yellow","fair")
+              } else {
+              thermTemp <- c("green", "good") }
+  symbols(1, 1, thermometers=cbind(0.5, 1, temp), inches=.5, fg = thermTemp[[1]],
+         xaxt = "n", yaxt = "n", ann = FALSE, bty = "n", pin = c(1.2,1.2) )
+  text (1,1, thermTemp[[2]],
+      adj = c(0.5,4), cex = .75, col = "black", xpd=NA)
+  text (1,1, paste("TSS=",format(round(temp,digits=2)),sep=""),
+      adj = c(0.5,6), cex = .75, col = "black", xpd=NA)
+  #box("outer","dotted") #show the outline of the fig box when debugging
+@
+  \begin{center}
+  \includegraphics{figure/thermometer1-1.pdf} \\     %place it
+  ability to find new sites \end{center}
+\end{minipage}  
+
+\smallskip
+\hrule
+\medskip
+\noindent
+This EDM incorporates the number of known and background locations
+indicated in Table 1, modeled with the random forests 
+routine \cite{breiman2001, iverson2004} in the R statistical environment 
+\cite{liaw2002, r291}. We validated the model by jackknifing 
+(also called leave-one-out, see
+\cite{fielding1997, fielding2002, pearson2007})
+by \Sexpr{as.character(group$JackknType)} for a total of \Sexpr{length(group$vals)} groups.
+The statistics in Table 2 report the mean and variance for these jackknifing runs.
+
+\smallskip
+
+\small
+\begin{minipage}[t]{3in}
+
+\smallskip     %dummy first line to align with next minipage
+
+Table 1. Input statistics. 
+<<tableOneLegend, results = "asis", echo=FALSE>>= 
+if(grep("10 km grid",group$JackknType) == 1){
+cat("Groups = number of input grid cells or cell groupings with PR points; ")
+}else{
+cat("Polys = input polygons; EOs = known locations; ")
+}
+@
+BG points = background points; PR points = presence points placed throughout
+all polygons.
+\smallskip
+\begin{center}
+<<tableOne, results="asis", echo = FALSE>>=
+  library(xtable)
+  if(grep("10 km grid",group$JackknType) == 1){
+	summ.table <- data.frame(Name=c("Groups","BG points","PR points"),
+                         Number=c(length(group$vals),
+                         nrow(subset(df.full, pres == 0)),
+                         nrow(subset(df.full, pres == 1))))
+  } else {
+	summ.table <- data.frame(Name=c("polys","EOs","BG points","PR points"),
+                         Number=c(numPys,numEOs,
+                         nrow(subset(df.full, pres == 0)),
+                         nrow(subset(df.full, pres == 1))))
+  }
+  print(xtable(summ.table),
+             floating = FALSE, include.rownames=FALSE)
+@
+\end{center}
+
+\medskip
+
+Table 2. Validation statistics for jackknife trials. Overall Accuracy = 
+Correct Classification Rate, TSS = True Skill Statistic, AUC = 
+area under the ROC curve; see \cite{allouche2006, vaughan2005,
+fielding2002}.
+\smallskip
+
+\begin{center}
+<<tableTwo, results="asis", echo = FALSE>>=
+  library(xtable)
+  summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
+                                 "TSS", "Kappa", "AUC"), 
+                         Mean=c(OvAc.summ$mean, specif.summ$mean,sensit.summ$mean,
+                                tss.summ$mean,Kappa.unw.summ$mean,
+                                auc.summ$mean),
+                         SD=c(OvAc.summ$sd, specif.summ$sd,sensit.summ$sd,
+                                tss.summ$sd,Kappa.unw.summ$sd, 
+                                auc.summ$sd),
+                         SEM=c(OvAc.summ$sem, specif.summ$sem,sensit.summ$sem,
+                                tss.summ$sem,Kappa.unw.summ$sem, 
+                                auc.summ$sem))
+  print(xtable(summ.table), 
+              floating=FALSE, include.rownames=FALSE)
+@
+\end{center}
+
+\medskip
+ Validation runs used \Sexpr{n.var} environmental 
+variables, with \Sexpr{trRes[[1]]$mtry} variables 
+tried at each split (mtry) and \Sexpr{trRes[[1]]$ntree} trees built.
+The final model was built using \Sexpr{rf.full$ntree} trees, all presence 
+and background points, with an mtry of \Sexpr{rf.full$mtry}, and the same
+number of environmental variables.
+
+\begin{center}
+<<ROCplot, fig.width=2.9, fig.height=1.6, include=FALSE, echo=FALSE>>=
+par(mar=c(2.8,2.5,.5,10),   #bottom, left, top, right
+    tcl=-0.1,   #tic length
+    cex=0.6,     #text size
+    mgp=c(1.6,0.4,0) #placement of axis title, labels, line
+    )
+plot(perf,lwd=2,
+        avg="threshold", colorize = TRUE,
+        print.cutoffs.at = c(rf.full.ctoff[2], cutval.rf[2]),
+        text.adj=c(-0.6,1.5), points.pch=19, points.cex=0.8, text.cex=0.8,
+        xlab="Av. false positive rate", ylab="Av. true positive rate",
+        colorkey.relwidth = 0.5,
+        colorize.palette=rainbow(256,start=3/6, end=0), colorkey.line = 1,
+        colorkey = FALSE
+        )
+
+  # set the color palette
+  rl.colors <- rev(rainbow(256,start=3/6, end=0))
+  # find the min and max of the cutoffs, as used in the ROC plot
+  rl.max.alpha <- max(unlist(perf@alpha.values))
+  rl.min.alpha <- min(unlist(perf@alpha.values))
+  # get the y min and max of the ROC plot
+  rl.max.y <- max(axTicks(4))
+  rl.min.y <- min(axTicks(4))
+  # interpolate the cutoffs to the y axis
+  rl.alpha.ticks <- approxfun(c(rl.min.y, rl.max.y),
+                           c(rl.min.alpha, rl.max.alpha))(axTicks(4))
+  # set up a vector the length of colors ranging from min to max values
+  rl.col.cutoffs <- rev(seq(rl.min.alpha,rl.max.alpha, length=length( rl.colors )))
+  # create a function to do the interpolation in later commands 
+  rl.alpha2y <- approxfun(c(min(rl.alpha.ticks), max(rl.alpha.ticks)),
+                       c(rl.min.y,rl.max.y))
+  # place the axis, using the correct labeling scheme
+axis(at=rl.alpha2y(rl.alpha.ticks),labels=round((rl.alpha.ticks),2), side=4, line=3.5)
+  # set up definition for what to display and then apply to y breaks and colors
+  rl.display.bool <- (rl.col.cutoffs >= min(rl.alpha.ticks) &
+                   rl.col.cutoffs < max(rl.alpha.ticks))
+  rl.y.lower <- rl.alpha2y(rl.col.cutoffs)[rl.display.bool]
+  rl.colors <- rl.colors[rl.display.bool]
+  rl.y.width <- rl.y.lower[2] - rl.y.lower[1]
+  rl.y.upper <- rl.y.lower + rl.y.width
+  # manually define x locations way off graph to minimize confusion
+  rl.x.left <- 1.3
+  rl.x.right <- 1.32
+  # place the bar, then the legend label
+rect(rl.x.left, rl.y.lower, rl.x.right, rl.y.upper, col=rl.colors, border=rl.colors, xpd=NA)
+mtext("cutoff", side=1, at = c(1.35), line = 0, cex=0.6)
+mtext("legend", side=1, at = c(1.35), line = 1, cex=0.6)
+
+  #clean up
+rm(list=ls(pattern="rl."))
+
+@
+\includegraphics{figure/ROCplot-1.pdf} %place it    
+\end{center}
+Figure 1. ROC plot for all \Sexpr{length(group$vals)} validation runs, 
+averaged along cutoffs. The first cutoff indicated (\Sexpr{round(cutval.rf[2],3)}) is 
+generated by finding the point along this curve closest to the upperleft-most
+corner. Validation statistics requiring a cutoff use this value. The second
+(\Sexpr{round(rf.full.ctoff[2],3)}) uses the full model and maximizes the precision-recall 
+F-measure using alpha=0.01 \cite{sing2005}.
+
+\end{minipage}
+\hfill \begin{minipage}[t]{3.5in}
+
+\smallskip  %dummy first line to align with previous minipage
+
+<<importanceFig, fig.width=3.0, fig.height=5.25, include=FALSE, echo=FALSE>>=
+par(mar=c(2.5,2.5,.5,2.5),   #bottom, left, top, right
+    tcl=-0.1,   #tic length
+    mgp=c(1.3,0.4,0) #placement of axis title, labels, line
+    )
+  #get the order for the importance charts
+  ord <- rev(order(EnvVars$impVal, decreasing = TRUE)[1:n.var])
+  xmin.i <- min(EnvVars$impVal)
+  #create importance dot chart
+  dotchart(EnvVars$impVal[ord], xlab = expression("lower" %->% "greater importance"),
+    xlim = c(xmin.i, max(EnvVars$impVal)), labels = EnvVars$fullName[ord],
+    cex = 0.62     #character size
+  )
+@
+\begin{center}
+\includegraphics{figure/importanceFig-1.pdf}    %place it
+\end{center}
+Figure 2. Relative importance of each environmental variable based on the full
+model using all sites as input. 
+
+<<densityFig, fig.width=2, fig.height=1.5, include=FALSE, echo=FALSE>>=
+par(mar=c(2.5, 2.5, 0.5, 0.5),   #bottom, left, top, right
+    tcl=-0.1,   #tic length
+    cex=0.6,     #text size  
+    mgp=c(1.6,0.4,0) #placement of axis title, labels, line
+    )
+# get the plot started with a dummy point that isn't drawn
+plot(x=0.5, xlim=c(0,1), ylim=c(0,200),
+     xlab="cutoff", ylab="density", main=NA, pch= NA)
+# add in the rest
+for (i in 1:length(v.rocr.pred.restruct@predictions)) {
+  if(length(v.rocr.pred.restruct@labels[[i]][v.rocr.pred.restruct@labels[[i]] == 0]) > 1)
+    {
+     lines(
+     density(v.rocr.pred.restruct@predictions[[i]][v.rocr.pred.restruct@labels[[i]] == 0]),
+     col = "red")
+    }
+    if(length(v.rocr.pred.restruct@labels[[i]][v.rocr.pred.restruct@labels[[i]] == 1]) > 1)
+    {
+     lines(
+     density(v.rocr.pred.restruct@predictions[[i]][v.rocr.pred.restruct@labels[[i]] == 1]),
+     col = "blue")
+    }
+  }
+
+## add an arrow to point to the cutoff
+# arrow for cutoff based on average ROC curve
+arrows(cutval.rf[2], 200, cutval.rf[2], 160,
+                    length=0.05, angle=30, lwd=2, ljoin=2,
+                    xpd=TRUE)                    
+# arrow for cutoff based on full model                    
+arrows(rf.full.ctoff[2], 60, rf.full.ctoff[2], 20, 
+                    length=0.05, angle=30, lwd=2, ljoin=2,
+                    xpd=TRUE)
+@
+
+\medskip
+\medskip
+\medskip
+
+\includegraphics{figure/densityFig-1.pdf}    %place it
+  \begin{minipage}[b]{1.4in}
+  Figure 3. Separation between presence and background points. Red and blue lines show 
+  densities of absence and presence points, respectively. One of each is drawn for 
+  each validation run. Arrows indicate cutoff locations as in Fig. 1.
+  \end{minipage}
+\end{minipage} 
+
+\normalsize
+\pagebreak
+
+<<pPlotFig, fig.width=6.5, fig.height=3.5, include=FALSE, echo=FALSE>>=
+par(tcl=-0.2,   #tic length
+    cex=0.6,     #text size
+    mgp=c(1.6,0.4,0) #placement of axis title, labels, line
+    )
+
+layout(matrix(c(2,4,6,8,1,3,5,7,10,12,14,16,9,11,13,15), 
+		nrow = 4, ncol = 4, byrow = TRUE), 
+		widths = c(1,1,1,1),heights=c(1,3,1,3))
+
+pres.dat <- subset(df.full, pres==1)
+abs.dat <- subset(df.full, pres==0)
+
+for (plotpi in 1:8){
+	par(mar=c(3,2,0,0.5))
+	if(is.character(pPlots[[plotpi]]$x)){
+		barplot(pPlots[[plotpi]]$y, width=rep(1, length(pPlots[[plotpi]]$y)), col="grey",
+                              xlab = pPlots[[plotpi]]$fname, ylab = NA,
+                              names.arg=pPlots[[plotpi]]$x, space=0.1,
+							  cex.names=0.7, las=2)	
+	plot(1,1,axes=FALSE, type="n", xlab=NA, ylab=NA) #skip density plots if pPlot is barplot
+	} else {
+	plot(pPlots[[plotpi]]$x, pPlots[[plotpi]]$y,
+		type = "l",
+		xlab = pPlots[[plotpi]]$fname, ylab=NA)
+	pres.dens <- density(pres.dat[,pPlots[[plotpi]]$code])
+	abs.dens <- density(abs.dat[,pPlots[[plotpi]]$code])
+	par(mar=c(0,2,0.5,0.5))
+	plot(pres.dens, xlim=c(min(pPlots[[plotpi]]$x), 
+					max(pPlots[[plotpi]]$x)),
+					ylim=c(0,max(c(abs.dens$y,pres.dens$y))),
+					main=NA,xlab=NA,ylab=NA,
+					axes=FALSE, col="blue", lwd=2
+					)
+	lines(abs.dens, col="red")
+	}
+}
+@
+\includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
+Figure 4. Partial dependence plots for the eight environmental variables with the 
+most influence on the model. Each plot shows the effect 
+of the variable on the probability of appropriate habitat with the 
+effects of the other variables removed \cite{liaw2002}. Peaks in the line indicate 
+where this variable had the strongest influence on predicting 
+appropriate habitat. The distribution of each category (thin red = BG points, 
+thick blue = PR points) is depicted at the top margin. Categorical variables are depicted 
+with barplots. 
+
+\medskip
+\noindent
+Important! Element distribution models map places of similar environmental
+conditions to the submitted locations (PR points). No model will ever depict sites where
+a targeted element will occur with certainty, it can \textit{only} depict locations it interprets
+as appropriate habitat for the targeted element. EDMs can be used in many ways and the 
+depiction of appropriate habitat should be varied depending on intended use. For targeting
+field surveys, an EDM may be used to refine the search area; users should always employ
+additional GIS tools to further direct search efforts. A lower cutoff depicting more land area
+such as that derived from the validation ROC plots (\Sexpr{round(cutval.rf[2],3)}) may be 
+appropriate to use in this case. For a more conservative depiction of suitable habitat that
+shows less land area, a higher cutoff such as that derived from the final model
+(\Sexpr{round(rf.full.ctoff[2],3)}) may be more appropriate.
+
+\medskip
+\noindent
+References
+\small
+\renewcommand{\refname}{\vskip -40 pt} %kill the header on the bibliography
+\begin{thebibliography}{99}\setlength{\itemsep}{-4pt}
+  \bibstyle{biblatex}
+  \bibitem{breiman2001} Breiman, L. 2001. Random forests. Machine Learning 45:5-32.
+  \bibitem{iverson2004} Iverson, L. R., A. M. Prasad, and A. Liaw. 2004. 
+    New machine learning tools for predictive vegetation mapping after 
+    climate change: Bagging and Random Forest perform better than Regression 
+    Tree Analysis. Landscape ecology of trees and forests.Proceedings of the 
+    twelfth annual IALE (UK) conference, Cirencester, UK, 21-24 June 2004 317-320.
+  \bibitem{liaw2002} Liaw, A. and M. Wiener. 2002. Classification and 
+    regression by randomForest. R News 2:18-22.
+  \bibitem{r291} R Development Core Team. 2009. R: A language and environment 
+    for statistical computing. 2009. R Foundation 
+    for Statistical Computing, Vienna, Austria. ISBN 3-900051-07-0, URL http://www.R-project.org.    
+  \bibitem{fielding1997} Fielding, A. H. and J. F. Bell. 1997. 
+    A review of methods for the assessment of prediction errors in 
+    conservation presence/absence models. Environmental Conservation 24:38-49.
+  \bibitem{fielding2002} Fielding, A. H. 2002. What are the appropriate
+    characteristics of an accuracy measure? Pages 271-280 in Predicting Species
+    Occurrences, issues of accuracy and scale. J. M. Scott, P. J. Helglund, M. L. Morrison,
+    J. B. Haufler, M. G. Raphael, W. A. Wall, F. B. Samson, eds. Island Press, Washington.
+  \bibitem{pearson2007} Pearson, R.G. 2007. Species Distribution Modeling for 
+    Conservation Educators and Practitioners. Synthesis. 
+    American Museum of Natural History. Available at http://ncep.amnh.org.
+  \bibitem{allouche2006} Allouche, O., A. Tsoar, and R. Kadmon. 2006. 
+    Assessing the accuracy of species distribution models: prevalence, 
+    kappa and the true skill statistic (TSS). Journal of Applied Ecology 43:1223-1232.
+  \bibitem{vaughan2005} Vaughan, I. P. and S. J. Ormerod. 2005. The continuing 
+    challenges of testing species distribution models. 
+    Journal of Applied Ecology 42:720-730.
+  \bibitem{sing2005} Sing, T., O. Sander, N. Beerenwinkel, T. Lengauer. 2005. 
+    ROCR: visualizing classifier performance in R. Bioinformatics 
+    21(20):3940-3941.
+\end{thebibliography}
+\normalsize
+Please cite this document and its associated EDM as: \\
+New York Natural Heritage Program \Sexpr{format(Sys.Date(), "%Y")}. Element distribution
+model, model validation, and environmental variable importance 
+for \textit{\Sexpr{as.character(ElementNames[[1]])}}. Albany, NY. 
+Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}.
+
+\end{document}
+
+
