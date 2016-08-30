@@ -8,45 +8,32 @@
 library(raster)
 library(rgdal)
 
-## Set Working Directory to the rasters location
-setwd("G:/SDM_test/env_rasters")
+pathToRas <- "D:/RegionalSDM/env_vars/nativeR"
+pathToPts <- "D:/RegionalSDM/inputs/background"
 
-## Option 1: load the brick
-envBrick <- brick("brick.grd")
-
-## Option 2: create a stack
-# tiflist <- list.files(pattern = ".tif$")
-# gridlist<-as.list(paste(pathToTifs,tiflist,sep = "/"))
-# nm <- substr(tiflist,1,nchar(tiflist) - 4)
-# names(gridlist)<-nm
-# envStack <- stack(gridlist)
+setwd(pathToRas)
+## create a stack
+raslist <- list.files(pattern = ".grd$")
+gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
+nm <- substr(raslist,1,nchar(raslist) - 4)
+names(gridlist) <- nm
+envStack <- stack(gridlist)
 
 ## Set working directory to the random points location
-setwd("G:/SDM_test/output")
+setwd(pathToPts)
 
-ranPtsFiles <- "testArea_RanPts.shp"
-ranPtsFilesNoExt <- sub(".shp","",ranPtsFiles)
+ranPtsFile <- "clpBnd_SDM_RanPts.shp"
+ranPtsFileNoExt <- sub(".shp","",ranPtsFile)
 
 ##Read these files into a list of SpatialPoints dataframes
-list_shpf <- lapply(ranPtsFilesNoExt,function(x)
-  readOGR(".",layer=x)
-  )
+shpf <- readOGR(".", layer = ranPtsFileNoExt)
   
 #Get a list of the codes (this assumes all the input files had '_RanPts.shp' that shall be stripped)
-code_names<-substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))
+code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))
 
-##Add names to the list
-names(list_shpf)<-code_names
+# do it, write it
+x <- extract(envStack, shpf, method="simple", sp=TRUE)
+filename <- paste(code_name, "_att", sep="")
+writeOGR(x, pathToPts, layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 
-#TODO: use the sqlite database to get interpolation information (simple or bilinear)
-# in this test, all layers are continuous and should be bilinear
-# hmmm, might not be able to do separate methods on a brick
-#methods_list <- rep("bilinear",4)
-
-# loop through the list, extracting to points, then writing each attributed shapefile
-for(j in 1:length(list_shpf)){
-	x <- extract(envBrick,list_shpf[[j]],method="bilinear", sp=TRUE)
-	layername <- paste(names(list_shpf)[[j]], "_att", sep="")
-	writeOGR(x, ".", layer=paste(layername), driver="ESRI Shapefile", overwrite_layer=TRUE)
-}
 
