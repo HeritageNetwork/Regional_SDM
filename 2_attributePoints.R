@@ -9,15 +9,17 @@ library(maptools)
 
 ## Set Working Directory to the rasters location
 #setwd("D:/RegionalSDM/env_vars/brick")
-setwd("D:/RegionalSDM/env_vars/geotiffs")
+#setwd("D:/RegionalSDM/env_vars/geotiffs")
 
-pathToTifs <- "D:/RegionalSDM/env_vars/geotiffs"
+pathToRas <- "D:/RegionalSDM/env_vars/nativeR"
+setwd(pathToRas)
 
 ## Option 1: load the brick
 #envBrick <- brick("brick.grd")
 
 ## Option 2: create a stack
-tiflist <- list.files(pattern = ".tif$")
+#tiflist <- list.files(pattern = ".tif$")
+tiflist <- list.files(pattern = ".grd$")
 gridlist <- as.list(paste(pathToTifs,tiflist,sep = "/"))
 nm <- substr(tiflist,1,nchar(tiflist) - 4)
 names(gridlist) <- nm
