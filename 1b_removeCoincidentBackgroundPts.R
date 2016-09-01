@@ -1,0 +1,40 @@
+# File: 1b_removeCoincidentBackgroundPts.r
+# Purpose: remove background points that are within polygons (and a 30 m buffer)
+# of known locations (EO polygons)
+
+library(RSQLite)
+library(rgdal)
+library(sp)
+library(rgeos)
+
+### This is the location and shapefile that has your species polygon data. 
+polydir <- "G:/SDM_test/output"
+polyFileName <- "glypmuhl_expl.shp"
+setwd(polydir)
+
+### This is the random points shapefile info
+ranptsFolder <- "G:/SDM_test/output"
+ranptsShp <- "testArea_RanPts"
+
+# get the poly shapefile
+fileName <- fileList[[n]]
+shpName <- strsplit(fileName,"\\.")[[1]][[1]]
+polyShapef <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
+
+# get the background shapefile
+backgShapef <- readOGR(dsn=ranptsFolder, layer=ranptsShp)
+
+#buffer the poly shapefile 30 m
+polybuff <- gBuffer(polyShapef, width = 30)
+
+# find points that fall within the buffered polygons, subset the sp object
+coincidentPts <- gContains(polybuff, backgShapef, byid = TRUE)
+colnames(coincidentPts) <- "insideBuff"
+backgShapef@data <- cbind(backgShapef@data, coincidentPts)
+backgSubset <- backgShapef[backgShapef@data$insideBuff == FALSE,]
+
+# write it out
+outFileName <- paste(ranptsShp, "_clean", sep="")
+writeOGR(backgSubset, dsn = ranptsFolder, layer = outFileName, 
+         driver="ESRI Shapefile", overwrite_layer=TRUE)
+
