@@ -4,9 +4,9 @@ library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp
 library(randomForest)
 library(knitr)
 
-inPath <- "F:/_Howard/Projects/EDM/2009_metadataout/withPPlots/VernPool"
-rnwPath <- "G:/RegionalSDM/scripts/Regional_SDM"
-outPath <- "G:/RegionalSDM/outputs/glypmuhl/metadata"
+inPath <- "D:/RegionalSDM/outputs"
+rnwPath <- "D:/RegionalSDM/scripts/Regional_SDM"
+outPath <- "D:/RegionalSDM/outputs/glypmuhl"
   
 ##get a list of what's in the directory
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
@@ -19,7 +19,7 @@ load(paste(inPath,fileName, sep="/"))
 
 setwd(outPath)
 
-knit2pdf(paste(rnwPath,"MetadataEval_knitr.rnw",sep="/"), output=paste(abbr, ".tex",sep=""))
+knit2pdf(paste(rnwPath,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, ".tex",sep=""))
 
 
 
