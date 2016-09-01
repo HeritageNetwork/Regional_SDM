@@ -15,44 +15,44 @@ library(randomForest)
 #  Lines that require editing
 #
 # directory for file locations
-dataLocation <- "G:/SDM_test/output"
-setwd(dataLocation)
+sppPtLoc <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
+ranPtLoc <- "D:/RegionalSDM/inputs/background"
+dbLoc <- "D:/RegionalSDM/scripts/Regional_SDM"
+
+setwd(sppPtLoc)
 
 # directory for saving RData files (analysis data)
-rdataOut <- "G:/SDM_test/RDataFiles"
+rdataOut <- "D:/RegionalSDM/outputs"
 
 # the names of the files to be uploaded: presence points
 df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- read.dbf("testArea_att.dbf")
+df.abs <- read.dbf(paste(ranPtLoc,"clpBnd_SDM_att.dbf", sep="/"))
 
 #  End, lines that require editing
+#
 #####
 
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
-df.abs <- cbind(df.abs, stratum="pseu-a", EO_ID=99999, 
-					pres=0, ERACCURACY="High", scien_name="background")
+df.abs <- cbind(df.abs, stratum="pseu-a", EO_ID_ST=99999, 
+					pres=0, RA="High", SNAME="background")
 
 ##lower case column names
 names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
-#remove nulls
-df.abs<-df.abs[complete.cases(df.abs),]
-df.in<-df.in[complete.cases(df.in),]
-
 #this is the full list of fields, arranged appropriately
 ## TODO: obviously this will change (and be very long) when we have all env. variables
-colList <- c("scien_name","eo_id","pres","stratum", "eraccuracy",
-	"awc_mm09","canopy01","discal09", 
-	"tmin13n09"
+colList <- c("sname","eo_id_st","pres","stratum", "ra",
+	"d_foss","d_fss_noss", "mn_can01","mn_fo01",
+	"mn_op01","mn_ss01","mn_wa01","mn_wet01"
 	)
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
 depVarCol <- 3
-indVarCols <- c(6:9)
+indVarCols <- c(6:13)
 
 # create a list of definitions for each envar that is a factor
 # factor.defs <- list(
@@ -67,12 +67,16 @@ indVarCols <- c(6:9)
 df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
 
+#remove nulls
+df.abs<-df.abs[complete.cases(df.abs),]
+df.in<-df.in[complete.cases(df.in),]
+
 #Fire up SQLite
-db_file <- "F:/_Howard/git/Regional_SDM/SDM_lookupAndTracking.sqlite"
+db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 db <- dbConnect(SQLite(),dbname=db_file)  
   
 ElementNames <- as.list(c(SciName="",CommName="",Code="",Type=""))
-ElementNames[1] <- as.character(df.in[1,"scien_name"])
+ElementNames[1] <- as.character(df.in[1,"sname"])
 
 ##get the names used in metadata output
 # populate the code field
@@ -91,7 +95,7 @@ ElementNames
 dbDisconnect(db)
 
 ##row bind the pseudo-absences with the presence points
-df.abs$eo_id <- factor(df.abs$eo_id)
+df.abs$eo_id_st <- factor(df.abs$eo_id_st)
 df.full <- rbind(df.in, df.abs)
 
 # ##make factors using definitions set up earlier
@@ -102,7 +106,7 @@ df.full <- rbind(df.in, df.abs)
 
 #reset these factors to remove values from other species 
 df.full$stratum <- factor(df.full$stratum)
-df.full$eo_id <- factor(df.full$eo_id)
+df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
 	
 #now that entire set is cleaned up, split back out to use any of the three DFs below
@@ -110,8 +114,8 @@ df.in2 <- subset(df.full,pres == "1")
 df.abs2 <- subset(df.full, pres == "0")
 df.in2$stratum <- factor(df.in2$stratum)
 df.abs2$stratum <- factor(df.abs2$stratum)
-df.in2$eo_id <- factor(df.in2$eo_id)
-df.abs2$eo_id <- factor(df.abs2$eo_id)
+df.in2$eo_id_st <- factor(df.in2$eo_id_st)
+df.abs2$eo_id_st <- factor(df.abs2$eo_id_st)
 df.in2$pres <- factor(df.in2$pres)
 df.abs2$pres <- factor(df.abs2$pres)
 	
@@ -119,41 +123,56 @@ df.abs2$pres <- factor(df.abs2$pres)
 row.names(df.in2) <- 1:nrow(df.in2)
 row.names(df.abs2) <- 1:nrow(df.abs2)
 
-### RF ###
-#TODO: consider custom tuning of mtry for each run
-
 ##### set mtry
-mtry <- 5
+#mtry <- 5
 #####
+
+##
+# tune mtry (full model)
+# run through mtry twice
+
+x <- tuneRF(df.full[,indVarCols],
+             y=df.full[,depVarCol],
+             ntreeTry = 50, stepFactor = 2, mtryStart = 6)
+
+newTry <- x[x[,2] == min(x[,2]),1]
+
+y <- tuneRF(df.full[,indVarCols],
+            y=df.full[,depVarCol],
+            ntreeTry = 50, stepFactor = 1.5, mtryStart = newTry)
+
+mtry <- y[y[,2] == min(y[,2]),1]
+
+rm(x,y)
 
 #how many polygons do we have?
 numPys <-  nrow(table(df.in2$stratum))
 #how many EOs do we have?
-numEOs <- nrow(table(df.in2$eo_id))
+numEOs <- nrow(table(df.in2$eo_id_st))
 
 #initialize the grouping list, and set up grouping variables
 #if we have fewer than 10 EOs, move forward with jackknifing by polygon, otherwise
 #jackknife by EO.
 group <- vector("list")
-group$colNm <- ifelse(numEOs < 10,"stratum","eo_id")
+group$colNm <- ifelse(numEOs < 10,"stratum","eo_id_st")
 group$JackknType <- ifelse(numEOs < 10,"polygon","element occurrence")
 if(numEOs < 10) {
 		group$vals <- unique(df.in2$stratum)
 		} else {
-		group$vals <- unique(df.in2$eo_id)
+		group$vals <- unique(df.in2$eo_id_st)
 		}
 
 
-# # reduce the number of groups, if there are more than 100, to 100 groups
-# # this groups the groups simply if they are adjacent in the order created above.
-# #  -- the routine runs out of memory if groups go over about 250 (WinXP 32 bit, 3GB avail RAM)
-# if(length(group$vals) > 100) {
-	# in.cut <- cut(1:length(group$vals), b = 100)
-	# in.split <- split(group$vals, in.cut)
-	# names(in.split) <- NULL 
-	# group$vals <- in.split	
-	# group$JackknType <- paste(group$JackknType, ", grouped to 100 levels,", sep = "")	
-# }		
+# reduce the number of groups, if there are more than 200, to 200 groups
+# this groups the groups simply if they are adjacent in the order created above.
+#  -- the routine runs out of memory if groups go over about 250 (WinXP 32 bit, 3GB avail RAM)
+if(length(group$vals) > 200) {
+  in.cut <- cut(1:length(group$vals), b = 200)
+  in.split <- split(group$vals, in.cut)
+  names(in.split) <- NULL
+  group$vals <- in.split
+  group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
+}
 	
 #reduce the number of trees if group$vals has more than 15 entries
 #this is for validation
@@ -164,8 +183,7 @@ if(length(group$vals) > 30) {
 }
 ###### reduced for testing #####
 ### TODO: clear when running real models
-ntrees <- 200
-
+ntrees <- 50
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
@@ -199,9 +217,9 @@ v.rocr.pred <- vector("list",length(group$vals))
 
 #######
 ## This is the validation loop.
-## it creates a model for all-but-one polygon,
-## tests if it can predict that polygon left out,
-## then moves on to another poly, cycling though all polygons (groups)
+## it creates a model for all-but-one group (EO, polygon, or group),
+## tests if it can predict that group left out,
+## then moves on to another group, cycling though all groups
 ## Validation stats in tabular form are the final product.
 #######
       
@@ -299,6 +317,8 @@ if(length(group$vals)>1){
 	perf.avg@alpha.values <- list( alpha.values )
 
 	# find the best cutoff based on the averaged ROC curve
+	### TODO: customize/calculate this for each model rather than
+	### average? Use f-measure?
 	cutpt <- which.max(abs(perf.avg@x.values[[1]]-perf.avg@y.values[[1]]))
 	cutval <- perf.avg@alpha.values[[1]][cutpt]
 	cutX <- perf.avg@x.values[[1]][cutpt]
@@ -477,11 +497,12 @@ for(i in 1:8){
 						plot = FALSE)
 	pPlots[[i]]$code <- names(f.imp[ord[i]])
 	pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
+	cat("finished partial plot ", i, " of 8", "\n")
 	}
 
 #save the project, return to the original working directory
 setwd(rdataOut)
 save.image(file = paste(ElementNames$Code, ".Rdata", sep=""))
-setwd(dataLocation)
-cat("done with", ElementNames[[1]], "\n")
+setwd(sppPtLoc)
+
 
