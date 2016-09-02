@@ -25,7 +25,7 @@ setwd(polydir)
 outdir <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
 
 ### This is the full path and name of the information-tracking database
-db_file <- "D:/RegionalSDM/scripts/Regional_SDM/SDM_lookupAndTracking.sqlite"
+db_file <- "D:/RegionalSDM/databases/SDM_lookupAndTracking.sqlite"
 db <- dbConnect(SQLite(),dbname=db_file)
 
 #get a list of what's in the directory
