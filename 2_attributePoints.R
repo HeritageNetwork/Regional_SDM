@@ -56,7 +56,7 @@ writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer
 ## directly. If continuous data, then we can (should) apply bilinear interpolation. 
 
 # ### get categorical/continuous info from the lookup database
-# db_file <- "D:/RegionalSDM/scripts/Regional_SDM/SDM_lookupAndTracking.sqlite"
+# db_file <- "D:/RegionalSDM/databases/SDM_lookupAndTracking.sqlite"
 # db <- dbConnect(SQLite(),dbname=db_file)
 # # get list of layers, select from the db, put into a dataframe
 # layerList <- paste(names(envStack), collapse = "', '")

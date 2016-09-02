@@ -2,7 +2,6 @@
 # Purpose: remove background points that are within polygons (and a 30 m buffer)
 # of known locations (EO polygons)
 
-library(RSQLite)
 library(rgdal)
 library(sp)
 library(rgeos)

@@ -17,7 +17,7 @@ library(randomForest)
 # directory for file locations
 sppPtLoc <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
 ranPtLoc <- "D:/RegionalSDM/inputs/background"
-dbLoc <- "D:/RegionalSDM/scripts/Regional_SDM"
+dbLoc <- "D:/RegionalSDM/databases"
 
 setwd(sppPtLoc)
 
@@ -470,12 +470,12 @@ f.imp <- f.imp[,"MeanDecreaseAccuracy"]
 
 db <- dbConnect(SQLite(),dbname=db_file)  
 # get importance data, set up a data frame
-EnvVars <- data.frame(code = names(f.imp), impVal = f.imp, fullName="", stringsAsFactors = FALSE)
+EnvVars <- data.frame(gridName = names(f.imp), impVal = f.imp, fullName="", stringsAsFactors = FALSE)
 #set the query for the following lookup, note it builds many queries, equal to the number of vars
-SQLquery <- paste("SELECT code, fullName FROM lkpEnvVars WHERE code in ('", paste(EnvVars$code,sep=", "),
+SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in ('", paste(EnvVars$gridName,sep=", "),
 					"'); ", sep="")
 #cycle through all select statements, put the results in the df
-for(i in 1:length(EnvVars$code)){
+for(i in 1:length(EnvVars$gridName)){
   EnvVars$fullName[i] <- as.character(dbGetQuery(db, statement = SQLquery[i])[,2])
   }
 ##clean up
@@ -495,7 +495,7 @@ for(i in 1:8){
 						names(f.imp[ord[i]]),
 						which.class = 1,
 						plot = FALSE)
-	pPlots[[i]]$code <- names(f.imp[ord[i]])
+	pPlots[[i]]$gridName <- names(f.imp[ord[i]])
 	pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
 	cat("finished partial plot ", i, " of 8", "\n")
 	}
