@@ -29,7 +29,7 @@ ranPtsFileNoExt <- sub(".shp","",ranPtsFile)
 shpf <- readOGR(".", layer = ranPtsFileNoExt)
   
 #Get a list of the codes (this assumes all the input files had '_RanPts.shp' that shall be stripped)
-code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))
+code_name <- substr(ranPtsFile,1,(nchar(ranPtsFile)-11))
 
 # do it, write it
 x <- extract(envStack, shpf, method="simple", sp=TRUE)

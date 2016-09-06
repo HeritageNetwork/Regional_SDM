@@ -7,18 +7,17 @@ library(sp)
 library(rgeos)
 
 ### This is the location and shapefile that has your species polygon data. 
-polydir <- "G:/SDM_test/output"
+polydir <- "D:/RegionalSDM/inputs/species/glypmuhl/polygon_data"
 polyFileName <- "glypmuhl_expl.shp"
 setwd(polydir)
 
 ### This is the random points shapefile info
-ranptsFolder <- "G:/SDM_test/output"
-ranptsShp <- "testArea_RanPts"
+ranptsFolder <- "D:/RegionalSDM/inputs/background"
+ranptsShp <- "clpBnd_SDM_RanPts"
 
 # get the poly shapefile
-fileName <- fileList[[n]]
-shpName <- strsplit(fileName,"\\.")[[1]][[1]]
-polyShapef <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
+shpName <- strsplit(polyFileName,"\\.")[[1]][[1]]
+polyShapef <- readOGR(dsn=polydir, layer = shpName) #Z-dimension discarded msg is OK
 
 # get the background shapefile
 backgShapef <- readOGR(dsn=ranptsFolder, layer=ranptsShp)
