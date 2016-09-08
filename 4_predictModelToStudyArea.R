@@ -44,9 +44,9 @@ envStack <- stack(fullL)
 fileNm <- paste(rdataLoc, ElementNames$Code, sep = "/")
 
 
-outRas <- predictRF(envStack, rf.full, progress='text', index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
+outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
-#writeRaster(outRas, filename=fileNm, format = "GTiff", overwrite = TRUE)
+writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
 
 
 
