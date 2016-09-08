@@ -53,11 +53,7 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	}
 
 #pare down columns
-colList <- c(grep("^EO_ID_ST$",names(shapef@data)),
-	grep("SNAME",names(shapef@data)),
-	grep("SCOMNAME",names(shapef@data)),
-	grep("RA",names(shapef@data)))
-shapef@data <- shapef@data[,colList]
+shapef@data <- shapef@data[,desiredCols]
 
 #get projection info for later
 projInfo <- shapef@proj4string

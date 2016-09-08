@@ -36,8 +36,10 @@ df.abs <- read.dbf(paste(ranPtLoc,"clpBnd_SDM_att.dbf", sep="/"))
 
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
-df.abs <- cbind(df.abs, stratum="pseu-a", EO_ID_ST=99999, 
+df.abs <- cbind(df.abs, EO_ID_ST=99999, 
 					pres=0, RA="High", SNAME="background")
+
+df.abs$stratum <- "pseu-a"
 
 ##lower case column names
 names(df.in) <- tolower(names(df.in))

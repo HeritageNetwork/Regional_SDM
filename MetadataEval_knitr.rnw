@@ -283,8 +283,8 @@ for (plotpi in 1:8){
 	plot(pPlots[[plotpi]]$x, pPlots[[plotpi]]$y,
 		type = "l",
 		xlab = pPlots[[plotpi]]$fname, ylab=NA)
-	pres.dens <- density(pres.dat[,pPlots[[plotpi]]$code])
-	abs.dens <- density(abs.dat[,pPlots[[plotpi]]$code])
+	pres.dens <- density(pres.dat[,pPlots[[plotpi]]$gridName])
+	abs.dens <- density(abs.dat[,pPlots[[plotpi]]$gridName])
 	par(mar=c(0,2,0.5,0.5))
 	plot(pres.dens, xlim=c(min(pPlots[[plotpi]]$x), 
 					max(pPlots[[plotpi]]$x)),
