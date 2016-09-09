@@ -110,6 +110,8 @@ df.full <- rbind(df.in, df.abs)
 df.full$stratum <- factor(df.full$stratum)
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
+df.full$ra <- factor(df.full$ra)
+df.full$sname <- factor(df.full$sname)
 	
 #now that entire set is cleaned up, split back out to use any of the three DFs below
 df.in2 <- subset(df.full,pres == "1")
@@ -185,7 +187,7 @@ if(length(group$vals) > 30) {
 }
 ###### reduced for testing #####
 ### TODO: clear when running real models
-ntrees <- 50
+#ntrees <- 50
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
@@ -326,6 +328,7 @@ if(length(group$vals)>1){
 	cutX <- perf.avg@x.values[[1]][cutpt]
 	cutY <- perf.avg@y.values[[1]][cutpt]
 	cutval.rf <- c(1-cutval,cutval)
+	names(cutval.rf) <- c("0","1")
 
 	for(i in 1:length(group$vals)){
 		#apply the cutoff to the validation data
