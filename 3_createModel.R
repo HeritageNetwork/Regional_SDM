@@ -110,6 +110,8 @@ df.full <- rbind(df.in, df.abs)
 df.full$stratum <- factor(df.full$stratum)
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
+df.full$ra <- factor(df.full$ra)
+df.full$sname <- factor(df.full$sname)
 	
 #now that entire set is cleaned up, split back out to use any of the three DFs below
 df.in2 <- subset(df.full,pres == "1")
@@ -185,7 +187,7 @@ if(length(group$vals) > 30) {
 }
 ###### reduced for testing #####
 ### TODO: clear when running real models
-ntrees <- 50
+#ntrees <- 50
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
@@ -248,8 +250,8 @@ if(length(group$vals)>1){
 									 importance=TRUE,ntree=ntrees,mtry=mtry)
 		   # run a randomForest predict on the validation data
 		  evRes[[i]] <- predict(trRes[[i]], evSet[[i]], type="prob")
-		   # use ROCR to structure the data
-		  v.rocr.pred[[i]] <- prediction(evRes[[i]][,2],evSet[[i]]$pres)
+		   # use ROCR to structure the data. Get pres col of evRes (= named "1")
+		  v.rocr.pred[[i]] <- prediction(evRes[[i]][,"1"],evSet[[i]]$pres)
 		   # extract the auc for metadata reporting
 		  v.rocr.auc[[i]] <- performance(v.rocr.pred[[i]], "auc")@y.values[[1]]
 			cat("finished run", i, "of", length(group$vals), "\n")
@@ -326,6 +328,7 @@ if(length(group$vals)>1){
 	cutX <- perf.avg@x.values[[1]][cutpt]
 	cutY <- perf.avg@y.values[[1]][cutpt]
 	cutval.rf <- c(1-cutval,cutval)
+	names(cutval.rf) <- c("0","1")
 
 	for(i in 1:length(group$vals)){
 		#apply the cutoff to the validation data
@@ -438,13 +441,15 @@ db <- dbConnect(SQLite(),dbname=db_file)
 # based on quick assessment in Spring 07, set alpha to 0.01
 # TODO: re-evaluate for this project
 alph <- 0.01
-		#create the prediction object for ROCR
-rf.full.pred <- prediction(rf.full$votes[,2],df.full$pres)
+		#create the prediction object for ROCR. Get pres col from votes (=named "1")
+rf.full.pred <- prediction(rf.full$votes[,"1"],df.full$pres)
 		#use ROCR performance to get the f measure
 rf.full.f <- performance(rf.full.pred,"f",alpha = alph)
 	#extract the data out of the S4 object, then find the cutoff that maximize the F-value.
 rf.full.f.df <- data.frame(cutoff = unlist(rf.full.f@x.values),fmeasure = unlist(rf.full.f@y.values))
+rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]])
 rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]])
+names(rf.full.ctoff) <- c("0","1")
 rf.full.ctoff
 
 # prep the data
@@ -453,7 +458,7 @@ OutPut <- data.frame(SciName = as.character(ElementNames$SciName),
 			 ElemCode=as.character(ElementNames$Code),
 			 numValidaRuns=length(group$vals),
 			 meanValidaCutoff = cutval,
-			 fullRunCutoff = rf.full.ctoff[2],
+			 fullRunCutoff = rf.full.ctoff["1"],
 			 date = paste(Sys.Date()),
 			 time = format(Sys.time(), "%X")
 			 )
