@@ -464,13 +464,22 @@ OutPut <- data.frame(SciName = as.character(ElementNames$SciName),
 			 meanValidaCutoff = cutval,
 			 fullRunCutoff = rf.full.ctoff["1"],
 			 date = paste(Sys.Date()),
-			 time = format(Sys.time(), "%X")
+			 time = format(Sys.time(), "%X"), stringsAsFactors = FALSE
 			 )
 			 
 #write the data to the database
-dbWriteTable(db,"tblCutoffs",OutPut,append=TRUE)
-#close(Cn.MDB.out) #close connection
-#rm(Cn.MDB.out)
+# problems with dbWriteTable (from an upgrade?)
+#dbWriteTable(db,"tblCutoffs",OutPut,append=TRUE)
+op <- options("useFancyQuotes")
+options(useFancyQuotes = FALSE)
+
+tblCols <- paste(cat(toString(OutPut)), sep = ",")
+SQLq <- paste("INSERT INTO tblCutoffs (", toString(names(OutPut)), 
+              ") VALUES (", toString(sQuote(OutPut)), ");")
+dbExecute(db, SQLq)
+
+options(op)
+dbDisconnect(db)
 
 ####
 # Importance measures
