@@ -48,8 +48,12 @@ names(df.abs) <- tolower(names(df.abs))
 #this is the full list of fields, arranged appropriately
 ## TODO: obviously this will change (and be very long) when we have all env. variables
 colList <- c("sname","eo_id_st","pres","stratum", "ra",
-	"d_foss","d_fss_noss", "mn_can01","mn_fo01",
-	"mn_op01","mn_ss01","mn_wa01","mn_wet01"
+  "canopy1", "canopy10", "canopy100", "dnwifemw", "dnwiffw", "dnwisemw", "gddays",
+  "geo001", "geo002", "geo003", "geo031", "geo032", "geo033", "geo100", "geo200", "geo300",
+  "geo400", "geo500", "geo600", "geo700", "impsur1", "impsur10", "impsur100",
+  "nlcdfor1", "nlcdfor10", "nlcdfor100", "nlcdopn1", "nlcdopn10", "nlcdopn100",
+  "nlcdshb1", "nlcdshb10", "nlcdshb100", "nlcdwat1", "nlcdwat10", "nlcdwat100",
+  "nlcdwet1", "nlcdwet10", "nlcdwet100"
 	)
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
