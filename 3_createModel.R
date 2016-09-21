@@ -58,7 +58,7 @@ colList <- c("sname","eo_id_st","pres","stratum", "ra",
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
 depVarCol <- 3
-indVarCols <- c(6:13)
+indVarCols <- c(6:43)
 
 # create a list of definitions for each envar that is a factor
 # factor.defs <- list(
@@ -147,9 +147,9 @@ newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
-            ntreeTry = 50, stepFactor = 1.5, mtryStart = newTry)
+            ntreeTry = 50, stepFactor = 1.5, mtryStart = max(newTry))
 
-mtry <- y[y[,2] == min(y[,2]),1]
+mtry <- max(y[y[,2] == min(y[,2]),1])
 
 rm(x,y)
 
