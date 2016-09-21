@@ -22,7 +22,7 @@ envStack <- stack(gridlist)
 ## Set working directory to the random points location
 setwd(pathToPts)
 
-ranPtsFile <- "clpBnd_SDM_RanPts.shp"
+ranPtsFile <- "clpBnd_SDM_RanPts_clean.shp"
 ranPtsFileNoExt <- sub(".shp","",ranPtsFile)
 
 ##Read these files into a list of SpatialPoints dataframes
