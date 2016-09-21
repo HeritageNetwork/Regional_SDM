@@ -18,10 +18,10 @@ setwd(pathToRas)
 #envBrick <- brick("brick.grd")
 
 ## Option 2: create a stack
-#tiflist <- list.files(pattern = ".tif$")
-tiflist <- list.files(pattern = ".grd$")
-gridlist <- as.list(paste(pathToTifs,tiflist,sep = "/"))
-nm <- substr(tiflist,1,nchar(tiflist) - 4)
+#raslist <- list.files(pattern = ".tif$")
+raslist <- list.files(pattern = ".grd$")
+gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
+nm <- substr(raslist,1,nchar(raslist) - 4)
 names(gridlist) <- nm
 envStack <- stack(gridlist)
 
