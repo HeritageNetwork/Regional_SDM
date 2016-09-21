@@ -48,13 +48,17 @@ names(df.abs) <- tolower(names(df.abs))
 #this is the full list of fields, arranged appropriately
 ## TODO: obviously this will change (and be very long) when we have all env. variables
 colList <- c("sname","eo_id_st","pres","stratum", "ra",
-	"d_foss","d_fss_noss", "mn_can01","mn_fo01",
-	"mn_op01","mn_ss01","mn_wa01","mn_wet01"
+  "canopy1", "canopy10", "canopy100", "dnwifemw", "dnwiffw", "dnwisemw", "gddays",
+  "geo001", "geo002", "geo003", "geo031", "geo032", "geo033", "geo100", "geo200", "geo300",
+  "geo400", "geo500", "geo600", "geo700", "impsur1", "impsur10", "impsur100",
+  "nlcdfor1", "nlcdfor10", "nlcdfor100", "nlcdopn1", "nlcdopn10", "nlcdopn100",
+  "nlcdshb1", "nlcdshb10", "nlcdshb100", "nlcdwat1", "nlcdwat10", "nlcdwat100",
+  "nlcdwet1", "nlcdwet10", "nlcdwet100"
 	)
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
 depVarCol <- 3
-indVarCols <- c(6:13)
+indVarCols <- c(6:43)
 
 # create a list of definitions for each envar that is a factor
 # factor.defs <- list(
@@ -143,9 +147,9 @@ newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
-            ntreeTry = 50, stepFactor = 1.5, mtryStart = newTry)
+            ntreeTry = 50, stepFactor = 1.5, mtryStart = max(newTry))
 
-mtry <- y[y[,2] == min(y[,2]),1]
+mtry <- max(y[y[,2] == min(y[,2]),1])
 
 rm(x,y)
 
@@ -460,13 +464,22 @@ OutPut <- data.frame(SciName = as.character(ElementNames$SciName),
 			 meanValidaCutoff = cutval,
 			 fullRunCutoff = rf.full.ctoff["1"],
 			 date = paste(Sys.Date()),
-			 time = format(Sys.time(), "%X")
+			 time = format(Sys.time(), "%X"), stringsAsFactors = FALSE
 			 )
 			 
 #write the data to the database
-dbWriteTable(db,"tblCutoffs",OutPut,append=TRUE)
-#close(Cn.MDB.out) #close connection
-#rm(Cn.MDB.out)
+# problems with dbWriteTable (from an upgrade?)
+#dbWriteTable(db,"tblCutoffs",OutPut,append=TRUE)
+op <- options("useFancyQuotes")
+options(useFancyQuotes = FALSE)
+
+tblCols <- paste(cat(toString(OutPut)), sep = ",")
+SQLq <- paste("INSERT INTO tblCutoffs (", toString(names(OutPut)), 
+              ") VALUES (", toString(sQuote(OutPut)), ");")
+dbExecute(db, SQLq)
+
+options(op)
+dbDisconnect(db)
 
 ####
 # Importance measures
