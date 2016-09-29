@@ -22,6 +22,13 @@ clpShp <- readOGR(pathToClipShape,clipShapeName)
 # get a list of the grids
 tiflist <- list.files(path = pathToTifs, pattern = ".tif$")
 
+## already got some clipped? use the next few lines to check and 
+## remove the ones already done
+donetiflist <- list.files(path = pathToClipped, pattern = ".tif$")
+finalTifList <- tiflist[!tiflist %in% donetiflist]
+tiflist <- finalTifList
+
+
 # tack on the full paths and name them
 gridlist<-as.list(paste(pathToTifs,tiflist,sep = "/"))
 nm <- substr(tiflist,1,nchar(tiflist) - 4)
