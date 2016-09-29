@@ -18,6 +18,7 @@ library(randomForest)
 sppPtLoc <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
 ranPtLoc <- "D:/RegionalSDM/inputs/background"
 dbLoc <- "D:/RegionalSDM/databases"
+pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
 
 setwd(sppPtLoc)
 
@@ -45,20 +46,41 @@ df.abs$stratum <- "pseu-a"
 names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
+# get a list of env vars from the folder used to create the raster stack
+raslist <- list.files(path = pathToRas, pattern = ".tif$")
+rasnames <- gsub(".tif", "", raslist)
+
+# are these all in the lookup database? Will create problems later if not
+db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
+db <- dbConnect(SQLite(),dbname=db_file)  
+op <- options("useFancyQuotes") 
+options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
+SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (", 
+                  toString(sQuote(rasnames)),
+                  "); ", sep = "")
+namesInDB <- dbGetQuery(db, statement = SQLquery)
+
+## this prints rasters not in the lookup database
+## if blank you are good to go, otherwise figure out what's up
+rasnames[!rasnames %in% namesInDB$gridName]
+
+## this prints out the rasters that don't appear as a column name
+## in df.in (meaning it wasn't used to attribute or the name is funky)
+## if blank you are good to go
+rasnames[!rasnames %in% names(df.in)]
+
+##clean up
+options(op)
+dbDisconnect(db)
+
 #this is the full list of fields, arranged appropriately
-## TODO: obviously this will change (and be very long) when we have all env. variables
-colList <- c("sname","eo_id_st","pres","stratum", "ra",
-  "canopy1", "canopy10", "canopy100", "dnwifemw", "dnwiffw", "dnwisemw", "gddays",
-  "geo001", "geo002", "geo003", "geo031", "geo032", "geo033", "geo100", "geo200", "geo300",
-  "geo400", "geo500", "geo600", "geo700", "impsur1", "impsur10", "impsur100",
-  "nlcdfor1", "nlcdfor10", "nlcdfor100", "nlcdopn1", "nlcdopn10", "nlcdopn100",
-  "nlcdshb1", "nlcdshb10", "nlcdshb100", "nlcdwat1", "nlcdwat10", "nlcdwat100",
-  "nlcdwet1", "nlcdwet10", "nlcdwet100"
-	)
+
+colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
+
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
 depVarCol <- 3
-indVarCols <- c(6:43)
+indVarCols <- c(6:length(colList))
 
 # create a list of definitions for each envar that is a factor
 # factor.defs <- list(
