@@ -9,15 +9,24 @@ library(raster)
 # set this path to the folder where the environmental rasters reside
 # it can have other files, but only *.tifs that you want to write to the R format
 
-pathToTifs <- "D:/RegionalSDM/env_vars/geotiffs"
+pathToTifs <- "D:/RegionalSDM/zz_testArea/env_vars/geotiffs"
 
 setwd(pathToTifs)
 
 # set the output path
-outPath <- "D:/RegionalSDM/env_vars/nativeR"
+outPath <- "D:/RegionalSDM/zz_testArea/env_vars/nativeR"
 
 # get a list of the grids
 tiflist <- list.files(pattern = ".tif$")
+
+# already got some written to R format? Check, then subset
+# skip these rows if you want to do a full overwrite of all
+doneraslist <- list.files(path = outPath, pattern = ".grd$")
+# lists without file extension
+tiflistNoExt <- gsub(".tif$","",tiflist)
+raslistNoExt <- gsub(".grd$","",doneraslist)
+finalTifList <- tiflist[!tiflistNoExt %in% raslistNoExt]
+tiflist <- finalTifList
 
 # loop through each tiff in the list, write it out in native R format
 for(tif in tiflist){
