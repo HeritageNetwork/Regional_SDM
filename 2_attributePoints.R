@@ -23,11 +23,12 @@ raslist <- list.files(pattern = ".grd$")
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
 names(gridlist) <- nm
-envStack <- stack(gridlist)
 
 ## check to make sure there are no names greater than 10 chars
-nmLen <- unlist(lapply(y, nchar))
+nmLen <- unlist(lapply(nm, nchar))
 max(nmLen) # if this result is greater than 10, you've got a renegade
+
+envStack <- stack(gridlist)
 
 ## Set working directory to the random points location
 setwd("D:/RegionalSDM/inputs/species/glypmuhl/point_data")
