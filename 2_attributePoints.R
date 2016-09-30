@@ -11,7 +11,7 @@ library(maptools)
 #setwd("D:/RegionalSDM/env_vars/brick")
 #setwd("D:/RegionalSDM/env_vars/geotiffs")
 
-pathToRas <- "D:/RegionalSDM/env_vars/nativeR"
+pathToRas <- "D:/RegionalSDM/zz_testArea/env_vars/nativeR"
 setwd(pathToRas)
 
 ## Option 1: load the brick
@@ -25,8 +25,12 @@ nm <- substr(raslist,1,nchar(raslist) - 4)
 names(gridlist) <- nm
 envStack <- stack(gridlist)
 
+## check to make sure there are no names greater than 10 chars
+nmLen <- unlist(lapply(y, nchar))
+max(nmLen) # if this result is greater than 10, you've got a renegade
+
 ## Set working directory to the random points location
-setwd("D:/RegionalSDM/inputs/species/glypmuhl/point_data")
+setwd("D:/RegionalSDM/zz_testArea/inputs/species/glypmuhl/point_data")
 
 ranPtsFiles <- list.files(pattern = ".RanPts.shp$")
 ranPtsFiles
