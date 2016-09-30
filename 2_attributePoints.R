@@ -11,7 +11,7 @@ library(maptools)
 #setwd("D:/RegionalSDM/env_vars/brick")
 #setwd("D:/RegionalSDM/env_vars/geotiffs")
 
-pathToRas <- "D:/RegionalSDM/zz_testArea/env_vars/nativeR"
+pathToRas <- "D:/RegionalSDM/env_vars/nativeR"
 setwd(pathToRas)
 
 ## Option 1: load the brick
@@ -30,7 +30,7 @@ nmLen <- unlist(lapply(y, nchar))
 max(nmLen) # if this result is greater than 10, you've got a renegade
 
 ## Set working directory to the random points location
-setwd("D:/RegionalSDM/zz_testArea/inputs/species/glypmuhl/point_data")
+setwd("D:/RegionalSDM/inputs/species/glypmuhl/point_data")
 
 ranPtsFiles <- list.files(pattern = ".RanPts.shp$")
 ranPtsFiles
