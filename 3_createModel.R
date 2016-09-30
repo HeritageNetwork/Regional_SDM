@@ -29,7 +29,7 @@ rdataOut <- "D:/RegionalSDM/outputs"
 df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- read.dbf(paste(ranPtLoc,"clpBnd_SDM_att.dbf", sep="/"))
+df.abs <- read.dbf(paste(ranPtLoc,"clpBnd_SDM_RanPt_att.dbf", sep="/"))
 
 #  End, lines that require editing
 #
@@ -47,8 +47,8 @@ names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = pathToRas, pattern = ".tif$")
-rasnames <- gsub(".tif", "", raslist)
+raslist <- list.files(path = pathToRas, pattern = ".grd$")
+rasnames <- gsub(".grd", "", raslist)
 
 # are these all in the lookup database? Will create problems later if not
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
@@ -59,6 +59,10 @@ SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (
                   toString(sQuote(rasnames)),
                   "); ", sep = "")
 namesInDB <- dbGetQuery(db, statement = SQLquery)
+
+#note the query is case sensitive, we should probably fix that (COLLATE NOCASE)
+namesInDB$gridName <- tolower(namesInDB$gridName)
+rasnames <- tolower(rasnames)
 
 ## this prints rasters not in the lookup database
 ## if blank you are good to go, otherwise figure out what's up
@@ -100,7 +104,6 @@ df.abs<-df.abs[complete.cases(df.abs),]
 df.in<-df.in[complete.cases(df.in),]
 
 #Fire up SQLite
-db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 db <- dbConnect(SQLite(),dbname=db_file)  
   
 ElementNames <- as.list(c(SciName="",CommName="",Code="",Type=""))
@@ -139,24 +142,6 @@ df.full$pres <- factor(df.full$pres)
 df.full$ra <- factor(df.full$ra)
 df.full$sname <- factor(df.full$sname)
 	
-#now that entire set is cleaned up, split back out to use any of the three DFs below
-df.in2 <- subset(df.full,pres == "1")
-df.abs2 <- subset(df.full, pres == "0")
-df.in2$stratum <- factor(df.in2$stratum)
-df.abs2$stratum <- factor(df.abs2$stratum)
-df.in2$eo_id_st <- factor(df.in2$eo_id_st)
-df.abs2$eo_id_st <- factor(df.abs2$eo_id_st)
-df.in2$pres <- factor(df.in2$pres)
-df.abs2$pres <- factor(df.abs2$pres)
-	
-#reset the row names, needed for random subsetting method of df.abs2, below
-row.names(df.in2) <- 1:nrow(df.in2)
-row.names(df.abs2) <- 1:nrow(df.abs2)
-
-##### set mtry
-#mtry <- 5
-#####
-
 ##
 # tune mtry (full model)
 # run through mtry twice
@@ -174,6 +159,42 @@ y <- tuneRF(df.full[,indVarCols],
 mtry <- max(y[y[,2] == min(y[,2]),1])
 
 rm(x,y)
+
+#### right here would be a good place for an initial model and layer importance
+ntrees <- 1000
+rf.find.envars <- randomForest(df.full[,indVarCols],
+                        y=df.full[,depVarCol],
+                        importance=TRUE,
+                        ntree=ntrees,
+                        mtry=mtry)
+
+impvals <- importance(rf.find.envars, type = 1)
+# here, choosing above 25% percentile
+y <- quantile(impvals, probs = 0.25)
+impEnvVars <- impvals[impvals > y,]
+#which columns are these, then flip the non-envars to TRUE
+impEnvVarCols <- names(df.full) %in% names(impEnvVars)
+impEnvVarCols[1:5] <- TRUE
+#subset!
+df.full <- df.full[,impEnvVarCols]
+
+##### new code above, not tested #####
+
+
+#now that entire set is cleaned up, split back out to use any of the three DFs below
+df.in2 <- subset(df.full,pres == "1")
+df.abs2 <- subset(df.full, pres == "0")
+df.in2$stratum <- factor(df.in2$stratum)
+df.abs2$stratum <- factor(df.abs2$stratum)
+df.in2$eo_id_st <- factor(df.in2$eo_id_st)
+df.abs2$eo_id_st <- factor(df.abs2$eo_id_st)
+df.in2$pres <- factor(df.in2$pres)
+df.abs2$pres <- factor(df.abs2$pres)
+
+#reset the row names, needed for random subsetting method of df.abs2, below
+row.names(df.in2) <- 1:nrow(df.in2)
+row.names(df.abs2) <- 1:nrow(df.abs2)
+
 
 #how many polygons do we have?
 numPys <-  nrow(table(df.in2$stratum))
