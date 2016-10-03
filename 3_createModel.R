@@ -160,7 +160,13 @@ mtry <- max(y[y[,2] == min(y[,2]),1])
 
 rm(x,y)
 
-#### right here would be a good place for an initial model and layer importance
+#####
+##
+# code below is for removing least important env vars
+# we need to discuss value in applying. Probably try both ways?
+##
+#####
+
 ntrees <- 1000
 rf.find.envars <- randomForest(df.full[,indVarCols],
                         y=df.full[,depVarCol],
@@ -177,8 +183,14 @@ impEnvVarCols <- names(df.full) %in% names(impEnvVars)
 impEnvVarCols[1:5] <- TRUE
 #subset!
 df.full <- df.full[,impEnvVarCols]
+#reset the indvarcols object
+indVarCols <- c(6:length(names(df.full)))
 
-##### new code above, not tested #####
+#####
+##
+# code above is for removing least important env vars
+##
+#####
 
 
 #now that entire set is cleaned up, split back out to use any of the three DFs below
@@ -209,27 +221,26 @@ group$colNm <- ifelse(numEOs < 10,"stratum","eo_id_st")
 group$JackknType <- ifelse(numEOs < 10,"polygon","element occurrence")
 if(numEOs < 10) {
 		group$vals <- unique(df.in2$stratum)
-		} else {
+} else {
 		group$vals <- unique(df.in2$eo_id_st)
-		}
-
-
-# reduce the number of groups, if there are more than 200, to 200 groups
-# this groups the groups simply if they are adjacent in the order created above.
-#  -- the routine runs out of memory if groups go over about 250 (WinXP 32 bit, 3GB avail RAM)
-if(length(group$vals) > 200) {
-  in.cut <- cut(1:length(group$vals), b = 200)
-  in.split <- split(group$vals, in.cut)
-  names(in.split) <- NULL
-  group$vals <- in.split
-  group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
 }
+
+# # reduce the number of groups, if there are more than 200, to 200 groups
+# # this groups the groups simply if they are adjacent in the order created above.
+# #  -- the routine runs out of memory if groups go over about 250 (WinXP 32 bit, 3GB avail RAM)
+# if(length(group$vals) > 200) {
+#   in.cut <- cut(1:length(group$vals), b = 200)
+#   in.split <- split(group$vals, in.cut)
+#   names(in.split) <- NULL
+#   group$vals <- in.split
+#   group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
+# }
 	
 #reduce the number of trees if group$vals has more than 15 entries
 #this is for validation
 if(length(group$vals) > 30) {
 	ntrees <- 500
-	} else {
+} else {
 	ntrees <- 750
 }
 ###### reduced for testing #####
@@ -461,13 +472,17 @@ if(length(group$vals)>1){
 	cutval <- NA
 }
 
-#reduce the number of trees if number of rows exceeds 20k
-#TODO re-evaluate for this project
-if(nrow(df.full) > 20000) {
-	ntrees <- 300
-	} else {
-	ntrees <- 600
-}
+# #reduce the number of trees if number of rows exceeds 20k
+# #TODO re-evaluate for this project
+# if(nrow(df.full) > 20000) {
+# 	ntrees <- 300
+# 	} else {
+# 	ntrees <- 600
+# }
+   
+# increase the number of trees for the full model
+ntrees <- 2000
+   
 ####
 #   run the full model
 #####
