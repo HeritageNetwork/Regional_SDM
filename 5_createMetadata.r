@@ -6,7 +6,8 @@ library(knitr)
 
 inPath <- "D:/RegionalSDM/outputs"
 rnwPath <- "D:/RegionalSDM/scripts/Regional_SDM"
-outPath <- "D:/RegionalSDM/outputs/glypmuhl"
+outPath <- "D:/RegionalSDM/outputs/metadata"
+
   
 ##get a list of what's in the directory
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
@@ -18,6 +19,14 @@ fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
 setwd(outPath)
+
+##
+# writing to the same folder as a grid might cause problems.
+# if errors check that first
+#   more explanation: tex looks for and uses aux files, which are also used
+#   by esri. If there's a non-tex aux file, knitr bails. 
+##
+
 
 knit2pdf(paste(rnwPath,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, ".tex",sep=""))
 

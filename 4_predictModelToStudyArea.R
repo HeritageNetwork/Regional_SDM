@@ -17,6 +17,9 @@ rdataLoc <- "D:/RegionalSDM/zz_testArea/outputs"
 # directory for the environmental rasters
 pathToRas <- "D:/RegionalSDM/zz_testArea/env_vars/nativeR"
 
+# output path (best if different from rdataloc)
+outRas <- "D:/RegionalSDM/zz_testArea/outputs/grids"
+
 # get the customized version of the predict function
 source('D:/RegionalSDM/scripts/Regional_SDM/RasterPredictMod.R')
 
@@ -33,7 +36,7 @@ n <- 1
 load(fileList[[n]])
 
 ##Make the raster stack
-stackOrder <- names(df.in)[indVarCols]
+stackOrder <- names(df.full)[indVarCols]
 setwd(pathToRas)
 rasL <- paste(stackOrder,".grd", sep="")
 fullL <- as.list(paste(pathToRas, rasL, sep="/"))
@@ -41,12 +44,12 @@ names(fullL) <- stackOrder
 envStack <- stack(fullL)
 
 
-fileNm <- paste(rdataLoc, ElementNames$Code, sep = "/")
+fileNm <- paste(outRas, ElementNames$Code, sep = "/")
 
 
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
-writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
+#writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
 
 
 

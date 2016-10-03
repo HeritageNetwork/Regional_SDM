@@ -29,7 +29,7 @@ rdataOut <- "D:/RegionalSDM/outputs"
 df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- read.dbf(paste(ranPtLoc,"clpBnd_SDM_att.dbf", sep="/"))
+df.abs <- read.dbf(paste(ranPtLoc,"clpBnd_SDM_RanPt_att.dbf", sep="/"))
 
 #  End, lines that require editing
 #
@@ -47,8 +47,8 @@ names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = pathToRas, pattern = ".tif$")
-rasnames <- gsub(".tif", "", raslist)
+raslist <- list.files(path = pathToRas, pattern = ".grd$")
+rasnames <- gsub(".grd", "", raslist)
 
 # are these all in the lookup database? Will create problems later if not
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
@@ -59,6 +59,10 @@ SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (
                   toString(sQuote(rasnames)),
                   "); ", sep = "")
 namesInDB <- dbGetQuery(db, statement = SQLquery)
+
+#note the query is case sensitive, we should probably fix that (COLLATE NOCASE)
+namesInDB$gridName <- tolower(namesInDB$gridName)
+rasnames <- tolower(rasnames)
 
 ## this prints rasters not in the lookup database
 ## if blank you are good to go, otherwise figure out what's up
@@ -100,7 +104,6 @@ df.abs<-df.abs[complete.cases(df.abs),]
 df.in<-df.in[complete.cases(df.in),]
 
 #Fire up SQLite
-db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 db <- dbConnect(SQLite(),dbname=db_file)  
   
 ElementNames <- as.list(c(SciName="",CommName="",Code="",Type=""))
@@ -139,24 +142,6 @@ df.full$pres <- factor(df.full$pres)
 df.full$ra <- factor(df.full$ra)
 df.full$sname <- factor(df.full$sname)
 	
-#now that entire set is cleaned up, split back out to use any of the three DFs below
-df.in2 <- subset(df.full,pres == "1")
-df.abs2 <- subset(df.full, pres == "0")
-df.in2$stratum <- factor(df.in2$stratum)
-df.abs2$stratum <- factor(df.abs2$stratum)
-df.in2$eo_id_st <- factor(df.in2$eo_id_st)
-df.abs2$eo_id_st <- factor(df.abs2$eo_id_st)
-df.in2$pres <- factor(df.in2$pres)
-df.abs2$pres <- factor(df.abs2$pres)
-	
-#reset the row names, needed for random subsetting method of df.abs2, below
-row.names(df.in2) <- 1:nrow(df.in2)
-row.names(df.abs2) <- 1:nrow(df.abs2)
-
-##### set mtry
-#mtry <- 5
-#####
-
 ##
 # tune mtry (full model)
 # run through mtry twice
@@ -175,6 +160,54 @@ mtry <- max(y[y[,2] == min(y[,2]),1])
 
 rm(x,y)
 
+#####
+##
+# code below is for removing least important env vars
+# we need to discuss value in applying. Probably try both ways?
+##
+#####
+
+ntrees <- 1000
+rf.find.envars <- randomForest(df.full[,indVarCols],
+                        y=df.full[,depVarCol],
+                        importance=TRUE,
+                        ntree=ntrees,
+                        mtry=mtry)
+
+impvals <- importance(rf.find.envars, type = 1)
+# here, choosing above 25% percentile
+y <- quantile(impvals, probs = 0.25)
+impEnvVars <- impvals[impvals > y,]
+#which columns are these, then flip the non-envars to TRUE
+impEnvVarCols <- names(df.full) %in% names(impEnvVars)
+impEnvVarCols[1:5] <- TRUE
+#subset!
+df.full <- df.full[,impEnvVarCols]
+#reset the indvarcols object
+indVarCols <- c(6:length(names(df.full)))
+
+#####
+##
+# code above is for removing least important env vars
+##
+#####
+
+
+#now that entire set is cleaned up, split back out to use any of the three DFs below
+df.in2 <- subset(df.full,pres == "1")
+df.abs2 <- subset(df.full, pres == "0")
+df.in2$stratum <- factor(df.in2$stratum)
+df.abs2$stratum <- factor(df.abs2$stratum)
+df.in2$eo_id_st <- factor(df.in2$eo_id_st)
+df.abs2$eo_id_st <- factor(df.abs2$eo_id_st)
+df.in2$pres <- factor(df.in2$pres)
+df.abs2$pres <- factor(df.abs2$pres)
+
+#reset the row names, needed for random subsetting method of df.abs2, below
+row.names(df.in2) <- 1:nrow(df.in2)
+row.names(df.abs2) <- 1:nrow(df.abs2)
+
+
 #how many polygons do we have?
 numPys <-  nrow(table(df.in2$stratum))
 #how many EOs do we have?
@@ -188,27 +221,26 @@ group$colNm <- ifelse(numEOs < 10,"stratum","eo_id_st")
 group$JackknType <- ifelse(numEOs < 10,"polygon","element occurrence")
 if(numEOs < 10) {
 		group$vals <- unique(df.in2$stratum)
-		} else {
+} else {
 		group$vals <- unique(df.in2$eo_id_st)
-		}
-
-
-# reduce the number of groups, if there are more than 200, to 200 groups
-# this groups the groups simply if they are adjacent in the order created above.
-#  -- the routine runs out of memory if groups go over about 250 (WinXP 32 bit, 3GB avail RAM)
-if(length(group$vals) > 200) {
-  in.cut <- cut(1:length(group$vals), b = 200)
-  in.split <- split(group$vals, in.cut)
-  names(in.split) <- NULL
-  group$vals <- in.split
-  group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
 }
+
+# # reduce the number of groups, if there are more than 200, to 200 groups
+# # this groups the groups simply if they are adjacent in the order created above.
+# #  -- the routine runs out of memory if groups go over about 250 (WinXP 32 bit, 3GB avail RAM)
+# if(length(group$vals) > 200) {
+#   in.cut <- cut(1:length(group$vals), b = 200)
+#   in.split <- split(group$vals, in.cut)
+#   names(in.split) <- NULL
+#   group$vals <- in.split
+#   group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
+# }
 	
 #reduce the number of trees if group$vals has more than 15 entries
 #this is for validation
 if(length(group$vals) > 30) {
 	ntrees <- 500
-	} else {
+} else {
 	ntrees <- 750
 }
 ###### reduced for testing #####
@@ -440,13 +472,17 @@ if(length(group$vals)>1){
 	cutval <- NA
 }
 
-#reduce the number of trees if number of rows exceeds 20k
-#TODO re-evaluate for this project
-if(nrow(df.full) > 20000) {
-	ntrees <- 300
-	} else {
-	ntrees <- 600
-}
+# #reduce the number of trees if number of rows exceeds 20k
+# #TODO re-evaluate for this project
+# if(nrow(df.full) > 20000) {
+# 	ntrees <- 300
+# 	} else {
+# 	ntrees <- 600
+# }
+   
+# increase the number of trees for the full model
+ntrees <- 2000
+   
 ####
 #   run the full model
 #####
