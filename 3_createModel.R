@@ -18,7 +18,7 @@ library(randomForest)
 sppPtLoc <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
 ranPtLoc <- "D:/RegionalSDM/inputs/background"
 dbLoc <- "D:/RegionalSDM/databases"
-pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
+pathToRas <- "D:/RegionalSDM/env_vars/nativeR"
 
 setwd(sppPtLoc)
 
