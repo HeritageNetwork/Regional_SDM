@@ -42,6 +42,9 @@ n <- 1
 ranPtsFilesNoExt <- sub(".shp","",ranPtsFiles)
 shpf <- readOGR(".", layer = ranPtsFilesNoExt[n])
 
+#get projection info for later
+projInfo <- shpf@proj4string
+
 #Get a list of the codes (this assumes all the input files had '_RanPts.shp' that shall be stripped)
 code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))[[n]]
 
@@ -51,6 +54,10 @@ code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))[[n]]
 ####
 x <- extract(envStack, shpf, method="simple", sp=TRUE)
 filename <- paste(code_name, "_att", sep="")
+
+# apply projection info
+x@proj4string <- projInfo
+
 writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 ####

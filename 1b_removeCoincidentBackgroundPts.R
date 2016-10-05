@@ -15,6 +15,9 @@ setwd(polydir)
 ranptsFolder <- "D:/RegionalSDM/inputs/background"
 ranptsShp <- "clpBnd_SDM_RanPts"
 
+#get projection info for later
+projInfo <- ranptsShp@proj4string
+
 # get the poly shapefile
 shpName <- strsplit(polyFileName,"\\.")[[1]][[1]]
 polyShapef <- readOGR(dsn=polydir, layer = shpName) #Z-dimension discarded msg is OK
@@ -30,6 +33,9 @@ coincidentPts <- gContains(polybuff, backgShapef, byid = TRUE)
 colnames(coincidentPts) <- "insideBuff"
 backgShapef@data <- cbind(backgShapef@data, coincidentPts)
 backgSubset <- backgShapef[backgShapef@data$insideBuff == FALSE,]
+
+# projection info doesn't stick, apply from what we grabbed earlier
+backgSubset@proj4string <- projInfo
 
 # write it out
 outFileName <- paste(ranptsShp, "_clean", sep="")
