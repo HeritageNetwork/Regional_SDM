@@ -358,10 +358,23 @@ References
     21(20):3940-3941.
 \end{thebibliography}
 \normalsize
+
+\pagebreak
+<<mapFig, fig.width=6.5, fig.height=3.5, include=FALSE, echo=FALSE>>=
+
+pall <- colorRampPalette(brewer.pal(9,"Blues"))(30)
+image(ras, col = pall)
+plot(bnds, add = TRUE)
+
+
+@
+\includegraphics{figure/mapFig-1.pdf} \\   
+Figure 5. A coarse representation of the model, predicted throughout the study area. State Boundaries are shown in black. 
+
+
 Please cite this document and its associated SDM as: \\
-Regional Distribution Modeling Project \Sexpr{format(Sys.Date(), "%Y")}. Species distribution
-model, model validation, and environmental variable importance 
-for \textit{\Sexpr{as.character(ElementNames[[1]])}}. Albany, NY. 
+Regional Distribution Modeling Project \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model, model validation, and environmental variable importance 
+for \textit{\Sexpr{as.character(ElementNames[[1]])}}.  
 Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}.
 
 \end{document}

@@ -4,13 +4,16 @@ library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp
 library(randomForest)
 library(knitr)
 library(raster)
+library(sp)
+library(rgdal)
+library(RColorBrewer)
 
 inPath <- "D:/RegionalSDM/outputs"
 rnwPath <- "D:/RegionalSDM/scripts/Regional_SDM"
 outPath <- "D:/RegionalSDM/outputs/metadata"
 gridpath <- "D:/RegionalSDM/outputs/grids"
+stateBoundPath <- "D:/RegionalSDM/other_spatial"
 
-  
 ##get a list of what's in the directory
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
@@ -27,7 +30,13 @@ g
 n <- 1
 ras <- raster(paste(gridpath, g[[n]], sep = "/"))
 
-plot(ras)
+bnds <- readOGR(stateBoundPath, "StateBoundariesAlbersConicEqualArea")
+
+# pall <- colorRampPalette(brewer.pal(9,"Blues"))(30)
+# image(ras, col = pall)
+# plot(bnds, add = TRUE)
+
+#spplot(ras, col.regions=pall)
 
 
 ##
