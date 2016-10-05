@@ -15,6 +15,9 @@ layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
 shapef <- readOGR(StudyAreaPoly, layer = layer)
 att.pt <- shapef@data
 
+#get projection info for later
+projInfo <- shapef@proj4string
+
 # name of random points output shapefile
 nm.RanPtFile <- paste(layer, "_RanPts", sep = "")
 
@@ -38,4 +41,8 @@ grtsResult <- grts(design=dsgn,
 ranPts <- as(grtsResult, "SpatialPointsDataFrame")
 colsToKeep <- c("stratum")
 ranPts <- ranPts[,colsToKeep]
+
+# apply projection info
+ranPts@proj4string <- projInfo
+
 writeOGR(ranPts, dsn = ".", layer = nm.RanPtFile, driver="ESRI Shapefile", overwrite_layer=TRUE)

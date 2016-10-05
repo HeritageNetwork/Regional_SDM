@@ -68,6 +68,10 @@ shp_expl@data <- cbind(shp_expl@data,
 		
 #write out the exploded polygon set
 nm.PyFile <- paste(sppCode, "_expl", sep = "")
+
+# projection info doesn't stick, apply from what we grabbed earlier
+shp_expl@proj4string <- projInfo
+
 writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
   
 #name of random points output shapefile; add path to (now input) polygon file
