@@ -311,9 +311,9 @@ with barplots.
 Important! Element distribution models map places of similar environmental
 conditions to the submitted locations (PR points). No model will ever depict sites where
 a targeted element will occur with certainty, it can \textit{only} depict locations it interprets
-as appropriate habitat for the targeted element. EDMs can be used in many ways and the 
+as appropriate habitat for the targeted element. SDMs can be used in many ways and the 
 depiction of appropriate habitat should be varied depending on intended use. For targeting
-field surveys, an EDM may be used to refine the search area; users should always employ
+field surveys, an SDM may be used to refine the search area; users should always employ
 additional GIS tools to further direct search efforts. A lower cutoff depicting more land area
 such as that derived from the validation ROC plots (\Sexpr{round(cutval.rf[2],3)}) may be 
 appropriate to use in this case. For a more conservative depiction of suitable habitat that
@@ -358,8 +358,8 @@ References
     21(20):3940-3941.
 \end{thebibliography}
 \normalsize
-Please cite this document and its associated EDM as: \\
-New York Natural Heritage Program \Sexpr{format(Sys.Date(), "%Y")}. Element distribution
+Please cite this document and its associated SDM as: \\
+Regional Distribution Modeling Project \Sexpr{format(Sys.Date(), "%Y")}. Species distribution
 model, model validation, and environmental variable importance 
 for \textit{\Sexpr{as.character(ElementNames[[1]])}}. Albany, NY. 
 Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}.
