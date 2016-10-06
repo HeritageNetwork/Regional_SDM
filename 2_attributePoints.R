@@ -1,5 +1,5 @@
 # File: 2_attributePoints.r
-# Purpose: attribute environmental data to random points
+# Purpose: attribute environmental data to presence points
 
 ## start with a fresh workspace with no objects loaded
 library(raster)
@@ -8,17 +8,11 @@ library(RSQLite)
 library(maptools)
 
 ## Set Working Directory to the rasters location
-#setwd("D:/RegionalSDM/env_vars/brick")
-#setwd("D:/RegionalSDM/env_vars/geotiffs")
-
+# assume you are using native R rasters, tweak if not 
 pathToRas <- "D:/RegionalSDM/env_vars/nativeR"
 setwd(pathToRas)
 
-## Option 1: load the brick
-#envBrick <- brick("brick.grd")
-
-## Option 2: create a stack
-#raslist <- list.files(pattern = ".tif$")
+## create a stack (assume you are using native R rasters)
 raslist <- list.files(pattern = ".grd$")
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
