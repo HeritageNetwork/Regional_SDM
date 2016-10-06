@@ -361,12 +361,15 @@ References
 \normalsize
 
 \pagebreak
-<<mapFig, fig.width=6.5, fig.height=3.5, include=FALSE, echo=FALSE>>=
+\medskip
+<<mapFig, fig.width=5, fig.height=3, include=FALSE, echo=FALSE>>=
+
+aspRatio <- ras@nrows/ras@ncols
 
 pall <- colorRampPalette(brewer.pal(9,"Blues"))(30)
-image(ras, col = pall)
+image(ras, col = pall, xaxt = "n", yaxt = "n", xlab = "", ylab = "", asp = aspRatio)
 plot(bnds, add = TRUE)
-
+box()
 
 @
 \includegraphics{figure/mapFig-1.pdf} \\   
