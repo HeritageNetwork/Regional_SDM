@@ -1,5 +1,6 @@
 # File: 1_randomPointsInPolys.r
 # Purpose: GRTS sampling of EDM polygons to create spatially balanced random points
+# these are the random presence points being created here, from polygon presence data.
 
 library(spsurvey)
 library(RSQLite)

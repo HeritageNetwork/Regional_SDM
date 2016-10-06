@@ -1,8 +1,6 @@
-#####
-# This script will take a folder of geoTiffs and 
+# File: preproc_writeNativeRrasters.r
+# Purpose: This script will take a folder of geoTiffs and 
 # write them out in native R raster format
-#
-####
 
 library(raster)
 

@@ -1,5 +1,9 @@
 # File: 3_createModel.R
-# Purpose: to create the random forest model
+# Purpose: to create the random forest model. This includes:
+# - create initial model to remove poorest performing env vars
+# - validate using leave-one-out jackknifing
+# - create a final model using all presence points
+# - build partial plots of top performing env vars for metadata output
 
 # assumptions:
 # input table contains only one species

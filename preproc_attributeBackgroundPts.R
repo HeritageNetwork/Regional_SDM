@@ -1,8 +1,5 @@
-# File: 2_attributePoints.r
-# Purpose: attribute environmental data to random points
-
-# this is set up to be able to attribute multiple species (multiple random points shapefiles)
-# at once, but it will run just fine with a single shapefile of random points. 
+# File: preproc_attributeBackgroundPts.r
+# Purpose: attribute environmental data to random background points
 
 ## start with a fresh workspace with no objects loaded
 library(raster)
@@ -12,7 +9,7 @@ pathToRas <- "D:/RegionalSDM/env_vars/nativeR"
 pathToPts <- "D:/RegionalSDM/inputs/background"
 
 setwd(pathToRas)
-## create a stack
+## create a stack. Note this is using native R rasters
 raslist <- list.files(pattern = ".grd$")
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)

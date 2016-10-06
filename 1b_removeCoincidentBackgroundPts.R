@@ -1,5 +1,5 @@
 # File: 1b_removeCoincidentBackgroundPts.r
-# Purpose: remove background points that are within polygons (and a 30 m buffer)
+# Purpose: remove random background points that are within polygons (and a 30 m buffer)
 # of known locations (EO polygons)
 
 library(rgdal)

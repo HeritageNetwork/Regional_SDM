@@ -1,8 +1,7 @@
-#####
-# This script will clip rasters and point shapefiles to a test area. 
-#
-#
-####
+# File: preproc_clipToTestArea.r
+# Purpose: This script will clip rasters and point shapefiles to a test area. 
+#  If we find ourselves creating models within subsets of the range, this 
+#  script should be able to create our subsets.
 
 library(raster)
 library(rgdal)

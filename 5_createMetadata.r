@@ -1,3 +1,9 @@
+# File: 5_createMetadata.r
+# Purpose: to summarize validation data and other information about the 
+# model and write it to a pdf. This pdf should accompany ALL sharing/showing
+# of the SDM map.
+
+# For knitr to work, you need MikTex installed. See http://miktex.org/
 
 
 library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp10/2009-February/189936.html

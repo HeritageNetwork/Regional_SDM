@@ -1,3 +1,4 @@
+%This knitr document is called by the knit2pdf call in 5_createMetadata.r
 \documentclass{article}
 \usepackage[utf8]{inputenc} 
 \usepackage{geometry}
