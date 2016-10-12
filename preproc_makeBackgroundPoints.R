@@ -22,7 +22,9 @@ projInfo <- shapef@proj4string
 nm.RanPtFile <- paste(layer, "_RanPts", sep = "")
 
 # Enter the number of random points you want to generate 
-numpts <- 500000
+# total area of entire study area is about 1,064,000 km^2
+# if our target is about 1 pt / 20 km^2, that comes out to about 53,000 points. 
+numpts <- 53000
 
 # Create the design list
 dsgn <- list(None=list(panel=c(Panel=numpts), seltype="Equal"))
