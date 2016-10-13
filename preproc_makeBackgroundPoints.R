@@ -7,6 +7,7 @@ library(rgdal)
 # This is the directory that has your study area polygon.
 setwd("E:/Reg5Modeling_Project/other_spatial")
 
+
 # the name of the study area polygon
 StudyAreaPoly <- "sdmclpbnd_20160831_buffNeg1000.shp"
 
