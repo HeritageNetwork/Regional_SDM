@@ -5,10 +5,10 @@ library(spsurvey)
 library(rgdal)
 
 # This is the directory that has your study area polygon.
-setwd("D:/RegionalSDM/inputs/background")
+setwd("E:/Reg5Modeling_Project/other_spatial")
 
 # the name of the study area polygon
-StudyAreaPoly <- "clpBnd_SDM.shp"
+StudyAreaPoly <- "sdmclpbnd_20160831_buffNeg1000.shp"
 
 # read in the shapefile, get the attribute data
 layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
