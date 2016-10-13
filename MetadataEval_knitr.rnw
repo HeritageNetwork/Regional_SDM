@@ -364,12 +364,37 @@ References
 \medskip
 <<mapFig, fig.width=5, fig.height=3, include=FALSE, echo=FALSE>>=
 
-aspRatio <- ras@nrows/ras@ncols
+#try with shapefiles
+library(rgdal)
+library(ggplot2)
+library(ggmap)
+library(raster)
 
-pall <- colorRampPalette(brewer.pal(9,"Blues"))(30)
-image(ras, col = pall, xaxt = "n", yaxt = "n", xlab = "", ylab = "", asp = aspRatio)
-plot(bnds, add = TRUE)
-box()
+stateBoundPath <- "X:/RegionalSDM/zz_testArea/other_spatial"
+extentmap <- readOGR(stateBoundPath, "StatesNE")
+region <- fortify(extentmap)
+#get the prediction
+map <- raster("X:/RegionalSDM/zz_testArea/outputs/grids/sciranci.tif")
+map.p <- rasterToPoints(map) # convert the raster to points. Is there a better way???
+
+#Make the points a dataframe for ggplot
+df <- data.frame(map.p)
+#Make appropriate column headings
+colnames(df) <- c("Longitude", "Latitude", "MAP") #MAP in this case refers to mean annual precip... got to change
+
+p <- ggplot(data=df, aes(y=Latitude, x=Longitude)) + 
+     geom_raster(data=df, aes(fill=MAP)) +
+     geom_polygon(data = region, aes(x=long, y=lat, group=group), color="gray", size=0.05,fill=NA) +
+     labs(title = "Predicted Probability of Presence",fill="") +
+     #scale_fill_gradient("probability", limits=c(0,1)) + #able for the legend
+     scale_fill_distiller(palette = "Reds", direction=1) +
+     #guides(fill = guide_legend(reverse=TRUE)) +
+     coord_fixed(expand=TRUE) + #possibly a better way of doing this, but this squared up the map
+     theme_nothing(legend=TRUE) # gets rid of the background grid
+
+# plot the map
+p
+#ggsave(p, file = "map5.png", width = 5, height = 4.5, type = "cairo-png")
 
 @
 \includegraphics{figure/mapFig-1.pdf} \\   

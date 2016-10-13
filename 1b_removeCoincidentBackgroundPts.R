@@ -15,12 +15,12 @@ setwd(polydir)
 ranptsFolder <- "D:/RegionalSDM/inputs/background"
 ranptsShp <- "clpBnd_SDM_RanPts"
 
-#get projection info for later
-projInfo <- ranptsShp@proj4string
-
 # get the poly shapefile
 shpName <- strsplit(polyFileName,"\\.")[[1]][[1]]
 polyShapef <- readOGR(dsn=polydir, layer = shpName) #Z-dimension discarded msg is OK
+
+#get projection info for later
+projInfo <- polyShapef@proj4string
 
 # get the background shapefile
 backgShapef <- readOGR(dsn=ranptsFolder, layer=ranptsShp)
