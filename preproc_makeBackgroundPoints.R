@@ -15,6 +15,9 @@ layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
 shapef <- readOGR(StudyAreaPoly, layer = layer)
 att.pt <- shapef@data
 
+#here are some changes to the master
+# and here are some more
+
 #get projection info for later
 projInfo <- shapef@proj4string
 
