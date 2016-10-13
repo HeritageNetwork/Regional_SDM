@@ -5,7 +5,7 @@ library(spsurvey)
 library(rgdal)
 
 # This is the directory that has your study area polygon.
-setwd("D:/RegionalSDM/inputs/background")
+setwd("D:/blahblahblah/inputs/background")
 
 # the name of the study area polygon
 StudyAreaPoly <- "clpBnd_SDM.shp"
