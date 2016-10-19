@@ -13,10 +13,7 @@ setwd(polydir)
 
 ### This is the random points shapefile info
 ranptsFolder <- "D:/RegionalSDM/inputs/background"
-ranptsShp <- "clpBnd_SDM_RanPts"
-
-#get projection info for later
-projInfo <- ranptsShp@proj4string
+ranptsShp <- "clpBnd_SDM_att"
 
 # get the poly shapefile
 shpName <- strsplit(polyFileName,"\\.")[[1]][[1]]
@@ -24,6 +21,9 @@ polyShapef <- readOGR(dsn=polydir, layer = shpName) #Z-dimension discarded msg i
 
 # get the background shapefile
 backgShapef <- readOGR(dsn=ranptsFolder, layer=ranptsShp)
+
+#get projection info for later
+projInfo <- backgShapef@proj4string
 
 #buffer the poly shapefile 30 m
 polybuff <- gBuffer(polyShapef, width = 30)
