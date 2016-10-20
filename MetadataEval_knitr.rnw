@@ -321,6 +321,27 @@ appropriate to use in this case. For a more conservative depiction of suitable h
 shows less land area, a higher cutoff such as that derived from the final model
 (\Sexpr{round(rf.full.ctoff[2],3)}) may be more appropriate.
 
+
+
+\pagebreak
+\medskip
+<<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE>>=
+
+stateBoundPath <- "X:/RegionalSDM/zz_testArea/other_spatial" #path of the state boundaries
+extentmap <- readOGR(stateBoundPath, "StatesNE", stringsAsFactors=FALSE) # name of state boundaries file
+
+testareapath <- "X:/RegionalSDM/zz_testArea/inputs/background"
+testarea <- readOGR(testareapath,"clpBnd_SDM")
+
+MapScipanci <- raster("X:/RegionalSDM/zz_testArea/outputs/grids/sciranci.tif")
+myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
+levelplot(MapScipanci, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(extentmap)) + layer(sp.polygons(testarea,lwd=0.1, col='red'))
+
+@
+\includegraphics{figure/mapFig-1.pdf}    
+Figure 5. A coarse overview of the model predictions throughout the study area. State Boundaries are shown in black.\\ 
+
+\pagebreak
 \medskip
 \noindent
 References
@@ -360,51 +381,12 @@ References
 \end{thebibliography}
 \normalsize
 
-\pagebreak
-\medskip
-<<mapFig, fig.width=5, fig.height=3, include=FALSE, echo=FALSE>>=
 
-#try with shapefiles
-library(rgdal)
-library(ggplot2)
-library(ggmap)
-library(raster)
-
-stateBoundPath <- "X:/RegionalSDM/zz_testArea/other_spatial"
-extentmap <- readOGR(stateBoundPath, "StatesNE")
-region <- fortify(extentmap)
-#get the prediction
-map <- raster("X:/RegionalSDM/zz_testArea/outputs/grids/sciranci.tif")
-map.p <- rasterToPoints(map) # convert the raster to points. Is there a better way???
-
-#Make the points a dataframe for ggplot
-df <- data.frame(map.p)
-#Make appropriate column headings
-colnames(df) <- c("Longitude", "Latitude", "MAP") #MAP in this case refers to mean annual precip... got to change
-
-p <- ggplot(data=df, aes(y=Latitude, x=Longitude)) + 
-     geom_raster(data=df, aes(fill=MAP)) +
-     geom_polygon(data = region, aes(x=long, y=lat, group=group), color="gray", size=0.05,fill=NA) +
-     labs(title = "Predicted Probability of Presence",fill="") +
-     #scale_fill_gradient("probability", limits=c(0,1)) + #able for the legend
-     scale_fill_distiller(palette = "Reds", direction=1) +
-     #guides(fill = guide_legend(reverse=TRUE)) +
-     coord_fixed(expand=TRUE) + #possibly a better way of doing this, but this squared up the map
-     theme_nothing(legend=TRUE) # gets rid of the background grid
-
-# plot the map
-p
-#ggsave(p, file = "map5.png", width = 5, height = 4.5, type = "cairo-png")
-
-@
-\includegraphics{figure/mapFig-1.pdf} \\   
-Figure 5. A coarse representation of the model, predicted throughout the study area. State Boundaries are shown in black. 
-
-
+\noindent
 Please cite this document and its associated SDM as: \\
-Regional Distribution Modeling Project \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model, model validation, and environmental variable importance 
+\hangindent Northeast Regional Distribution Modeling Project. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model, model validation, and environmental variable importance 
 for \textit{\Sexpr{as.character(ElementNames[[1]])}}.  
-Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}.
+Created on \Sexpr{format(Sys.Date(), "%Y %b %d")}.
 
 \end{document}
 

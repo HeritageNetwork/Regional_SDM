@@ -10,9 +10,13 @@ library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp
 library(randomForest)
 library(knitr)
 library(raster)
+library(maptools)
 library(sp)
 library(rgdal)
 library(RColorBrewer)
+library(rgdal)
+library(rasterVis)
+
 
 inPath <- "D:/RegionalSDM/outputs"
 rnwPath <- "D:/RegionalSDM/scripts/Regional_SDM"
@@ -27,23 +31,6 @@ d
 n <- 1
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
-
-
-## get the grid so we can plot it
-g <- dir(path = gridpath, pattern = ".tif$", full.names = FALSE)
-g
-# which one?
-n <- 1
-ras <- raster(paste(gridpath, g[[n]], sep = "/"))
-
-bnds <- readOGR(stateBoundPath, "StateBoundariesAlbersConicEqualArea")
-
-# pall <- colorRampPalette(brewer.pal(9,"Blues"))(30)
-# image(ras, col = pall)
-# plot(bnds, add = TRUE)
-
-#spplot(ras, col.regions=pall)
-
 
 ##
 # writing to the same folder as a grid might cause problems.
