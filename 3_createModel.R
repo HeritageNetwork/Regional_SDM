@@ -22,7 +22,7 @@ library(randomForest)
 sppPtLoc <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
 ranPtLoc <- "D:/RegionalSDM/inputs/background"
 dbLoc <- "D:/RegionalSDM/databases"
-pathToRas <- "D:/RegionalSDM/env_vars/nativeR"
+pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
 
 setwd(sppPtLoc)
 
@@ -51,8 +51,8 @@ names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = pathToRas, pattern = ".grd$")
-rasnames <- gsub(".grd", "", raslist)
+raslist <- list.files(path = pathToRas, pattern = ".tif$")
+rasnames <- gsub(".tif", "", raslist)
 
 # are these all in the lookup database? Will create problems later if not
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
