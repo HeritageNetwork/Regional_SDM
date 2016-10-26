@@ -5,12 +5,12 @@
 library(raster)
 library(rgdal)
 
-pathToRas <- "D:/RegionalSDM/env_vars/nativeR"
+pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
 pathToPts <- "D:/RegionalSDM/inputs/background"
 
 setwd(pathToRas)
 ## create a stack. Note this is using native R rasters
-raslist <- list.files(pattern = ".grd$")
+raslist <- list.files(pattern = ".tif$")
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
 names(gridlist) <- nm
