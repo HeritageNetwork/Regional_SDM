@@ -327,11 +327,10 @@ shows less land area, a higher cutoff such as that derived from the final model
 \medskip
 <<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE>>=
 
-stateBoundPath <- "X:/RegionalSDM/zz_testArea/other_spatial" #path of the state boundaries
-extentmap <- readOGR(stateBoundPath, "StatesNE", stringsAsFactors=FALSE) # name of state boundaries file
 
-testareapath <- "X:/RegionalSDM/zz_testArea/inputs/background"
-testarea <- readOGR(testareapath,"clpBnd_SDM")
+extentmap <- readOGR(stateBoundPath, extentMapName, stringsAsFactors=FALSE) # name of state boundaries file
+
+testarea <- readOGR(testareapath, testAreaName)
 
 MapScipanci <- raster("X:/RegionalSDM/zz_testArea/outputs/grids/sciranci.tif")
 myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
