@@ -18,7 +18,7 @@ library(rgdal)
 library(rasterVis)
 
 
-inPath <- "G:/RegionalSDM/_firstFullModelOut/outputs"
+inPath <- "G:/RegionalSDM/_firstFullModelOut"
 rnwPath <- "G:/RegionalSDM/scripts/Regional_SDM"
 outPath <- "G:/RegionalSDM/outputs/metadata"
 gridpath <- "G:/RegionalSDM/_firstFullModelOut/outras"
