@@ -327,15 +327,15 @@ shows less land area, a higher cutoff such as that derived from the final model
 \medskip
 <<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE>>=
 
-stateBoundPath <- "X:/RegionalSDM/zz_testArea/other_spatial" #path of the state boundaries
+stateBoundPath <- "G:/RegionalSDM/_firstFullModelOut/outras" #path of the state boundaries
 extentmap <- readOGR(stateBoundPath, "StatesNE", stringsAsFactors=FALSE) # name of state boundaries file
 
-testareapath <- "X:/RegionalSDM/zz_testArea/inputs/background"
-testarea <- readOGR(testareapath,"clpBnd_SDM")
+#testareapath <- "G:/RegionalSDM/_firstFullModelOut/outras"
+#testarea <- readOGR(testareapath,"clpBnd_SDM")
 
-MapScipanci <- raster("X:/RegionalSDM/zz_testArea/outputs/grids/sciranci.tif")
+MapScipanci <- raster("G:/RegionalSDM/_firstFullModelOut/outras/glypmuhl.tif")
 myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
-levelplot(MapScipanci, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(extentmap)) + layer(sp.polygons(testarea,lwd=0.1, col='red'))
+levelplot(MapScipanci, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(extentmap)) #+ layer(sp.polygons(testarea,lwd=0.1, col='red'))
 
 @
 \includegraphics{figure/mapFig-1.pdf}    

@@ -18,11 +18,11 @@ library(rgdal)
 library(rasterVis)
 
 
-inPath <- "D:/RegionalSDM/outputs"
-rnwPath <- "D:/RegionalSDM/scripts/Regional_SDM"
-outPath <- "D:/RegionalSDM/outputs/metadata"
-gridpath <- "D:/RegionalSDM/outputs/grids"
-stateBoundPath <- "D:/RegionalSDM/other_spatial"
+inPath <- "G:/RegionalSDM/_firstFullModelOut/outputs"
+rnwPath <- "G:/RegionalSDM/scripts/Regional_SDM"
+outPath <- "G:/RegionalSDM/outputs/metadata"
+gridpath <- "G:/RegionalSDM/_firstFullModelOut/outras"
+stateBoundPath <- "G:/RegionalSDM/_firstFullModelOut/outras"
 
 ##get a list of what's in the directory
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
