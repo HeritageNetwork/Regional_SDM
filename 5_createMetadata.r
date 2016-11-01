@@ -16,17 +16,19 @@ library(rgdal)
 library(RColorBrewer)
 library(rgdal)
 library(rasterVis)
+library(RSQLite)
 
 
-inPath <- "D:/RegionalSDM/outputs"
-rnwPath <- "D:/RegionalSDM/scripts/Regional_SDM"
-outPath <- "D:/RegionalSDM/outputs/metadata"
-gridpath <- "D:/RegionalSDM/outputs/grids"
-stateBoundPath <- "D:/RegionalSDM/other_spatial"
+inPath <- "G:/RegionalSDM/outputs"
+rnwPath <- "G:/RegionalSDM/scripts/Regional_SDM"
+outPath <- "G:/RegionalSDM/outputs/metadata"
+gridpath <- "G:/RegionalSDM/outputs/grids"
+stateBoundPath <- "G:/RegionalSDM/other_spatial"
+dbLoc <- "G:/RegionalSDM/databases"
 
 extentMapName <- "StatesNE"
-testareapath <- "X:/RegionalSDM/zz_testArea/inputs/background"
-testAreaName <- "clpBnd_SDM"
+testareapath <- "G:/RegionalSDM/other_spatial"
+testAreaName <- "reg5_pred_20161027"
 
 
 ## find and load model data ----
@@ -39,6 +41,30 @@ fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
 ## Get Program and Sources information ----
+
+db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
+db <- dbConnect(SQLite(),dbname=db_file)  
+SQLquery <- paste("Select lkpModelers.PROGRAM_NAME, lkpModelers.FULL_ORG_NAME, ",
+  "lkpModelers.CITY, lkpModelers.STATE, lkpSpecies.CODE ",
+  "FROM lkpModelers ", 
+  "INNER JOIN lkpSpecies ON lkpModelers.MODELER_ID=lkpSpecies.MODELER_ID ", 
+  "WHERE lkpSpecies.CODE='", ElementNames$Code, "'; ", sep="")
+sdm.modeler <- dbGetQuery(db, statement = SQLquery)
+
+SQLquery <- paste()
+## this works, need to incorporate
+SELECT sp.CODE, sr.PROGRAM_NAME, sr.STATE
+FROM lkpSpecies as sp
+INNER JOIN mapDataSourcesToSpp as mp ON mp.EST_ID=sp.EST_ID
+INNER JOIN lkpDataSources as sr ON mp.DATA_SOURCES_ID=sr.DATA_SOURCES_ID
+WHERE sp.CODE='glypmuhl';
+
+
+##clean up
+options(op)
+dbDisconnect(db)
+
+
 
 
 
