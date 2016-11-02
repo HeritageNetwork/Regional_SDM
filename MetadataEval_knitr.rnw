@@ -229,15 +229,15 @@ for (i in 1:length(v.rocr.pred.restruct@predictions)) {
     }
   }
 
-## add an arrow to point to the cutoff
-# arrow for cutoff based on average ROC curve
-arrows(cutval.rf[2], 200, cutval.rf[2], 160,
-                    length=0.05, angle=30, lwd=2, ljoin=2,
-                    xpd=TRUE)                    
-# arrow for cutoff based on full model                    
-arrows(rf.full.ctoff[2], 60, rf.full.ctoff[2], 20, 
-                    length=0.05, angle=30, lwd=2, ljoin=2,
-                    xpd=TRUE)
+# ## add an arrow to point to the cutoff
+# # arrow for cutoff based on average ROC curve
+# arrows(cutval.rf[2], 200, cutval.rf[2], 160,
+#                     length=0.05, angle=30, lwd=2, ljoin=2,
+#                     xpd=TRUE)                    
+# # arrow for cutoff based on full model                    
+# arrows(rf.full.ctoff[2], 60, rf.full.ctoff[2], 20, 
+#                     length=0.05, angle=30, lwd=2, ljoin=2,
+#                     xpd=TRUE)
 @
 
 \medskip
@@ -248,7 +248,7 @@ arrows(rf.full.ctoff[2], 60, rf.full.ctoff[2], 20,
   \begin{minipage}[b]{1.4in}
   Figure 3. Separation between presence and background points. Red and blue lines show 
   densities of absence and presence points, respectively. One of each is drawn for 
-  each validation run. Arrows indicate cutoff locations as in Fig. 1.
+  each validation run.
   \end{minipage}
 \end{minipage} 
 
