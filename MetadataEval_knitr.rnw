@@ -332,9 +332,8 @@ extentmap <- readOGR(stateBoundPath, extentMapName, stringsAsFactors=FALSE) # na
 
 testarea <- readOGR(testareapath, testAreaName)
 
-MapScipanci <- raster("X:/RegionalSDM/zz_testArea/outputs/grids/sciranci.tif")
 myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
-levelplot(MapScipanci, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(extentmap)) + layer(sp.polygons(testarea,lwd=0.1, col='red'))
+levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(extentmap)) + layer(sp.polygons(testarea,lwd=0.1, col='red'))
 
 @
 \includegraphics{figure/mapFig-1.pdf}    
@@ -383,7 +382,7 @@ References
 
 \noindent
 Please cite this document and its associated SDM as: \\
-\hangindent Northeast Regional Distribution Modeling Project. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model, model validation, and environmental variable importance 
+\hangindent=10pt Northeast Regional Distribution Modeling Project. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model, model validation, and environmental variable importance 
 for \textit{\Sexpr{as.character(ElementNames[[1]])}}.  
 Created on \Sexpr{format(Sys.Date(), "%Y %b %d")}.
 
