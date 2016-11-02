@@ -375,8 +375,26 @@ References
 \end{thebibliography}
 \normalsize
 
-
 \noindent
+\medskip
+
+This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
+\begin{itemize}
+    \setlength{\itemsep}{0pt}
+    \setlength{\parskip}{0pt}
+    \setlength{\parsep}{0pt}
+<<DataSourcesList, results="asis", echo = FALSE>>=
+for(i in 1:length(sdm.dataSources$ProgramName)){
+  x <- paste("\\item ", sdm.dataSources$ProgramName[[i]], "\n", sep = "")
+  y <- sub("&", "\\\\&", x) #escape ampersands if there are any - special character in latex
+  cat(y)
+  #cat(paste("\\item ", sdm.dataSources$ProgramName[[i]], "\n", sep = ""))
+}
+@
+\end{itemize}
+
+
+
 Please cite this document and its associated SDM as: \\
 \hangindent=10pt \Sexpr{sdm.modeler$ProgramName}. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}. \Sexpr{sdm.modeler$FullOrganizationName}, \Sexpr{sdm.modeler$City}, \Sexpr{sdm.modeler$State}.
 
