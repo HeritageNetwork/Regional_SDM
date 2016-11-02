@@ -40,6 +40,8 @@ extentMapName <- "StatesNE"
 testareapath <- "G:/RegionalSDM/other_spatial"
 testAreaName <- "reg5_pred_20161027"
 
+ras <- raster(paste(gridpath, "/", ElementNames$Code, ".tif", sep = ""))
+
 
 ## Get Program and Data Sources info ----
 
