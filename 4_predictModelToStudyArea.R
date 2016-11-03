@@ -15,7 +15,7 @@ library(randomForest)
 rdataLoc <- "D:/RegionalSDM/zz_testArea/outputs"
 
 # directory for the environmental rasters
-pathToRas <- "D:/RegionalSDM/zz_testArea/env_vars/nativeR"
+pathToRas <- "D:/RegionalSDM/zz_testArea/env_vars/geotiffs"
 
 # output path (best if different from rdataloc)
 outRas <- "D:/RegionalSDM/zz_testArea/outputs/grids"
@@ -38,7 +38,7 @@ load(fileList[[n]])
 ##Make the raster stack
 stackOrder <- names(df.full)[indVarCols]
 setwd(pathToRas)
-rasL <- paste(stackOrder,".grd", sep="")
+rasL <- paste(stackOrder,".tif", sep="")
 fullL <- as.list(paste(pathToRas, rasL, sep="/"))
 names(fullL) <- stackOrder
 envStack <- stack(fullL)
