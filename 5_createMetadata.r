@@ -20,8 +20,10 @@ library(RSQLite)
 
 inPath <- "G:/RegionalSDM/outputs"
 
+
 ## find and load model data ----
 # get a list of what's in the directory
+
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
