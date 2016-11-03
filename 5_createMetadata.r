@@ -16,6 +16,7 @@ library(rgdal)
 library(RColorBrewer)
 library(rgdal)
 library(rasterVis)
+#library(ggplot2)
 
 
 inPath <- "D:/RegionalSDM/outputs"
