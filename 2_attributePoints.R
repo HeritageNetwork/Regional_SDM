@@ -39,7 +39,7 @@ shpf <- readOGR(".", layer = ranPtsFilesNoExt[n])
 #get projection info for later
 projInfo <- shpf@proj4string
 
-#Get a list of the codes (this assumes all the input files had '_RanPts.shp' that shall be stripped)
+#Get the species code for the ranPtsFile chosen
 code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))[[n]]
 
 ####
