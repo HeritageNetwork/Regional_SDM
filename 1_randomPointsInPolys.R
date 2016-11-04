@@ -18,7 +18,7 @@ library(rgdal)
 ######
 ## these are the lines you need to change
 
-### This is the shapefile that has your species polygon data. 
+### This is the folder that has your species polygon data. 
 polydir <- "D:/RegionalSDM/inputs/species/glypmuhl/polygon_data"
 setwd(polydir)
 
