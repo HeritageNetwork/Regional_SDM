@@ -11,16 +11,13 @@ polydir <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/polygon_data"
 polyFileName <- "glypmuhl_expl.shp"
 setwd(polydir)
 
-### This is the random points shapefile info
+### This is the background random points shapefile info
 ranptsFolder <- "K:/Reg5Modeling_Project/inputs/background"
 ranptsShp <- "sdmclpbnd_20160831_buffNeg1000_att_Reg5"
 
 # get the poly shapefile
 shpName <- strsplit(polyFileName,"\\.")[[1]][[1]]
 polyShapef <- readOGR(dsn=polydir, layer = shpName) #Z-dimension discarded msg is OK
-
-#get projection info for later
-projInfo <- polyShapef@proj4string
 
 # get the background shapefile
 backgShapef <- readOGR(dsn=ranptsFolder, layer=ranptsShp)
