@@ -25,7 +25,7 @@ max(nmLen) # if this result is greater than 10, you've got a renegade
 envStack <- stack(gridlist)
 
 ## Set working directory to the random points location
-setwd("D:/RegionalSDM/inputs/species/glypmuhl/point_data")
+setwd("K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data")
 
 ranPtsFiles <- list.files(pattern = ".RanPts.shp$")
 ranPtsFiles
