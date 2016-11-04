@@ -9,11 +9,11 @@ library(maptools)
 
 ## Set Working Directory to the rasters location
 # assume you are using native R rasters, tweak if not 
-pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
+pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
 setwd(pathToRas)
 
 ## create a stack (assume you are using native R rasters)
-raslist <- list.files(pattern = ".tif$")
+raslist <- list.files(pattern = ".grd$")
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
 names(gridlist) <- nm
