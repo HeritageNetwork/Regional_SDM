@@ -19,21 +19,21 @@ library(randomForest)
 #  Lines that require editing
 #
 # directory for file locations
-sppPtLoc <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
-ranPtLoc <- "D:/RegionalSDM/inputs/background"
-dbLoc <- "D:/RegionalSDM/databases"
-pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
+sppPtLoc <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
+ranPtLoc <- "K:/Reg5Modeling_Project/inputs/background"
+dbLoc <- "K:/Reg5Modeling_Project/databases"
+pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
 
 setwd(sppPtLoc)
 
 # directory for saving RData files (analysis data)
-rdataOut <- "D:/RegionalSDM/outputs"
+rdataOut <- "K:/Reg5Modeling_Project/outputs"
 
 # the names of the files to be uploaded: presence points
 df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- read.dbf(paste(ranPtLoc,"clpBnd_SDM_RanPt_att.dbf", sep="/"))
+df.abs <- read.dbf(paste(ranPtLoc,"sdmclpbnd_20160831_buffNeg1000_att_Reg5_clean.dbf", sep="/"))
 
 #  End, lines that require editing
 #
@@ -51,8 +51,8 @@ names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = pathToRas, pattern = ".tif$")
-rasnames <- gsub(".tif", "", raslist)
+raslist <- list.files(path = pathToRas, pattern = ".grd$")
+rasnames <- gsub(".grd", "", raslist)
 
 # are these all in the lookup database? Will create problems later if not
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
@@ -180,7 +180,7 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
 
 impvals <- importance(rf.find.envars, type = 1)
 # here, choosing above 25% percentile
-y <- quantile(impvals, probs = 0.25)
+y <- quantile(impvals, probs = 0.40)  #TODO add this in the metadata
 impEnvVars <- impvals[impvals > y,]
 #which columns are these, then flip the non-envars to TRUE
 impEnvVarCols <- names(df.full) %in% names(impEnvVars)
@@ -232,13 +232,13 @@ if(numEOs < 10) {
 # # reduce the number of groups, if there are more than 200, to 200 groups
 # # this groups the groups simply if they are adjacent in the order created above.
 # #  -- the routine runs out of memory if groups go over about 250 (WinXP 32 bit, 3GB avail RAM)
-# if(length(group$vals) > 200) {
-#   in.cut <- cut(1:length(group$vals), b = 200)
-#   in.split <- split(group$vals, in.cut)
-#   names(in.split) <- NULL
-#   group$vals <- in.split
-#   group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
-# }
+if(length(group$vals) > 200) {
+  in.cut <- cut(1:length(group$vals), b = 200)
+  in.split <- split(group$vals, in.cut)
+  names(in.split) <- NULL
+  group$vals <- in.split
+  group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
+}
 	
 #reduce the number of trees if group$vals has more than 15 entries
 #this is for validation
