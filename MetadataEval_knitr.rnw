@@ -261,16 +261,16 @@ par(tcl=-0.2,   #tic length
     mgp=c(1.6,0.4,0) #placement of axis title, labels, line
     )
 
-layout(matrix(c(2,4,6,8,1,3,5,7,10,12,14,16,9,11,13,15), 
-		nrow = 4, ncol = 4, byrow = TRUE), 
-		widths = c(1,1,1,1),heights=c(1,3,1,3))
+layout(matrix(c(17,2,4,6,8,17,1,3,5,7,17,10,12,14,16,17,9,11,13,15), 
+		nrow = 4, ncol = 5, byrow = TRUE), 
+		widths = c(0.15,1,1,1,1),heights=c(1,3,1,3))
 
 pres.dat <- subset(df.full, pres==1)
 abs.dat <- subset(df.full, pres==0)
 
 for (plotpi in 1:8){
-	par(mar=c(3,2,0,0.5))
-	if(is.character(pPlots[[plotpi]]$x)){
+    par(mar=c(3,2,0,0.5))
+  	if(is.character(pPlots[[plotpi]]$x)){
 		barplot(pPlots[[plotpi]]$y, width=rep(1, length(pPlots[[plotpi]]$y)), col="grey",
                               xlab = pPlots[[plotpi]]$fname, ylab = NA,
                               names.arg=pPlots[[plotpi]]$x, space=0.1,
@@ -292,6 +292,7 @@ for (plotpi in 1:8){
 	lines(abs.dens, col="red")
 	}
 }
+  mtext("log of fraction of votes", side = 2, line = -2, outer=TRUE, cex = 0.7)
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
 Figure 4. Partial dependence plots for the eight environmental variables with the 
@@ -393,7 +394,9 @@ for(i in 1:length(sdm.dataSources$ProgramName)){
 @
 \end{itemize}
 
+\medskip
 
+This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, New York Natural Heritage Program, Pennsylvania Natural Heritage Program, and Virginia Natural Heritage Program. It is one of a suite of distribution models developed using the same methods, the same scripts, and the same environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output. This work was supported by the US Fish and Wildlife Service, and the South Atlantic Landscape Conservation Cooperative.
 
 Please cite this document and its associated SDM as: \\
 \hangindent=10pt \Sexpr{sdm.modeler$ProgramName}. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}. \Sexpr{sdm.modeler$FullOrganizationName}, \Sexpr{sdm.modeler$City}, \Sexpr{sdm.modeler$State}.
