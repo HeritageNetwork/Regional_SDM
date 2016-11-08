@@ -301,8 +301,7 @@ of the variable on the probability of appropriate habitat with the
 effects of the other variables removed \cite{liaw2002}. Peaks in the line indicate 
 where this variable had the strongest influence on predicting 
 appropriate habitat. The distribution of each category (thin red = BG points, 
-thick blue = PR points) is depicted at the top margin. Categorical variables are depicted 
-with barplots. 
+thick blue = PR points) is depicted at the top margin. 
 
 \medskip
 \noindent
