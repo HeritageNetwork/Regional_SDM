@@ -20,13 +20,9 @@ library(RSQLite)
 
 inPath <- "G:/RegionalSDM/outputs"
 
-inPath <- "G:/RegionalSDM/_firstFullModelOut"
-rnwPath <- "G:/RegionalSDM/scripts/Regional_SDM"
-outPath <- "G:/RegionalSDM/outputs/metadata"
-gridpath <- "G:/RegionalSDM/_firstFullModelOut/outras"
-stateBoundPath <- "G:/RegionalSDM/_firstFullModelOut/outras"
+## find and load model data ----
+# get a list of what's in the directory
 
-##get a list of what's in the directory
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
