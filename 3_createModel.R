@@ -21,7 +21,7 @@ library(randomForest)
 # directory for file locations
 sppPtLoc <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
 ranPtLoc <- "D:/RegionalSDM/inputs/background"
-dbLoc <- "D:/RegionalSDM/databases"
+dbLoc <- "G:/RegionalSDM/databases"
 pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
 
 setwd(sppPtLoc)
@@ -520,7 +520,7 @@ rf.full.ctoff
 
 # prep the data
 OutPut <- data.frame(SciName = as.character(ElementNames$SciName),
-			 CommName=as.character(ElementNames$CommName),
+			 CommName=sub("'","''",as.character(ElementNames$CommName)),
 			 ElemCode=as.character(ElementNames$Code),
 			 numValidaRuns=length(group$vals),
 			 meanValidaCutoff = cutval,
