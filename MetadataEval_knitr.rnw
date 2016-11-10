@@ -15,7 +15,7 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 \rfoot{p. \thepage}
 
 
-\normalsize} %return the font to normal
+\normalsize %return the font to normal
 
 \begin{document}
 
@@ -80,7 +80,6 @@ all polygons.
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-  library(xtable)
 	summ.table <- data.frame(Name=c("polys","EOs","BG points","PR points"),
                          Number=c(numPys,numEOs,
                          nrow(subset(df.full, pres == 0)),
@@ -100,7 +99,6 @@ fielding2002}.
 
 \begin{center}
 <<tableTwo, results="asis", echo = FALSE>>=
-  library(xtable)
   summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
                                  "TSS", "Kappa", "AUC"), 
                          Mean=c(OvAc.summ$mean, specif.summ$mean,sensit.summ$mean,
@@ -337,7 +335,7 @@ levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewe
 
 @
 \includegraphics{figure/mapFig-1.pdf}    
-Figure 5. A generalized view of the model predictions throughout the study area. State Boundaries are shown in black. The study area is outlined in red.\\ 
+Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in black. The study area is outlined in red. 
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:

@@ -17,6 +17,7 @@ library(RColorBrewer)
 library(rgdal)
 library(rasterVis)
 library(RSQLite)
+library(xtable)
 
 inPath <- "G:/RegionalSDM/outputs"
 
