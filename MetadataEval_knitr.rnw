@@ -8,9 +8,9 @@
 \geometry{letterpaper, top=0.45in, bottom=0.75in, left=0.75in, right=0.75in}
 \pagestyle{fancy} \fancyhf{} \renewcommand\headrulewidth{0pt} %strip default header/footer stuff
 %add footers
-\lfoot{
-\small   %small font
-Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). \Sexpr{sdm.modeler$ProgramName}.
+\cfoot{
+\small   %small font. The double slashes is newline in fancyhdr
+Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). \\ \Sexpr{sdm.modeler$ProgramName}
 }
 \rfoot{p. \thepage}
 
@@ -73,7 +73,7 @@ The statistics in Table 2 report the mean and variance for these jackknifing run
 
 Table 1. Input statistics. 
 <<tableOneLegend, results = "asis", echo=FALSE>>= 
-cat("Polys = input polygons; EOs = known locations; Groups = ", group$JackknType)
+cat("Polys = input polygons; EOs = element occurrences (known locations); Groups = ", group$JackknType)
 @
 BG points = background points; PR points = presence points placed throughout
 all polygons.
