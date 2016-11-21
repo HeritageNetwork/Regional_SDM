@@ -188,7 +188,7 @@ averaged along cutoffs.
 \smallskip  %dummy first line to align with previous minipage
 
 <<importanceFig, fig.width=3.0, fig.height=5.25, include=FALSE, echo=FALSE>>=
-par(mar=c(2.5,2.5,.5,2.5),   #bottom, left, top, right
+par(mar=c(3.2,2.5,.5,1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
     mgp=c(1.3,0.4,0) #placement of axis title, labels, line
     )
@@ -196,10 +196,11 @@ par(mar=c(2.5,2.5,.5,2.5),   #bottom, left, top, right
   ord <- rev(order(EnvVars$impVal, decreasing = TRUE)[1:n.var])
   xmin.i <- min(EnvVars$impVal)
   #create importance dot chart
-  dotchart(EnvVars$impVal[ord], xlab = expression("lower" %->% "greater importance"),
+  dotchart(EnvVars$impVal[ord], xlab = expression("lower" %->% "greater"),
     xlim = c(xmin.i, max(EnvVars$impVal)), labels = EnvVars$fullName[ord],
     cex = 0.62     #character size
   )
+  mtext("importance", side = 1, line = 2, cex = 0.62)
 @
 \begin{center}
 \includegraphics{figure/importanceFig-1.pdf}    %place it
