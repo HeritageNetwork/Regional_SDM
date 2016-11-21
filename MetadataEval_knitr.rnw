@@ -188,7 +188,7 @@ averaged along cutoffs.
 \smallskip  %dummy first line to align with previous minipage
 
 <<importanceFig, fig.width=3.0, fig.height=5.25, include=FALSE, echo=FALSE>>=
-par(mar=c(3.2,2.5,.5,1),   #bottom, left, top, right
+par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
     mgp=c(1.3,0.4,0) #placement of axis title, labels, line
     )
