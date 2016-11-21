@@ -134,7 +134,7 @@ plot(perf,lwd=2,
         avg="threshold", colorize = TRUE,
         #print.cutoffs.at = c(rf.full.ctoff[2], cutval.rf[2]),
         #text.adj=c(-0.6,1.5), points.pch=19, points.cex=0.8, text.cex=0.8,
-        xlab="Av. false positive rate", ylab="Av. true positive rate",
+        xlab="Avg. false positive rate", ylab="Avg. true positive rate",
         colorkey.relwidth = 0.5,
         colorize.palette=rainbow(256,start=3/6, end=0), colorkey.line = 1,
         colorkey = FALSE
