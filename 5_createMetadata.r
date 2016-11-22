@@ -38,6 +38,7 @@ stateBoundPath <- "G:/RegionalSDM/other_spatial"
 dbLoc <- "G:/RegionalSDM/databases"
 
 extentMapName <- "StatesNE"
+
 testareapath <- "G:/RegionalSDM/other_spatial"
 testAreaName <- "reg5_pred_20161027"
 
