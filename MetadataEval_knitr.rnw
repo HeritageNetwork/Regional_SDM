@@ -206,7 +206,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
-model using all sites as input. 
+model using all sites as input. Abbreviations used: CP = coastal plain, precip = precipitation, temp = temperature, max = maximum, min = minimum, fresh = freshwater, calc = calcareous.
 
 <<densityFig, fig.width=2, fig.height=1.5, include=FALSE, echo=FALSE>>=
 par(mar=c(2.5, 2.5, 0.5, 0.5),   #bottom, left, top, right
