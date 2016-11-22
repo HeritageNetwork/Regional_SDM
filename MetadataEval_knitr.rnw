@@ -187,7 +187,7 @@ averaged along cutoffs.
 
 \smallskip  %dummy first line to align with previous minipage
 
-<<importanceFig, fig.width=3.0, fig.height=5.25, include=FALSE, echo=FALSE>>=
+<<importanceFig, fig.width=3.0, fig.height=6.75, include=FALSE, echo=FALSE>>=
 par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
     mgp=c(1.3,0.4,0) #placement of axis title, labels, line
@@ -208,52 +208,6 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
 Figure 2. Relative importance of each environmental variable based on the full
 model using all sites as input. Abbreviations used: CP = coastal plain, precip = precipitation, temp = temperature, max = maximum, min = minimum, fresh = freshwater, calc = calcareous.
 
-<<densityFig, fig.width=2, fig.height=1.5, include=FALSE, echo=FALSE>>=
-par(mar=c(2.5, 2.5, 0.5, 0.5),   #bottom, left, top, right
-    tcl=-0.1,   #tic length
-    cex=0.6,     #text size  
-    mgp=c(1.6,0.4,0) #placement of axis title, labels, line
-    )
-# get the plot started with a dummy point that isn't drawn
-plot(x=0.5, xlim=c(0,1), ylim=c(0,200),
-     xlab="cutoff", ylab="density", main=NA, pch= NA)
-# add in the rest
-for (i in 1:length(v.rocr.pred.restruct@predictions)) {
-  if(length(v.rocr.pred.restruct@labels[[i]][v.rocr.pred.restruct@labels[[i]] == 0]) > 1)
-    {
-     lines(
-     density(v.rocr.pred.restruct@predictions[[i]][v.rocr.pred.restruct@labels[[i]] == 0]),
-     col = "red")
-    }
-    if(length(v.rocr.pred.restruct@labels[[i]][v.rocr.pred.restruct@labels[[i]] == 1]) > 1)
-    {
-     lines(
-     density(v.rocr.pred.restruct@predictions[[i]][v.rocr.pred.restruct@labels[[i]] == 1]),
-     col = "blue")
-    }
-  }
-
-# ## add an arrow to point to the cutoff
-# # arrow for cutoff based on average ROC curve
-# arrows(cutval.rf[2], 200, cutval.rf[2], 160,
-#                     length=0.05, angle=30, lwd=2, ljoin=2,
-#                     xpd=TRUE)                    
-# # arrow for cutoff based on full model                    
-# arrows(rf.full.ctoff[2], 60, rf.full.ctoff[2], 20, 
-#                     length=0.05, angle=30, lwd=2, ljoin=2,
-#                     xpd=TRUE)
-@
-
-\medskip
-\medskip
-\medskip
-
-\includegraphics{figure/densityFig-1.pdf}    %place it
-  \begin{minipage}[b]{1.4in}
-  Figure 3. Separation between presence and background points. Red and blue lines show 
-  densities of absence and presence points, respectively. One of each is drawn for 
-  each validation run.
-  \end{minipage}
 \end{minipage} 
 
 \normalsize
@@ -299,7 +253,7 @@ for (plotpi in 1:8){
   mtext("log of fraction of votes", side = 2, line = -2, outer=TRUE, cex = 0.7)
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
-Figure 4. Partial dependence plots for the eight environmental variables with the 
+Figure 3. Partial dependence plots for the eight environmental variables with the 
 most influence on the model. Each plot shows the effect 
 of the variable on the probability of appropriate habitat with the 
 effects of the other variables removed \cite{liaw2002}. Peaks in the line indicate 
