@@ -20,6 +20,7 @@ n <- 1
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
+## Calculate different thresholds ----
 #get minimum training presence
 x <- data.frame(rf.full$y, rf.full$votes)
 y <- x[x$rf.full.y ==1,]
@@ -41,17 +42,47 @@ maxSSS <- rf.full.sss[which.max(rf.full.sss$sss),"cutSens"]
 rf.full.sss$diff <- abs(rf.full.sss$sens - rf.full.sss$spec)
 eqss <- rf.full.sss[which.min(rf.full.sss$diff),"cutSens"]
 
+allThresh <- data.frame("MTP" = MTP, "tenthPctile" = TenPctile, 
+                        "maxSumSensSpec" = maxSSS, "eqSensSpec" = eqss, 
+                        "FMeasure" = rf.full.ctoff[2], "FMeasAlpha" = alph,
+                        row.names = ElementNames$Code)
+
+## choose threshold, create binary grid ----
+#lets set the threshold to MTP
+threshold <- allThresh$MTP
 
 # load the prediction grid
 ras <- raster(paste(gridpath,"/",ElementNames$Code, ".tif", sep = ""))
-#set a threshhold. This is from...
-threshold <- round(rf.full.ctoff[2],3)
-threshold <- round(maxSSS, 4)
 
-# reclassify the raster based on the threshold
-rasrc <- reclassify(ras, c(-Inf,threshold,0,  threshold,Inf,1))
+# reclassify the raster based on the threshold into binary 0/1
+m <- cbind(
+  from = c(-Inf, threshold),
+  to = c(threshold, Inf),
+  becomes = c(0, 1)
+)
+
+rasrc <- reclassify(ras, m)
 
 #plot(rasrc)
 outfile <- paste(outRas,"/",ElementNames$Code,"_threshold.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
 
+#clean up
+rm(m, rasrc)
+
+## continuous grid that drops cells below thresh ----
+# reclassify the raster based on the threshold into Na below thresh
+m <- cbind(
+  from = c(-Inf),
+  to = c(threshold),
+  becomes = c(NA)
+)
+
+rasrc <- reclassify(ras, m)
+
+#plot(rasrc)
+outfile <- paste(outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
+writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
+
+#clean up
+rm(m, rasrc)
