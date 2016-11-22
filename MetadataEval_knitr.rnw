@@ -280,10 +280,10 @@ appropriate to use in this case. For a more conservative depiction of suitable h
 
 extentmap <- readOGR(stateBoundPath, extentMapName, stringsAsFactors=FALSE) # name of state boundaries file
 
-testarea <- readOGR(testareapath, testAreaName)
+testarea <- readOGR(testareapath, testAreaName, stringsAsFactors=FALSE) 
 
 myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
-levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(extentmap)) + layer(sp.polygons(testarea,lwd=0.1, col='red'))
+levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(extentmap,lwd=0.05,col='gray')) + layer(sp.polygons(testarea,lwd=1, col='red'))
 
 @
 \includegraphics{figure/mapFig-1.pdf}    
