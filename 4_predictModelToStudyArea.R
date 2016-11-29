@@ -18,7 +18,7 @@ rdataLoc <- "D:/RegionalSDM/zz_testArea/outputs"
 pathToRas <- "D:/RegionalSDM/zz_testArea/env_vars/geotiffs"
 
 # output path (best if different from rdataloc)
-outRas <- "D:/RegionalSDM/zz_testArea/outputs/grids"
+outRasPath <- "D:/RegionalSDM/zz_testArea/outputs/grids"
 
 # get the customized version of the predict function
 source('D:/RegionalSDM/scripts/Regional_SDM/RasterPredictMod.R')
@@ -44,7 +44,7 @@ names(fullL) <- stackOrder
 envStack <- stack(fullL)
 
 
-fileNm <- paste(outRas, ElementNames$Code, sep = "/")
+fileNm <- paste(outRasPath, ElementNames$Code, sep = "/")
 
 
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
