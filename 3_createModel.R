@@ -520,14 +520,16 @@ rf.full.ctoff
 
 # prep the data
 OutPut <- data.frame(SciName = as.character(ElementNames$SciName),
-			 CommName=sub("'","''",as.character(ElementNames$CommName)),
-			 ElemCode=as.character(ElementNames$Code),
-			 numValidaRuns=length(group$vals),
-			 meanValidaCutoff = cutval,
-			 fullRunCutoff = rf.full.ctoff["1"],
-			 date = paste(Sys.Date()),
-			 time = format(Sys.time(), "%X"), stringsAsFactors = FALSE
-			 )
+
+CommName=sub("'","''",as.character(ElementNames$CommName)),
+ElemCode=as.character(ElementNames$Code),
+numValidaRuns=length(group$vals),
+meanValidaCutoff = cutval,
+fullRunCutoff = rf.full.ctoff["1"],
+date = paste(Sys.Date()),
+time = format(Sys.time(), "%X"), stringsAsFactors = FALSE
+)
+
 			 
 #write the data to the database
 # problems with dbWriteTable (from an upgrade?)

@@ -20,6 +20,7 @@ pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
 # output path (best if different from rdataloc)
 outRas <- "K:/Reg5Modeling_Project/outputs/grids"
 
+
 # get the customized version of the predict function
 source('K:/Reg5Modeling_Project/scripts/Regional_SDM/RasterPredictMod.R')
 
@@ -44,7 +45,7 @@ names(fullL) <- stackOrder
 envStack <- stack(fullL)
 
 
-fileNm <- paste(outRas, ElementNames$Code, sep = "/")
+fileNm <- paste(outRasPath, ElementNames$Code, sep = "/")
 
 
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)

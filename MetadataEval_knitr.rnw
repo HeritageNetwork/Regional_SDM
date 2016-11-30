@@ -8,14 +8,14 @@
 \geometry{letterpaper, top=0.45in, bottom=0.75in, left=0.75in, right=0.75in}
 \pagestyle{fancy} \fancyhf{} \renewcommand\headrulewidth{0pt} %strip default header/footer stuff
 %add footers
-\lfoot{
-\small   %small font
-Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). \Sexpr{sdm.modeler$ProgramName}.
+\cfoot{
+\small   %small font. The double slashes is newline in fancyhdr
+Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). \\ \Sexpr{sdm.modeler$ProgramName}
 }
 \rfoot{p. \thepage}
 
 
-\normalsize} %return the font to normal
+\normalsize %return the font to normal
 
 \begin{document}
 
@@ -73,14 +73,13 @@ The statistics in Table 2 report the mean and variance for these jackknifing run
 
 Table 1. Input statistics. 
 <<tableOneLegend, results = "asis", echo=FALSE>>= 
-cat("Polys = input polygons; EOs = known locations; Groups = ", group$JackknType)
+cat("Polys = input polygons; EOs = element occurrences (known locations); Groups = ", group$JackknType)
 @
 BG points = background points; PR points = presence points placed throughout
 all polygons.
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-  library(xtable)
 	summ.table <- data.frame(Name=c("polys","EOs","BG points","PR points"),
                          Number=c(numPys,numEOs,
                          nrow(subset(df.full, pres == 0)),
@@ -100,7 +99,6 @@ fielding2002}.
 
 \begin{center}
 <<tableTwo, results="asis", echo = FALSE>>=
-  library(xtable)
   summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
                                  "TSS", "Kappa", "AUC"), 
                          Mean=c(OvAc.summ$mean, specif.summ$mean,sensit.summ$mean,
@@ -136,7 +134,7 @@ plot(perf,lwd=2,
         avg="threshold", colorize = TRUE,
         #print.cutoffs.at = c(rf.full.ctoff[2], cutval.rf[2]),
         #text.adj=c(-0.6,1.5), points.pch=19, points.cex=0.8, text.cex=0.8,
-        xlab="Av. false positive rate", ylab="Av. true positive rate",
+        xlab="Avg. false positive rate", ylab="Avg. true positive rate",
         colorkey.relwidth = 0.5,
         colorize.palette=rainbow(256,start=3/6, end=0), colorkey.line = 1,
         colorkey = FALSE
@@ -189,8 +187,8 @@ averaged along cutoffs.
 
 \smallskip  %dummy first line to align with previous minipage
 
-<<importanceFig, fig.width=3.0, fig.height=5.25, include=FALSE, echo=FALSE>>=
-par(mar=c(2.5,2.5,.5,2.5),   #bottom, left, top, right
+<<importanceFig, fig.width=3.0, fig.height=6.75, include=FALSE, echo=FALSE>>=
+par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
     mgp=c(1.3,0.4,0) #placement of axis title, labels, line
     )
@@ -198,63 +196,18 @@ par(mar=c(2.5,2.5,.5,2.5),   #bottom, left, top, right
   ord <- rev(order(EnvVars$impVal, decreasing = TRUE)[1:n.var])
   xmin.i <- min(EnvVars$impVal)
   #create importance dot chart
-  dotchart(EnvVars$impVal[ord], xlab = expression("lower" %->% "greater importance"),
+  dotchart(EnvVars$impVal[ord], xlab = expression("lower" %->% "greater"),
     xlim = c(xmin.i, max(EnvVars$impVal)), labels = EnvVars$fullName[ord],
     cex = 0.62     #character size
   )
+  mtext("importance", side = 1, line = 2, cex = 0.62)
 @
 \begin{center}
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
-model using all sites as input. 
+model using all sites as input. Abbreviations used: calc = calcareous, CP = coastal plain, dist = distance, fresh = freshwater, precip = precipitation, temp = temperature, max = maximum, min = minimum.
 
-<<densityFig, fig.width=2, fig.height=1.5, include=FALSE, echo=FALSE>>=
-par(mar=c(2.5, 2.5, 0.5, 0.5),   #bottom, left, top, right
-    tcl=-0.1,   #tic length
-    cex=0.6,     #text size  
-    mgp=c(1.6,0.4,0) #placement of axis title, labels, line
-    )
-# get the plot started with a dummy point that isn't drawn
-plot(x=0.5, xlim=c(0,1), ylim=c(0,200),
-     xlab="cutoff", ylab="density", main=NA, pch= NA)
-# add in the rest
-for (i in 1:length(v.rocr.pred.restruct@predictions)) {
-  if(length(v.rocr.pred.restruct@labels[[i]][v.rocr.pred.restruct@labels[[i]] == 0]) > 1)
-    {
-     lines(
-     density(v.rocr.pred.restruct@predictions[[i]][v.rocr.pred.restruct@labels[[i]] == 0]),
-     col = "red")
-    }
-    if(length(v.rocr.pred.restruct@labels[[i]][v.rocr.pred.restruct@labels[[i]] == 1]) > 1)
-    {
-     lines(
-     density(v.rocr.pred.restruct@predictions[[i]][v.rocr.pred.restruct@labels[[i]] == 1]),
-     col = "blue")
-    }
-  }
-
-# ## add an arrow to point to the cutoff
-# # arrow for cutoff based on average ROC curve
-# arrows(cutval.rf[2], 200, cutval.rf[2], 160,
-#                     length=0.05, angle=30, lwd=2, ljoin=2,
-#                     xpd=TRUE)                    
-# # arrow for cutoff based on full model                    
-# arrows(rf.full.ctoff[2], 60, rf.full.ctoff[2], 20, 
-#                     length=0.05, angle=30, lwd=2, ljoin=2,
-#                     xpd=TRUE)
-@
-
-\medskip
-\medskip
-\medskip
-
-\includegraphics{figure/densityFig-1.pdf}    %place it
-  \begin{minipage}[b]{1.4in}
-  Figure 3. Separation between presence and background points. Red and blue lines show 
-  densities of absence and presence points, respectively. One of each is drawn for 
-  each validation run.
-  \end{minipage}
 \end{minipage} 
 
 \normalsize
@@ -300,7 +253,7 @@ for (plotpi in 1:8){
   mtext("log of fraction of votes", side = 2, line = -2, outer=TRUE, cex = 0.7)
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
-Figure 4. Partial dependence plots for the eight environmental variables with the 
+Figure 3. Partial dependence plots for the eight environmental variables with the 
 most influence on the model. Each plot shows the effect 
 of the variable on the probability of appropriate habitat with the 
 effects of the other variables removed \cite{liaw2002}. Peaks in the line indicate 
@@ -316,11 +269,8 @@ a targeted element will occur with certainty, it can \textit{only} depict locati
 as appropriate habitat for the targeted element. SDMs can be used in many ways and the 
 depiction of appropriate habitat should be varied depending on intended use. For targeting
 field surveys, an SDM may be used to refine the search area; users should always employ
-additional GIS tools to further direct search efforts. A lower cutoff depicting more land area
-such as that derived from the validation ROC plots (\Sexpr{round(cutval.rf[2],3)}) may be 
-appropriate to use in this case. For a more conservative depiction of suitable habitat that
-shows less land area, a higher cutoff such as that derived from the final model
-(\Sexpr{round(rf.full.ctoff[2],3)}) may be more appropriate.
+additional GIS tools to further direct search efforts. A lower cutoff depicting more land area may be 
+appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less land area, a higher cutoff may be more appropriate.
 
 
 
@@ -330,14 +280,14 @@ shows less land area, a higher cutoff such as that derived from the final model
 
 extentmap <- readOGR(stateBoundPath, extentMapName, stringsAsFactors=FALSE) # name of state boundaries file
 
-testarea <- readOGR(testareapath, testAreaName)
+testarea <- readOGR(testareapath, testAreaName, stringsAsFactors=FALSE) 
 
 myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
-levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(extentmap)) + layer(sp.polygons(testarea,lwd=0.1, col='red'))
+levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(extentmap,lwd=0.05,col='gray')) + layer(sp.polygons(testarea,lwd=1, col='red'))
 
 @
 \includegraphics{figure/mapFig-1.pdf}    
-Figure 5. A generalized view of the model predictions throughout the study area. State Boundaries are shown in black. The study area is outlined in red.\\ 
+Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in black. The study area is outlined in red. 
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
