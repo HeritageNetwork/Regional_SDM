@@ -520,7 +520,7 @@ rf.full.ctoff
 
 # prep the data
 OutPut <- data.frame(SciName = as.character(ElementNames$SciName),
-			 CommName=as.character(ElementNames$CommName),
+			 CommName=sub("'","''",as.character(ElementNames$CommName)),
 			 ElemCode=as.character(ElementNames$Code),
 			 numValidaRuns=length(group$vals),
 			 meanValidaCutoff = cutval,

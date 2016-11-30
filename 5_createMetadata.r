@@ -20,7 +20,6 @@ library(RSQLite)
 
 inPath <- "G:/RegionalSDM/outputs"
 
-
 ## find and load model data ----
 # get a list of what's in the directory
 
@@ -62,6 +61,7 @@ SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
   "INNER JOIN lkpDataSources as sr ON mp.DataSourcesID=sr.DataSourcesID ",
   "WHERE sp.CODE='", ElementNames$Code, "'; ", sep="")
 sdm.dataSources <- dbGetQuery(db, statement = SQLquery)
+sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
 ##clean up
 options(op)
