@@ -7,25 +7,27 @@ library(rgdal)
 library(RSQLite)
 library(maptools)
 
-## Set Working Directory to the rasters location
-# assume you are using native R rasters, tweak if not 
+# Set paths ----
 pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
+pathToRanPts <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
+
 setwd(pathToRas)
 
-## create a stack (assume you are using native R rasters)
+# load data, QC ----
+# create a stack (assume you are using native R rasters)
 raslist <- list.files(pattern = ".tif$")
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
 names(gridlist) <- nm
 
-## check to make sure there are no names greater than 10 chars
+# check to make sure there are no names greater than 10 chars
 nmLen <- unlist(lapply(nm, nchar))
 max(nmLen) # if this result is greater than 10, you've got a renegade
 
 envStack <- stack(gridlist)
 
-## Set working directory to the random points location
-setwd("D:/RegionalSDM/inputs/species/glypmuhl/point_data")
+# Set working directory to the random points location
+setwd(pathToRanPts)
 
 ranPtsFiles <- list.files(pattern = ".RanPts.shp$")
 ranPtsFiles
@@ -42,20 +44,21 @@ projInfo <- shpf@proj4string
 #Get the species code for the ranPtsFile chosen
 code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))[[n]]
 
-####
-##  Bilinear interpolation is a *huge* memory hog. We 
-##  may need to just do it all as 'simple'. geez.
-####
+# extract raster data to points ----
+##  Bilinear interpolation is a *huge* memory hog. 
+##  Do it all as 'simple' 
+
 x <- extract(envStack, shpf, method="simple", sp=TRUE)
 filename <- paste(code_name, "_att", sep="")
 
+
+# write it out ----
 # apply projection info
 x@proj4string <- projInfo
-
 writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 ####
-# The remaining code explores bilinear interpolation options
+# The remaining code explores bilinear interpolation options ----
 ####
 
 ## If we have any categorical data sets, then we need to extract the cell values
