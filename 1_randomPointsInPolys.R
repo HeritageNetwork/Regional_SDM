@@ -50,8 +50,10 @@ shapef <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
 shpColNms <- names(shapef@data)
 desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
-	stop("at least one column is missing or incorrectly named")
-	}
+	  stop("at least one column is missing or incorrectly named")
+  } else {
+    print("Required columns are present")
+  }
 
 #pare down columns
 shapef@data <- shapef@data[,desiredCols]
@@ -115,9 +117,9 @@ ERA_wgt <- c("very high" = 2, "high" = 1.5, "medium" = 1, "low" = 0.75, "very lo
 att.pt$ERAWT <- unname(ERA_wgt[att.pt$RA])
 att.pt$PSampNum <- att.pt$ERAWT * att.pt$PolySampNum
 
-#create the vector for indicating how many points to put in each polygon, 
-#then each value in the vector needs to be attributed to the sampling unit 
-#(either EO_ID or Shape_ID)
+# create the vector for indicating how many points to put in each polygon, 
+# then each value in the vector needs to be attributed to the sampling unit 
+# (either EO_ID or Shape_ID)
 sampNums <- c(att.pt[,"PSampNum"])
 names(sampNums) <- att.pt[,"EXPL_ID"]
 
@@ -126,8 +128,8 @@ names(sampNums) <- att.pt[,"EXPL_ID"]
 # 2 when sample size = 1, otherwise 0
 overAmt <- ifelse(sampNums == 1,2,0)
 
-#initialize the design list and the names vector so 
-#they are available in the for loop
+# initialize the design list and the names vector so 
+# they are available in the for loop
 SampDesign <- vector("list",length(sampNums))
 namesVec <- vector("list", length(sampNums))
 
@@ -195,7 +197,5 @@ OutPut <- data.frame(SciName = paste(att.pt[1,"SNAME"]),
 #Write the data to the SQLite database
 dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
 
-
 #Close Connection to the SQL DB
 dbDisconnect(db)
-
