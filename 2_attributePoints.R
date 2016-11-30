@@ -14,8 +14,12 @@ pathToRanPts <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
 setwd(pathToRas)
 
 # load data, QC ----
-# create a stack (assume you are using native R rasters)
+# create a stack
+# if using TIFFs, use this line
 raslist <- list.files(pattern = ".tif$")
+# if using native R rasters, use this line
+#raslist <- list.files(pattern = ".grd$")
+
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
 names(gridlist) <- nm
