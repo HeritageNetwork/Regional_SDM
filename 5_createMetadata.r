@@ -17,6 +17,7 @@ library(RColorBrewer)
 library(rgdal)
 library(rasterVis)
 library(RSQLite)
+library(xtable)
 
 inPath <- "G:/RegionalSDM/outputs"
 
@@ -37,6 +38,7 @@ stateBoundPath <- "G:/RegionalSDM/other_spatial"
 dbLoc <- "G:/RegionalSDM/databases"
 
 extentMapName <- "StatesNE"
+
 testareapath <- "G:/RegionalSDM/other_spatial"
 testAreaName <- "reg5_pred_20161027"
 
@@ -60,6 +62,7 @@ SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
   "INNER JOIN lkpDataSources as sr ON mp.DataSourcesID=sr.DataSourcesID ",
   "WHERE sp.CODE='", ElementNames$Code, "'; ", sep="")
 sdm.dataSources <- dbGetQuery(db, statement = SQLquery)
+sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
 ##clean up
 options(op)
