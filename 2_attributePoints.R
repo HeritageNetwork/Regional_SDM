@@ -16,9 +16,9 @@ setwd(pathToRas)
 # load data, QC ----
 # create a stack
 # if using TIFFs, use this line
-raslist <- list.files(pattern = ".tif$")
+#raslist <- list.files(pattern = ".tif$")
 # if using native R rasters, use this line
-#raslist <- list.files(pattern = ".grd$")
+raslist <- list.files(pattern = ".grd$")
 
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
