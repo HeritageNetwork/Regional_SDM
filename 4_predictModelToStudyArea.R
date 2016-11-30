@@ -9,8 +9,8 @@ library(randomForest)
 
 #####
 #  Lines that require editing
-#
 
+# set up paths ----
 # directory for the RData files (analysis data)
 rdataLoc <- "K:/Reg5Modeling_Project/outputs"
 
@@ -28,7 +28,8 @@ source('K:/Reg5Modeling_Project/scripts/Regional_SDM/RasterPredictMod.R')
 #
 #####
 
-## get the rdata file
+# load data ----
+# get the rdata file
 setwd(rdataLoc)
 fileList <- dir(pattern = ".Rdata$",full.names=FALSE)
 fileList
@@ -44,10 +45,8 @@ fullL <- as.list(paste(pathToRas, rasL, sep="/"))
 names(fullL) <- stackOrder
 envStack <- stack(fullL)
 
-
+# run prediction ----
 fileNm <- paste(outRasPath, ElementNames$Code, sep = "/")
-
-
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
 #writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)

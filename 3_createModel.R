@@ -18,7 +18,7 @@ library(randomForest)
 #####
 #  Lines that require editing
 #
-# directory for file locations
+# set up paths ----
 sppPtLoc <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
 ranPtLoc <- "K:/Reg5Modeling_Project/inputs/background"
 dbLoc <- "K:/Reg5Modeling_Project/databases"
@@ -39,6 +39,7 @@ df.abs <- read.dbf(paste(ranPtLoc,"sdmclpbnd_20160831_buffNeg1000_att_Reg5_clean
 #
 #####
 
+# align data sets, QC ----
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
 df.abs <- cbind(df.abs, EO_ID_ST=99999, 
@@ -46,7 +47,7 @@ df.abs <- cbind(df.abs, EO_ID_ST=99999,
 
 df.abs$stratum <- "pseu-a"
 
-##lower case column names
+# lower case column names
 names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
@@ -54,7 +55,7 @@ names(df.abs) <- tolower(names(df.abs))
 raslist <- list.files(path = pathToRas, pattern = ".grd$")
 rasnames <- gsub(".grd", "", raslist)
 
-# are these all in the lookup database? Will create problems later if not
+# are these all in the lookup database? Checking here.
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 db <- dbConnect(SQLite(),dbname=db_file)  
 op <- options("useFancyQuotes") 
@@ -63,8 +64,6 @@ SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (
                   toString(sQuote(rasnames)),
                   "); ", sep = "")
 namesInDB <- dbGetQuery(db, statement = SQLquery)
-
-#note the query is case sensitive, we should probably fix that (COLLATE NOCASE)
 namesInDB$gridName <- tolower(namesInDB$gridName)
 rasnames <- tolower(rasnames)
 
@@ -77,12 +76,11 @@ rasnames[!rasnames %in% namesInDB$gridName]
 ## if blank you are good to go
 rasnames[!rasnames %in% names(df.in)]
 
-##clean up
+# clean up
 options(op)
 dbDisconnect(db)
 
-#this is the full list of fields, arranged appropriately
-
+# this is the full list of fields, arranged appropriately
 colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
 
 # if colList gets modified, 
@@ -90,15 +88,6 @@ colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
 depVarCol <- 3
 indVarCols <- c(6:length(colList))
 
-# create a list of definitions for each envar that is a factor
-# factor.defs <- list(
-	# pres = c(0,1),
-	# ccapnhp09 = c(2:15,17:23,"-9999"),
-	# ccapnhp6 = c("12","1323","1921","2345","67820","91011","-9999"),
-	# gclass09 = c(seq(100,700, by=100),"900","997","999","-9999"),
-	# nyaspct09 = c(1:9,"-9999"),
-	# surfg2209 = c("1", "3", 8:12, "15", "16", "26", "27", "32", "33", "35", "417", "562", "1830", "2229", "3134", "142513", "192021", "723248","-9999"))
-	
 #re-arrange
 df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
@@ -113,8 +102,7 @@ db <- dbConnect(SQLite(),dbname=db_file)
 ElementNames <- as.list(c(SciName="",CommName="",Code="",Type=""))
 ElementNames[1] <- as.character(df.in[1,"sname"])
 
-##get the names used in metadata output
-# populate the code field
+# get the names used in metadata output
 SQLquery <- paste("SELECT CODE FROM lkpSpecies WHERE SCIEN_NAME = '", 
 	ElementNames[1],"' ;", sep="")
 ElementNames[3] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
@@ -129,17 +117,11 @@ ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
 dbDisconnect(db)
 
-##row bind the pseudo-absences with the presence points
+# row bind the pseudo-absences with the presence points
 df.abs$eo_id_st <- factor(df.abs$eo_id_st)
 df.full <- rbind(df.in, df.abs)
 
-# ##make factors using definitions set up earlier
-# for(colName in names(factor.defs)) {
-	# df.full[[colName]] <- factor(df.full[[colName]],
-	# levels=factor.defs[[colName]])
-  # } 
-
-#reset these factors to remove values from other species 
+# reset these factors
 df.full$stratum <- factor(df.full$stratum)
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
@@ -147,7 +129,7 @@ df.full$ra <- factor(df.full$ra)
 df.full$sname <- factor(df.full$sname)
 	
 ##
-# tune mtry (full model)
+# tune mtry ----
 # run through mtry twice
 
 x <- tuneRF(df.full[,indVarCols],
@@ -164,12 +146,9 @@ mtry <- max(y[y[,2] == min(y[,2]),1])
 
 rm(x,y)
 
-#####
 ##
-# code below is for removing least important env vars
-# we need to discuss value in applying. Probably try both ways?
+# Remove the least important env vars ----
 ##
-#####
 
 ntrees <- 1000
 rf.find.envars <- randomForest(df.full[,indVarCols],
@@ -182,21 +161,19 @@ impvals <- importance(rf.find.envars, type = 1)
 # here, choosing above 25% percentile
 y <- quantile(impvals, probs = 0.40)  #TODO add this in the metadata
 impEnvVars <- impvals[impvals > y,]
-#which columns are these, then flip the non-envars to TRUE
+# which columns are these, then flip the non-envars to TRUE
 impEnvVarCols <- names(df.full) %in% names(impEnvVars)
 impEnvVarCols[1:5] <- TRUE
-#subset!
+# subset!
 df.full <- df.full[,impEnvVarCols]
-#reset the indvarcols object
+# reset the indvarcols object
 indVarCols <- c(6:length(names(df.full)))
 
-#####
 ##
 # code above is for removing least important env vars
 ##
-#####
 
-
+# prep for validation loop ----
 #now that entire set is cleaned up, split back out to use any of the three DFs below
 df.in2 <- subset(df.full,pres == "1")
 df.abs2 <- subset(df.full, pres == "0")
@@ -282,7 +259,7 @@ v.rocr.pred <- vector("list",length(group$vals))
    names(v.rocr.pred) <- group$vals[]
 
 #######
-## This is the validation loop.
+## This is the validation loop. ----
 ## it creates a model for all-but-one group (EO, polygon, or group),
 ## tests if it can predict that group left out,
 ## then moves on to another group, cycling though all groups
@@ -476,20 +453,12 @@ if(length(group$vals)>1){
 	cutval <- NA
 }
 
-# #reduce the number of trees if number of rows exceeds 20k
-# #TODO re-evaluate for this project
-# if(nrow(df.full) > 20000) {
-# 	ntrees <- 300
-# 	} else {
-# 	ntrees <- 600
-# }
-   
 # increase the number of trees for the full model
 ntrees <- 2000
    
 ####
-#   run the full model
-#####
+#   run the full model ----
+####
 cat("running full model", "\n")
 rf.full <- randomForest(df.full[,indVarCols],
 						y=df.full[,depVarCol],
@@ -498,7 +467,7 @@ rf.full <- randomForest(df.full[,indVarCols],
 						mtry=mtry)
 
 ####
-# get cutoff data
+# get cutoff data ----
 ####
 
 db <- dbConnect(SQLite(),dbname=db_file)
@@ -546,7 +515,7 @@ options(op)
 dbDisconnect(db)
 
 ####
-# Importance measures
+# Importance measures ----
 ####
 #get the importance measures (don't get GINI coeff - see Strobl et al. 2006)
 f.imp <- importance(rf.full, class = NULL, scale = TRUE, type = NULL)
@@ -566,7 +535,7 @@ for(i in 1:length(EnvVars$gridName)){
 dbDisconnect(db)
 
 ###
-# partial plot data
+# partial plot data ----
 ###
 #get the order for the importance charts
 ord <- order(EnvVars$impVal, decreasing = TRUE)[1:n.var]
@@ -588,5 +557,3 @@ for(i in 1:8){
 setwd(rdataOut)
 save.image(file = paste(ElementNames$Code, ".Rdata", sep=""))
 setwd(sppPtLoc)
-
-
