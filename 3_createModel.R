@@ -79,6 +79,7 @@ rasnames[!rasnames %in% names(df.in)]
 # clean up
 options(op)
 dbDisconnect(db)
+rm(db)
 
 # this is the full list of fields, arranged appropriately
 colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
@@ -116,6 +117,7 @@ SQLquery <- paste("SELECT ELEMTYPE FROM lkpSpecies WHERE SCIEN_NAME = '",
 ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
 dbDisconnect(db)
+rm(db)
 
 # row bind the pseudo-absences with the presence points
 df.abs$eo_id_st <- factor(df.abs$eo_id_st)
@@ -143,7 +145,6 @@ y <- tuneRF(df.full[,indVarCols],
             ntreeTry = 50, stepFactor = 1.5, mtryStart = max(newTry))
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
-
 rm(x,y)
 
 ##
@@ -158,9 +159,13 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
                         mtry=mtry)
 
 impvals <- importance(rf.find.envars, type = 1)
-# here, choosing above 25% percentile
-y <- quantile(impvals, probs = 0.40)  #TODO add this in the metadata
+OriginalNumberOfEnvars <- length(impvals)
+# set the percentile, here choosing above 25% percentile
+envarPctile <- 0.25
+y <- quantile(impvals, probs = envarPctile)
 impEnvVars <- impvals[impvals > y,]
+subsetNumberofEnvars <- length(impEnvVars)
+rm(y)
 # which columns are these, then flip the non-envars to TRUE
 impEnvVarCols <- names(df.full) %in% names(impEnvVars)
 impEnvVarCols[1:5] <- TRUE
@@ -208,7 +213,6 @@ if(numEOs < 10) {
 
 # # reduce the number of groups, if there are more than 200, to 200 groups
 # # this groups the groups simply if they are adjacent in the order created above.
-# #  -- the routine runs out of memory if groups go over about 250 (WinXP 32 bit, 3GB avail RAM)
 if(length(group$vals) > 200) {
   in.cut <- cut(1:length(group$vals), b = 200)
   in.split <- split(group$vals, in.cut)
@@ -217,7 +221,7 @@ if(length(group$vals) > 200) {
   group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
 }
 	
-#reduce the number of trees if group$vals has more than 15 entries
+#reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
 if(length(group$vals) > 30) {
 	ntrees <- 500
