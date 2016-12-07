@@ -18,7 +18,7 @@ rdataLoc <- "K:/Reg5Modeling_Project/outputs"
 pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
 
 # output path (best if different from rdataloc)
-outRas <- "K:/Reg5Modeling_Project/outputs/grids"
+outRasPath <- "K:/Reg5Modeling_Project/outputs/grids"
 
 
 # get the customized version of the predict function
