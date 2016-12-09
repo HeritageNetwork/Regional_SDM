@@ -25,7 +25,7 @@ load(paste(inPath,fileName, sep="/"))
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 db <- dbConnect(SQLite(),dbname=db_file)  
 
-SQLquery <- paste("SELECT customModelCommentsID, date, speciesCode, comments",
+SQLquery <- paste("SELECT ID, date, speciesCode, comments",
                   " FROM tblCustomModelComments ", 
                   "WHERE speciesCode='", ElementNames$Code, "'; ", sep="")
 dat.in.db <- dbGetQuery(db, statement = SQLquery)
@@ -35,12 +35,12 @@ dat.in.db
 
 
 ## edit current information ----
-# if you have multiple records and you just want to modify one and use in 
+# if you have existing record(s) and you just want to modify one and use in 
 # for your current model, get a copy of the text with these calls
 
 # if you have multiple rows, which row to you want? Set the rowID you want to use:
 idVal <- 1
-cat(dat.in.db$comments[dat.in.db$customModelCommentsID == idVal])
+cat(dat.in.db$comments[dat.in.db$ID == idVal])
 
 # copy and paste it into here and edit as needed. 
 
@@ -49,6 +49,8 @@ bunch of text describing what you want to describe about
 this particular model or this particular species. It will 
 be added as a paragraph to the metadata pdf."
 
+#clean up newline chars, send it to the DB
+newText <- gsub("\n", " ", newText)
 SQLquery <- paste("UPDATE tblCustomModelComments ",
                   "SET comments = '", newText, 
                   "' , date = '", date(), 
@@ -58,11 +60,13 @@ dbExecute(db, SQLquery)
 
 
 ## create a new row instead ----
-newText <- "This is the spot where you can write a 
+myText <- "This is the spot where you can write a 
 bunch of text describing what you want to describe about
 this particular model or this particular species. It will 
 be added as a paragraph to the metadata pdf."
 
+#clean up newline chars, send it to the DB
+myText <- gsub("\n", " ", newText)
 SQLquery <- paste("INSERT INTO tblCustomModelComments ",
                   "(date, speciesCode, comments) ",
                   "VALUES ('",
@@ -75,3 +79,5 @@ dbExecute(db, SQLquery)
 
 ##clean up
 dbDisconnect(db)
+# remove ALL objects
+rm(list = ls())
