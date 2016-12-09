@@ -8,13 +8,12 @@ library(rgdal)
 # set this path to the folder where the environmental rasters reside
 # it can have other files, but only *.tifs that you want to write to the R format
 
-pathToTifs <- "E:/Reg5Modeling_Project/inputs/env_vars/geotiffs"
-pathToTifs <- "D:/Reg5Modeling_Project/inputs/env_vars/geotiffs"
+pathToTifs <- "K:/Reg5Modeling_Project/inputs/env_vars/geotiffs"
 setwd(pathToTifs)
 
 # set the output path
-outPath <- "E:/Reg5Modeling_Project/inputs/env_vars/nativeR"
-outPath <- "D:/Reg5Modeling_Project/inputs/env_vars/nativeR"
+outPath <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
+
 # get a list of the grids
 tiflist <- list.files(pattern = ".tif$")
 

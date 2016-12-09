@@ -6,17 +6,17 @@ library(raster)
 library(rgdal)
 library(ROCR)
 
-inPath <- "G:/RegionalSDM/outputs"
-gridpath <- "G:/RegionalSDM/outputs/grids"
+inPath <- "K:/Reg5Modeling_Project/outputs"
+gridpath <- "K:/Reg5Modeling_Project/outputs/grids"
 #out path
-outRas <- "G:/RegionalSDM/outputs/grids" 
+outRas <- "K:/Reg5Modeling_Project/outputs/grids" 
 
 ## find and load model data ----
 # get a list of what's in the directory
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 1
+n <- 3
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
