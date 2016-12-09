@@ -11,7 +11,6 @@ library(RSQLite)
 
 ## set paths, load Rdata file ----
 inPath <- "G:/RegionalSDM/outputs"
-dbLoc <- "G:/RegionalSDM/databases"
 
 # get a list of what's in the directory
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
@@ -20,6 +19,8 @@ d
 n <- 1
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
+
+dbLoc <- "G:/RegionalSDM/databases"
 
 ## get any current documentation ----
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
@@ -38,7 +39,8 @@ dat.in.db
 # if you have existing record(s) and you just want to modify one and use in 
 # for your current model, get a copy of the text with these calls
 
-# if you have multiple rows, which row to you want? Set the rowID you want to use:
+# if you have multiple rows, which row to you want? Set the ID you want to use, 
+# the ID should be visible in the dat.in.db view, above
 idVal <- 1
 cat(dat.in.db$comments[dat.in.db$ID == idVal])
 
@@ -54,7 +56,7 @@ newText <- gsub("\n", " ", newText)
 SQLquery <- paste("UPDATE tblCustomModelComments ",
                   "SET comments = '", newText, 
                   "' , date = '", date(), 
-                  "' WHERE customModelCommentsID = ", 
+                  "' WHERE ID = ", 
                   idVal, ";", sep = "")
 dbExecute(db, SQLquery)
 
