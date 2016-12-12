@@ -45,3 +45,6 @@ outFileName <- paste(ranptsShp, "_clean", sep="")
 writeOGR(backgSubset, dsn = ranptsFolder, layer = outFileName, 
          driver="ESRI Shapefile", overwrite_layer=TRUE)
 
+## clean up ----
+# remove all objects before moving on to the next script
+rm(list=ls())

@@ -6,11 +6,13 @@
 library(raster)
 library(rgdal)
 
+## set paths ----
 # set this path to the folder where the environmental rasters reside
 pathToTifs <- "K:/Florida"
 
 # the path to write out the tiffs to
 pathToClipped <- "K:/Reg5Modeling_Project/inputs/env_vars/geotiffs_clip"
+
 
 # path to the shape to use for clipping
 pathToClipShape <- "K:/Reg5Modeling_Project/other_spatial"
@@ -33,6 +35,8 @@ gridlist<-as.list(paste(pathToTifs,tiflist,sep = "/"))
 nm <- substr(tiflist,1,nchar(tiflist) - 4)
 names(gridlist)<-nm
 
+
+## clip the rasters ----
 for (i in 1:length(gridlist)){
   ras <- raster(gridlist[[i]])
   fn <- paste(pathToClipped, "/", names(gridlist[i]), ".tif", sep="")
@@ -40,8 +44,7 @@ for (i in 1:length(gridlist)){
 }
 
 
-### now clip the points to same rectangle
-
+## now clip the points ----
 pathToBackgPts <- "D:/RegionalSDM/inputs/background"
 backgPts <- "clpBnd_SDM_RanPts"
 outPathBkg <- "D:/RegionalSDM/zz_testArea/inputs/background"
@@ -66,7 +69,6 @@ bigArea <- readOGR(pathToPresPolys, presPolys)
 smallArea <- bigArea[clpShp,]
 writeOGR(smallArea, outPathPres, presPolys, driver="ESRI Shapefile")
 
-
-
-
-
+## clean up ----
+# remove all objects before using another script
+rm(list=ls())

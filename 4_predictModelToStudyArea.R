@@ -51,5 +51,7 @@ outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, typ
 
 #writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
 
-
+## clean up ----
+# remove all objects before moving on to the next script
+rm(list=ls())
 

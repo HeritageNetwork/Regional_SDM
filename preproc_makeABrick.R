@@ -34,3 +34,6 @@ envBrick <- brick(stack(gridlist),filename = paste(pathToBrick,"/brick.grd",sep 
 # plot(envBrick) #plots all the layers in the brick
 # plot(envBrick,nm[1]) #plots only layer 1, for example
 
+## clean up ----
+# remove all objects before using another script
+rm(list=ls())

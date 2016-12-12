@@ -274,7 +274,11 @@ field surveys, an SDM may be used to refine the search area; users should always
 additional GIS tools to further direct search efforts. A lower cutoff depicting more land area may be 
 appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less land area, a higher cutoff may be more appropriate.
 
-
+\medskip
+\noindent
+if(nrow(sdm.customComments.subset) > 0){
+  \Sexpr{sdm.customComments.subset$comments}
+}
 
 \pagebreak
 \medskip

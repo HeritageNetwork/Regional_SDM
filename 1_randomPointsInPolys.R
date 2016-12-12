@@ -197,5 +197,8 @@ OutPut <- data.frame(SciName = paste(att.pt[1,"SNAME"]),
 #Write the data to the SQLite database
 dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
 
+## clean up ----
 #Close Connection to the SQL DB
 dbDisconnect(db)
+# remove all objects before moving on to the next script
+rm(list=ls())

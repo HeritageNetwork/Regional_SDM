@@ -65,9 +65,18 @@ SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
 sdm.dataSources <- dbGetQuery(db, statement = SQLquery)
 sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
-##clean up
-options(op)
-dbDisconnect(db)
+SQLquery <- paste("SELECT ID, date, speciesCode, comments",
+                  " FROM tblCustomModelComments ", 
+                  "WHERE speciesCode='", ElementNames$Code, "'; ", sep="")
+sdm.customComments <- dbGetQuery(db, statement = SQLquery)
+# assume you want the most recently entered comments, if there are multiple entries
+if(nrow(sdm.customComments) > 1) {
+  rowToGet <- nrow(sdm.customComments)
+  sdm.customComments <- sdm.customComments[order(sdm.customComments$date),]
+  sdm.customComments.subset <- sdm.customComments[rowToGet,]
+} else {
+  sdm.customComments.subset <- sdm.customComments
+}
 
 ## Run knitr and create metadata ----
 
@@ -83,5 +92,7 @@ setwd(outPath)
 
 knit2pdf(paste(rnwPath,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, ".tex",sep=""))
 
-
-
+## clean up ----
+dbDisconnect(db)
+# remove all objects before moving on to the next script
+rm(list=ls())

@@ -561,3 +561,8 @@ for(i in 1:8){
 setwd(rdataOut)
 save.image(file = paste(ElementNames$Code, ".Rdata", sep=""))
 setwd(sppPtLoc)
+
+## clean up ----
+# remove all objects before moving on to the next script
+rm(list=ls())
+
