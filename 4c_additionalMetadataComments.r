@@ -55,7 +55,7 @@ be added as a paragraph to the metadata pdf."
 newText <- gsub("\n", " ", newText)
 SQLquery <- paste("UPDATE tblCustomModelComments ",
                   "SET comments = '", newText, 
-                  "' , date = '", date(), 
+                  "' , date = '", Sys.time(), 
                   "' WHERE ID = ", 
                   idVal, ";", sep = "")
 dbExecute(db, SQLquery)
@@ -72,7 +72,7 @@ myText <- gsub("\n", " ", newText)
 SQLquery <- paste("INSERT INTO tblCustomModelComments ",
                   "(date, speciesCode, comments) ",
                   "VALUES ('",
-                  date(),"', '", 
+                  Sys.time(),"', '", 
                   ElementNames$Code, "', '", 
                   newText,
                   "');", sep = "")

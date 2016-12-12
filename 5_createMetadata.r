@@ -64,8 +64,20 @@ SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
 sdm.dataSources <- dbGetQuery(db, statement = SQLquery)
 sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
+SQLquery <- paste("SELECT ID, date, speciesCode, comments",
+                  " FROM tblCustomModelComments ", 
+                  "WHERE speciesCode='", ElementNames$Code, "'; ", sep="")
+sdm.customComments <- dbGetQuery(db, statement = SQLquery)
+# assume you want the most recently entered comments, if there are multiple entries
+if(nrow(sdm.customComments) > 1) {
+  rowToGet <- nrow(sdm.customComments)
+  sdm.customComments <- sdm.customComments[order(sdm.customComments$date),]
+  sdm.customComments.subset <- sdm.customComments[rowToGet,]
+} else {
+  sdm.customComments.subset <- sdm.customComments
+}
+
 ##clean up
-options(op)
 dbDisconnect(db)
 
 ## Run knitr and create metadata ----
