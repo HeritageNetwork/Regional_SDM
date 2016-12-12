@@ -77,9 +77,6 @@ if(nrow(sdm.customComments) > 1) {
   sdm.customComments.subset <- sdm.customComments
 }
 
-##clean up
-dbDisconnect(db)
-
 ## Run knitr and create metadata ----
 
 # writing to the same folder as a grid might cause problems.
@@ -94,5 +91,7 @@ setwd(outPath)
 
 knit2pdf(paste(rnwPath,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, ".tex",sep=""))
 
-
-
+## clean up ----
+dbDisconnect(db)
+# remove all objects before moving on to the next script
+rm(list=ls())

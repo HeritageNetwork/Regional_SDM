@@ -34,4 +34,6 @@ for(tif in tiflist){
 	writeRaster(x, filename = paste(outPath,"/",nm,sep=""), format = "raster")
 	}
 
-
+## clean up ----
+# remove all objects before using another script
+rm(list=ls())

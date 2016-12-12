@@ -79,7 +79,7 @@ SQLquery <- paste("INSERT INTO tblCustomModelComments ",
                   
 dbExecute(db, SQLquery)
 
-##clean up
+## clean up ----
 dbDisconnect(db)
-# remove ALL objects
-rm(list = ls())
+# remove all objects before moving on to the next script
+rm(list=ls())

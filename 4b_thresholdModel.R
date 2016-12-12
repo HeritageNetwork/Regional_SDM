@@ -84,5 +84,6 @@ rasrc <- reclassify(ras, m)
 outfile <- paste(outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
 
-#clean up
-rm(m, rasrc)
+## clean up ----
+# remove all objects before moving on to the next script
+rm(list=ls())
