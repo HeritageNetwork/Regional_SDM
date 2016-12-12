@@ -77,6 +77,28 @@ if(nrow(sdm.customComments) > 1) {
   sdm.customComments.subset <- sdm.customComments
 }
 
+## Get threshold information ----
+SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue ", 
+                  "FROM tblCutoffs ", 
+                  "WHERE ElemCode='", ElementNames$Code, "'; ", sep="")
+sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
+# filter to only most recent
+uniqueTimes <- unique(sdm.thresholds$dateTime)
+mostRecent <- uniqueTimes[order(uniqueTimes)][[1]]
+sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
+
+# get info about thresholds
+SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull ", 
+                  "FROM lkpThresholdTypes ", 
+                  "WHERE cutCode IN (", 
+                  toString(sQuote(sdm.thresholds$cutCode)),
+                  ");", sep = "")
+sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
+
+sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
+
+sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue","cutDescription","cutCitationShort")]
+
 ## Run knitr and create metadata ----
 
 # writing to the same folder as a grid might cause problems.
