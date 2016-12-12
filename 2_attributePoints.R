@@ -16,6 +16,7 @@ setwd(pathToRas)
 # load data, QC ----
 # create a stack
 # if using TIFFs, use this line
+
 #raslist <- list.files(pattern = ".tif$")
 # if using native R rasters, use this line
 raslist <- list.files(pattern = ".grd$")

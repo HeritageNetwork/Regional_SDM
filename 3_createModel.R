@@ -220,7 +220,7 @@ if(length(group$vals) > 200) {
   group$vals <- in.split
   group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
 }
-	
+
 #reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
 if(length(group$vals) > 30) {
