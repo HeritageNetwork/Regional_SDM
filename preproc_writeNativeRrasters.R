@@ -31,7 +31,7 @@ for(tif in tiflist){
   print(paste("working on", tif, sep = " "))
 	x <- raster(tif)
 	nm <- substr(tif,1,nchar(tif) - 4)
-	writeRaster(x, filename = paste(outPath,"/",nm,sep=""), format = "raster")
+	writeRaster(x, filename = paste(outPath,"/",nm,sep=""), format = "raster", overwrite=TRUE)
 	}
 
 
