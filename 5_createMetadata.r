@@ -46,6 +46,8 @@ ras <- raster(paste(gridpath, "/", ElementNames$Code, ".tif", sep = ""))
 
 
 ## Get Program and Data Sources info ----
+op <- options("useFancyQuotes")
+options(useFancyQuotes = FALSE)
 
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 db <- dbConnect(SQLite(),dbname=db_file)  
@@ -70,12 +72,44 @@ SQLquery <- paste("SELECT ID, date, speciesCode, comments",
 sdm.customComments <- dbGetQuery(db, statement = SQLquery)
 # assume you want the most recently entered comments, if there are multiple entries
 if(nrow(sdm.customComments) > 1) {
-  rowToGet <- nrow(sdm.customComments)
-  sdm.customComments <- sdm.customComments[order(sdm.customComments$date),]
-  sdm.customComments.subset <- sdm.customComments[rowToGet,]
+  sdm.customComments <- sdm.customComments[order(sdm.customComments$date, decreasing = TRUE),]
+  sdm.customComments.subset <- sdm.customComments[1,]
 } else {
   sdm.customComments.subset <- sdm.customComments
 }
+
+## Get threshold information ----
+SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPolys, capturedPts ", 
+                  "FROM tblCutoffs ", 
+                  "WHERE ElemCode='", ElementNames$Code, "'; ", sep="")
+sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
+# filter to only most recent
+uniqueTimes <- unique(sdm.thresholds$dateTime)
+mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
+sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
+
+# get info about thresholds
+SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull ", 
+                  "FROM lkpThresholdTypes ", 
+                  "WHERE cutCode IN (", 
+                  toString(sQuote(sdm.thresholds$cutCode)),
+                  ");", sep = "")
+sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
+
+sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
+
+sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
+  "capturedEOs", "capturedPolys", "capturedPts", "cutDescription")]
+names(sdm.thresh.table) <- c("Threshold", "Value", "EOs","Polys","Pts","Description")
+sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
+                                     "(",sdm.thresh.table$EOs, ")", sep="")
+sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
+                              "(",sdm.thresh.table$Polys, ")", sep="")
+numPts <- nrow(subset(df.full, pres == 1))
+sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
+                              sep="")
+
+
 
 ## Run knitr and create metadata ----
 
@@ -92,6 +126,7 @@ setwd(outPath)
 knit2pdf(paste(rnwPath,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, ".tex",sep=""))
 
 ## clean up ----
+options(op)
 dbDisconnect(db)
 # remove all objects before moving on to the next script
 rm(list=ls())
