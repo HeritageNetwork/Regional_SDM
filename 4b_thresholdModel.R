@@ -24,33 +24,63 @@ load(paste(inPath,fileName, sep="/"))
 #set an empty list
 cutList <- list()
 
+# total number of EOs (subtract absence class)
+totEOs <- length(unique(df.full$eo_id_st)) - 1
+# total number of polys
+totPolys <- length(unique(df.full$stratum)) - 1
+
 #get minimum training presence
-x <- data.frame(rf.full$y, rf.full$votes)
+x <- data.frame(rf.full$y, rf.full$votes, df.full[,c("eo_id_st", "stratum")])
 y <- x[x$rf.full.y ==1,]
 MTP <- min(y$X1)
-cutList$MTP <- list("value" = MTP, "code" = "MTP")
+capturedEOs <- length(unique(y$eo_id_st))
+capturedPolys <- length(unique(y$stratum))
+capturedPts <- nrow(y)
+cutList$MTP <- list("value" = MTP, "code" = "MTP", 
+                    "capturedEOs" = capturedEOs,
+                    "capturedPolys" = capturedPolys,
+                    "capturedPts" = capturedPts)
 
 #get 10 percentile training presence
 TenPctile <- quantile(y$X1, prob = c(0.1))
-cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile")
+z <- y[y$X1 >= TenPctile,]
+capturedEOs <- length(unique(z$eo_id_st))
+capturedPolys <- length(unique(z$stratum))
+capturedPts <- nrow(z)
+cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
+                    "capturedEOs" = capturedEOs,
+                    "capturedPolys" = capturedPolys,
+                    "capturedPts" = capturedPts)
 
 #max sensitivity plus specificity (maxSSS per Liu et al 2016)
 rf.full.sens <- performance(rf.full.pred,"sens")
 rf.full.spec <- performance(rf.full.pred,"spec")
 rf.full.sss <- data.frame(cutSens = unlist(rf.full.sens@x.values),sens = unlist(rf.full.sens@y.values),
                           cutSpec = unlist(rf.full.spec@x.values), spec = unlist(rf.full.spec@y.values))
-
 rf.full.sss$sss <- with(rf.full.sss, sens + spec)
 maxSSS <- rf.full.sss[which.max(rf.full.sss$sss),"cutSens"]
-cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS")
+z <- y[y$X1 >= maxSSS,]
+capturedEOs <- length(unique(z$eo_id_st))
+capturedPolys <- length(unique(z$stratum))
+capturedPts <- nrow(z)
+cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
+  "capturedEOs" = capturedEOs,
+  "capturedPolys" = capturedPolys,
+  "capturedPts" = capturedPts)
 
 #equal sensitivity and specificity
 rf.full.sss$diff <- abs(rf.full.sss$sens - rf.full.sss$spec)
 eqss <- rf.full.sss[which.min(rf.full.sss$diff),"cutSens"]
-cutList$eqss <- list("value" = eqss, "code" = "eqSS")
+z <- y[y$X1 >= eqss,]
+capturedEOs <- length(unique(z$eo_id_st))
+capturedPolys <- length(unique(z$stratum))
+capturedPts <- nrow(z)
+cutList$eqss <- list("value" = eqss, "code" = "eqSS",
+                       "capturedEOs" = capturedEOs,
+                       "capturedPolys" = capturedPolys,
+                       "capturedPts" = capturedPts)
 
-
-# F-measure cutoff skewed towards capture more presence points
+# F-measure cutoff skewed towards capturing more presence points.
 # extract the precision-recall F-measure from training data
 # set alpha very low to tip in favor of 'presence' data over 'absence' data
 # based on quick assessment in Spring 07, set alpha to 0.01
@@ -65,7 +95,29 @@ rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]]
 #rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]])
 names(rf.full.ctoff) <- c("0","1")
 FMeasPt01 <- rf.full.ctoff[2]
-cutList$FMeasPt01 <- list("value" = FMeasPt01, "code" = "FMeasPt01")
+z <- y[y$X1 >= FMeasPt01,]
+capturedEOs <- length(unique(z$eo_id_st))
+capturedPolys <- length(unique(z$stratum))
+capturedPts <- nrow(z)
+cutList$FMeasPt01 <- list("value" = FMeasPt01, "code" = "FMeasPt01",
+                     "capturedEOs" = capturedEOs,
+                     "capturedPolys" = capturedPolys,
+                     "capturedPts" = capturedPts)
+
+# upper left corner of ROC plot
+rf.full.perf <- performance(rf.full.pred, "tpr","fpr")
+cutpt <- which.max(abs(rf.full.perf@x.values[[1]]-rf.full.perf@y.values[[1]]))
+ROCupperleft <- rf.full.perf@alpha.values[[1]][cutpt]
+z <- y[y$X1 >= ROCupperleft,]
+capturedEOs <- length(unique(z$eo_id_st))
+capturedPolys <- length(unique(z$stratum))
+capturedPts <- nrow(z)
+cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
+                          "capturedEOs" = capturedEOs,
+                          "capturedPolys" = capturedPolys,
+                          "capturedPts" = capturedPts)
+
+##auc <- performance(rf.full.pred, "auc")
 
 # collate and write to DB ----
 
@@ -76,6 +128,9 @@ allThresh <- data.frame("ElemCode" = rep(ElementNames$Code, numThresh),
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
                 "cutCode" = unlist(lapply(cutList, function(x) x[2])),
                 "cutValue" = unlist(lapply(cutList, function(x) x[1])),
+                "capturedEOs" = unlist(lapply(cutList, function(x) x[3])),
+                "capturedPolys" = unlist(lapply(cutList, function(x) x[4])),
+                "capturedPts" = unlist(lapply(cutList, function(x) x[5])),
                 stringsAsFactors = FALSE)
 
 db <- dbConnect(SQLite(),dbname=db_file)
