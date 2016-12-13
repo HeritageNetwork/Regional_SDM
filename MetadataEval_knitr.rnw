@@ -265,20 +265,35 @@ thick blue = PR points) is depicted at the top margin.
 
 \medskip
 \noindent
-Important! Element distribution models map places of similar environmental
+Element distribution models map places of similar environmental
 conditions to the submitted locations (PR points). No model will ever depict sites where
 a targeted element will occur with certainty, it can \textit{only} depict locations it interprets
 as appropriate habitat for the targeted element. SDMs can be used in many ways and the 
 depiction of appropriate habitat should be varied depending on intended use. For targeting
 field surveys, an SDM may be used to refine the search area; users should always employ
-additional GIS tools to further direct search efforts. A lower cutoff depicting more land area may be 
-appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less land area, a higher cutoff may be more appropriate.
+additional GIS tools to further direct search efforts. A lower threshold depicting more land area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less land area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
 
 \medskip
 \noindent
+Table 3. Thresholds calculated from the final model. For discussions of these different thresholds
+see \cite{LiuEtAl2005, LiuEtAl2015}.
+
+\smallskip
+\noindent
+<<tableThree, results="asis", echo = FALSE>>=
+  tbl <- sdm.thresh.table
+  #tbl$Citation <- gsub("(^.*)","\\\\cite{\\1}",sdm.thresh.table$Citation)
+  print(xtable(tbl, digits = 3, align = c("r","l","r","p{2.5in}")), 
+              floating=FALSE, include.rownames=FALSE)
+@
+
+\medskip
+\noindent
+<<customComments, results="asis", echo = FALSE>>=
 if(nrow(sdm.customComments.subset) > 0){
-  \Sexpr{sdm.customComments.subset$comments}
+  {cat(sdm.customComments.subset$comments)}
 }
+@
 
 \pagebreak
 \medskip
@@ -355,6 +370,13 @@ References
   \bibitem{sing2005} Sing, T., O. Sander, N. Beerenwinkel, T. Lengauer. 2005. 
     ROCR: visualizing classifier performance in R. Bioinformatics 
     21(20):3940-3941.
+  \bibitem{LiuEtAl2005} Liu, C., P. M. Berry, T. P. Dawson, and R. G. Pearson. 2005. 
+    Selecting thresholds of occurrence in the prediction of species distributions. 
+    Ecography 28:385–393.
+  \bibitem{LiuEtAl2015} Liu, C., G. Newell, and M. White. 2015. On the selection of 
+    thresholds for predicting species occurrence with presence-only data. Ecology and 
+    Evolution 6:337–348. 
+
 \end{thebibliography}
 
 \end{document}

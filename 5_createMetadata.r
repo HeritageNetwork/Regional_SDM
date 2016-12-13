@@ -46,6 +46,8 @@ ras <- raster(paste(gridpath, "/", ElementNames$Code, ".tif", sep = ""))
 
 
 ## Get Program and Data Sources info ----
+op <- options("useFancyQuotes")
+options(useFancyQuotes = FALSE)
 
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 db <- dbConnect(SQLite(),dbname=db_file)  
@@ -97,7 +99,9 @@ sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
 
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 
-sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue","cutDescription","cutCitationShort")]
+sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue","cutDescription")]
+names(sdm.thresh.table) <- c("Threshold", "Value", "Description")
+
 
 ## Run knitr and create metadata ----
 
@@ -114,6 +118,7 @@ setwd(outPath)
 knit2pdf(paste(rnwPath,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, ".tex",sep=""))
 
 ## clean up ----
+options(op)
 dbDisconnect(db)
 # remove all objects before moving on to the next script
 rm(list=ls())
