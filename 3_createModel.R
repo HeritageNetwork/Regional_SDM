@@ -366,7 +366,7 @@ if(length(group$vals)>1){
 
 	# find the best cutoff based on the averaged ROC curve
 	### TODO: customize/calculate this for each model rather than
-	### average? Use f-measure?
+	### average? 
 	cutpt <- which.max(abs(perf.avg@x.values[[1]]-perf.avg@y.values[[1]]))
 	cutval <- perf.avg@alpha.values[[1]][cutpt]
 	cutX <- perf.avg@x.values[[1]][cutpt]
