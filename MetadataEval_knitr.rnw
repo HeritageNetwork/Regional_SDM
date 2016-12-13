@@ -276,14 +276,14 @@ additional GIS tools to further direct search efforts. A lower threshold depicti
 \medskip
 \noindent
 Table 3. Thresholds calculated from the final model. For discussions of these different thresholds
-see \cite{LiuEtAl2005, LiuEtAl2015}.
+see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of EOs, polygons, and PR points used in the final model are reported in Table 1.
 
 \smallskip
 \noindent
 <<tableThree, results="asis", echo = FALSE>>=
   tbl <- sdm.thresh.table
   #tbl$Citation <- gsub("(^.*)","\\\\cite{\\1}",sdm.thresh.table$Citation)
-  print(xtable(tbl, digits = 3, align = c("r","l","r","p{2.5in}")), 
+  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","r","p{2.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
 

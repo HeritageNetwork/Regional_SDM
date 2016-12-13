@@ -102,12 +102,12 @@ sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
   "capturedEOs", "capturedPolys", "capturedPts", "cutDescription")]
 names(sdm.thresh.table) <- c("Threshold", "Value", "EOs","Polys","Pts","Description")
 sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
-                                     "(",sdm.thresh.table$EOs,"/", numEOs, ")", sep="")
+                                     "(",sdm.thresh.table$EOs, ")", sep="")
 sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
-                              "(",sdm.thresh.table$Polys,"/", numPys, ")", sep="")
+                              "(",sdm.thresh.table$Polys, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
-                              "(", sdm.thresh.table$Pts, "/", numPts, ")", sep="")
+                              sep="")
 
 
 
