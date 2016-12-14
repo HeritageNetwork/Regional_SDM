@@ -365,7 +365,7 @@ if(length(group$vals)>1){
 
 	# find the best cutoff based on the averaged ROC curve
 	### TODO: customize/calculate this for each model rather than
-	### average? Use f-measure?
+	### average? 
 	cutpt <- which.max(abs(perf.avg@x.values[[1]]-perf.avg@y.values[[1]]))
 	cutval <- perf.avg@alpha.values[[1]][cutpt]
 	cutX <- perf.avg@x.values[[1]][cutpt]
@@ -470,53 +470,6 @@ rf.full <- randomForest(df.full[,indVarCols],
 						ntree=ntrees,
 						mtry=mtry)
 
-####
-# get cutoff data ----
-####
-
-db <- dbConnect(SQLite(),dbname=db_file)
-# extract the precision-recall F-measure from training data
-# set alpha very low to tip in favor of 'presence' data over 'absence' data
-# based on quick assessment in Spring 07, set alpha to 0.01
-# TODO: re-evaluate for this project
-alph <- 0.01
-		#create the prediction object for ROCR. Get pres col from votes (=named "1")
-rf.full.pred <- prediction(rf.full$votes[,"1"],df.full$pres)
-		#use ROCR performance to get the f measure
-rf.full.f <- performance(rf.full.pred,"f",alpha = alph)
-	#extract the data out of the S4 object, then find the cutoff that maximize the F-value.
-rf.full.f.df <- data.frame(cutoff = unlist(rf.full.f@x.values),fmeasure = unlist(rf.full.f@y.values))
-rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]])
-rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]])
-names(rf.full.ctoff) <- c("0","1")
-rf.full.ctoff
-
-# prep the data
-OutPut <- data.frame(SciName = as.character(ElementNames$SciName),
-
-CommName=sub("'","''",as.character(ElementNames$CommName)),
-ElemCode=as.character(ElementNames$Code),
-numValidaRuns=length(group$vals),
-meanValidaCutoff = cutval,
-fullRunCutoff = rf.full.ctoff["1"],
-date = paste(Sys.Date()),
-time = format(Sys.time(), "%X"), stringsAsFactors = FALSE
-)
-
-			 
-#write the data to the database
-# problems with dbWriteTable (from an upgrade?)
-#dbWriteTable(db,"tblCutoffs",OutPut,append=TRUE)
-op <- options("useFancyQuotes")
-options(useFancyQuotes = FALSE)
-
-tblCols <- paste(cat(toString(OutPut)), sep = ",")
-SQLq <- paste("INSERT INTO tblCutoffs (", toString(names(OutPut)), 
-              ") VALUES (", toString(sQuote(OutPut)), ");")
-dbExecute(db, SQLq)
-
-options(op)
-dbDisconnect(db)
 
 ####
 # Importance measures ----
