@@ -16,7 +16,7 @@ outRas <- "K:/Reg5Modeling_Project/outputs/grids"
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 3
+n <- 4
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 

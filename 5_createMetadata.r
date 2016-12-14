@@ -27,7 +27,7 @@ inPath <- "K:/Reg5Modeling_Project/outputs"
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 3
+n <- 4
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
@@ -44,6 +44,8 @@ testareapath <- "K:/Reg5Modeling_Project/other_spatial"
 testAreaName <- "reg5_pred_20161027"
 
 ras <- raster(paste(gridpath, "/", ElementNames$Code, ".tif", sep = ""))
+
+ras <- raster(paste(gridpath, "/", "glypmuhl_12-06-16", ".tif", sep = ""))
 
 
 ## Get Program and Data Sources info ----
