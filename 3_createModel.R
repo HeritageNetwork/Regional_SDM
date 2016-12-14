@@ -33,7 +33,7 @@ rdataOut <- "K:/Reg5Modeling_Project/outputs"
 df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- read.dbf(paste(ranPtLoc,"sdmclpbnd_20160831_buffNeg1000_att_Reg5_clean.dbf", sep="/"))
+df.abs <- read.dbf(paste(ranPtLoc,"sdmclpbnd_20160831_buffNeg1000_att.dbf", sep="/"))
 
 #  End, lines that require editing
 #
@@ -161,7 +161,7 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
 # set the percentile, here choosing above 25% percentile
-envarPctile <- 0.25
+envarPctile <- 0.90
 y <- quantile(impvals, probs = envarPctile)
 impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
