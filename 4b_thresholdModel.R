@@ -13,6 +13,11 @@ gridpath <- "G:/RegionalSDM/outputs/grids"
 #out path
 outRas <- "G:/RegionalSDM/outputs/grids" 
 
+dbLoc <- "G:/RegionalSDM/databases"
+
+## get any current documentation ----
+db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
+
 ## find and load model data ----
 # get a list of what's in the directory
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
