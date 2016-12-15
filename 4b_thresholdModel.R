@@ -5,6 +5,8 @@
 library(raster)
 library(rgdal)
 library(ROCR)
+library(RSQLite)
+library(DBI)
 
 inPath <- "G:/RegionalSDM/outputs"
 gridpath <- "G:/RegionalSDM/outputs/grids"
