@@ -482,7 +482,7 @@ rf.full <- randomForest(df.full[,indVarCols],
 						y=df.full[,depVarCol],
 						importance=TRUE,
 						ntree=ntrees,
-						mtry=mtry)
+						mtry=mtry, norm.votes = TRUE)
 
 
 ####
