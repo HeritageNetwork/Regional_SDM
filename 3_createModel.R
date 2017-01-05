@@ -174,6 +174,20 @@ df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
 indVarCols <- c(6:length(names(df.full)))
 
+
+### try out VSURF
+library(VSURF)
+vsurf.out <- VSURF(df.full[,indVarCols],
+                   y=df.full[,depVarCol], parallel = TRUE)
+
+
+### try out Hapfelmeier code ## Killed it, was still running after winter break!
+# library(party)
+# source("K:/Reg5Modeling_Project/scripts/Hapfelmeier_Appendices/Variable_Selektion_Approaches.r")
+# 
+# rfNAP.out <- NAP(X=df.full[,indVarCols],
+#                  Y=df.full[,depVarCol])
+
 ##
 # code above is for removing least important env vars
 ##
@@ -518,4 +532,10 @@ setwd(sppPtLoc)
 ## clean up ----
 # remove all objects before moving on to the next script
 rm(list=ls())
+
+
+
+## variable selection
+
+
 
