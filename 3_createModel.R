@@ -19,21 +19,21 @@ library(randomForest)
 #  Lines that require editing
 #
 # set up paths ----
-sppPtLoc <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
-ranPtLoc <- "D:/RegionalSDM/inputs/background"
-dbLoc <- "D:/RegionalSDM/databases"
-pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
+sppPtLoc <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
+ranPtLoc <- "K:/Reg5Modeling_Project/inputs/background"
+dbLoc <- "K:/Reg5Modeling_Project/databases"
+pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
 
 setwd(sppPtLoc)
 
 # directory for saving RData files (analysis data)
-rdataOut <- "D:/RegionalSDM/outputs"
+rdataOut <- "K:/Reg5Modeling_Project/outputs"
 
 # the names of the files to be uploaded: presence points
 df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- read.dbf(paste(ranPtLoc,"clpBnd_SDM_RanPt_att.dbf", sep="/"))
+df.abs <- read.dbf(paste(ranPtLoc,"sdmclpbnd_20160831_buffNeg1000_att.dbf", sep="/"))
 
 #  End, lines that require editing
 #
@@ -52,8 +52,8 @@ names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = pathToRas, pattern = ".tif$")
-rasnames <- gsub(".tif", "", raslist)
+raslist <- list.files(path = pathToRas, pattern = ".grd$")
+rasnames <- gsub(".grd", "", raslist)
 
 # are these all in the lookup database? Checking here.
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
@@ -161,7 +161,7 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
 # set the percentile, here choosing above 25% percentile
-envarPctile <- 0.25
+envarPctile <- 0.90
 y <- quantile(impvals, probs = envarPctile)
 impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
@@ -173,6 +173,20 @@ impEnvVarCols[1:5] <- TRUE
 df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
 indVarCols <- c(6:length(names(df.full)))
+
+
+### try out VSURF
+library(VSURF)
+vsurf.out <- VSURF(df.full[,indVarCols],
+                   y=df.full[,depVarCol], parallel = TRUE)
+
+
+### try out Hapfelmeier code ## Killed it, was still running after winter break!
+# library(party)
+# source("K:/Reg5Modeling_Project/scripts/Hapfelmeier_Appendices/Variable_Selektion_Approaches.r")
+# 
+# rfNAP.out <- NAP(X=df.full[,indVarCols],
+#                  Y=df.full[,depVarCol])
 
 ##
 # code above is for removing least important env vars
@@ -213,7 +227,6 @@ if(numEOs < 10) {
 
 # # reduce the number of groups, if there are more than 200, to 200 groups
 # # this groups the groups simply if they are adjacent in the order created above.
-
 if(length(group$vals) > 200) {
   in.cut <- cut(1:length(group$vals), b = 200)
   in.split <- split(group$vals, in.cut)
@@ -464,12 +477,15 @@ ntrees <- 2000
 ####
 #   run the full model ----
 ####
+
 cat("running full model", "\n")
 rf.full <- randomForest(df.full[,indVarCols],
 						y=df.full[,depVarCol],
 						importance=TRUE,
 						ntree=ntrees,
-						mtry=mtry)
+						mtry=mtry, 
+						sampsize = c(numEOs*10, numEOs),
+						norm.votes = TRUE)
 
 
 ####
@@ -519,4 +535,10 @@ setwd(sppPtLoc)
 ## clean up ----
 # remove all objects before moving on to the next script
 rm(list=ls())
+
+
+
+## variable selection
+
+
 

@@ -8,10 +8,10 @@ library(ROCR)
 library(RSQLite)
 library(DBI)
 
-inPath <- "G:/RegionalSDM/outputs"
-gridpath <- "G:/RegionalSDM/outputs/grids"
+inPath <- "K:/Reg5Modeling_Project/outputs"
+gridpath <- "K:/Reg5Modeling_Project/outputs/grids"
 #out path
-outRas <- "G:/RegionalSDM/outputs/grids" 
+outRas <- "K:/Reg5Modeling_Project/outputs/grids" 
 
 dbLoc <- "G:/RegionalSDM/databases"
 
@@ -23,7 +23,7 @@ db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 1
+n <- 4
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
