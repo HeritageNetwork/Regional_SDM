@@ -5,11 +5,18 @@
 library(raster)
 library(rgdal)
 library(ROCR)
+library(RSQLite)
+library(DBI)
 
 inPath <- "K:/Reg5Modeling_Project/outputs"
 gridpath <- "K:/Reg5Modeling_Project/outputs/grids"
 #out path
 outRas <- "K:/Reg5Modeling_Project/outputs/grids" 
+
+dbLoc <- "G:/RegionalSDM/databases"
+
+## get any current documentation ----
+db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 
 ## find and load model data ----
 # get a list of what's in the directory
@@ -52,6 +59,30 @@ cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
                     "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
 
+# F-measure cutoff skewed towards capturing more presence points.
+# extract the precision-recall F-measure from training data
+# set alpha very low to tip in favor of 'presence' data over 'absence' data
+# based on quick assessment in Spring 07, set alpha to 0.01
+alph <- 0.01
+#create the prediction object for ROCR. Get pres col from votes (=named "1")
+rf.full.pred <- prediction(rf.full$votes[,"1"],df.full$pres)
+#use ROCR performance to get the f measure
+rf.full.f <- performance(rf.full.pred,"f",alpha = alph)
+#extract the data out of the S4 object, then find the cutoff that maximize the F-value.
+rf.full.f.df <- data.frame(cutoff = unlist(rf.full.f@x.values),fmeasure = unlist(rf.full.f@y.values))
+rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]])
+#rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]])
+names(rf.full.ctoff) <- c("0","1")
+FMeasPt01 <- rf.full.ctoff[2]
+z <- y[y$X1 >= FMeasPt01,]
+capturedEOs <- length(unique(z$eo_id_st))
+capturedPolys <- length(unique(z$stratum))
+capturedPts <- nrow(z)
+cutList$FMeasPt01 <- list("value" = FMeasPt01, "code" = "FMeasPt01",
+                          "capturedEOs" = capturedEOs,
+                          "capturedPolys" = capturedPolys,
+                          "capturedPts" = capturedPts)
+
 #max sensitivity plus specificity (maxSSS per Liu et al 2016)
 rf.full.sens <- performance(rf.full.pred,"sens")
 rf.full.spec <- performance(rf.full.pred,"spec")
@@ -79,30 +110,6 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
                        "capturedEOs" = capturedEOs,
                        "capturedPolys" = capturedPolys,
                        "capturedPts" = capturedPts)
-
-# F-measure cutoff skewed towards capturing more presence points.
-# extract the precision-recall F-measure from training data
-# set alpha very low to tip in favor of 'presence' data over 'absence' data
-# based on quick assessment in Spring 07, set alpha to 0.01
-alph <- 0.01
-#create the prediction object for ROCR. Get pres col from votes (=named "1")
-rf.full.pred <- prediction(rf.full$votes[,"1"],df.full$pres)
-#use ROCR performance to get the f measure
-rf.full.f <- performance(rf.full.pred,"f",alpha = alph)
-#extract the data out of the S4 object, then find the cutoff that maximize the F-value.
-rf.full.f.df <- data.frame(cutoff = unlist(rf.full.f@x.values),fmeasure = unlist(rf.full.f@y.values))
-rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]])
-#rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]])
-names(rf.full.ctoff) <- c("0","1")
-FMeasPt01 <- rf.full.ctoff[2]
-z <- y[y$X1 >= FMeasPt01,]
-capturedEOs <- length(unique(z$eo_id_st))
-capturedPolys <- length(unique(z$stratum))
-capturedPts <- nrow(z)
-cutList$FMeasPt01 <- list("value" = FMeasPt01, "code" = "FMeasPt01",
-                     "capturedEOs" = capturedEOs,
-                     "capturedPolys" = capturedPolys,
-                     "capturedPts" = capturedPts)
 
 # upper left corner of ROC plot
 rf.full.perf <- performance(rf.full.pred, "tpr","fpr")
