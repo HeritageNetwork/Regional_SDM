@@ -477,12 +477,15 @@ ntrees <- 2000
 ####
 #   run the full model ----
 ####
+
 cat("running full model", "\n")
 rf.full <- randomForest(df.full[,indVarCols],
 						y=df.full[,depVarCol],
 						importance=TRUE,
 						ntree=ntrees,
-						mtry=mtry, norm.votes = TRUE)
+						mtry=mtry, 
+						sampsize = c(numEOs*10, numEOs),
+						norm.votes = TRUE)
 
 
 ####
