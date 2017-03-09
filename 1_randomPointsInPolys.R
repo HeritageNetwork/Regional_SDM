@@ -174,7 +174,7 @@ ranPts <- as(grtsResult, "SpatialPointsDataFrame")
 ranPts@proj4string <- projInfo
 # remove extranneous fields, write it out
 fullName <- paste(nm.RanPtFile,".shp",sep="")
-colsToKeep <- c("stratum", desiredCols)
+colsToKeep <- c("siteID", "stratum", desiredCols)
 ranPts <- ranPts[,colsToKeep]
 writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile, 
 			driver="ESRI Shapefile", overwrite_layer=TRUE)
