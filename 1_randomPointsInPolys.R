@@ -19,14 +19,14 @@ library(rgdal)
 ## these are the lines you need to change
 
 ### This is the folder that has your species polygon data. 
-polydir <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/polygon_data"
+polydir <- "G:/SDM_test/ElementData"
 setwd(polydir)
 
 ### This is the directory you want the output data (random point shapefile) written to
-outdir <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
+outdir <- "G:/SDM_test/ElementData/pointData"
 
 ### This is the full path and name of the information-tracking database
-db_file <- "K:/Reg5Modeling_Project/databases/SDM_lookupAndTracking.sqlite"
+db_file <- "G:/SDM_test/databases/SDM_lookupAndTracking.sqlite"
 db <- dbConnect(SQLite(),dbname=db_file)
 
 #get a list of what's in the directory

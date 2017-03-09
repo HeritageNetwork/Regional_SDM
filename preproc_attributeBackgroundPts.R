@@ -6,15 +6,15 @@ library(raster)
 library(rgdal)
 
 
-pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
-pathToPts <- "K:/Reg5Modeling_Project/inputs/background"
+pathToRas <- "G:/SDM_test/env_rasters"
+pathToPts <- "G:/SDM_test/background"
 
 
 ## create a stack ----
 setwd(pathToRas)
 
 ## create a stack. Note this is using native R rasters
-raslist <- list.files(pattern = ".grd$")
+raslist <- list.files(pattern = ".tif$")
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
 names(gridlist) <- nm
@@ -23,7 +23,7 @@ envStack <- stack(gridlist)
 ## Get random points file ----
 setwd(pathToPts)
 
-ranPtsFile <- "sdmclpbnd_20160831_buffNeg1000_att_Reg5_clean.shp"
+ranPtsFile <- "testArea_RanPts.shp"
 ranPtsFileNoExt <- sub(".shp","",ranPtsFile)
 # Read these files into a list of SpatialPoints dataframes
 shpf <- readOGR(".", layer = ranPtsFileNoExt)
