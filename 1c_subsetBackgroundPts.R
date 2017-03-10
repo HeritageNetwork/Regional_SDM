@@ -29,7 +29,7 @@ projInfo <- backgShapef@proj4string
 
 # random subset ----
 # how many background points do we want?
-desiredBG <- 1000
+desiredBG <- 100
 
 # these points are already spatially-balanced, per GRTS
 # so to maintain this, we actually draw *in order*, based 
