@@ -151,7 +151,7 @@ rm(x,y)
 # Remove the least important env vars ----
 ##
 
-ntrees <- 1000
+ntrees <- 500
 rf.find.envars <- randomForest(df.full[,indVarCols],
                         y=df.full[,depVarCol],
                         importance=TRUE,
@@ -161,7 +161,7 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
 # set the percentile, here choosing above 25% percentile
-envarPctile <- 0.90
+envarPctile <- 0.001
 y <- quantile(impvals, probs = envarPctile)
 impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
@@ -173,20 +173,6 @@ impEnvVarCols[1:5] <- TRUE
 df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
 indVarCols <- c(6:length(names(df.full)))
-
-
-### try out VSURF
-library(VSURF)
-vsurf.out <- VSURF(df.full[,indVarCols],
-                   y=df.full[,depVarCol], parallel = TRUE)
-
-
-### try out Hapfelmeier code ## Killed it, was still running after winter break!
-# library(party)
-# source("K:/Reg5Modeling_Project/scripts/Hapfelmeier_Appendices/Variable_Selektion_Approaches.r")
-# 
-# rfNAP.out <- NAP(X=df.full[,indVarCols],
-#                  Y=df.full[,depVarCol])
 
 ##
 # code above is for removing least important env vars
