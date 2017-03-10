@@ -8,8 +8,8 @@ library(RSQLite)
 library(maptools)
 
 # Set paths ----
-pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
-pathToRanPts <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
+pathToRas <- "G:/SDM_test/env_rasters"
+pathToRanPts <- "G:/SDM_test/ElementData/pointData"
 
 setwd(pathToRas)
 
@@ -17,9 +17,9 @@ setwd(pathToRas)
 # create a stack
 # if using TIFFs, use this line
 
-#raslist <- list.files(pattern = ".tif$")
+raslist <- list.files(pattern = ".tif$")
 # if using native R rasters, use this line
-raslist <- list.files(pattern = ".grd$")
+#raslist <- list.files(pattern = ".grd$")
 
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)

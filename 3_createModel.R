@@ -19,21 +19,21 @@ library(randomForest)
 #  Lines that require editing
 #
 # set up paths ----
-sppPtLoc <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
-ranPtLoc <- "K:/Reg5Modeling_Project/inputs/background"
-dbLoc <- "K:/Reg5Modeling_Project/databases"
-pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
+sppPtLoc <- "G:/SDM_test/ElementData/pointData"
+ranPtLoc <- "G:/SDM_test/background"
+dbLoc <- "G:/SDM_test/databases"
+pathToRas <- "G:/SDM_test/env_rasters"
 
 setwd(sppPtLoc)
 
 # directory for saving RData files (analysis data)
-rdataOut <- "K:/Reg5Modeling_Project/outputs"
+rdataOut <- "G:/SDM_test/output"
 
 # the names of the files to be uploaded: presence points
 df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- read.dbf(paste(ranPtLoc,"sdmclpbnd_20160831_buffNeg1000_att.dbf", sep="/"))
+df.abs <- read.dbf(paste(ranPtLoc,"testArea_att.dbf", sep="/"))
 
 #  End, lines that require editing
 #
@@ -52,8 +52,8 @@ names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = pathToRas, pattern = ".grd$")
-rasnames <- gsub(".grd", "", raslist)
+raslist <- list.files(path = pathToRas, pattern = ".tif$")
+rasnames <- gsub(".tif", "", raslist)
 
 # are these all in the lookup database? Checking here.
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
@@ -244,7 +244,7 @@ if(length(group$vals) > 30) {
 }
 ###### reduced for testing #####
 ### TODO: clear when running real models
-#ntrees <- 50
+ntrees <- 50
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
