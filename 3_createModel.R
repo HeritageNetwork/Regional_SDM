@@ -42,10 +42,8 @@ df.abs <- read.dbf(paste(ranPtLoc,"testArea_att.dbf", sep="/"))
 # align data sets, QC ----
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
-df.abs <- cbind(df.abs, EO_ID_ST=99999, 
-					pres=0, RA="High", SNAME="background")
-
-df.abs$stratum <- "pseu-a"
+df.abs <- cbind(df.abs, EO_ID_ST="pseu-a", 
+					pres=0, RA="High", SNAME="background", stratum="pseu-a")
 
 # lower case column names
 names(df.in) <- tolower(names(df.in))
@@ -151,7 +149,7 @@ rm(x,y)
 # Remove the least important env vars ----
 ##
 
-ntrees <- 500
+ntrees <- 50
 rf.find.envars <- randomForest(df.full[,indVarCols],
                         y=df.full[,depVarCol],
                         importance=TRUE,
@@ -261,7 +259,7 @@ t.rocr.pred <- vector("list",length(group$vals))
    names(t.rocr.pred) <- group$vals[]
 v.rocr.pred <- vector("list",length(group$vals))
    names(v.rocr.pred) <- group$vals[]
-
+   
 #######
 ## This is the validation loop. ----
 ## it creates a model for all-but-one group (EO, polygon, or group),
@@ -288,10 +286,51 @@ if(length(group$vals)>1){
 		  trSet <- rbind(trSet, trSetBG)
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  rm(trSetBG, evSetBG)
+		  
+		  evSetBG <- df.full[sample(nrow(df.full), BGsampSz , replace = FALSE, prob = NULL),]
+		  # 
+		  subs <- as.character(df.full$eo_id_st) == as.character(group$vals[[i]])
+		  #   
+		  # evSet[[i]] <- 
+		  
+		  #build sampsize statement 
+		  # which elem to set to zero?
+		  presSampsize <- rep(1, length(group$vals))
+		  #presSampsize[[i]] <- 2
+		  names(presSampsize) <- group$vals
+      absSampsize <- length(group$vals)
+      names(absSampsize) <- df.abs[,group$colNm][[1]]
+		  df.full.temp <- df.full
+		  levels(df.full.temp$pres) <- c(0,1,2)
+		  df.full.temp[df.full.temp$eo_id_st == names(presSampsize)[[i]], "pres"] <- 2
+      
+		  sampleSize <- c(presSampsize, absSampsize)
+
+		  #subs <- as.character(df.full$eo_id_st) != as.character(group$vals[[i]])
+		  
 		   # run RF on subsets
-		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
-									 importance=TRUE,ntree=ntrees,mtry=mtry)
-		   # run a randomForest predict on the validation data
+		  trRes[[i]] <- randomForest(df.full.temp[,indVarCols],y=df.full.temp[,depVarCol],
+									 importance=TRUE,ntree=ntrees,mtry=mtry,
+									 strata = df.full[,group$colNm], sampsize = sampleSize
+									 )
+
+
+		  # trRes[[i]] <- randomForest(df.full[,indVarCols],y=df.full[,depVarCol],
+		  #                            importance=TRUE,ntree=ntrees,mtry=mtry,
+		  #                            strata = df.full[,group$colNm], sampsize = sampleSize
+		  #                            )
+		  # trRes[[i]] <- randomForest(pres ~ ., data = df.full[,c(depVarCol, indVarCols)], 
+		  #                   subset = !subs, importance = TRUE, ntree = ntrees, mtry = mtry,
+		  #                   strata = df.full[,group$colNm], sampsize = sampleSize)
+		  
+		  
+		  		  # trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
+		  #                            importance=TRUE,ntree=ntrees,mtry=mtry 
+		  #                            )
+		  
+		  x <- predict(trRes[[i]], df.full[subs,], type="prob")
+		  
+		  # run a randomForest predict on the validation data
 		  evRes[[i]] <- predict(trRes[[i]], evSet[[i]], type="prob")
 		   # use ROCR to structure the data. Get pres col of evRes (= named "1")
 		  v.rocr.pred[[i]] <- prediction(evRes[[i]][,"1"],evSet[[i]]$pres)
@@ -403,11 +442,6 @@ if(length(group$vals)>1){
 		names(used) <- names(imp)
 		t.importance[[i]] <- data.frame("meanDecreaseAcc" = imp,
 									"timesUsed" = used )
-		#housecleaning to save memory
-		trRes[[i]]$forest <- NULL
-		trRes[[i]]$oob.times <- NULL
-		trRes[[i]]$votes <- NULL
-		trRes[[i]]$predicted <- NULL
 	} #close loop
 
 	#housecleaning
@@ -452,6 +486,14 @@ if(length(group$vals)>1){
 									tss.summ$sem, OvAc.summ$sem, specif.summ$sem,
 									sensit.summ$sem))
 	summ.table
+	
+	
+	full.model <- combine(trRes[[2]], trRes[[1]])
+	for(i in 3:length(group$vals)){
+	  full.model <- combine(full.model, trRes[[i]])
+	}
+	
+
 } else {
 	cat("Only one polygon, can't do validation", "\n")
 	cutval <- NA
@@ -464,13 +506,64 @@ ntrees <- 2000
 #   run the full model ----
 ####
 
+# make samp size groupings
+
+x <- as.character(df.full[df.full$ra == "medium","eo_id_st"])
+y <- unique(x)
+len_y <- length(y)
+# handle if length is odd numbered, handle differently to avoid recycling
+# if(len_y %% 2 ==0){
+#   z <- paste(y[seq(1,len_y,by=2)], y[seq(2,len_y, by=2)], sep="-")
+# } else {
+#   z <- paste(y[seq(1,len_y-1,by=2)], y[seq(2,len_y-1, by=2)], sep="-")
+#   z <- c(z, y[len_y])
+# }
+# # now make a lookup table
+# con <- textConnection(z)
+# lkup <- read.table(con, sep="-", fill = TRUE)
+# lkup <- cbind(lkup, z)
+
+df.full$row <- as.integer(rownames(df.full))
+
+if(len_y %% 2 ==0){
+  lkup2 <- data.frame(first = y[seq(1,len_y,by=2)], 
+                  second = y[seq(2,len_y, by = 2)], stringsAsFactors = FALSE)
+} else {
+  lkup2 <- data.frame(first = y[seq(1,len_y,by=2)], 
+                  second = y[c(seq(2,len_y, by = 2), NA)], stringsAsFactors = FALSE)
+}
+lkup2 <- cbind(lkup2, joined = paste(lkup2$first, lkup2$second, sep = "-"), stringsAsFactors = FALSE)
+
+#df.full2 <- df.full
+df.full2 <- merge(x = df.full, y = lkup2[,c("first","joined")],
+                  by.x = "eo_id_st", by.y = "first", all.x = TRUE)
+df.full2 <- merge(x = df.full2, y = lkup2[,c("second","joined")],
+                  by.x = "eo_id_st", by.y = "second", all.x = TRUE)
+
+df.full2$sampSizeStrat <- ifelse(is.na(df.full2$joined.y),
+            ifelse(is.na(df.full2$joined.x),
+              as.character(df.full2$eo_id_st),
+              as.character(df.full2$joined.x)),
+            as.character(df.full2$joined.y))
+
+df.full3 <- merge(df.full, df.full2[,c("row","sampSizeStrat")],
+                  by.x = "row", by.y = "row", all.x = TRUE)
+
+sampSizeStratNames <- unique(df.full3$sampSizeStrat)
+sampSizeVals <- rep(1, length(sampSizeStratNames))
+sampSizeVals[which(x == "pseu-a")] <- length(sampSizeStratNames)
+names(sampSizeVals) <- sampSizeStratNames
+
+
+df.full4 <- df.full3[,!grepl("row",names(df.full3))]
 cat("running full model", "\n")
-rf.full <- randomForest(df.full[,indVarCols],
-						y=df.full[,depVarCol],
+rf.full <- randomForest(df.full4[,indVarCols],
+						y=df.full4[,depVarCol],
 						importance=TRUE,
 						ntree=ntrees,
 						mtry=mtry, 
-						sampsize = c(numEOs*10, numEOs),
+						strata = df.full4[,"sampSizeStrat"],
+						sampsize = sampSizeVals,
 						norm.votes = TRUE)
 
 
