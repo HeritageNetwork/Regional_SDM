@@ -19,7 +19,7 @@ library(rasterVis)
 library(RSQLite)
 library(xtable)
 
-inPath <- "K:/Reg5Modeling_Project/outputs"
+inPath <- "G:/SDM_test/output"
 
 ## find and load model data ----
 # get a list of what's in the directory
@@ -27,25 +27,25 @@ inPath <- "K:/Reg5Modeling_Project/outputs"
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 4
+n <- 1
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
 ## set paths (after loading Rdata file in case objects exist) ----
-rnwPath <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
-outPath <- "K:/Reg5Modeling_Project/outputs/metadata"
-gridpath <- "K:/Reg5Modeling_Project/outputs/grids"
-stateBoundPath <- "K:/Reg5Modeling_Project/other_spatial"
-dbLoc <- "K:/Reg5Modeling_Project/databases"
+rnwPath <- "G:/RegionalSDM/scripts/Regional_SDM"
+outPath <- "G:/SDM_test/output/metadata"
+gridpath <- "G:/SDM_test/output/grids"
+stateBoundPath <- "G:/SDM_test/other_spatial"
+dbLoc <- "G:/RegionalSDM/databases"
 
-extentMapName <- "StateBoundariesAlbersConicEqualArea"
+extentMapName <- "testArea_Albers"
 
-testareapath <- "K:/Reg5Modeling_Project/other_spatial"
-testAreaName <- "reg5_pred_20161027"
+testareapath <- "G:/SDM_test/other_spatial"
+testAreaName <- "testArea_Albers"
 
 ras <- raster(paste(gridpath, "/", ElementNames$Code, ".tif", sep = ""))
 
-ras <- raster(paste(gridpath, "/", "glypmuhl_12-06-16", ".tif", sep = ""))
+ras <- raster(paste(gridpath, "/", "glypmuhl", ".tif", sep = ""))
 
 
 ## Get Program and Data Sources info ----
