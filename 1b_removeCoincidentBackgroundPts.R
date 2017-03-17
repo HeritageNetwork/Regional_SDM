@@ -9,12 +9,12 @@ library(rgeos)
 # set up paths ----
 ### This is the location and shapefile that has your species polygon data. 
 polydir <- "G:/SDM_test/ElementData"
-polyFileName <- "glypmuhl_expl.shp"
+polyFileName <- "glypmuhl_expl_Albers.shp"
 setwd(polydir)
 
 ### This is the background random points shapefile info
 ranptsFolder <- "G:/SDM_test/background"
-ranptsShp <- "testArea_RanPts"
+ranptsShp <- "testArea_Albers_RanPts_2"
 
 # load data ----
 # get the poly shapefile
