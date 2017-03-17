@@ -23,13 +23,13 @@ envStack <- stack(gridlist)
 ## Get random points file ----
 setwd(pathToPts)
 
-ranPtsFile <- "testArea_RanPts.shp"
+ranPtsFile <- "testArea_Albers_RanPts_2_clean.shp"
 ranPtsFileNoExt <- sub(".shp","",ranPtsFile)
 # Read these files into a list of SpatialPoints dataframes
 shpf <- readOGR(".", layer = ranPtsFileNoExt)
 
 ## drop current data in dataframe
-shpf@data <- shpf@data[,c(1,83)]
+#shpf@data <- shpf@data[,c(1,83)]
   
 # Get a list of the codes (this assumes all the input files had '_RanPts.shp' that shall be stripped)
 code_name <- substr(ranPtsFile,1,(nchar(ranPtsFile)-11))
