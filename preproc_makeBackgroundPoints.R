@@ -10,7 +10,7 @@ setwd("G:/SDM_test/other_spatial")
 
 
 # the name of the study area polygon
-StudyAreaPoly <- "testArea.shp"
+StudyAreaPoly <- "testArea_Albers.shp"
 
 # read in the shapefile, get the attribute data
 layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
@@ -27,7 +27,7 @@ nm.RanPtFile <- paste(layer, "_RanPts", sep = "")
 # Enter the number of random points you want to generate 
 # total area of entire study area is about 1,064,000 km^2
 # if our target is about 1 pt / 20 km^2, that comes out to about 53,000 points. 
-numpts <- 1000
+numpts <- 20000
 
 # Create the design list
 dsgn <- list(None=list(panel=c(Panel=numpts), seltype="Equal"))
