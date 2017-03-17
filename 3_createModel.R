@@ -19,21 +19,21 @@ library(randomForest)
 #  Lines that require editing
 #
 # set up paths ----
-sppPtLoc <- "G:/SDM_test/ElementData/pointData"
-ranPtLoc <- "G:/SDM_test/background"
-dbLoc <- "G:/SDM_test/databases"
-pathToRas <- "G:/SDM_test/env_rasters"
+sppPtLoc <- "K:/SDM_test/inputs/species/pointData"
+ranPtLoc <- "K:/SDM_test/inputs/background"
+dbLoc <- "K:/SDM_test/databases"
+pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
 
 setwd(sppPtLoc)
 
 # directory for saving RData files (analysis data)
-rdataOut <- "G:/SDM_test/output"
+rdataOut <- "K:/SDM_test/outputs"
 
 # the names of the files to be uploaded: presence points
-df.in <-read.dbf("glypmuhl_att.dbf")
+df.in <-read.dbf("glypmuhl_Albers_att_ColCo.dbf")
 
 # absence points
-df.abs <- read.dbf(paste(ranPtLoc,"testArea_att.dbf", sep="/"))
+df.abs <- foreign:::read.dbf(paste(ranPtLoc,"testArea_att.dbf", sep="/"))
 
 #  End, lines that require editing
 #
@@ -43,7 +43,7 @@ df.abs <- read.dbf(paste(ranPtLoc,"testArea_att.dbf", sep="/"))
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
 df.abs <- cbind(df.abs, EO_ID_ST="pseu-a", 
-					pres=0, RA="High", SNAME="background", stratum="pseu-a")
+					pres=0, RA="high", SNAME="background", stratum="pseu-a")
 
 # lower case column names
 names(df.in) <- tolower(names(df.in))
@@ -149,7 +149,7 @@ rm(x,y)
 # Remove the least important env vars ----
 ##
 
-ntrees <- 50
+ntrees <- 100
 rf.find.envars <- randomForest(df.full[,indVarCols],
                         y=df.full[,depVarCol],
                         importance=TRUE,
@@ -228,7 +228,7 @@ if(length(group$vals) > 30) {
 }
 ###### reduced for testing #####
 ### TODO: clear when running real models
-ntrees <- 50
+ntrees <- 200
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
@@ -287,32 +287,32 @@ if(length(group$vals)>1){
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  rm(trSetBG, evSetBG)
 		  
-		  evSetBG <- df.full[sample(nrow(df.full), BGsampSz , replace = FALSE, prob = NULL),]
+		  #evSetBG <- df.full[sample(nrow(df.full), BGsampSz , replace = FALSE, prob = NULL),]
 		  # 
-		  subs <- as.character(df.full$eo_id_st) == as.character(group$vals[[i]])
+		  #subs <- as.character(df.full$eo_id_st) == as.character(group$vals[[i]])
 		  #   
 		  # evSet[[i]] <- 
 		  
 		  #build sampsize statement 
 		  # which elem to set to zero?
-		  presSampsize <- rep(1, length(group$vals))
+		  #presSampsize <- rep(1, length(group$vals))
 		  #presSampsize[[i]] <- 2
-		  names(presSampsize) <- group$vals
-      absSampsize <- length(group$vals)
-      names(absSampsize) <- df.abs[,group$colNm][[1]]
-		  df.full.temp <- df.full
-		  levels(df.full.temp$pres) <- c(0,1,2)
-		  df.full.temp[df.full.temp$eo_id_st == names(presSampsize)[[i]], "pres"] <- 2
+		  #names(presSampsize) <- group$vals
+      #absSampsize <- length(group$vals)
+      #names(absSampsize) <- df.abs[,group$colNm][[1]]
+		  #df.full.temp <- df.full
+		  #levels(df.full.temp$pres) <- c(0,1,2)
+		  #df.full.temp[df.full.temp$eo_id_st == names(presSampsize)[[i]], "pres"] <- 2
       
-		  sampleSize <- c(presSampsize, absSampsize)
+		  #sampleSize <- c(presSampsize, absSampsize)
 
 		  #subs <- as.character(df.full$eo_id_st) != as.character(group$vals[[i]])
 		  
 		   # run RF on subsets
-		  trRes[[i]] <- randomForest(df.full.temp[,indVarCols],y=df.full.temp[,depVarCol],
-									 importance=TRUE,ntree=ntrees,mtry=mtry,
-									 strata = df.full[,group$colNm], sampsize = sampleSize
-									 )
+		#   trRes[[i]] <- randomForest(df.full.temp[,indVarCols],y=df.full.temp[,depVarCol],
+		# 							 importance=TRUE,ntree=ntrees,mtry=mtry,
+		# 							 strata = df.full[,group$colNm], sampsize = sampleSize
+		# 							 )
 
 
 		  # trRes[[i]] <- randomForest(df.full[,indVarCols],y=df.full[,depVarCol],
@@ -324,11 +324,11 @@ if(length(group$vals)>1){
 		  #                   strata = df.full[,group$colNm], sampsize = sampleSize)
 		  
 		  
-		  		  # trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
-		  #                            importance=TRUE,ntree=ntrees,mtry=mtry 
-		  #                            )
+		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
+		                             importance=TRUE,ntree=ntrees,mtry=mtry
+		                             )
 		  
-		  x <- predict(trRes[[i]], df.full[subs,], type="prob")
+		  #x <- predict(trRes[[i]], df.full[subs,], type="prob")
 		  
 		  # run a randomForest predict on the validation data
 		  evRes[[i]] <- predict(trRes[[i]], evSet[[i]], type="prob")
@@ -486,14 +486,6 @@ if(length(group$vals)>1){
 									tss.summ$sem, OvAc.summ$sem, specif.summ$sem,
 									sensit.summ$sem))
 	summ.table
-	
-	
-	full.model <- combine(trRes[[2]], trRes[[1]])
-	for(i in 3:length(group$vals)){
-	  full.model <- combine(full.model, trRes[[i]])
-	}
-	
-
 } else {
 	cat("Only one polygon, can't do validation", "\n")
 	cutval <- NA
@@ -523,6 +515,9 @@ len_y <- length(y)
 # lkup <- read.table(con, sep="-", fill = TRUE)
 # lkup <- cbind(lkup, z)
 
+#TODO: generalize this to whichever grouping var is chosen, above.
+#TODO: include other RA levels
+
 df.full$row <- as.integer(rownames(df.full))
 
 if(len_y %% 2 ==0){
@@ -551,7 +546,7 @@ df.full3 <- merge(df.full, df.full2[,c("row","sampSizeStrat")],
 
 sampSizeStratNames <- unique(df.full3$sampSizeStrat)
 sampSizeVals <- rep(1, length(sampSizeStratNames))
-sampSizeVals[which(x == "pseu-a")] <- length(sampSizeStratNames)
+sampSizeVals[which(sampSizeStratNames == "pseu-a")] <- length(sampSizeStratNames)
 names(sampSizeVals) <- sampSizeStratNames
 
 
@@ -561,10 +556,45 @@ rf.full <- randomForest(df.full4[,indVarCols],
 						y=df.full4[,depVarCol],
 						importance=TRUE,
 						ntree=ntrees,
-						mtry=mtry, 
+						mtry=mtry,
 						strata = df.full4[,"sampSizeStrat"],
 						sampsize = sampSizeVals,
 						norm.votes = TRUE)
+
+#### this, above is saved as timSampMethod
+
+########
+## # make samp size groupings Kirsten's way
+EObyRA <- unique(df.full[,c("eo_id_st","ra")])
+EObyRA$sampSize[EObyRA$ra == "very high"] <- 4
+EObyRA$sampSize[EObyRA$ra == "high"] <- 3
+EObyRA$sampSize[EObyRA$ra == "medium"] <- 1
+EObyRA$sampSize[EObyRA$ra == "low"] <- 1
+EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- length(unique(EObyRA$eo_id_st))
+
+sampSizeVec <- EObyRA$sampSize
+names(sampSizeVec) <- as.character(EObyRA$eo_id_st)
+
+rf.full <- randomForest(df.full[,indVarCols],
+                        y=df.full[,depVarCol],
+                        importance=TRUE,
+                        ntree=ntrees,
+                        mtry=mtry,
+                        strata = df.full[,"eo_id_st"],
+                        sampsize = sampSizeVec,
+                        norm.votes = TRUE)
+
+
+#### this, above is saved as kirstenSampMethod
+
+
+
+## old way
+# rf.full <- randomForest(df.full[,indVarCols],
+#                         y=df.full[,depVarCol],
+#                         importance=TRUE,
+#                         ntree=ntrees,
+#                         mtry=mtry, norm.votes = TRUE)
 
 
 ####
@@ -591,7 +621,7 @@ dbDisconnect(db)
 # partial plot data ----
 ###
 #get the order for the importance charts
-ord <- order(EnvVars$impVal, decreasing = TRUE)[1:n.var]
+ord <- order(EnvVars$impVal, decreasing = TRUE)[1:length(indVarCols)]
 #set up a list to hold the plot data
 pPlots <- vector("list",8)
 		names(pPlots) <- c(1:8)
@@ -608,16 +638,8 @@ for(i in 1:8){
 
 #save the project, return to the original working directory
 setwd(rdataOut)
-save.image(file = paste(ElementNames$Code, ".Rdata", sep=""))
-setwd(sppPtLoc)
+save.image(file = paste(ElementNames$Code, "_kirstenSampMethod.Rdata", sep=""))
 
 ## clean up ----
 # remove all objects before moving on to the next script
 rm(list=ls())
-
-
-
-## variable selection
-
-
-
