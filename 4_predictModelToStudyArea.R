@@ -12,17 +12,17 @@ library(randomForest)
 
 # set up paths ----
 # directory for the RData files (analysis data)
-rdataLoc <- "K:/Reg5Modeling_Project/outputs"
+rdataLoc <- "K:/SDM_test/outputS"
 
 # directory for the environmental rasters
-pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
+pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
 
 # output path (best if different from rdataloc)
-outRasPath <- "K:/Reg5Modeling_Project/outputs/grids"
+outRasPath <- "K:/SDM_test/outputS/grids"
 
 
 # get the customized version of the predict function
-source('K:/Reg5Modeling_Project/scripts/Regional_SDM/RasterPredictMod.R')
+source('K:/SDM_test/scripts/Regional_SDM/RasterPredictMod.R')
 
 #  End, lines that require editing
 #
@@ -34,19 +34,19 @@ setwd(rdataLoc)
 fileList <- dir(pattern = ".Rdata$",full.names=FALSE)
 fileList
 # choose one to run, load it #### requires editing ####
-n <- 2
+n <- 1
 load(fileList[[n]])
 
 ##Make the raster stack
 stackOrder <- names(df.full)[indVarCols]
 setwd(pathToRas)
-rasL <- paste(stackOrder,".grd", sep="")
+rasL <- paste(stackOrder,".tif", sep="")
 fullL <- as.list(paste(pathToRas, rasL, sep="/"))
 names(fullL) <- stackOrder
 envStack <- stack(fullL)
 
 # run prediction ----
-fileNm <- paste(outRasPath, ElementNames$Code, sep = "/")
+fileNm <- paste(outRasPath, "/", ElementNames$Code, "_kirstenSampMethod", sep = "")
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
 #writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
