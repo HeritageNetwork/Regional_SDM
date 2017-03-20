@@ -7,20 +7,11 @@ library(sp)
 library(rgeos)
 
 # set up paths ----
-### This is the location and shapefile that has your species polygon data. 
-polydir <- "G:/SDM_test/ElementData"
-polyFileName <- "glypmuhl_expl.shp"
-setwd(polydir)
-
 ### This is the background random points shapefile info
-ranptsFolder <- "G:/SDM_test/background"
-ranptsShp <- "testArea_RanPts_clean"
+ranptsFolder <- "K:/SDM_test/inputs/background"
+ranptsShp <- "testArea_Albers_RanPts__att"
 
 # load data ----
-# get the poly shapefile
-shpName <- strsplit(polyFileName,"\\.")[[1]][[1]]
-polyShapef <- readOGR(dsn=polydir, layer = shpName) #Z-dimension discarded msg is OK
-
 # get the background shapefile
 backgShapef <- readOGR(dsn=ranptsFolder, layer=ranptsShp)
 
@@ -29,7 +20,7 @@ projInfo <- backgShapef@proj4string
 
 # random subset ----
 # how many background points do we want?
-desiredBG <- 100
+desiredBG <- 800
 
 # these points are already spatially-balanced, per GRTS
 # so to maintain this, we actually draw *in order*, based 
