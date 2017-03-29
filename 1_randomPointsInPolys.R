@@ -19,14 +19,14 @@ library(rgdal)
 ## these are the lines you need to change
 
 ### This is the folder that has your species polygon data. 
-polydir <- "G:/SDM_test/ElementData"
+polydir <- "K:/SDM_test/inputs/species"
 setwd(polydir)
 
 ### This is the directory you want the output data (random point shapefile) written to
-outdir <- "G:/SDM_test/ElementData/pointData"
+outdir <- "K:/SDM_test/inputs/species/pointData"
 
 ### This is the full path and name of the information-tracking database
-db_file <- "G:/SDM_test/databases/SDM_lookupAndTracking.sqlite"
+db_file <- "K:/SDM_test/databases/SDM_lookupAndTracking.sqlite"
 db <- dbConnect(SQLite(),dbname=db_file)
 
 #get a list of what's in the directory
@@ -34,7 +34,7 @@ fileList <- dir( pattern = ".shp$")
 fileList
 #look at the output and choose which shapefile you want to run
 #enter its location in the list (first = 1, second = 2, etc)
-n <- 1
+n <- 2
 
 ## should not need to change anything else below here
 ####
@@ -46,7 +46,7 @@ shpName <- strsplit(fileName,"\\.")[[1]][[1]]
 sppCode <- shpName
 
 shapef <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
-#check for proper column names. If no error in next three lines, then good to go
+#check for proper column names. If no error from next code block, then good to go
 shpColNms <- names(shapef@data)
 desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
@@ -69,22 +69,20 @@ shp_expl@data <- cbind(shp_expl@data,
 	EXPL_ID = rownames(shp_expl@data), 
 	AREAM2 = sapply(slot(shp_expl, "polygons"), slot, "area"))
 		
-#write out the exploded polygon set
-nm.PyFile <- paste(sppCode, "_expl", sep = "")
-
 # projection info doesn't stick, apply from what we grabbed earlier
 shp_expl@proj4string <- projInfo
+#write out the exploded polygon set
+nm.PyFile <- paste(sppCode, "_expl", sep = "")
 writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
   
 #name of random points output shapefile; add path to (now input) polygon file
 nm.RanPtFile <- paste(outdir,"/", sppCode, "_RanPts", sep = "")
 nm.PyFile <- paste(polydir,"/", sppCode, "_expl", sep = "")
 
-###############################
+####
 ####  Placing random points within each sample unit (polygon/EO) ----
 ####
-###############################
-    
+
 #get the attribute table from above 
 att.pt <- shp_expl@data
 
@@ -96,31 +94,9 @@ att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"AREAM2"]/900+1)*0.004)))-1
 #make a new field for the design, providing a stratum name
 att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$EXPL_ID, sep=""))
 
-##
-# modify point counts based on representational accuracy (RA)
-# polygons with higher RA get higher probability of sampling (more points in dataset)
-# polygons with lower RA get lower probability of sampling (fewer points on per-area basis)
-# this is, in effect, weighting the sampling within the modeling effort - we are simply 
-# doing it here a-priori
-##
-
-#assign values to eraccuracy
-raVals <- c("very high", "high", "medium", "low", "very low")
-att.pt$RA <- tolower(att.pt$RA)
-att.pt$RA <- factor(att.pt$RA, levels = raVals)
-
-#### these values should be discussed 
-### right now, the numbers are treated as mulitpliers, so very high gets 2X the number of
-### points, high get 1.5X and very low gets 1/2 the number of points
-ERA_wgt <- c("very high" = 2, "high" = 1.5, "medium" = 1, "low" = 0.75, "very low" = 0.5)
-
-att.pt$ERAWT <- unname(ERA_wgt[att.pt$RA])
-att.pt$PSampNum <- att.pt$ERAWT * att.pt$PolySampNum
-
 # create the vector for indicating how many points to put in each polygon, 
 # then each value in the vector needs to be attributed to the sampling unit 
-# (either EO_ID or Shape_ID)
-sampNums <- c(att.pt[,"PSampNum"])
+sampNums <- c(att.pt[,"PolySampNum"])
 names(sampNums) <- att.pt[,"EXPL_ID"]
 
 # sample MUST be larger than 1 for any single polygon use OVER to increase 
@@ -179,10 +155,9 @@ ranPts <- ranPts[,colsToKeep]
 writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile, 
 			driver="ESRI Shapefile", overwrite_layer=TRUE)
 
-###############################
-#####     Write out various stats and data to the database ----
-#####
-###############################
+####
+####     Write out various stats and data to the database ------
+####
 
 # prep the data
 OutPut <- data.frame(SciName = paste(att.pt[1,"SNAME"]),
