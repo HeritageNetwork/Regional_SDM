@@ -153,22 +153,38 @@ df.full <- rbind(df.in, df.abs)
 df.full$stratum <- factor(df.full$stratum)
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
-df.full$ra <- factor(df.full$ra)
+df.full$ra <- factor(tolower(as.character(df.full$ra)))
 df.full$sname <- factor(df.full$sname)
-	
+
+# make samp size groupings ----
+EObyRA <- unique(df.full[,c("eo_id_st","ra")])
+EObyRA$sampSize[EObyRA$ra == "very high"] <- 5
+EObyRA$sampSize[EObyRA$ra == "high"] <- 4
+EObyRA$sampSize[EObyRA$ra == "medium"] <- 3
+EObyRA$sampSize[EObyRA$ra == "low"] <- 2
+EObyRA$sampSize[EObyRA$ra == "very low"] <- 1
+# set the background pts to the sum of the EO samples
+EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
+
+sampSizeVec <- EObyRA$sampSize
+names(sampSizeVec) <- as.character(EObyRA$eo_id_st)
+
+
 ##
 # tune mtry ----
 # run through mtry twice
 
 x <- tuneRF(df.full[,indVarCols],
              y=df.full[,depVarCol],
-             ntreeTry = 50, stepFactor = 2, mtryStart = 6)
+             ntreeTry = 300, stepFactor = 2, mtryStart = 6,
+            strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
-            ntreeTry = 50, stepFactor = 1.5, mtryStart = max(newTry))
+            ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
+            strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
 rm(x,y)
@@ -177,17 +193,18 @@ rm(x,y)
 # Remove the least important env vars ----
 ##
 
-ntrees <- 100
+ntrees <- 1000
 rf.find.envars <- randomForest(df.full[,indVarCols],
                         y=df.full[,depVarCol],
                         importance=TRUE,
                         ntree=ntrees,
-                        mtry=mtry)
+                        mtry=mtry,
+                        strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
-# set the percentile, here choosing above 25% percentile
-envarPctile <- 0.001
+# set the percentile, here choosing above 50% percentile
+envarPctile <- 0.50
 y <- quantile(impvals, probs = envarPctile)
 impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
@@ -526,103 +543,17 @@ ntrees <- 2000
 #   run the full model ----
 ####
 
-# make samp size groupings
-
-x <- as.character(df.full[df.full$ra == "medium","eo_id_st"])
-y <- unique(x)
-len_y <- length(y)
-# handle if length is odd numbered, handle differently to avoid recycling
-# if(len_y %% 2 ==0){
-#   z <- paste(y[seq(1,len_y,by=2)], y[seq(2,len_y, by=2)], sep="-")
-# } else {
-#   z <- paste(y[seq(1,len_y-1,by=2)], y[seq(2,len_y-1, by=2)], sep="-")
-#   z <- c(z, y[len_y])
-# }
-# # now make a lookup table
-# con <- textConnection(z)
-# lkup <- read.table(con, sep="-", fill = TRUE)
-# lkup <- cbind(lkup, z)
-
-#TODO: generalize this to whichever grouping var is chosen, above.
-#TODO: include other RA levels
-
-df.full$row <- as.integer(rownames(df.full))
-
-if(len_y %% 2 ==0){
-  lkup2 <- data.frame(first = y[seq(1,len_y,by=2)], 
-                  second = y[seq(2,len_y, by = 2)], stringsAsFactors = FALSE)
-} else {
-  lkup2 <- data.frame(first = y[seq(1,len_y,by=2)], 
-                  second = y[c(seq(2,len_y, by = 2), NA)], stringsAsFactors = FALSE)
-}
-lkup2 <- cbind(lkup2, joined = paste(lkup2$first, lkup2$second, sep = "-"), stringsAsFactors = FALSE)
-
-#df.full2 <- df.full
-df.full2 <- merge(x = df.full, y = lkup2[,c("first","joined")],
-                  by.x = "eo_id_st", by.y = "first", all.x = TRUE)
-df.full2 <- merge(x = df.full2, y = lkup2[,c("second","joined")],
-                  by.x = "eo_id_st", by.y = "second", all.x = TRUE)
-
-df.full2$sampSizeStrat <- ifelse(is.na(df.full2$joined.y),
-            ifelse(is.na(df.full2$joined.x),
-              as.character(df.full2$eo_id_st),
-              as.character(df.full2$joined.x)),
-            as.character(df.full2$joined.y))
-
-df.full3 <- merge(df.full, df.full2[,c("row","sampSizeStrat")],
-                  by.x = "row", by.y = "row", all.x = TRUE)
-
-sampSizeStratNames <- unique(df.full3$sampSizeStrat)
-sampSizeVals <- rep(1, length(sampSizeStratNames))
-sampSizeVals[which(sampSizeStratNames == "pseu-a")] <- length(sampSizeStratNames)
-names(sampSizeVals) <- sampSizeStratNames
-
-
-df.full4 <- df.full3[,!grepl("row",names(df.full3))]
-cat("running full model", "\n")
-rf.full <- randomForest(df.full4[,indVarCols],
-						y=df.full4[,depVarCol],
-						importance=TRUE,
-						ntree=ntrees,
-						mtry=mtry,
-						strata = df.full4[,"sampSizeStrat"],
-						sampsize = sampSizeVals,
-						norm.votes = TRUE)
-
-#### this, above is saved as timSampMethod
-
-########
-## # make samp size groupings Kirsten's way
-EObyRA <- unique(df.full[,c("eo_id_st","ra")])
-EObyRA$sampSize[EObyRA$ra == "very high"] <- 4
-EObyRA$sampSize[EObyRA$ra == "high"] <- 3
-EObyRA$sampSize[EObyRA$ra == "medium"] <- 1
-EObyRA$sampSize[EObyRA$ra == "low"] <- 1
-EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- length(unique(EObyRA$eo_id_st))
-
-sampSizeVec <- EObyRA$sampSize
-names(sampSizeVec) <- as.character(EObyRA$eo_id_st)
-
 rf.full <- randomForest(df.full[,indVarCols],
                         y=df.full[,depVarCol],
                         importance=TRUE,
                         ntree=ntrees,
                         mtry=mtry,
                         strata = df.full[,"eo_id_st"],
-                        sampsize = sampSizeVec,
+                        sampsize = sampSizeVec, replace = TRUE,
                         norm.votes = TRUE)
 
 
-#### this, above is saved as kirstenSampMethod
 
-
-
-## old way
-rf.full <- randomForest(df.full[,indVarCols],
-                        y=df.full[,depVarCol],
-                        importance=TRUE,
-                        ntree=ntrees,
-                        mtry=mtry, norm.votes = TRUE)
 
 
 ####
@@ -666,7 +597,7 @@ for(i in 1:8){
 
 #save the project, return to the original working directory
 setwd(rdataOut)
-save.image(file = paste(ElementNames$Code, "_OrigModel_20kBG_2kbuff.Rdata", sep=""))
+save.image(file = paste(ElementNames$Code, "_newMethod_remEVs.Rdata", sep=""))
 
 ## clean up ----
 # remove all objects before moving on to the next script
