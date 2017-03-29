@@ -8,13 +8,13 @@ library(rgeos)
 
 # set up paths ----
 ### This is the location and shapefile that has your species polygon data. 
-polydir <- "G:/SDM_test/ElementData"
+polydir <- "K:/SDM_test/inputs/species"
 polyFileName <- "glypmuhl_expl_Albers.shp"
 setwd(polydir)
 
 ### This is the background random points shapefile info
-ranptsFolder <- "G:/SDM_test/background"
-ranptsShp <- "testArea_Albers_RanPts_2"
+ranptsFolder <- "K:/SDM_test/inputs/background"
+ranptsShp <- "testArea_Albers_RanPts__att"
 
 # load data ----
 # get the poly shapefile
@@ -30,6 +30,9 @@ projInfo <- backgShapef@proj4string
 # find coincident points ----
 #buffer the poly shapefile 30 m
 polybuff <- gBuffer(polyShapef, width = 30)
+
+# # try a 2KM buffer
+# polybuff <- gBuffer(polyShapef, width = 2000)
 
 # find points that fall within the buffered polygons, subset the sp object
 coincidentPts <- gContains(polybuff, backgShapef, byid = TRUE)
