@@ -34,7 +34,7 @@ setwd(rdataLoc)
 fileList <- dir(pattern = ".Rdata$",full.names=FALSE)
 fileList
 # choose one to run, load it #### requires editing ####
-n <- 1
+n <- 6
 load(fileList[[n]])
 
 ##Make the raster stack
@@ -46,7 +46,7 @@ names(fullL) <- stackOrder
 envStack <- stack(fullL)
 
 # run prediction ----
-fileNm <- paste(outRasPath, "/", ElementNames$Code, "_kirstenSampMethod", sep = "")
+fileNm <- paste(outRasPath, "/", ElementNames$Code, "_OrigMethod_20kBG_2kbuff.tif", sep = "")
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
 #writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
