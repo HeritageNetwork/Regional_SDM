@@ -31,9 +31,6 @@ projInfo <- backgShapef@proj4string
 #buffer the poly shapefile 30 m
 polybuff <- gBuffer(polyShapef, width = 30)
 
-# # try a 2KM buffer
-# polybuff <- gBuffer(polyShapef, width = 2000)
-
 # find points that fall within the buffered polygons, subset the sp object
 coincidentPts <- gContains(polybuff, backgShapef, byid = TRUE)
 colnames(coincidentPts) <- "insideBuff"
