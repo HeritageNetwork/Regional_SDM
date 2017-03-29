@@ -46,7 +46,7 @@ names(fullL) <- stackOrder
 envStack <- stack(fullL)
 
 # run prediction ----
-fileNm <- paste(outRasPath, "/", ElementNames$Code, "_OrigMethod_20kBG_2kbuff.tif", sep = "")
+fileNm <- paste(outRasPath, "/", ElementNames$Code, "_new.tif", sep = "")
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
 #writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
