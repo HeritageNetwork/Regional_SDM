@@ -30,10 +30,18 @@ setwd(sppPtLoc)
 rdataOut <- "K:/SDM_test/outputs"
 
 # the names of the files to be uploaded: presence points
-df.in <-read.dbf("glypmuhl_Albers_att_ColCo.dbf")
+df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- foreign:::read.dbf(paste(ranPtLoc,"testArea_att.dbf", sep="/"))
+df.abs <- foreign:::read.dbf(paste(ranPtLoc,"testArea_Albers_RanPts__att.dbf", sep="/"))
+
+
+## temp: create correllation matrix
+# library(Hmisc)
+# y <- foreign:::read.dbf("K:/Reg5Modeling_Project/inputs/background/sdmclpbnd_20160831_buffNeg1000_RanPts_studyArea_att.dbf")
+# y <- foreign:::read.dbf("K:/Reg5Modeling_Project/inputs/background/backgroundfixed20161202/sdmatt2fixed.dbf")
+# z <- rcorr(as.matrix(y[,2:82]))
+
 
 #  End, lines that require editing
 #
@@ -74,11 +82,30 @@ rasnames[!rasnames %in% namesInDB$gridName]
 ## if blank you are good to go
 rasnames[!rasnames %in% names(df.in)]
 
+# get a list of all distance-to env vars
+SQLquery <- "SELECT gridName FROM lkpEnvVars WHERE distToGrid = 1;"
+dtGrids <- dbGetQuery(db, statement = SQLquery)
+
 # clean up
 options(op)
 dbDisconnect(db)
 rm(db)
 
+# Remove irrelevant distance-to grids ----
+# check if pres points are VERY far away from any of the dist-to grids
+#   (this can cause erroneous, non-biological relationships that should
+#    not be driving the model. Group decision to remove.)
+
+# get the ones we are using here
+dtRas <- rasnames[rasnames %in% dtGrids$gridName]
+# what's the closest distance for each?
+dtRas.min <- apply(df.in[,dtRas], 2, min)
+# remove those whose closest distance is greater than 10km
+dtRas.sub <- dtRas.min[dtRas.min > 10000]
+rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
+
+
+# clean up, merge data sets -----
 # this is the full list of fields, arranged appropriately
 colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
 
@@ -91,7 +118,7 @@ indVarCols <- c(6:length(colList))
 df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
 
-#remove nulls
+#remove records with nulls
 df.abs<-df.abs[complete.cases(df.abs),]
 df.in<-df.in[complete.cases(df.in),]
 
@@ -114,6 +141,7 @@ SQLquery <- paste("SELECT ELEMTYPE FROM lkpSpecies WHERE SCIEN_NAME = '",
 	ElementNames[1],"';", sep="")
 ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
+
 dbDisconnect(db)
 rm(db)
 
@@ -590,11 +618,11 @@ rf.full <- randomForest(df.full[,indVarCols],
 
 
 ## old way
-# rf.full <- randomForest(df.full[,indVarCols],
-#                         y=df.full[,depVarCol],
-#                         importance=TRUE,
-#                         ntree=ntrees,
-#                         mtry=mtry, norm.votes = TRUE)
+rf.full <- randomForest(df.full[,indVarCols],
+                        y=df.full[,depVarCol],
+                        importance=TRUE,
+                        ntree=ntrees,
+                        mtry=mtry, norm.votes = TRUE)
 
 
 ####
@@ -638,7 +666,7 @@ for(i in 1:8){
 
 #save the project, return to the original working directory
 setwd(rdataOut)
-save.image(file = paste(ElementNames$Code, "_kirstenSampMethod.Rdata", sep=""))
+save.image(file = paste(ElementNames$Code, "_OrigModel_20kBG_2kbuff.Rdata", sep=""))
 
 ## clean up ----
 # remove all objects before moving on to the next script
