@@ -86,23 +86,37 @@ nm.PyFile <- paste(polydir,"/", sppCode, "_expl", sep = "")
 #get the attribute table from above 
 att.pt <- shp_expl@data
 
-# just in case convert to upper
-names(att.pt) <- toupper(names(att.pt))
+# just in case convert to lower
+names(att.pt) <- tolower(names(att.pt))
 
 #calculate Number of points for each poly, stick into new field
-att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"AREAM2"]/900+1)*0.004)))-1))
+att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"aream2"]/900+1)*0.004)))-1))
 #make a new field for the design, providing a stratum name
-att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$EXPL_ID, sep=""))
+att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$expl_id, sep=""))
+
+# sample must be equal or larger than the RA sample size in the random forest model
+# add one to RA sample size to ensure randomness in GRTS captures enough points
+# (sometimes it won't)
+att.pt$ra <- factor(tolower(as.character(att.pt$ra)))
+
+EObyRA <- unique(att.pt[,c("expl_id", "eo_id_st","ra")])
+EObyRA$minSamps[EObyRA$ra == "very high"] <- 5 + 1
+EObyRA$minSamps[EObyRA$ra == "high"] <- 4 + 1
+EObyRA$minSamps[EObyRA$ra == "medium"] <- 3 + 1
+EObyRA$minSamps[EObyRA$ra == "low"] <- 2 + 1
+EObyRA$minSamps[EObyRA$ra == "very low"] <- 1 + 1
+
+att.pt.2 <- merge(x = att.pt, y = EObyRA[,c("expl_id","minSamps")], 
+                  all.x = TRUE, by.x = "expl_id", by.y = "expl_id")
+
+att.pt.2$finalSampNum <- ifelse(att.pt.2$PolySampNum < att.pt.2$minSamps, 
+                                att.pt.2$minSamps, 
+                                att.pt.2$PolySampNum)
 
 # create the vector for indicating how many points to put in each polygon, 
 # then each value in the vector needs to be attributed to the sampling unit 
-sampNums <- c(att.pt[,"PolySampNum"])
-names(sampNums) <- att.pt[,"EXPL_ID"]
-
-# sample MUST be larger than 1 for any single polygon use OVER to increase 
-# sample sizes in these. To handle this, create a vector that contains 
-# 2 when sample size = 1, otherwise 0
-overAmt <- ifelse(sampNums == 1,2,0)
+sampNums <- c(att.pt.2[,"finalSampNum"])
+names(sampNums) <- att.pt[,"expl_id"]
 
 # initialize the design list and the names vector so 
 # they are available in the for loop
@@ -120,7 +134,7 @@ for (i in 1:length(sampNums)){
 	#populate the internal list
 	SampDesign[[i]] <- list(panel=c(FirstSamp=sampNums[[i]]),
 			seltype="Equal", 
-			over=overAmt[[i]])
+			over=0)
 }
 #apply that names vector
 names(SampDesign) <- namesVec
@@ -150,7 +164,7 @@ ranPts <- as(grtsResult, "SpatialPointsDataFrame")
 ranPts@proj4string <- projInfo
 # remove extranneous fields, write it out
 fullName <- paste(nm.RanPtFile,".shp",sep="")
-colsToKeep <- c("siteID", "stratum", desiredCols)
+colsToKeep <- c("siteID", "stratum", tolower(desiredCols))
 ranPts <- ranPts[,colsToKeep]
 writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile, 
 			driver="ESRI Shapefile", overwrite_layer=TRUE)
@@ -160,8 +174,8 @@ writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile,
 ####
 
 # prep the data
-OutPut <- data.frame(SciName = paste(att.pt[1,"SNAME"]),
-	CommName=paste(att.pt[1,"SCOMNAME"]),
+OutPut <- data.frame(SciName = paste(att.pt[1,"sname"]),
+	CommName=paste(att.pt[1,"scomname"]),
 	ElemCode=sppCode,
 	RandomPtFile=nm.RanPtFile,
 	date = paste(Sys.Date()),
