@@ -19,7 +19,7 @@ library(rasterVis)
 library(RSQLite)
 library(xtable)
 
-inPath <- "G:/SDM_test/output"
+inPath <- "K:/SDM_test/outputs"
 
 ## find and load model data ----
 # get a list of what's in the directory
@@ -27,25 +27,25 @@ inPath <- "G:/SDM_test/output"
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 1
+n <- 4
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
 ## set paths (after loading Rdata file in case objects exist) ----
-rnwPath <- "G:/RegionalSDM/scripts/Regional_SDM"
-outPath <- "G:/SDM_test/output/metadata"
-gridpath <- "G:/SDM_test/output/grids"
-stateBoundPath <- "G:/SDM_test/other_spatial"
-dbLoc <- "G:/RegionalSDM/databases"
+rnwPath <- "K:/SDM_test/outputs"
+outPath <- "K:/SDM_test/outputs/metadata"
+gridpath <- "K:/SDM_test/outputs/grids"
+stateBoundPath <- "K:/SDM_test/other_spatial"
+dbLoc <- "K:/SDM_test/databases"
 
 extentMapName <- "testArea_Albers"
 
-testareapath <- "G:/SDM_test/other_spatial"
+testareapath <- "K:/SDM_test/other_spatial"
 testAreaName <- "testArea_Albers"
 
 ras <- raster(paste(gridpath, "/", ElementNames$Code, ".tif", sep = ""))
 
-ras <- raster(paste(gridpath, "/", "glypmuhl", ".tif", sep = ""))
+#ras <- raster(paste(gridpath, "/", "glypmuhl_newMethod_remEVs", ".tif", sep = ""))
 
 
 ## Get Program and Data Sources info ----
