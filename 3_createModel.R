@@ -246,13 +246,19 @@ numEOs <- nrow(table(df.in2$eo_id_st))
 #if we have fewer than 10 EOs, move forward with jackknifing by polygon, otherwise
 #jackknife by EO.
 group <- vector("list")
-group$colNm <- ifelse(numEOs < 10,"stratum","eo_id_st")
-group$JackknType <- ifelse(numEOs < 10,"polygon","element occurrence")
-if(numEOs < 10) {
-		group$vals <- unique(df.in2$stratum)
-} else {
-		group$vals <- unique(df.in2$eo_id_st)
-}
+# group$colNm <- ifelse(numEOs < 10,"stratum","eo_id_st")
+# group$JackknType <- ifelse(numEOs < 10,"polygon","element occurrence")
+# if(numEOs < 10) {
+# 		group$vals <- unique(df.in2$stratum)
+# } else {
+# 		group$vals <- unique(df.in2$eo_id_st)
+# }
+## TODO: bring back by-polygon validation. SampSize needs to be able to handle this to make it possible
+# only validate by EO at this time:
+group$colNm <- "eo_id_st"
+group$JackknType <- "element occurrence"
+group$vals <- unique(df.in2$eo_id_st)
+
 
 # # reduce the number of groups, if there are more than 200, to 200 groups
 # # this groups the groups simply if they are adjacent in the order created above.
@@ -273,7 +279,7 @@ if(length(group$vals) > 30) {
 }
 ###### reduced for testing #####
 ### TODO: clear when running real models
-ntrees <- 200
+#ntrees <- 200
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
@@ -329,51 +335,16 @@ if(length(group$vals)>1){
 		  trSetBG <-  df.abs2[-TrBGsamps,]  #get everything that isn't in TrBGsamps
 		   # join em, clean up
 		  trSet <- rbind(trSet, trSetBG)
+		  trSet$eo_id_st <- factor(trSet$eo_id_st)
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
+		  
+		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
 		  rm(trSetBG, evSetBG)
 		  
-		  #evSetBG <- df.full[sample(nrow(df.full), BGsampSz , replace = FALSE, prob = NULL),]
-		  # 
-		  #subs <- as.character(df.full$eo_id_st) == as.character(group$vals[[i]])
-		  #   
-		  # evSet[[i]] <- 
-		  
-		  #build sampsize statement 
-		  # which elem to set to zero?
-		  #presSampsize <- rep(1, length(group$vals))
-		  #presSampsize[[i]] <- 2
-		  #names(presSampsize) <- group$vals
-      #absSampsize <- length(group$vals)
-      #names(absSampsize) <- df.abs[,group$colNm][[1]]
-		  #df.full.temp <- df.full
-		  #levels(df.full.temp$pres) <- c(0,1,2)
-		  #df.full.temp[df.full.temp$eo_id_st == names(presSampsize)[[i]], "pres"] <- 2
-      
-		  #sampleSize <- c(presSampsize, absSampsize)
-
-		  #subs <- as.character(df.full$eo_id_st) != as.character(group$vals[[i]])
-		  
-		   # run RF on subsets
-		#   trRes[[i]] <- randomForest(df.full.temp[,indVarCols],y=df.full.temp[,depVarCol],
-		# 							 importance=TRUE,ntree=ntrees,mtry=mtry,
-		# 							 strata = df.full[,group$colNm], sampsize = sampleSize
-		# 							 )
-
-
-		  # trRes[[i]] <- randomForest(df.full[,indVarCols],y=df.full[,depVarCol],
-		  #                            importance=TRUE,ntree=ntrees,mtry=mtry,
-		  #                            strata = df.full[,group$colNm], sampsize = sampleSize
-		  #                            )
-		  # trRes[[i]] <- randomForest(pres ~ ., data = df.full[,c(depVarCol, indVarCols)], 
-		  #                   subset = !subs, importance = TRUE, ntree = ntrees, mtry = mtry,
-		  #                   strata = df.full[,group$colNm], sampsize = sampleSize)
-		  
-		  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
-		                             importance=TRUE,ntree=ntrees,mtry=mtry
+		                             importance=TRUE,ntree=ntrees,mtry=mtry,
+		                             strata = trSet[,group$colNm], sampsize = ssVec, replace = TRUE
 		                             )
-		  
-		  #x <- predict(trRes[[i]], df.full[subs,], type="prob")
 		  
 		  # run a randomForest predict on the validation data
 		  evRes[[i]] <- predict(trRes[[i]], evSet[[i]], type="prob")
@@ -597,7 +568,7 @@ for(i in 1:8){
 
 #save the project, return to the original working directory
 setwd(rdataOut)
-save.image(file = paste(ElementNames$Code, "_newMethod_remEVs.Rdata", sep=""))
+save.image(file = paste(ElementNames$Code, "_newMethod_remEVs2.Rdata", sep=""))
 
 ## clean up ----
 # remove all objects before moving on to the next script
