@@ -32,7 +32,7 @@ fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
 ## set paths (after loading Rdata file in case objects exist) ----
-rnwPath <- "K:/SDM_test/outputs"
+rnwPath <- "K:/SDM_test/scripts/Regional_SDM"
 outPath <- "K:/SDM_test/outputs/metadata"
 gridpath <- "K:/SDM_test/outputs/grids"
 stateBoundPath <- "K:/SDM_test/other_spatial"
