@@ -544,10 +544,6 @@ rf.full <- randomForest(df.full[,indVarCols],
                         sampsize = sampSizeVec, replace = TRUE,
                         norm.votes = TRUE)
 
-
-
-
-
 ####
 # Importance measures ----
 ####
