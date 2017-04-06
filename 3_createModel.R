@@ -142,6 +142,10 @@ SQLquery <- paste("SELECT ELEMTYPE FROM lkpSpecies WHERE SCIEN_NAME = '",
 ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
 
+#also get correlated env var information
+SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings NOT NULL;"
+corrdEVs <- dbGetQuery(db, statement = SQLquery)
+
 dbDisconnect(db)
 rm(db)
 
@@ -203,8 +207,21 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
-# set the percentile, here choosing above 50% percentile
-envarPctile <- 0.50
+
+# first remove the bottom of the correlated vars
+for(grp in unique(corrdEVs$correlatedVarGroupings)){
+  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
+  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
+  imp.sub <- imp.sub[order(imp.sub),, drop = FALSE]
+  if(nrow(imp.sub) > 1){
+    varsToDrop <- rownames(imp.sub)[2:nrow(imp.sub)]
+    impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
+  }
+}
+rm(vars, imp.sub)
+
+# set the percentile, here choosing above 25% percentile
+envarPctile <- 0.25
 y <- quantile(impvals, probs = envarPctile)
 impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
