@@ -294,9 +294,9 @@ if(length(group$vals) > 200) {
 #reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
 if(length(group$vals) > 30) {
-	ntrees <- 500
-} else {
 	ntrees <- 750
+} else {
+	ntrees <- 1000
 }
 ###### reduced for testing #####
 ### TODO: clear when running real models
