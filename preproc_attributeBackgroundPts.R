@@ -6,8 +6,8 @@ library(raster)
 library(rgdal)
 
 
-pathToRas <- "G:/SDM_test/env_rasters"
-pathToPts <- "G:/SDM_test/background"
+pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
+pathToPts <- "K:/SDM_test/inputs/background"
 
 
 ## create a stack ----
@@ -22,6 +22,7 @@ envStack <- stack(gridlist)
 
 ## Get random points file ----
 setwd(pathToPts)
+
 
 ranPtsFile <- "testArea_Albers_RanPts_2_clean.shp"
 ranPtsFileNoExt <- sub(".shp","",ranPtsFile)
