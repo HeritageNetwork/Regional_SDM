@@ -8,15 +8,15 @@ library(rgdal)
 
 ## set paths ----
 # set this path to the folder where the environmental rasters reside
-pathToTifs <- "K:/Florida"
+pathToTifs <- "K:/Reg5Modeling_Project/inputs/env_vars/geotiffs_masked"
 
 # the path to write out the tiffs to
-pathToClipped <- "K:/Reg5Modeling_Project/inputs/env_vars/geotiffs_clip"
+pathToClipped <- "K:/SDM_test/inputs/env_vars/geotiffs"
 
 
 # path to the shape to use for clipping
-pathToClipShape <- "K:/Reg5Modeling_Project/other_spatial"
-clipShapeName <- "reg5_pred_20161027"
+pathToClipShape <- "K:/SDM_test/other_spatial"
+clipShapeName <- "testArea_Albers"
 
 clpShp <- readOGR(pathToClipShape,clipShapeName)
 

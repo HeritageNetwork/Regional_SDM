@@ -19,41 +19,52 @@ library(randomForest)
 #  Lines that require editing
 #
 # set up paths ----
-sppPtLoc <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
-ranPtLoc <- "K:/Reg5Modeling_Project/inputs/background"
-dbLoc <- "K:/Reg5Modeling_Project/databases"
-pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/nativeR"
+sppPtLoc <- "K:/SDM_test/inputs/species/pointData"
+ranPtLoc <- "K:/SDM_test/inputs/background"
+dbLoc <- "K:/SDM_test/databases"
+pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
 
 setwd(sppPtLoc)
 
 # directory for saving RData files (analysis data)
-rdataOut <- "K:/Reg5Modeling_Project/outputs"
+rdataOut <- "K:/SDM_test/outputs"
 
 # the names of the files to be uploaded: presence points
 df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- read.dbf(paste(ranPtLoc,"sdmclpbnd_20160831_buffNeg1000_att.dbf", sep="/"))
+df.abs <- foreign:::read.dbf(paste(ranPtLoc,"testArea_Albers_RanPts__att.dbf", sep="/"))
+
+
+## temp: create correllation matrix
+# library(Hmisc)
+# y <- foreign:::read.dbf("K:/Reg5Modeling_Project/inputs/background/sdmclpbnd_20160831_buffNeg1000_RanPts_studyArea_att.dbf")
+# y <- foreign:::read.dbf("K:/Reg5Modeling_Project/inputs/background/backgroundfixed20161202/sdmatt2fixed.dbf")
+# z <- rcorr(as.matrix(y[,2:82]))
+
 
 #  End, lines that require editing
 #
 #####
 
+#make sure we don't have any NAs
+df.in <- df.in[complete.cases(df.in),]
+df.abs <- df.abs[complete.cases(df.abs),]
+
+
 # align data sets, QC ----
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
-df.abs <- cbind(df.abs, EO_ID_ST=99999, 
-					pres=0, RA="High", SNAME="background")
-
-df.abs$stratum <- "pseu-a"
+df.abs <- cbind(df.abs, EO_ID_ST="pseu-a", 
+					pres=0, RA="high", SNAME="background", stratum="pseu-a")
 
 # lower case column names
 names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = pathToRas, pattern = ".grd$")
-rasnames <- gsub(".grd", "", raslist)
+raslist <- list.files(path = pathToRas, pattern = ".tif$")
+rasnames <- gsub(".tif", "", raslist)
 
 # are these all in the lookup database? Checking here.
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
@@ -76,11 +87,30 @@ rasnames[!rasnames %in% namesInDB$gridName]
 ## if blank you are good to go
 rasnames[!rasnames %in% names(df.in)]
 
+# get a list of all distance-to env vars
+SQLquery <- "SELECT gridName FROM lkpEnvVars WHERE distToGrid = 1;"
+dtGrids <- dbGetQuery(db, statement = SQLquery)
+
 # clean up
 options(op)
 dbDisconnect(db)
 rm(db)
 
+# Remove irrelevant distance-to grids ----
+# check if pres points are VERY far away from any of the dist-to grids
+#   (this can cause erroneous, non-biological relationships that should
+#    not be driving the model. Group decision to remove.)
+
+# get the ones we are using here
+dtRas <- rasnames[rasnames %in% dtGrids$gridName]
+# what's the closest distance for each?
+dtRas.min <- apply(df.in[,dtRas], 2, min)
+# remove those whose closest distance is greater than 10km
+dtRas.sub <- dtRas.min[dtRas.min > 10000]
+rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
+
+
+# clean up, merge data sets -----
 # this is the full list of fields, arranged appropriately
 colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
 
@@ -92,10 +122,6 @@ indVarCols <- c(6:length(colList))
 #re-arrange
 df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
-
-#remove nulls
-df.abs<-df.abs[complete.cases(df.abs),]
-df.in<-df.in[complete.cases(df.in),]
 
 #Fire up SQLite
 db <- dbConnect(SQLite(),dbname=db_file)  
@@ -116,6 +142,11 @@ SQLquery <- paste("SELECT ELEMTYPE FROM lkpSpecies WHERE SCIEN_NAME = '",
 	ElementNames[1],"';", sep="")
 ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
+
+#also get correlated env var information
+SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings NOT NULL;"
+corrdEVs <- dbGetQuery(db, statement = SQLquery)
+
 dbDisconnect(db)
 rm(db)
 
@@ -127,22 +158,38 @@ df.full <- rbind(df.in, df.abs)
 df.full$stratum <- factor(df.full$stratum)
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
-df.full$ra <- factor(df.full$ra)
+df.full$ra <- factor(tolower(as.character(df.full$ra)))
 df.full$sname <- factor(df.full$sname)
-	
+
+# make samp size groupings ----
+EObyRA <- unique(df.full[,c("eo_id_st","ra")])
+EObyRA$sampSize[EObyRA$ra == "very high"] <- 5
+EObyRA$sampSize[EObyRA$ra == "high"] <- 4
+EObyRA$sampSize[EObyRA$ra == "medium"] <- 3
+EObyRA$sampSize[EObyRA$ra == "low"] <- 2
+EObyRA$sampSize[EObyRA$ra == "very low"] <- 1
+# set the background pts to the sum of the EO samples
+EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
+
+sampSizeVec <- EObyRA$sampSize
+names(sampSizeVec) <- as.character(EObyRA$eo_id_st)
+
+
 ##
 # tune mtry ----
 # run through mtry twice
 
 x <- tuneRF(df.full[,indVarCols],
              y=df.full[,depVarCol],
-             ntreeTry = 50, stepFactor = 2, mtryStart = 6)
+             ntreeTry = 300, stepFactor = 2, mtryStart = 6,
+            strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
-            ntreeTry = 50, stepFactor = 1.5, mtryStart = max(newTry))
+            ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
+            strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
 rm(x,y)
@@ -156,12 +203,29 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
                         y=df.full[,depVarCol],
                         importance=TRUE,
                         ntree=ntrees,
-                        mtry=mtry)
+                        mtry=mtry,
+                        strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
+
+# first remove the bottom of the correlated vars
+for(grp in unique(corrdEVs$correlatedVarGroupings)){
+  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
+  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
+  varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
+  impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
+  #old way
+  # imp.sub <- imp.sub[order(imp.sub, decreasing = TRUE),, drop = FALSE]
+  # if(nrow(imp.sub) > 1){
+  #   varsToDrop <- rownames(imp.sub)[2:nrow(imp.sub)]
+  #   impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
+  # }
+}
+rm(vars, imp.sub, varsToDrop)
+
 # set the percentile, here choosing above 25% percentile
-envarPctile <- 0.90
+envarPctile <- 0.25
 y <- quantile(impvals, probs = envarPctile)
 impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
@@ -173,20 +237,6 @@ impEnvVarCols[1:5] <- TRUE
 df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
 indVarCols <- c(6:length(names(df.full)))
-
-
-### try out VSURF
-library(VSURF)
-vsurf.out <- VSURF(df.full[,indVarCols],
-                   y=df.full[,depVarCol], parallel = TRUE)
-
-
-### try out Hapfelmeier code ## Killed it, was still running after winter break!
-# library(party)
-# source("K:/Reg5Modeling_Project/scripts/Hapfelmeier_Appendices/Variable_Selektion_Approaches.r")
-# 
-# rfNAP.out <- NAP(X=df.full[,indVarCols],
-#                  Y=df.full[,depVarCol])
 
 ##
 # code above is for removing least important env vars
@@ -217,13 +267,19 @@ numEOs <- nrow(table(df.in2$eo_id_st))
 #if we have fewer than 10 EOs, move forward with jackknifing by polygon, otherwise
 #jackknife by EO.
 group <- vector("list")
-group$colNm <- ifelse(numEOs < 10,"stratum","eo_id_st")
-group$JackknType <- ifelse(numEOs < 10,"polygon","element occurrence")
-if(numEOs < 10) {
-		group$vals <- unique(df.in2$stratum)
-} else {
-		group$vals <- unique(df.in2$eo_id_st)
-}
+# group$colNm <- ifelse(numEOs < 10,"stratum","eo_id_st")
+# group$JackknType <- ifelse(numEOs < 10,"polygon","element occurrence")
+# if(numEOs < 10) {
+# 		group$vals <- unique(df.in2$stratum)
+# } else {
+# 		group$vals <- unique(df.in2$eo_id_st)
+# }
+## TODO: bring back by-polygon validation. SampSize needs to be able to handle this to make it possible
+# only validate by EO at this time:
+group$colNm <- "eo_id_st"
+group$JackknType <- "element occurrence"
+group$vals <- unique(df.in2$eo_id_st)
+
 
 # # reduce the number of groups, if there are more than 200, to 200 groups
 # # this groups the groups simply if they are adjacent in the order created above.
@@ -238,13 +294,13 @@ if(length(group$vals) > 200) {
 #reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
 if(length(group$vals) > 30) {
-	ntrees <- 500
-} else {
 	ntrees <- 750
+} else {
+	ntrees <- 1000
 }
 ###### reduced for testing #####
 ### TODO: clear when running real models
-#ntrees <- 50
+#ntrees <- 200
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
@@ -275,7 +331,7 @@ t.rocr.pred <- vector("list",length(group$vals))
    names(t.rocr.pred) <- group$vals[]
 v.rocr.pred <- vector("list",length(group$vals))
    names(v.rocr.pred) <- group$vals[]
-
+   
 #######
 ## This is the validation loop. ----
 ## it creates a model for all-but-one group (EO, polygon, or group),
@@ -300,12 +356,18 @@ if(length(group$vals)>1){
 		  trSetBG <-  df.abs2[-TrBGsamps,]  #get everything that isn't in TrBGsamps
 		   # join em, clean up
 		  trSet <- rbind(trSet, trSetBG)
+		  trSet$eo_id_st <- factor(trSet$eo_id_st)
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
+		  
+		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
 		  rm(trSetBG, evSetBG)
-		   # run RF on subsets
+		  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
-									 importance=TRUE,ntree=ntrees,mtry=mtry)
-		   # run a randomForest predict on the validation data
+		                             importance=TRUE,ntree=ntrees,mtry=mtry,
+		                             strata = trSet[,group$colNm], sampsize = ssVec, replace = TRUE
+		                             )
+		  
+		  # run a randomForest predict on the validation data
 		  evRes[[i]] <- predict(trRes[[i]], evSet[[i]], type="prob")
 		   # use ROCR to structure the data. Get pres col of evRes (= named "1")
 		  v.rocr.pred[[i]] <- prediction(evRes[[i]][,"1"],evSet[[i]]$pres)
@@ -417,11 +479,6 @@ if(length(group$vals)>1){
 		names(used) <- names(imp)
 		t.importance[[i]] <- data.frame("meanDecreaseAcc" = imp,
 									"timesUsed" = used )
-		#housecleaning to save memory
-		trRes[[i]]$forest <- NULL
-		trRes[[i]]$oob.times <- NULL
-		trRes[[i]]$votes <- NULL
-		trRes[[i]]$predicted <- NULL
 	} #close loop
 
 	#housecleaning
@@ -478,15 +535,14 @@ ntrees <- 2000
 #   run the full model ----
 ####
 
-cat("running full model", "\n")
 rf.full <- randomForest(df.full[,indVarCols],
-						y=df.full[,depVarCol],
-						importance=TRUE,
-						ntree=ntrees,
-						mtry=mtry, 
-						sampsize = c(numEOs*10, numEOs),
-						norm.votes = TRUE)
-
+                        y=df.full[,depVarCol],
+                        importance=TRUE,
+                        ntree=ntrees,
+                        mtry=mtry,
+                        strata = df.full[,"eo_id_st"],
+                        sampsize = sampSizeVec, replace = TRUE,
+                        norm.votes = TRUE)
 
 ####
 # Importance measures ----
@@ -499,7 +555,7 @@ db <- dbConnect(SQLite(),dbname=db_file)
 # get importance data, set up a data frame
 EnvVars <- data.frame(gridName = names(f.imp), impVal = f.imp, fullName="", stringsAsFactors = FALSE)
 #set the query for the following lookup, note it builds many queries, equal to the number of vars
-SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in ('", paste(EnvVars$gridName,sep=", "),
+SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName COLLATE NOCASE in ('", paste(EnvVars$gridName,sep=", "),
 					"'); ", sep="")
 #cycle through all select statements, put the results in the df
 for(i in 1:length(EnvVars$gridName)){
@@ -512,7 +568,7 @@ dbDisconnect(db)
 # partial plot data ----
 ###
 #get the order for the importance charts
-ord <- order(EnvVars$impVal, decreasing = TRUE)[1:n.var]
+ord <- order(EnvVars$impVal, decreasing = TRUE)[1:length(indVarCols)]
 #set up a list to hold the plot data
 pPlots <- vector("list",8)
 		names(pPlots) <- c(1:8)
@@ -529,16 +585,8 @@ for(i in 1:8){
 
 #save the project, return to the original working directory
 setwd(rdataOut)
-save.image(file = paste(ElementNames$Code, ".Rdata", sep=""))
-setwd(sppPtLoc)
+save.image(file = paste(ElementNames$Code, "_newMethod_remEVs3.Rdata", sep=""))
 
 ## clean up ----
 # remove all objects before moving on to the next script
 rm(list=ls())
-
-
-
-## variable selection
-
-
-

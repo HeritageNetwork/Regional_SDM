@@ -8,12 +8,12 @@ library(ROCR)
 library(RSQLite)
 library(DBI)
 
-inPath <- "K:/Reg5Modeling_Project/outputs"
-gridpath <- "K:/Reg5Modeling_Project/outputs/grids"
+inPath <- "K:/SDM_test/outputs"
+gridpath <- "K:/SDM_test/outputs/grids"
 #out path
-outRas <- "K:/Reg5Modeling_Project/outputs/grids" 
+outRas <- "K:/SDM_test/outputs/grids" 
 
-dbLoc <- "G:/RegionalSDM/databases"
+dbLoc <- "K:/SDM_test/databases"
 
 ## get any current documentation ----
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
@@ -23,7 +23,7 @@ db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 4
+n <- 3
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
@@ -161,6 +161,9 @@ dbDisconnect(db)
 
 
 ## choose threshold, create binary grid ----
+# THE next lines are for creating thresholded grids. You don't need to do this here, 
+# you could do in Arc instead. 
+
 #lets set the threshold to MTP
 threshold <- allThresh$MTP
 
