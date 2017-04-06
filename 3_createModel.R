@@ -47,6 +47,11 @@ df.abs <- foreign:::read.dbf(paste(ranPtLoc,"testArea_Albers_RanPts__att.dbf", s
 #
 #####
 
+#make sure we don't have any NAs
+df.in <- df.in[complete.cases(df.in),]
+df.abs <- df.abs[complete.cases(df.abs),]
+
+
 # align data sets, QC ----
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
@@ -117,10 +122,6 @@ indVarCols <- c(6:length(colList))
 #re-arrange
 df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
-
-#remove records with nulls
-df.abs<-df.abs[complete.cases(df.abs),]
-df.in<-df.in[complete.cases(df.in),]
 
 #Fire up SQLite
 db <- dbConnect(SQLite(),dbname=db_file)  
@@ -212,13 +213,16 @@ OriginalNumberOfEnvars <- length(impvals)
 for(grp in unique(corrdEVs$correlatedVarGroupings)){
   vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
   imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
-  imp.sub <- imp.sub[order(imp.sub),, drop = FALSE]
-  if(nrow(imp.sub) > 1){
-    varsToDrop <- rownames(imp.sub)[2:nrow(imp.sub)]
-    impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
-  }
+  varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
+  impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
+  #old way
+  # imp.sub <- imp.sub[order(imp.sub, decreasing = TRUE),, drop = FALSE]
+  # if(nrow(imp.sub) > 1){
+  #   varsToDrop <- rownames(imp.sub)[2:nrow(imp.sub)]
+  #   impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
+  # }
 }
-rm(vars, imp.sub)
+rm(vars, imp.sub, varsToDrop)
 
 # set the percentile, here choosing above 25% percentile
 envarPctile <- 0.25
@@ -555,7 +559,7 @@ db <- dbConnect(SQLite(),dbname=db_file)
 # get importance data, set up a data frame
 EnvVars <- data.frame(gridName = names(f.imp), impVal = f.imp, fullName="", stringsAsFactors = FALSE)
 #set the query for the following lookup, note it builds many queries, equal to the number of vars
-SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in ('", paste(EnvVars$gridName,sep=", "),
+SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName COLLATE NOCASE in ('", paste(EnvVars$gridName,sep=", "),
 					"'); ", sep="")
 #cycle through all select statements, put the results in the df
 for(i in 1:length(EnvVars$gridName)){
@@ -585,7 +589,7 @@ for(i in 1:8){
 
 #save the project, return to the original working directory
 setwd(rdataOut)
-save.image(file = paste(ElementNames$Code, "_newMethod_remEVs2.Rdata", sep=""))
+save.image(file = paste(ElementNames$Code, "_newMethod_remEVs3.Rdata", sep=""))
 
 ## clean up ----
 # remove all objects before moving on to the next script
