@@ -8,8 +8,8 @@ library(RSQLite)
 library(maptools)
 
 # Set paths ----
-pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
-pathToRanPts <- "D:/RegionalSDM/inputs/species/glypmuhl/point_data"
+pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
+pathToRanPts <- "K:/SDM_test/inputs/species/pointData"
 
 setwd(pathToRas)
 
@@ -39,25 +39,28 @@ ranPtsFiles
 #enter its location in the list (first = 1, second = 2, etc)
 n <- 1
 
-ranPtsFilesNoExt <- sub(".shp","",ranPtsFiles)
-shpf <- readOGR(".", layer = ranPtsFilesNoExt[n])
+ranPtsFilesNoExt <- sub(".shp","",ranPtsFiles[n])
+shpf <- readOGR(".", layer = ranPtsFilesNoExt)
 
 #get projection info for later
 projInfo <- shpf@proj4string
 
 #Get the species code for the ranPtsFile chosen
-code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))[[n]]
+# new way, assume you want first part of text string, before first underscore
+code_name <- strsplit(ranPtsFilesNoExt, "_")[[1]][1]
+# old way, removes last eleven characters ("_RanPts.shp")
+#code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))[[n]]
 
 # extract raster data to points ----
 ##  Bilinear interpolation is a *huge* memory hog. 
 ##  Do it all as 'simple' 
 
 x <- extract(envStack, shpf, method="simple", sp=TRUE)
-filename <- paste(code_name, "_att", sep="")
 
 # write it out ----
 # apply projection info
 x@proj4string <- projInfo
+filename <- paste(code_name, "_att", sep="")
 writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 ## clean up ----

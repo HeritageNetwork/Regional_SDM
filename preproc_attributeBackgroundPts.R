@@ -5,12 +5,15 @@
 library(raster)
 library(rgdal)
 
-## set paths ----
-pathToRas <- "D:/RegionalSDM/env_vars/geotiffs"
-pathToPts <- "D:/RegionalSDM/inputs/background"
+
+pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
+pathToPts <- "K:/SDM_test/inputs/background"
+
 
 ## create a stack ----
 setwd(pathToRas)
+
+## create a stack. Note this is using native R rasters
 raslist <- list.files(pattern = ".tif$")
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
@@ -19,10 +22,15 @@ envStack <- stack(gridlist)
 
 ## Get random points file ----
 setwd(pathToPts)
-ranPtsFile <- "clpBnd_SDM_RanPts_clean.shp"
+
+
+ranPtsFile <- "testArea_Albers_RanPts_2_clean.shp"
 ranPtsFileNoExt <- sub(".shp","",ranPtsFile)
 # Read these files into a list of SpatialPoints dataframes
 shpf <- readOGR(".", layer = ranPtsFileNoExt)
+
+## drop current data in dataframe
+#shpf@data <- shpf@data[,c(1,83)]
   
 # Get a list of the codes (this assumes all the input files had '_RanPts.shp' that shall be stripped)
 code_name <- substr(ranPtsFile,1,(nchar(ranPtsFile)-11))

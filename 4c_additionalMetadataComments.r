@@ -10,7 +10,7 @@
 library(RSQLite)
 
 ## set paths, load Rdata file ----
-inPath <- "G:/RegionalSDM/outputs"
+inPath <- "K:/Reg5Modeling_Project/outputs"
 
 # get a list of what's in the directory
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
@@ -20,7 +20,7 @@ n <- 1
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
-dbLoc <- "G:/RegionalSDM/databases"
+dbLoc <- "K:/Reg5Modeling_Project/databases"
 
 ## get any current documentation ----
 db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")

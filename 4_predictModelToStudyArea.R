@@ -12,16 +12,17 @@ library(randomForest)
 
 # set up paths ----
 # directory for the RData files (analysis data)
-rdataLoc <- "D:/RegionalSDM/zz_testArea/outputs"
+rdataLoc <- "K:/SDM_test/outputS"
 
 # directory for the environmental rasters
-pathToRas <- "D:/RegionalSDM/zz_testArea/env_vars/geotiffs"
+pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
 
 # output path (best if different from rdataloc)
-outRasPath <- "D:/RegionalSDM/zz_testArea/outputs/grids"
+outRasPath <- "K:/SDM_test/outputS/grids"
+
 
 # get the customized version of the predict function
-source('D:/RegionalSDM/scripts/Regional_SDM/RasterPredictMod.R')
+source('K:/SDM_test/scripts/Regional_SDM/RasterPredictMod.R')
 
 #  End, lines that require editing
 #
@@ -33,7 +34,7 @@ setwd(rdataLoc)
 fileList <- dir(pattern = ".Rdata$",full.names=FALSE)
 fileList
 # choose one to run, load it #### requires editing ####
-n <- 1
+n <- 6
 load(fileList[[n]])
 
 ##Make the raster stack
@@ -45,7 +46,7 @@ names(fullL) <- stackOrder
 envStack <- stack(fullL)
 
 # run prediction ----
-fileNm <- paste(outRasPath, ElementNames$Code, sep = "/")
+fileNm <- paste(outRasPath, "/", ElementNames$Code, "_new.tif", sep = "")
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
 #writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)

@@ -6,10 +6,11 @@ library(rgdal)
 
 ## set paths ----
 # This is the directory that has your study area polygon.
-setwd("D:/blahblahblah/inputs/background")
+setwd("G:/SDM_test/other_spatial")
+
 
 # the name of the study area polygon
-StudyAreaPoly <- "clpBnd_SDM.shp"
+StudyAreaPoly <- "testArea_Albers.shp"
 
 # read in the shapefile, get the attribute data
 layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
@@ -26,7 +27,7 @@ nm.RanPtFile <- paste(layer, "_RanPts", sep = "")
 # Enter the number of random points you want to generate 
 # total area of entire study area is about 1,064,000 km^2
 # if our target is about 1 pt / 20 km^2, that comes out to about 53,000 points. 
-numpts <- 53000
+numpts <- 20000
 
 # Create the design list
 dsgn <- list(None=list(panel=c(Panel=numpts), seltype="Equal"))
@@ -37,13 +38,13 @@ grtsResult <- grts(design=dsgn,
 			in.shape=layer,
 			att.frame=att.pt,
 			type.frame="area",
-			DesignID="bkgrndRanPts",
+			DesignID="BG-",
 			prjfilename=layer,
 			out.shape=nm.RanPtFile)
 			
 # remove extranneous fields, write it out ----
 ranPts <- as(grtsResult, "SpatialPointsDataFrame")
-colsToKeep <- c("stratum")
+colsToKeep <- c("siteID")
 ranPts <- ranPts[,colsToKeep]
 
 # apply projection info
