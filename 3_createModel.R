@@ -19,10 +19,10 @@ library(randomForest)
 #  Lines that require editing
 #
 # set up paths ----
-sppPtLoc <- "K:/SDM_test/inputs/species/pointData"
-ranPtLoc <- "K:/SDM_test/inputs/background"
-dbLoc <- "K:/SDM_test/databases"
-pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
+sppPtLoc <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
+ranPtLoc <- "K:/Reg5Modeling_Project/inputs/background"
+dbLoc <- "K:/Reg5Modeling_Project/databases"
+pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/geotiffs_masked"
 
 setwd(sppPtLoc)
 
@@ -33,7 +33,7 @@ rdataOut <- "K:/SDM_test/outputs"
 df.in <-read.dbf("glypmuhl_att.dbf")
 
 # absence points
-df.abs <- foreign:::read.dbf(paste(ranPtLoc,"testArea_Albers_RanPts__att.dbf", sep="/"))
+df.abs <- foreign:::read.dbf(paste(ranPtLoc,"bkgrd_att_clean_clp.dbf", sep="/"))
 
 
 ## temp: create correllation matrix
@@ -171,8 +171,14 @@ EObyRA$sampSize[EObyRA$ra == "very low"] <- 1
 # set the background pts to the sum of the EO samples
 EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
 
-sampSizeVec <- EObyRA$sampSize
-names(sampSizeVec) <- as.character(EObyRA$eo_id_st)
+# there appear to be cases where more than one 
+# RA is assigned per EO. Handle it here by 
+# taking max value
+EObySS <- aggregate(EObyRA$sampSize, by=list(EObyRA$eo_id_st), max)
+names(EObySS) <- c("eo_id_st","sampSize")
+
+sampSizeVec <- EObySS$sampSize
+names(sampSizeVec) <- as.character(EObySS$eo_id_st)
 
 
 ##
