@@ -159,10 +159,14 @@ ranPts <- do.call('rbind',v.ranSPDF.clean)
 #check for cases where sample smaller than requested
 # how many points actually generated?
 npts <- sapply(v.ranSPDF.clean, function(i) nrow(i@coords))
-tpts <- shp_expl_dat@data$finalSampNum[-as.numeric(names(ptsCouldntBePlaced))]
-diff <- data.frame(targPts = tpts, resTps = npts)
-diff$diff <- diff$targPts - diff$resTps
-table(diff$diff)
+if(length(ptsCouldntBePlaced) > 0){
+  tpts <- shp_expl_dat@data$finalSampNum[-as.numeric(names(ptsCouldntBePlaced))]
+} else {
+  tpts <- shp_expl_dat@data$finalSampNum
+}
+dif <- data.frame(targPts = tpts, resTps = npts)
+dif$diff <- diff$targPts - diff$resTps
+table(dif$diff)
 # if you get all zeros in the above "table" command you are golden!
 # TODO: handle cases that are off
 
