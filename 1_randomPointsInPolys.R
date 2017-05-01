@@ -124,10 +124,11 @@ names(v.ranSPDF) <- shp_expl_dat@data$EXPL_ID
 # generate random points for each polygon by looping through all polys
 for(i in 1:nrow(shp_expl_dat)){
   numSamps <- shp_expl_dat@data$finalSampNum[[i]]
-  pts <- spsample(shp_expl_dat@polygons[[i]], n= numSamps, 
-    type = "random", iter = 500)
+  pts <- spsample(shp_expl_dat[i,], n= numSamps, 
+                  type = "random", iter = 500)
   #rare edge cases where points can't get placed will result in null
   #seems to be due to holes in the poly most often
+  # this might be fixed! Keeping in for safety for now. 
   if(!is.null(pts)){
     v.ranSPDF[[i]] <- SpatialPointsDataFrame(pts, data = shp_expl_dat@data[rep(i, nrow(pts@coords)),])
   }
@@ -165,7 +166,7 @@ if(length(ptsCouldntBePlaced) > 0){
   tpts <- shp_expl_dat@data$finalSampNum
 }
 dif <- data.frame(targPts = tpts, resTps = npts)
-dif$diff <- diff$targPts - diff$resTps
+dif$diff <- dif$targPts - dif$resTps
 table(dif$diff)
 # if you get all zeros in the above "table" command you are golden!
 # TODO: handle cases that are off
