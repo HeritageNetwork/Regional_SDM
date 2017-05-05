@@ -576,17 +576,17 @@ dbDisconnect(db)
 #get the order for the importance charts
 ord <- order(EnvVars$impVal, decreasing = TRUE)[1:length(indVarCols)]
 #set up a list to hold the plot data
-pPlots <- vector("list",8)
-		names(pPlots) <- c(1:8)
+pPlots <- vector("list",9)
+		names(pPlots) <- c(1:9)
 #get the top eight partial plots
-for(i in 1:8){
+for(i in 1:9){
 	pPlots[[i]] <- partialPlot(rf.full, df.full[,indVarCols],
 						names(f.imp[ord[i]]),
 						which.class = 1,
 						plot = FALSE)
 	pPlots[[i]]$gridName <- names(f.imp[ord[i]])
 	pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
-	cat("finished partial plot ", i, " of 8", "\n")
+	cat("finished partial plot ", i, " of 9", "\n")
 	}
 
 #save the project, return to the original working directory
