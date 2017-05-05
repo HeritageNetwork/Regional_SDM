@@ -27,7 +27,7 @@ pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/geotiffs_masked"
 setwd(sppPtLoc)
 
 # directory for saving RData files (analysis data)
-rdataOut <- "K:/SDM_test/outputs"
+rdataOut <- "K:/Reg5Modeling_Project/outputs"
 
 # the names of the files to be uploaded: presence points
 df.in <-read.dbf("glypmuhl_att.dbf")
@@ -289,13 +289,13 @@ group$vals <- unique(df.in2$eo_id_st)
 
 # # reduce the number of groups, if there are more than 200, to 200 groups
 # # this groups the groups simply if they are adjacent in the order created above.
-if(length(group$vals) > 200) {
-  in.cut <- cut(1:length(group$vals), b = 200)
-  in.split <- split(group$vals, in.cut)
-  names(in.split) <- NULL
-  group$vals <- in.split
-  group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
-}
+# if(length(group$vals) > 200) {
+#   in.cut <- cut(1:length(group$vals), b = 200)
+#   in.split <- split(group$vals, in.cut)
+#   names(in.split) <- NULL
+#   group$vals <- in.split
+#   group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
+# }
 
 #reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
@@ -591,7 +591,7 @@ for(i in 1:8){
 
 #save the project, return to the original working directory
 setwd(rdataOut)
-save.image(file = paste(ElementNames$Code, "_newMethod_remEVs3.Rdata", sep=""))
+save.image(file = paste(ElementNames$Code, "_",Sys.Date(),".Rdata", sep=""))
 
 ## clean up ----
 # remove all objects before moving on to the next script
