@@ -19,7 +19,7 @@ library(rasterVis)
 library(RSQLite)
 library(xtable)
 
-inPath <- "K:/SDM_test/outputs"
+inPath <- "K:/Reg5Modeling_Project/outputS"
 
 ## find and load model data ----
 # get a list of what's in the directory
@@ -27,26 +27,34 @@ inPath <- "K:/SDM_test/outputs"
 d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 4
+n <- 5
 fileName <- d[[n]]
 load(paste(inPath,fileName, sep="/"))
 
 ## set paths (after loading Rdata file in case objects exist) ----
-rnwPath <- "K:/SDM_test/scripts/Regional_SDM"
-outPath <- "K:/SDM_test/outputs/metadata"
-gridpath <- "K:/SDM_test/outputs/grids"
-stateBoundPath <- "K:/SDM_test/other_spatial"
-dbLoc <- "K:/SDM_test/databases"
+rnwPath <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+outPath <- "K:/Reg5Modeling_Project/outputs/metadata"
+gridpath <- "K:/Reg5Modeling_Project/outputs/grids"
+stateBoundPath <- "K:/Reg5Modeling_Project/other_spatial"
+dbLoc <- "K:/Reg5Modeling_Project/databases"
 
-extentMapName <- "testArea_Albers"
+extentMapName <- "StateBoundariesAlbersConicEqualArea"
 
-testareapath <- "K:/SDM_test/other_spatial"
-testAreaName <- "testArea_Albers"
+testareapath <- "K:/Reg5Modeling_Project/other_spatial"
+testAreaName <- "reg5_pred_20161027"
 
-ras <- raster(paste(gridpath, "/", ElementNames$Code, ".tif", sep = ""))
+extentmap <- readOGR(stateBoundPath, extentMapName, stringsAsFactors=FALSE) # name of state boundaries file
 
-#ras <- raster(paste(gridpath, "/", "glypmuhl_newMethod_remEVs", ".tif", sep = ""))
+testarea <- readOGR(testareapath, testAreaName, stringsAsFactors=FALSE) 
 
+
+r <- dir(path = gridpath, pattern = ".tif",full.names=FALSE)
+r
+# which one do we want to run?
+n <- 10
+fileName <- r[[n]]
+ras <- raster(paste(gridpath, fileName, sep = "/"))
+#ras <- raster(paste(gridpath, "/", ElementNames$Code, ".tif", sep = ""))
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
@@ -111,8 +119,6 @@ sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
                               sep="")
-
-
 
 ## Run knitr and create metadata ----
 
