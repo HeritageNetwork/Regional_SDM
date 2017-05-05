@@ -2,7 +2,6 @@
 # Purpose: GRTS sampling of EDM polygons to create spatially balanced random points
 # these are the random presence points being created here, from polygon presence data.
 
-library(spsurvey)
 library(RSQLite)
 library(rgdal)
 
@@ -95,16 +94,14 @@ att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"aream2"]/900+1)*0.004)))-1
 att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$expl_id, sep=""))
 
 # sample must be equal or larger than the RA sample size in the random forest model
-# add one to RA sample size to ensure randomness in GRTS captures enough points
-# (sometimes it won't)
 att.pt$ra <- factor(tolower(as.character(att.pt$ra)))
 
 EObyRA <- unique(att.pt[,c("expl_id", "eo_id_st","ra")])
-EObyRA$minSamps[EObyRA$ra == "very high"] <- 5 + 1
-EObyRA$minSamps[EObyRA$ra == "high"] <- 4 + 1
-EObyRA$minSamps[EObyRA$ra == "medium"] <- 3 + 1
-EObyRA$minSamps[EObyRA$ra == "low"] <- 2 + 1
-EObyRA$minSamps[EObyRA$ra == "very low"] <- 1 + 1
+EObyRA$minSamps[EObyRA$ra == "very high"] <- 5
+EObyRA$minSamps[EObyRA$ra == "high"] <- 4
+EObyRA$minSamps[EObyRA$ra == "medium"] <- 3
+EObyRA$minSamps[EObyRA$ra == "low"] <- 2
+EObyRA$minSamps[EObyRA$ra == "very low"] <- 1
 
 att.pt.2 <- merge(x = att.pt, y = EObyRA[,c("expl_id","minSamps")], 
                   all.x = TRUE, by.x = "expl_id", by.y = "expl_id")
@@ -113,58 +110,74 @@ att.pt.2$finalSampNum <- ifelse(att.pt.2$PolySampNum < att.pt.2$minSamps,
                                 att.pt.2$minSamps, 
                                 att.pt.2$PolySampNum)
 
-# create the vector for indicating how many points to put in each polygon, 
-# then each value in the vector needs to be attributed to the sampling unit 
-sampNums <- c(att.pt.2[,"finalSampNum"])
-names(sampNums) <- att.pt[,"expl_id"]
+# add two more cols for later (backwards compatibility with old GRTS routine)
+att.pt.2$stratum <- att.pt.2$panelNum
+att.pt.2$siteID <- paste(sppCode, att.pt.2$expl_id, sep = "-")
+# get these data into the spatial poly df
+shp_expl_dat <- merge(shp_expl, att.pt.2[,c("expl_id","finalSampNum","siteID","stratum")],
+                      by.x = "EXPL_ID", by.y = "expl_id")
 
-# initialize the design list and the names vector so 
-# they are available in the for loop
-SampDesign <- vector("list",length(sampNums))
-namesVec <- vector("list", length(sampNums))
+#initialize a list for saving the random points data
+v.ranSPDF <- vector("list", nrow(shp_expl_dat))
+names(v.ranSPDF) <- shp_expl_dat@data$EXPL_ID
 
-# Build the sampling design, as required by GRTS
-# this is a list 'SampDesign' with internal lists: 'panel', 'seltype', and 
-# 'over' for each entry of SampDesign
-for (i in 1:length(sampNums)){
-	#build a vector of names to apply after the for loop
-	namesVec[i] <- paste("poly_",i,sep="")
-	#initialize the internal list
-	SampDesign[[i]] <- vector("list",3)
-	#populate the internal list
-	SampDesign[[i]] <- list(panel=c(FirstSamp=sampNums[[i]]),
-			seltype="Equal", 
-			over=0)
+# generate random points for each polygon by looping through all polys
+for(i in 1:nrow(shp_expl_dat)){
+  numSamps <- shp_expl_dat@data$finalSampNum[[i]]
+  pts <- spsample(shp_expl_dat[i,], n= numSamps, 
+                  type = "random", iter = 500)
+  #rare edge cases where points can't get placed will result in null
+  #seems to be due to holes in the poly most often
+  # this might be fixed! Keeping in for safety for now. 
+  if(!is.null(pts)){
+    v.ranSPDF[[i]] <- SpatialPointsDataFrame(pts, data = shp_expl_dat@data[rep(i, nrow(pts@coords)),])
+  }
 }
-#apply that names vector
-names(SampDesign) <- namesVec
 
-# if you want to check out this design, 
-# a couple of exploratory commands here, commented out
-# list the names of one of the sub lists
-#names(SampDesign[[1]])
-# show something about the structure of the list
-#summary(SampDesign)  ##str(SampDesign) is even more thorough
+#check for screw-ups
+ptsCouldntBePlaced <- v.ranSPDF[sapply(v.ranSPDF, is.null)]
+if(length(ptsCouldntBePlaced) > 0){
+  if(length(ptsCouldntBePlaced) > 1){
+    print(paste("You've got ", length(ptsCouldntBePlaced), " polys that didn't get any points placed in them.", sep = ""))
+    print("These are:")         
+    shp_expl_dat@data[as.numeric(names(ptsCouldntBePlaced)),]
+  } else {
+    print(paste("You've got one poly that didn't get any points placed in them.", sep = ""))
+    print("This is:")         
+    shp_expl_dat@data[as.numeric(names(ptsCouldntBePlaced)),]
+  }
+}
+## if you got polys with no points, read the numbers reported and 
+## view the poly with this command
+# plot(shp_expl_dat[[putNumberReportedHere]])
+# e.g. plot(shp_expl_dat[698,])
 
-# Create the GRTS survey design [might take a while]
-grtsResult <- grts(design=SampDesign,
-			 src.frame="shapefile", #source of the frame
-			 in.shape=nm.PyFile,    #name of input shapefile no extension
-			 att.frame=att.pt,      #attributes associated with elements in the frame
-			 type.frame="area",     #type of frame:"finite", "linear", "area"
-			 stratum="panelNum",	#stratum field in att.pt
-			 mdcaty="EXPL_ID",		#categories for random pt probabilities
-			 DesignID= sppCode,  	#name for the design, used to create a site ID
-			 prj=nm.PyFile,
-			 out.shape=nm.RanPtFile,
-			 shapefile=FALSE)
+# you can choose to move on or fix in gis (remove holes?)
 
-ranPts <- as(grtsResult, "SpatialPointsDataFrame")
+v.ranSPDF.clean <- v.ranSPDF[!sapply(v.ranSPDF, is.null)]
+ranPts <- do.call('rbind',v.ranSPDF.clean)
+
+#check for cases where sample smaller than requested
+# how many points actually generated?
+npts <- sapply(v.ranSPDF.clean, function(i) nrow(i@coords))
+if(length(ptsCouldntBePlaced) > 0){
+  tpts <- shp_expl_dat@data$finalSampNum[-as.numeric(names(ptsCouldntBePlaced))]
+} else {
+  tpts <- shp_expl_dat@data$finalSampNum
+}
+dif <- data.frame(targPts = tpts, resTps = npts)
+dif$diff <- dif$targPts - dif$resTps
+table(dif$diff)
+# if you get all zeros in the above "table" command you are golden!
+# TODO: handle cases that are off
+
 # projection info doesn't stick, apply from what we grabbed earlier
 ranPts@proj4string <- projInfo
+names(ranPts@data) <- tolower(names(ranPts@data))
 # remove extranneous fields, write it out
 fullName <- paste(nm.RanPtFile,".shp",sep="")
-colsToKeep <- c("siteID", "stratum", tolower(desiredCols))
+
+colsToKeep <- c("siteid", "stratum", tolower(desiredCols))
 ranPts <- ranPts[,colsToKeep]
 writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile, 
 			driver="ESRI Shapefile", overwrite_layer=TRUE)
