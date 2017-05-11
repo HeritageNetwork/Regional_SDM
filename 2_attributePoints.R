@@ -7,20 +7,23 @@ library(rgdal)
 library(RSQLite)
 library(maptools)
 
-# Set paths ----
-pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
-pathToRanPts <- "K:/SDM_test/inputs/species/pointData"
-
-setwd(pathToRas)
-
 # load data, QC ----
+
+###
+## two lines need your attention. The one directly below (loc_scripts)
+## and about line 43 where you choose which random points file to use
+loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+
+source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+setwd(loc_envVars)
+
 # create a stack
 # if using TIFFs, use this line
 raslist <- list.files(pattern = ".tif$")
 # if using native R rasters, use this line
 #raslist <- list.files(pattern = ".grd$")
 
-gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
+gridlist <- as.list(paste(loc_envVars,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
 names(gridlist) <- nm
 
@@ -31,7 +34,7 @@ max(nmLen) # if this result is greater than 10, you've got a renegade
 envStack <- stack(gridlist)
 
 # Set working directory to the random points location
-setwd(pathToRanPts)
+setwd(loc_spPts)
 
 ranPtsFiles <- list.files(pattern = ".RanPts.shp$")
 ranPtsFiles
@@ -45,23 +48,21 @@ shpf <- readOGR(".", layer = ranPtsFilesNoExt)
 #get projection info for later
 projInfo <- shpf@proj4string
 
-#Get the species code for the ranPtsFile chosen
-# new way, assume you want first part of text string, before first underscore
+# Get the species code for the ranPtsFile chosen
+# assume you want first part of text string, before first underscore
 code_name <- strsplit(ranPtsFilesNoExt, "_")[[1]][1]
-# old way, removes last eleven characters ("_RanPts.shp")
-#code_name <- substr(ranPtsFiles,1,(nchar(ranPtsFiles)-11))[[n]]
 
 # extract raster data to points ----
 ##  Bilinear interpolation is a *huge* memory hog. 
 ##  Do it all as 'simple' 
 
-x <- extract(envStack, shpf, method="simple", sp=TRUE)
+points_attributed <- extract(envStack, shpf, method="simple", sp=TRUE)
 
 # write it out ----
 # apply projection info
-x@proj4string <- projInfo
+points_attributed@proj4string <- projInfo
 filename <- paste(code_name, "_att", sep="")
-writeOGR(x, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+writeOGR(points_attributed, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 ## clean up ----
 # remove all objects before moving on to the next script

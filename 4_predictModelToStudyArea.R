@@ -4,49 +4,38 @@
 ## start with a fresh workspace with no objects loaded
 library(raster)
 library(rgdal)
-
 library(randomForest)
 
-#####
-#  Lines that require editing
+####
+## two lines need your attention. The one directly below (loc_scripts)
+## and about line 26 where you choose which Rdata file to use,
 
-# set up paths ----
-# directory for the RData files (analysis data)
-rdataLoc <- "K:/SDM_test/outputS"
+loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-# directory for the environmental rasters
-pathToRas <- "K:/SDM_test/inputs/env_vars/geotiffs"
-
-# output path (best if different from rdataloc)
-outRasPath <- "K:/SDM_test/outputS/grids"
-
-
+# get paths, other settings
+source(paste(loc_scripts,"0_pathsAndSettings.R", sep="/"))
 # get the customized version of the predict function
-source('K:/SDM_test/scripts/Regional_SDM/RasterPredictMod.R')
-
-#  End, lines that require editing
-#
-#####
+source(paste(loc_scripts, "RasterPredictMod.R", sep = "/"))
 
 # load data ----
 # get the rdata file
-setwd(rdataLoc)
+setwd(loc_RDataOut)
 fileList <- dir(pattern = ".Rdata$",full.names=FALSE)
 fileList
 # choose one to run, load it #### requires editing ####
-n <- 6
+n <- 1
 load(fileList[[n]])
 
 ##Make the raster stack
 stackOrder <- names(df.full)[indVarCols]
-setwd(pathToRas)
+setwd(loc_envVars)
 rasL <- paste(stackOrder,".tif", sep="")
-fullL <- as.list(paste(pathToRas, rasL, sep="/"))
+fullL <- as.list(paste(loc_envVars, rasL, sep="/"))
 names(fullL) <- stackOrder
 envStack <- stack(fullL)
 
 # run prediction ----
-fileNm <- paste(outRasPath, "/", ElementNames$Code, "_new.tif", sep = "")
+fileNm <- paste(loc_outRas, "/", ElementNames$Code, "_",Sys.Date(),".tif", sep = "")
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
 #writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
