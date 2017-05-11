@@ -2,11 +2,8 @@
 # Purpose: to create the random forest model. This includes:
 # - create initial model to remove poorest performing env vars
 # - validate using leave-one-out jackknifing
-# - create a final model using all presence points
+# - create a final model using all presence points, stratify by EO using RA
 # - build partial plots of top performing env vars for metadata output
-
-# assumptions:
-# input table contains only one species
 
 library(RSQLite)
 library(ROCR)    #for ROC plots and stats
@@ -16,59 +13,57 @@ library(foreign) #for reading dbf files
 library(randomForest)
 
 #####
-#  Lines that require editing
-#
-# set up paths ----
-sppPtLoc <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
-ranPtLoc <- "K:/Reg5Modeling_Project/inputs/background"
-dbLoc <- "K:/Reg5Modeling_Project/databases"
-pathToRas <- "K:/Reg5Modeling_Project/inputs/env_vars/geotiffs_masked"
+## three lines need your attention. The one directly below (loc_scripts),
+## about line 29 where you choose which Rdata file to use,
+## and about line 40 where you choose which record to use
+loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-setwd(sppPtLoc)
+source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+setwd(loc_spPts)
 
-# directory for saving RData files (analysis data)
-rdataOut <- "K:/Reg5Modeling_Project/outputs"
+#get a list of what's in the directory
+p_fileList <- dir( pattern = "_att.dbf$")
+p_fileList
+#look at the output and choose which shapefile you want to run
+#enter its location in the list (first = 1, second = 2, etc)
+n <- 1
 
-# the names of the files to be uploaded: presence points
-df.in <-read.dbf("glypmuhl_att.dbf")
+presFile <- p_fileList[[n]]
+# get the presence points
+df.in <-read.dbf(presFile)
+
+setwd(loc_bkgPts)
+bk_fileList <- dir( pattern = "_clean.dbf$")
+bk_fileList
+#look at the output and choose which shapefile you want to run
+#enter its location in the list (first = 1, second = 2, etc)
+n <- 1
+bkgFile <- bk_fileList[[n]]
 
 # absence points
-df.abs <- foreign:::read.dbf(paste(ranPtLoc,"bkgrd_att_clean_clp.dbf", sep="/"))
-
-
-## temp: create correllation matrix
-# library(Hmisc)
-# y <- foreign:::read.dbf("K:/Reg5Modeling_Project/inputs/background/sdmclpbnd_20160831_buffNeg1000_RanPts_studyArea_att.dbf")
-# y <- foreign:::read.dbf("K:/Reg5Modeling_Project/inputs/background/backgroundfixed20161202/sdmatt2fixed.dbf")
-# z <- rcorr(as.matrix(y[,2:82]))
-
-
-#  End, lines that require editing
-#
-#####
+df.abs <- foreign:::read.dbf(bkgFile)
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in),]
 df.abs <- df.abs[complete.cases(df.abs),]
 
-
 # align data sets, QC ----
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
+df.abs$stratum <- "pseu-a"
 df.abs <- cbind(df.abs, EO_ID_ST="pseu-a", 
-					pres=0, RA="high", SNAME="background", stratum="pseu-a")
+					pres=0, RA="high", SNAME="background")
 
 # lower case column names
 names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = pathToRas, pattern = ".tif$")
+raslist <- list.files(path = loc_envVars, pattern = ".tif$")
 rasnames <- gsub(".tif", "", raslist)
 
 # are these all in the lookup database? Checking here.
-db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
-db <- dbConnect(SQLite(),dbname=db_file)  
+db <- dbConnect(SQLite(),dbname=nm_db_file)  
 op <- options("useFancyQuotes") 
 options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
 SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (", 
@@ -109,7 +104,6 @@ dtRas.min <- apply(df.in[,dtRas], 2, min)
 dtRas.sub <- dtRas.min[dtRas.min > 10000]
 rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
 
-
 # clean up, merge data sets -----
 # this is the full list of fields, arranged appropriately
 colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
@@ -124,7 +118,7 @@ df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
 
 #Fire up SQLite
-db <- dbConnect(SQLite(),dbname=db_file)  
+db <- dbConnect(SQLite(),dbname=nm_db_file)  
   
 ElementNames <- as.list(c(SciName="",CommName="",Code="",Type=""))
 ElementNames[1] <- as.character(df.in[1,"sname"])
@@ -184,7 +178,6 @@ names(sampSizeVec) <- as.character(EObySS$eo_id_st)
 ##
 # tune mtry ----
 # run through mtry twice
-
 x <- tuneRF(df.full[,indVarCols],
              y=df.full[,depVarCol],
              ntreeTry = 300, stepFactor = 2, mtryStart = 6,
@@ -221,12 +214,6 @@ for(grp in unique(corrdEVs$correlatedVarGroupings)){
   imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
   varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
   impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
-  #old way
-  # imp.sub <- imp.sub[order(imp.sub, decreasing = TRUE),, drop = FALSE]
-  # if(nrow(imp.sub) > 1){
-  #   varsToDrop <- rownames(imp.sub)[2:nrow(imp.sub)]
-  #   impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
-  # }
 }
 rm(vars, imp.sub, varsToDrop)
 
@@ -263,7 +250,6 @@ df.abs2$pres <- factor(df.abs2$pres)
 row.names(df.in2) <- 1:nrow(df.in2)
 row.names(df.abs2) <- 1:nrow(df.abs2)
 
-
 #how many polygons do we have?
 numPys <-  nrow(table(df.in2$stratum))
 #how many EOs do we have?
@@ -286,17 +272,6 @@ group$colNm <- "eo_id_st"
 group$JackknType <- "element occurrence"
 group$vals <- unique(df.in2$eo_id_st)
 
-
-# # reduce the number of groups, if there are more than 200, to 200 groups
-# # this groups the groups simply if they are adjacent in the order created above.
-# if(length(group$vals) > 200) {
-#   in.cut <- cut(1:length(group$vals), b = 200)
-#   in.split <- split(group$vals, in.cut)
-#   names(in.split) <- NULL
-#   group$vals <- in.split
-#   group$JackknType <- paste(group$JackknType, ", grouped to 200 levels,", sep = "")
-# }
-
 #reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
 if(length(group$vals) > 30) {
@@ -304,9 +279,6 @@ if(length(group$vals) > 30) {
 } else {
 	ntrees <- 1000
 }
-###### reduced for testing #####
-### TODO: clear when running real models
-#ntrees <- 200
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
@@ -557,7 +529,7 @@ rf.full <- randomForest(df.full[,indVarCols],
 f.imp <- importance(rf.full, class = NULL, scale = TRUE, type = NULL)
 f.imp <- f.imp[,"MeanDecreaseAccuracy"]
 
-db <- dbConnect(SQLite(),dbname=db_file)  
+db <- dbConnect(SQLite(),dbname=nm_db_file)  
 # get importance data, set up a data frame
 EnvVars <- data.frame(gridName = names(f.imp), impVal = f.imp, fullName="", stringsAsFactors = FALSE)
 #set the query for the following lookup, note it builds many queries, equal to the number of vars
@@ -590,7 +562,7 @@ for(i in 1:9){
 	}
 
 #save the project, return to the original working directory
-setwd(rdataOut)
+setwd(loc_RDataOut)
 save.image(file = paste(ElementNames$Code, "_",Sys.Date(),".Rdata", sep=""))
 
 ## clean up ----

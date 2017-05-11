@@ -8,24 +8,21 @@ library(ROCR)
 library(RSQLite)
 library(DBI)
 
-inPath <- "K:/SDM_test/outputs"
-gridpath <- "K:/SDM_test/outputs/grids"
-#out path
-outRas <- "K:/SDM_test/outputs/grids" 
+### find and load model data ----
+## two lines need your attention. The one directly below (loc_scripts)
+## and about line 23 where you choose which Rdata file to use
 
-dbLoc <- "K:/SDM_test/databases"
+loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-## get any current documentation ----
-db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
-
-## find and load model data ----
+source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+       
 # get a list of what's in the directory
-d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
+d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 3
+n <- 1
 fileName <- d[[n]]
-load(paste(inPath,fileName, sep="/"))
+load(paste(loc_RDataOut,fileName, sep="/"))
 
 ## Calculate different thresholds ----
 #set an empty list
@@ -140,7 +137,7 @@ allThresh <- data.frame("ElemCode" = rep(ElementNames$Code, numThresh),
                 "capturedPts" = unlist(lapply(cutList, function(x) x[5])),
                 stringsAsFactors = FALSE)
 
-db <- dbConnect(SQLite(),dbname=db_file)
+db <- dbConnect(SQLite(),dbname=nm_db_file)
 
 
 op <- options("useFancyQuotes")
@@ -162,13 +159,13 @@ dbDisconnect(db)
 
 ## choose threshold, create binary grid ----
 # THE next lines are for creating thresholded grids. You don't need to do this here, 
-# you could do in Arc instead. 
+# you could do it in Arc instead. 
 
 #lets set the threshold to MTP
 threshold <- allThresh$MTP
 
 # load the prediction grid
-ras <- raster(paste(gridpath,"/",ElementNames$Code, ".tif", sep = ""))
+ras <- raster(paste(loc_outRas,"/",ElementNames$Code, ".tif", sep = ""))
 
 # reclassify the raster based on the threshold into binary 0/1
 m <- cbind(
@@ -180,7 +177,7 @@ m <- cbind(
 rasrc <- reclassify(ras, m)
 
 #plot(rasrc)
-outfile <- paste(outRas,"/",ElementNames$Code,"_threshold.tif", sep = "")
+outfile <- paste(loc_outRas,"/",ElementNames$Code,"_threshold.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
 
 #clean up
@@ -197,7 +194,7 @@ m <- cbind(
 rasrc <- reclassify(ras, m)
 
 #plot(rasrc)
-outfile <- paste(outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
+outfile <- paste(loc_outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
 
 ## clean up ----
