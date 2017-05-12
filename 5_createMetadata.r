@@ -19,49 +19,39 @@ library(rasterVis)
 library(RSQLite)
 library(xtable)
 
-inPath <- "K:/Reg5Modeling_Project/outputS"
+### find and load model data ----
+## three lines need your attention. The one directly below (loc_scripts),
+## about line 35 where you choose which Rdata file to use,
+## and about line 46 where you choose which record to use
 
-## find and load model data ----
+loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+
+source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+
 # get a list of what's in the directory
-
-d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
+d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 5
+n <- 1
 fileName <- d[[n]]
-load(paste(inPath,fileName, sep="/"))
+load(paste(loc_RDataOut,fileName, sep="/"))
 
-## set paths (after loading Rdata file in case objects exist) ----
-rnwPath <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
-outPath <- "K:/Reg5Modeling_Project/outputs/metadata"
-gridpath <- "K:/Reg5Modeling_Project/outputs/grids"
-stateBoundPath <- "K:/Reg5Modeling_Project/other_spatial"
-dbLoc <- "K:/Reg5Modeling_Project/databases"
+# get background poly data for the map
+referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries, stringsAsFactors=FALSE) # name of state boundaries file
+studyAreaExtent <- readOGR(loc_otherSpatial, nm_studyAreaExtent, stringsAsFactors=FALSE) 
 
-extentMapName <- "StateBoundariesAlbersConicEqualArea"
-
-testareapath <- "K:/Reg5Modeling_Project/other_spatial"
-testAreaName <- "reg5_pred_20161027"
-
-extentmap <- readOGR(stateBoundPath, extentMapName, stringsAsFactors=FALSE) # name of state boundaries file
-
-testarea <- readOGR(testareapath, testAreaName, stringsAsFactors=FALSE) 
-
-
-r <- dir(path = gridpath, pattern = ".tif",full.names=FALSE)
+r <- dir(path = loc_outRas, pattern = ".tif$",full.names=FALSE)
 r
 # which one do we want to run?
-n <- 10
+n <- 1
 fileName <- r[[n]]
-ras <- raster(paste(gridpath, fileName, sep = "/"))
-#ras <- raster(paste(gridpath, "/", ElementNames$Code, ".tif", sep = ""))
+ras <- raster(paste(loc_outRas, fileName, sep = "/"))
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
 
-db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
-db <- dbConnect(SQLite(),dbname=db_file)  
+db <- dbConnect(SQLite(),dbname=nm_db_file)  
 SQLquery <- paste("Select lkpModelers.ProgramName, lkpModelers.FullOrganizationName, ",
   "lkpModelers.City, lkpModelers.State, lkpSpecies.CODE ",
   "FROM lkpModelers ", 
@@ -130,9 +120,9 @@ sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
 # Also, might need to run this twice. First time through tex builds the reference
 # list, second time through it can then number the refs in the doc.
 
-setwd(outPath)
+setwd(loc_outMetadata)
 
-knit2pdf(paste(rnwPath,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, ".tex",sep=""))
+knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, "_",Sys.Date(), ".tex",sep=""))
 
 ## clean up ----
 options(op)
