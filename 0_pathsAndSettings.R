@@ -7,20 +7,20 @@
 # These locations require data created not as part of these scripts
 
 # The folder that has your species polygon data. 
-loc_spPoly <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/polygon_data"
+loc_spPoly <- "E:/SDM/Aquatic/inputs/species/glypmuhl/polygon_data"
 
 # This is the full path and name of the information-tracking database
-nm_db_file <- "K:/Reg5Modeling_Project/databases/SDM_lookupAndTracking.sqlite"
+nm_db_file <- "E:/SDM/Aquatic/databases/SDM_lookupAndTracking.sqlite"
 
 # This is the background random points shapefile, path then name (without the 'shp)
-loc_bkgPts <- "K:/Reg5Modeling_Project/inputs/background"
+loc_bkgPts <- "E:/SDM/Aquatic/inputs/background"
 nm_bkgPts <- "bkgrd_att"
 
 # the folder containing all environmental variable raster (tiffs)
-loc_envVars <- "K:/Reg5Modeling_Project/inputs/env_vars/geotiffs_masked"
+loc_envVars <- "E:/SDM/Aquatic/inputs/env_vars/geotiffs_masked"
 
 # the path where the next two shapefiles are stored
-loc_otherSpatial <- "K:/Reg5Modeling_Project/other_spatial"
+loc_otherSpatial <- "E:/SDM/Aquatic/other_spatial"
 
 # A shapefile showing state boundaries (or other reference boundaries)
 # used in the map produced in the metadata
@@ -36,10 +36,10 @@ nm_studyAreaExtent <- "reg5_pred_20161027"
 # In many cases, they become input folders later in the process. 
 
 # The folder for species point data
-loc_spPts <- "K:/Reg5Modeling_Project/inputs/species/glypmuhl/point_data"
+loc_spPts <- "E:/SDM/Aquatic/inputs/species/glypmuhl/point_data"
 
 # output folder for RData files
-loc_RDataOut <- "K:/Reg5Modeling_Project/outputs"
+loc_RDataOut <- "E:/SDM/Aquatic/outputs"
 
 # output folder for grids (raster predictions)
 loc_outRas <- "K:/Reg5Modeling_Project/outputs/grids"
