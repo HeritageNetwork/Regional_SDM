@@ -8,24 +8,21 @@ library(ROCR)
 library(RSQLite)
 library(DBI)
 
-inPath <- "K:/SDM_test/outputs"
-gridpath <- "K:/SDM_test/outputs/grids"
-#out path
-outRas <- "K:/SDM_test/outputs/grids" 
+### find and load model data ----
+## two lines need your attention. The one directly below (loc_scripts)
+## and about line 23 where you choose which Rdata file to use
 
-dbLoc <- "K:/SDM_test/databases"
+loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-## get any current documentation ----
-db_file <- paste(dbLoc, "SDM_lookupAndTracking.sqlite", sep = "/")
-
-## find and load model data ----
+source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+       
 # get a list of what's in the directory
-d <- dir(path = inPath, pattern = ".Rdata",full.names=FALSE)
+d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 3
+n <- 1
 fileName <- d[[n]]
-load(paste(inPath,fileName, sep="/"))
+load(paste(loc_RDataOut,fileName, sep="/"))
 
 ## Calculate different thresholds ----
 #set an empty list
@@ -37,27 +34,55 @@ totEOs <- length(unique(df.full$eo_id_st)) - 1
 totPolys <- length(unique(df.full$stratum)) - 1
 
 #get minimum training presence
-x <- data.frame(rf.full$y, rf.full$votes, df.full[,c("eo_id_st", "stratum")])
-y <- x[x$rf.full.y ==1,]
-MTP <- min(y$X1)
-capturedEOs <- length(unique(y$eo_id_st))
-capturedPolys <- length(unique(y$stratum))
-capturedPts <- nrow(y)
+allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("eo_id_st", "stratum")])
+allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
+
+MTP <- min(allVotesPresPts$X1)
+capturedEOs <- length(unique(allVotesPresPts$eo_id_st))
+capturedPolys <- length(unique(allVotesPresPts$stratum))
+capturedPts <- nrow(allVotesPresPts)
 cutList$MTP <- list("value" = MTP, "code" = "MTP", 
                     "capturedEOs" = capturedEOs,
                     "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
 
 #get 10 percentile training presence
-TenPctile <- quantile(y$X1, prob = c(0.1))
-z <- y[y$X1 >= TenPctile,]
-capturedEOs <- length(unique(z$eo_id_st))
-capturedPolys <- length(unique(z$stratum))
-capturedPts <- nrow(z)
+TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1))
+TenPctilePts <- allVotesPresPts[allVotesPresPts$X1 >= TenPctile,]
+capturedEOs <- length(unique(TenPctilePts$eo_id_st))
+capturedPolys <- length(unique(TenPctilePts$stratum))
+capturedPts <- nrow(TenPctilePts)
 cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
                     "capturedEOs" = capturedEOs,
                     "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
+
+# get min of max values by polygon (MTPP; minimum training polygon presence)
+maxInEachPoly <- aggregate(allVotesPresPts$X1, 
+                           by=list(allVotesPresPts$stratum, allVotesPresPts$eo_id_st), max)
+names(maxInEachPoly) <- c("stratum","eo_id_st","X1")
+MTPP <- min(maxInEachPoly$X1)
+capturedEOs <- length(unique(maxInEachPoly$eo_id_st))
+capturedPolys <- length(unique(maxInEachPoly$stratum))
+capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPP,])
+cutList$MTPP <- list("value" = MTPP, "code" = "MTPP", 
+                    "capturedEOs" = capturedEOs,
+                    "capturedPolys" = capturedPolys,
+                    "capturedPts" = capturedPts)
+
+# get min of max values by EO (MTPEO; minimum training EO presence)
+maxInEachEO <- aggregate(allVotesPresPts$X1, 
+                           by=list(allVotesPresPts$eo_id_st), max)
+names(maxInEachEO) <- c("eo_id_st","X1")
+MTPEO <- min(maxInEachEO$X1)
+capturedEOs <- length(unique(maxInEachEO$eo_id_st))
+capturedPolys <- length(unique(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,"stratum"]))
+capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,])
+cutList$MTPEO <- list("value" = MTPEO, "code" = "MTPEO", 
+                     "capturedEOs" = capturedEOs,
+                     "capturedPolys" = capturedPolys,
+                     "capturedPts" = capturedPts)
+
 
 # F-measure cutoff skewed towards capturing more presence points.
 # extract the precision-recall F-measure from training data
@@ -74,7 +99,7 @@ rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]]
 #rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]])
 names(rf.full.ctoff) <- c("0","1")
 FMeasPt01 <- rf.full.ctoff[2]
-z <- y[y$X1 >= FMeasPt01,]
+z <- allVotesPresPts[allVotesPresPts$X1 >= FMeasPt01,]
 capturedEOs <- length(unique(z$eo_id_st))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
@@ -90,7 +115,7 @@ rf.full.sss <- data.frame(cutSens = unlist(rf.full.sens@x.values),sens = unlist(
                           cutSpec = unlist(rf.full.spec@x.values), spec = unlist(rf.full.spec@y.values))
 rf.full.sss$sss <- with(rf.full.sss, sens + spec)
 maxSSS <- rf.full.sss[which.max(rf.full.sss$sss),"cutSens"]
-z <- y[y$X1 >= maxSSS,]
+z <- allVotesPresPts[allVotesPresPts$X1 >= maxSSS,]
 capturedEOs <- length(unique(z$eo_id_st))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
@@ -102,7 +127,7 @@ cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
 #equal sensitivity and specificity
 rf.full.sss$diff <- abs(rf.full.sss$sens - rf.full.sss$spec)
 eqss <- rf.full.sss[which.min(rf.full.sss$diff),"cutSens"]
-z <- y[y$X1 >= eqss,]
+z <- allVotesPresPts[allVotesPresPts$X1 >= eqss,]
 capturedEOs <- length(unique(z$eo_id_st))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
@@ -112,19 +137,18 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
                        "capturedPts" = capturedPts)
 
 # upper left corner of ROC plot
-rf.full.perf <- performance(rf.full.pred, "tpr","fpr")
-cutpt <- which.max(abs(rf.full.perf@x.values[[1]]-rf.full.perf@y.values[[1]]))
-ROCupperleft <- rf.full.perf@alpha.values[[1]][cutpt]
-z <- y[y$X1 >= ROCupperleft,]
-capturedEOs <- length(unique(z$eo_id_st))
-capturedPolys <- length(unique(z$stratum))
-capturedPts <- nrow(z)
-cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
-                          "capturedEOs" = capturedEOs,
-                          "capturedPolys" = capturedPolys,
-                          "capturedPts" = capturedPts)
-
-##auc <- performance(rf.full.pred, "auc")
+### this is the same as maxSSS (pretty sure), so commented out for now
+# rf.full.perf <- performance(rf.full.pred, "tpr","fpr")
+# cutpt <- which.max(abs(rf.full.perf@x.values[[1]]-rf.full.perf@y.values[[1]]))
+# ROCupperleft <- rf.full.perf@alpha.values[[1]][cutpt]
+# z <- allVotesPresPts[allVotesPresPts$X1 >= ROCupperleft,]
+# capturedEOs <- length(unique(z$eo_id_st))
+# capturedPolys <- length(unique(z$stratum))
+# capturedPts <- nrow(z)
+# cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
+#                           "capturedEOs" = capturedEOs,
+#                           "capturedPolys" = capturedPolys,
+#                           "capturedPts" = capturedPts)
 
 # collate and write to DB ----
 
@@ -140,7 +164,7 @@ allThresh <- data.frame("ElemCode" = rep(ElementNames$Code, numThresh),
                 "capturedPts" = unlist(lapply(cutList, function(x) x[5])),
                 stringsAsFactors = FALSE)
 
-db <- dbConnect(SQLite(),dbname=db_file)
+db <- dbConnect(SQLite(),dbname=nm_db_file)
 
 
 op <- options("useFancyQuotes")
@@ -162,13 +186,13 @@ dbDisconnect(db)
 
 ## choose threshold, create binary grid ----
 # THE next lines are for creating thresholded grids. You don't need to do this here, 
-# you could do in Arc instead. 
+# you could do it in Arc instead. 
 
 #lets set the threshold to MTP
 threshold <- allThresh$MTP
 
 # load the prediction grid
-ras <- raster(paste(gridpath,"/",ElementNames$Code, ".tif", sep = ""))
+ras <- raster(paste(loc_outRas,"/",ElementNames$Code, ".tif", sep = ""))
 
 # reclassify the raster based on the threshold into binary 0/1
 m <- cbind(
@@ -180,7 +204,7 @@ m <- cbind(
 rasrc <- reclassify(ras, m)
 
 #plot(rasrc)
-outfile <- paste(outRas,"/",ElementNames$Code,"_threshold.tif", sep = "")
+outfile <- paste(loc_outRas,"/",ElementNames$Code,"_threshold.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
 
 #clean up
@@ -197,7 +221,7 @@ m <- cbind(
 rasrc <- reclassify(ras, m)
 
 #plot(rasrc)
-outfile <- paste(outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
+outfile <- paste(loc_outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
 
 ## clean up ----

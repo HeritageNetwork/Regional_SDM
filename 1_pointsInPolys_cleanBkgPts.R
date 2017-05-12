@@ -1,52 +1,50 @@
-# File: 1_randomPointsInPolys.r
-# Purpose: GRTS sampling of EDM polygons to create spatially balanced random points
-# these are the random presence points being created here, from polygon presence data.
+# File: 1_pointsInPolys_cleanBkgPts.r
+# Purpose: 
+# 1. Sampling of EDM polygons to create random points within the polygons
+#  these are the random presence points being created here, from polygon presence data.
+# 2. Removing any points from the background points dataset that overlap or are near
+#  the input presence polygon dataset.
 
 library(RSQLite)
 library(rgdal)
+library(sp)
+library(rgeos)
 
 ####
 # Assumptions
-# - there is one shapefile for each element in the working directory listed below
 # - the shapefile is named with the species code that is used in the lookup table
 #   e.g. glypmuhl.shp
 # - There is lookup data in the sqlite database to link to other element information (full name, common name, etc.)
 # - the polygon shapefile has at least these fields EO_ID_ST, SNAME, SCOMNAME, RA
 
 ####
-#### modify paths ----
-## these are the lines you need to change
+#### load input poly ----
 
-### This is the folder that has your species polygon data. 
-polydir <- "K:/SDM_test/inputs/species"
-setwd(polydir)
+###
+## two lines need your attention. The one directly below (loc_scripts)
+## and about line 38 where you choose which polygon file to use
 
-### This is the directory you want the output data (random point shapefile) written to
-outdir <- "K:/SDM_test/inputs/species/pointData"
+loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 
-### This is the full path and name of the information-tracking database
-db_file <- "K:/SDM_test/databases/SDM_lookupAndTracking.sqlite"
-db <- dbConnect(SQLite(),dbname=db_file)
+setwd(loc_spPoly)
 
 #get a list of what's in the directory
 fileList <- dir( pattern = ".shp$")
 fileList
+
 #look at the output and choose which shapefile you want to run
 #enter its location in the list (first = 1, second = 2, etc)
-n <- 2
-
-## should not need to change anything else below here
-####
-####
+n <- 1
 
 # load data, QC ----
 fileName <- fileList[[n]]
 shpName <- strsplit(fileName,"\\.")[[1]][[1]]
 sppCode <- shpName
 
-shapef <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
+presPolys <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
 #check for proper column names. If no error from next code block, then good to go
-shpColNms <- names(shapef@data)
+shpColNms <- names(presPolys@data)
 desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop("at least one column is missing or incorrectly named")
@@ -55,13 +53,13 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
   }
 
 #pare down columns
-shapef@data <- shapef@data[,desiredCols]
+presPolys@data <- presPolys@data[,desiredCols]
 
 #get projection info for later
-projInfo <- shapef@proj4string
+projInfo <- presPolys@proj4string
 
 # explode multi-part polys ----
-shp_expl <- disaggregate(shapef)
+shp_expl <- disaggregate(presPolys)
 
 #add some columns (explode id and area)
 shp_expl@data <- cbind(shp_expl@data, 
@@ -75,8 +73,8 @@ nm.PyFile <- paste(sppCode, "_expl", sep = "")
 writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
   
 #name of random points output shapefile; add path to (now input) polygon file
-nm.RanPtFile <- paste(outdir,"/", sppCode, "_RanPts", sep = "")
-nm.PyFile <- paste(polydir,"/", sppCode, "_expl", sep = "")
+nm.RanPtFile <- paste(loc_spPts,"/", sppCode, "_RanPts", sep = "")
+nm.PyFile <- paste(loc_spPoly,"/", sppCode, "_expl", sep = "")
 
 ####
 ####  Placing random points within each sample unit (polygon/EO) ----
@@ -146,6 +144,8 @@ if(length(ptsCouldntBePlaced) > 0){
     print("This is:")         
     shp_expl_dat@data[as.numeric(names(ptsCouldntBePlaced)),]
   }
+} else {
+  print("All's well")
 }
 ## if you got polys with no points, read the numbers reported and 
 ## view the poly with this command
@@ -182,10 +182,7 @@ ranPts <- ranPts[,colsToKeep]
 writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile, 
 			driver="ESRI Shapefile", overwrite_layer=TRUE)
 
-####
-####     Write out various stats and data to the database ------
-####
-
+# Write out various stats and data to the database ------
 # prep the data
 OutPut <- data.frame(SciName = paste(att.pt[1,"sname"]),
 	CommName=paste(att.pt[1,"scomname"]),
@@ -197,10 +194,38 @@ OutPut <- data.frame(SciName = paste(att.pt[1,"sname"]),
 	)
 
 #Write the data to the SQLite database
+db <- dbConnect(SQLite(),dbname=nm_db_file)
 dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
+dbDisconnect(db)
+
+###
+### remove Coincident Background points ----
+###
+
+# get the background shapefile
+backgShapef <- readOGR(dsn=loc_bkgPts, layer=nm_bkgPts)
+
+#get projection info for later
+projInfo <- backgShapef@proj4string
+
+# find coincident points ----
+#buffer the poly shapefile 30 m
+polybuff <- gBuffer(presPolys, width = 30)
+
+# find points that fall within the buffered polygons, subset the sp object
+coincidentPts <- gContains(polybuff, backgShapef, byid = TRUE)
+colnames(coincidentPts) <- "insideBuff"
+backgShapef@data <- cbind(backgShapef@data, coincidentPts)
+backgSubset <- backgShapef[backgShapef@data$insideBuff == FALSE,]
+
+# projection info doesn't stick, apply from what we grabbed earlier
+backgSubset@proj4string <- projInfo
+
+# write it out ---
+outFileName <- paste(nm_bkgPts, "_clean", sep="")
+writeOGR(backgSubset, dsn = loc_bkgPts, layer = outFileName, 
+         driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 ## clean up ----
-#Close Connection to the SQL DB
-dbDisconnect(db)
 # remove all objects before moving on to the next script
 rm(list=ls())
