@@ -6,8 +6,10 @@
 # Set inputs ----
 # These locations require data created not as part of these scripts
 
-# The folder that has your species polygon data. 
-loc_spPoly <- "E:/SDM/Aquatic/inputs/species/glypmuhl/polygon_data"
+# The folder that has your species csv data
+loc_spCatchment <- "E:/SDM/Aquatic/inputs" # replaces the polygon input
+## The folder that has your species polygon data. 
+##l oc_spPoly <- "E:/SDM/Aquatic/inputs"
 
 # This is the full path and name of the information-tracking database
 nm_db_file <- "E:/SDM/Aquatic/databases/SDM_lookupAndTracking.sqlite"
