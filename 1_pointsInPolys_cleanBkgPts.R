@@ -6,6 +6,8 @@
 #  the input presence polygon dataset.
 
 library(RSQLite)
+library(spsurvey)
+library(rgdal)
 
 ####
 # Assumptions
@@ -73,22 +75,26 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
 dbDisconnect(db)
 
-# remove catchments from background that have presence points
+# remove reaches from background that have presence points
 list_presCatchments <- att.pt$comid
 
+setwd("E:/SDM/Aquatic/other_spatial/FrenchCreek")
 
+# the name of the study area polygon
+StudyAreaPoly <- "flowlines.shp"
+
+# read in the shapefile, get the attribute data
+layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
+shapef <- readOGR(StudyAreaPoly, layer = layer)
+testcatchments <- shapef@data
+list_projCatchments <- testcatchments$COMID
 
 #list_projCatchments <- att.pt$comid
 
 setwd(loc_envVars)
-
 bgpoints <- read.csv("EnvVars.csv") #may need additional code for field types
-
-selectedRows <- (bgpoints$COMID %in% list_projCatchments)
-
+selectedRows <- (bgpoints$COMID %in% list_projCatchments & !(bgpoints$COMID %in% list_presCatchments))
 bgpoints_cleaned <- bgpoints[selectedRows,]
-selectedRows <- !(bgpoints_cleaned$COMID %in% list_presCatchments)
-bgpoints_cleaned <- bgpoints_cleaned[selectedRows,]
 
 names(bgpoints_cleaned) <- tolower(names(bgpoints_cleaned))
 
