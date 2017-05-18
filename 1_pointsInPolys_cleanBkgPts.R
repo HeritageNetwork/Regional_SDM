@@ -6,23 +6,19 @@
 #  the input presence polygon dataset.
 
 library(RSQLite)
-library(spsurvey)
 library(rgdal)
 
 ####
 # Assumptions
-# - the shapefile is named with the species code that is used in the lookup table
-#   e.g. glypmuhl.shp
+# - the csv is named with the species code that is used in the lookup table (e.g. glypmuhl.shp)
 # - There is lookup data in the sqlite database to link to other element information (full name, common name, etc.)
-# - the polygon shapefile has at least these fields EO_ID_ST, SNAME, SCOMNAME, RA
+# - the csv has at least these fields EO_ID_ST, SNAME, SCOMNAME, RA
 
 ####
-#### load input poly ----
-
+#### load input reaches ----
 ###
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 38 where you choose which polygon file to use
-
 loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 
@@ -38,10 +34,12 @@ n <- 1
 
 # load data, QC ----
 fileName <- fileList[[n]]
-presCatchments <- read.csv(fileName)
+shpName <- strsplit(fileName,"\\.")[[1]][[1]]
+sppCode <- shpName
+presReaches <- read.csv(fileName)
 
-shpColNms <- names(presCatchments)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA","COMID")  #drop RA
+shpColNms <- names(presReaches)
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop("at least one column is missing or incorrectly named")
   } else {
@@ -49,21 +47,21 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
   }
 
 #pare down columns
-presCatchments <- presCatchments[,desiredCols]
+presReaches <- presReaches[,desiredCols]
 
 #get the attribute table from above 
-att.pt <- presCatchments
+att.reaches <- presReaches
 
 # just in case convert to lower
-names(att.pt) <- tolower(names(att.pt))
+names(att.reaches) <- tolower(names(att.reaches))
 
-write.csv(att.pt,"lasmcomp_prepped.csv")
+write.csv(att.reaches,"lasmcomp_prepped.csv")
 
 # Write out various stats and data to the database ------
 # prep the data
-OutPut <- data.frame(SciName = paste(att.pt[1,"sname"]),
-	CommName=paste(att.pt[1,"scomname"]),
-	#ElemCode=sppCode,
+OutPut <- data.frame(SciName = paste(att.reaches[1,"sname"]),
+	CommName=paste(att.reaches[1,"scomname"]),
+	ElemCode=sppCode,
 	#RandomPtFile=nm.RanPtFile, # do we need this?
 	date = paste(Sys.Date()),
 	time = format(Sys.time(), "%X"),
@@ -76,27 +74,21 @@ dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
 dbDisconnect(db)
 
 # remove reaches from background that have presence points
-list_presCatchments <- att.pt$comid
-
+list_presReaches <- att.reaches$comid
 setwd("E:/SDM/Aquatic/other_spatial/FrenchCreek")
-
 # the name of the study area polygon
 StudyAreaPoly <- "flowlines.shp"
-
 # read in the shapefile, get the attribute data
 layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
 shapef <- readOGR(StudyAreaPoly, layer = layer)
 testcatchments <- shapef@data
 list_projCatchments <- testcatchments$COMID
-
-#list_projCatchments <- att.pt$comid
-
 setwd(loc_envVars)
 bgpoints <- read.csv("EnvVars.csv") #may need additional code for field types
-selectedRows <- (bgpoints$COMID %in% list_projCatchments & !(bgpoints$COMID %in% list_presCatchments))
+selectedRows <- (bgpoints$COMID %in% list_projCatchments & !(bgpoints$COMID %in% list_presReaches))
 bgpoints_cleaned <- bgpoints[selectedRows,]
 
-names(bgpoints_cleaned) <- tolower(names(bgpoints_cleaned))
+#names(bgpoints_cleaned) <- tolower(names(bgpoints_cleaned)) # this may not be needed, is it covered later?
 
 setwd(loc_bkgReach)
 write.csv(bgpoints_cleaned,"bgpoints_clean.csv")

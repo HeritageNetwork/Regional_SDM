@@ -42,6 +42,9 @@ bkgFile <- bk_fileList[[n]]
 
 # absence points
 df.abs <- read.csv(bkgFile)
+# get a list of env-vars for later checking of ev presence in the database
+envvar_list <- names(df.abs)
+envvar_list <- envvar_list[-1:-2]
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in),]
@@ -51,8 +54,7 @@ df.abs <- df.abs[complete.cases(df.abs),]
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
 df.abs$stratum <- "pseu-a"
-df.abs <- cbind(df.abs, EO_ID_ST="pseu-a", 
-					pres=0, RA="high", SNAME="background")
+df.abs <- cbind(df.abs, EO_ID_ST="pseu-a", pres=0, SNAME="background")
 
 # lower case column names
 names(df.in) <- tolower(names(df.in))
@@ -65,56 +67,48 @@ names(df.abs) <- tolower(names(df.abs))
 #rasnames <- gsub(".tif", "", raslist)
 
 # are these all in the lookup database? Checking here.
-#db <- dbConnect(SQLite(),dbname=nm_db_file)  
-#op <- options("useFancyQuotes") 
-#options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
-#SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (", 
-#                  toString(sQuote(rasnames)),
-#                  "); ", sep = "")
-#namesInDB <- dbGetQuery(db, statement = SQLquery)
-#namesInDB$gridName <- tolower(namesInDB$gridName)
-#rasnames <- tolower(rasnames)
+db <- dbConnect(SQLite(),dbname=nm_db_file)  
+op <- options("useFancyQuotes") 
+options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
+SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (", 
+                  toString(sQuote(envvar_list)),
+                  "); ", sep = "")
+namesInDB <- dbGetQuery(db, statement = SQLquery)
+namesInDB$gridName <- tolower(namesInDB$gridName)
+envvar_list <- tolower(envvar_list)
 
 ## this prints rasters not in the lookup database
 ## if blank you are good to go, otherwise figure out what's up
-#rasnames[!rasnames %in% namesInDB$gridName]
+envvar_list[!envvar_list %in% namesInDB$gridName]
 
 ## this prints out the rasters that don't appear as a column name
 ## in df.in (meaning it wasn't used to attribute or the name is funky)
 ## if blank you are good to go
-#rasnames[!rasnames %in% names(df.in)]
+envvar_list[!envvar_list %in% names(df.in)]
 
-# get a list of all distance-to env vars
-#SQLquery <- "SELECT gridName FROM lkpEnvVars WHERE distToGrid = 1;"
-#dtGrids <- dbGetQuery(db, statement = SQLquery)
-
-# clean up
+#clean up
 options(op)
 dbDisconnect(db)
 rm(db)
 
-# Remove irrelevant distance-to grids ----
-# check if pres points are VERY far away from any of the dist-to grids
-#   (this can cause erroneous, non-biological relationships that should
-#    not be driving the model. Group decision to remove.)
-
-# get the ones we are using here
-#dtRas <- rasnames[rasnames %in% dtGrids$gridName]
-# what's the closest distance for each?
-#dtRas.min <- apply(df.in[,dtRas], 2, min)
-# remove those whose closest distance is greater than 10km
-#dtRas.sub <- dtRas.min[dtRas.min > 10000]
-#rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
 
 # clean up, merge data sets -----
+df.in$x.1 <- NULL
+df.in$x <- NULL
+df.in$scomname <- NULL  # not in df.abs --> causing issues on the rearrange below
+df.abs$x <- NULL
+
+# add a 'stratum' column to df.in -- missing without the RA steps.  How to fix?
+df.in$stratum <- 1
+
 # this is the full list of fields, arranged appropriately
-#colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
-colList <- names(df.in)
+colList <- c("sname","eo_id_st","pres","stratum","comid", envvar_list)
+#colList <- names(df.in)
 
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
 depVarCol <- 3
-indVarCols <- c(6:length(colList))
+indVarCols <- c(6:length(colList)) 
 
 #re-arrange
 df.in <- df.in[,colList]
@@ -152,10 +146,10 @@ df.abs$eo_id_st <- factor(df.abs$eo_id_st)
 df.full <- rbind(df.in, df.abs)
 
 # reset these factors
-#df.full$stratum <- factor(df.full$stratum)
+df.full$stratum <- factor(df.full$stratum)
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
-df.full$ra <- factor(tolower(as.character(df.full$ra)))
+#df.full$ra <- factor(tolower(as.character(df.full$ra)))
 df.full$sname <- factor(df.full$sname)
 
 # make samp size groupings ----
@@ -184,14 +178,14 @@ df.full$sname <- factor(df.full$sname)
 x <- tuneRF(df.full[,indVarCols],
              y=df.full[,depVarCol],
              ntreeTry = 300, stepFactor = 2, mtryStart = 6,
-            strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
+            strata = df.full$eo_id_st, replace = TRUE)  #sampsize = sampSizeVec, 
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
-            strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
+            strata = df.full$eo_id_st, replace = TRUE) # sampsize = sampSizeVec, 
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
 rm(x,y)
@@ -206,7 +200,7 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
                         importance=TRUE,
                         ntree=ntrees,
                         mtry=mtry,
-                        strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
+                        strata = df.full$eo_id_st, replace = TRUE) # sampsize = sampSizeVec, 
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
