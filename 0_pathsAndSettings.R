@@ -8,18 +8,18 @@
 
 # The folder that has your species csv data
 loc_spCatchment <- "E:/SDM/Aquatic/inputs" # replaces the polygon input
-## The folder that has your species polygon data. 
-##l oc_spPoly <- "E:/SDM/Aquatic/inputs"
 
 # This is the full path and name of the information-tracking database
 nm_db_file <- "E:/SDM/Aquatic/databases/SDM_lookupAndTracking.sqlite"
 
 # This is the background random points shapefile, path then name (without the 'shp)
-loc_bkgPts <- "E:/SDM/Aquatic/inputs/background"
+loc_bkgReach <- "E:/SDM/Aquatic/inputs/background"
 nm_bkgPts <- "bkgrd_att"
 
-# the folder containing all environmental variable raster (tiffs)
-loc_envVars <- "E:/SDM/Aquatic/inputs/env_vars/geotiffs_masked"
+# the folder containing all environmental variable tables (csv's)
+loc_envVars <- "E:/SDM/Aquatic/env_vars"
+
+
 
 # the path where the next two shapefiles are stored
 loc_otherSpatial <- "E:/SDM/Aquatic/other_spatial"

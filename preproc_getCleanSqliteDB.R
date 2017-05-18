@@ -24,11 +24,11 @@
 # Lines that require editing
 
 # database location and name
-dbLoc <- "G:/RegionalSDM/databases"
+dbLoc <- "E:\\SDM\\Aquatic\\databasess"
 dbName <- "SDM_lookupAndTracking.sqlite"
 
 # path to git folder
-gitLoc <- "G:/RegionalSDM/scripts/Regional_SDM"
+gitLoc <- "E:\\SDM\\Aquatic\\scripts\\Regional_SDM"
 
 # End, lines that require editing
 
@@ -41,8 +41,8 @@ gitLoc <- "G:/RegionalSDM/scripts/Regional_SDM"
 
 setwd(gitLoc)
 toSQLitecmd <- paste('type sqliteDBDump.txt | "',
-                     dbLoc, '/sqlite3" "',
-                     dbLoc, '/', dbName, '"', sep = "")
+                     dbLoc, '\\sqlite3" "',
+                     dbLoc, '\\', dbName, '"', sep = "")
 shell(toSQLitecmd)
 
 # database dump ----

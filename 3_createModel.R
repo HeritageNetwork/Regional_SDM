@@ -16,13 +16,13 @@ library(randomForest)
 ## three lines need your attention. The one directly below (loc_scripts),
 ## about line 29 where you choose which Rdata file to use,
 ## and about line 40 where you choose which record to use
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 
 source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
-setwd(loc_spPts)
+setwd(loc_spCatchment)
 
 #get a list of what's in the directory
-p_fileList <- dir( pattern = "_att.dbf$")
+p_fileList <- dir( pattern = "_att.csv$")
 p_fileList
 #look at the output and choose which shapefile you want to run
 #enter its location in the list (first = 1, second = 2, etc)
@@ -30,10 +30,10 @@ n <- 1
 
 presFile <- p_fileList[[n]]
 # get the presence points
-df.in <-read.dbf(presFile)
+df.in <-read.csv(presFile)
 
-setwd(loc_bkgPts)
-bk_fileList <- dir( pattern = "_clean.dbf$")
+setwd(loc_bkgReach)
+bk_fileList <- dir( pattern = "_clean.csv$")
 bk_fileList
 #look at the output and choose which shapefile you want to run
 #enter its location in the list (first = 1, second = 2, etc)
@@ -41,7 +41,7 @@ n <- 1
 bkgFile <- bk_fileList[[n]]
 
 # absence points
-df.abs <- foreign:::read.dbf(bkgFile)
+df.abs <- read.csv(bkgFile)
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in),]
@@ -58,33 +58,35 @@ df.abs <- cbind(df.abs, EO_ID_ST="pseu-a",
 names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
+
+
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = loc_envVars, pattern = ".tif$")
-rasnames <- gsub(".tif", "", raslist)
+#raslist <- list.files(path = loc_envVars, pattern = ".tif$")
+#rasnames <- gsub(".tif", "", raslist)
 
 # are these all in the lookup database? Checking here.
-db <- dbConnect(SQLite(),dbname=nm_db_file)  
-op <- options("useFancyQuotes") 
-options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
-SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (", 
-                  toString(sQuote(rasnames)),
-                  "); ", sep = "")
-namesInDB <- dbGetQuery(db, statement = SQLquery)
-namesInDB$gridName <- tolower(namesInDB$gridName)
-rasnames <- tolower(rasnames)
+#db <- dbConnect(SQLite(),dbname=nm_db_file)  
+#op <- options("useFancyQuotes") 
+#options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
+#SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (", 
+#                  toString(sQuote(rasnames)),
+#                  "); ", sep = "")
+#namesInDB <- dbGetQuery(db, statement = SQLquery)
+#namesInDB$gridName <- tolower(namesInDB$gridName)
+#rasnames <- tolower(rasnames)
 
 ## this prints rasters not in the lookup database
 ## if blank you are good to go, otherwise figure out what's up
-rasnames[!rasnames %in% namesInDB$gridName]
+#rasnames[!rasnames %in% namesInDB$gridName]
 
 ## this prints out the rasters that don't appear as a column name
 ## in df.in (meaning it wasn't used to attribute or the name is funky)
 ## if blank you are good to go
-rasnames[!rasnames %in% names(df.in)]
+#rasnames[!rasnames %in% names(df.in)]
 
 # get a list of all distance-to env vars
-SQLquery <- "SELECT gridName FROM lkpEnvVars WHERE distToGrid = 1;"
-dtGrids <- dbGetQuery(db, statement = SQLquery)
+#SQLquery <- "SELECT gridName FROM lkpEnvVars WHERE distToGrid = 1;"
+#dtGrids <- dbGetQuery(db, statement = SQLquery)
 
 # clean up
 options(op)
@@ -97,16 +99,17 @@ rm(db)
 #    not be driving the model. Group decision to remove.)
 
 # get the ones we are using here
-dtRas <- rasnames[rasnames %in% dtGrids$gridName]
+#dtRas <- rasnames[rasnames %in% dtGrids$gridName]
 # what's the closest distance for each?
-dtRas.min <- apply(df.in[,dtRas], 2, min)
+#dtRas.min <- apply(df.in[,dtRas], 2, min)
 # remove those whose closest distance is greater than 10km
-dtRas.sub <- dtRas.min[dtRas.min > 10000]
-rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
+#dtRas.sub <- dtRas.min[dtRas.min > 10000]
+#rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
 
 # clean up, merge data sets -----
 # this is the full list of fields, arranged appropriately
-colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
+#colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
+colList <- names(df.in)
 
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
@@ -138,8 +141,8 @@ ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
 
 #also get correlated env var information
-SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings NOT NULL;"
-corrdEVs <- dbGetQuery(db, statement = SQLquery)
+#SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings NOT NULL;"
+#corrdEVs <- dbGetQuery(db, statement = SQLquery)
 
 dbDisconnect(db)
 rm(db)
@@ -149,30 +152,30 @@ df.abs$eo_id_st <- factor(df.abs$eo_id_st)
 df.full <- rbind(df.in, df.abs)
 
 # reset these factors
-df.full$stratum <- factor(df.full$stratum)
+#df.full$stratum <- factor(df.full$stratum)
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
 df.full$ra <- factor(tolower(as.character(df.full$ra)))
 df.full$sname <- factor(df.full$sname)
 
 # make samp size groupings ----
-EObyRA <- unique(df.full[,c("eo_id_st","ra")])
-EObyRA$sampSize[EObyRA$ra == "very high"] <- 5
-EObyRA$sampSize[EObyRA$ra == "high"] <- 4
-EObyRA$sampSize[EObyRA$ra == "medium"] <- 3
-EObyRA$sampSize[EObyRA$ra == "low"] <- 2
-EObyRA$sampSize[EObyRA$ra == "very low"] <- 1
+#EObyRA <- unique(df.full[,c("eo_id_st","ra")])
+#EObyRA$sampSize[EObyRA$ra == "very high"] <- 5
+#EObyRA$sampSize[EObyRA$ra == "high"] <- 4
+#EObyRA$sampSize[EObyRA$ra == "medium"] <- 3
+#EObyRA$sampSize[EObyRA$ra == "low"] <- 2
+#EObyRA$sampSize[EObyRA$ra == "very low"] <- 1
 # set the background pts to the sum of the EO samples
-EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
+#EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
 
 # there appear to be cases where more than one 
 # RA is assigned per EO. Handle it here by 
 # taking max value
-EObySS <- aggregate(EObyRA$sampSize, by=list(EObyRA$eo_id_st), max)
-names(EObySS) <- c("eo_id_st","sampSize")
+#EObySS <- aggregate(EObyRA$sampSize, by=list(EObyRA$eo_id_st), max)
+#names(EObySS) <- c("eo_id_st","sampSize")
 
-sampSizeVec <- EObySS$sampSize
-names(sampSizeVec) <- as.character(EObySS$eo_id_st)
+#sampSizeVec <- EObySS$sampSize
+#names(sampSizeVec) <- as.character(EObySS$eo_id_st)
 
 
 ##
