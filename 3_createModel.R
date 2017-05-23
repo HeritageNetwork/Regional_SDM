@@ -26,11 +26,12 @@ p_fileList
 #look at the output and choose which shapefile you want to run
 #enter its location in the list (first = 1, second = 2, etc)
 n <- 1
-
 presFile <- p_fileList[[n]]
 # get the presence points
 df.in <-read.csv(presFile, colClasses=c("huc12"="character"))
 
+
+# absence points
 setwd(loc_bkgReach)
 bk_fileList <- dir( pattern = "_clean.csv$")
 bk_fileList
@@ -38,8 +39,6 @@ bk_fileList
 #enter its location in the list (first = 1, second = 2, etc)
 n <- 1
 bkgFile <- bk_fileList[[n]]
-
-# absence points
 df.abs <- read.csv(bkgFile, colClasses=c("HUC12"="character"))
 # get a list of env-vars for later checking of ev presence in the database
 envvar_list <- names(df.abs) # gets a list of environmental variables
@@ -86,23 +85,23 @@ dbDisconnect(db)
 rm(db)
 
 # clean up, merge data sets -----
-df.in$x.1 <- NULL
-df.in$x <- NULL
+df.in$x.1 <- NULL # can probably eliminate with better csv data prep from GIS
+df.in$x <- NULL # can probably eliminate with better csv data prep from GIS
 df.in$scomname <- NULL  # not in df.abs --> causing issues on the rearrange below
-df.abs$x <- NULL
-df.abs$x.1 <- NULL
+df.abs$x <- NULL # can probably eliminate with better csv data prep from GIS
+df.abs$x.1 <- NULL # can probably eliminate with better csv data prep from GIS
 
 # add a 'stratum' column to df.in -- missing without the RA steps.  How to fix?
 df.in$stratum <- 1 ### CT - work here!!!!!
 
 # this is the full list of fields, arranged appropriately
-colList <- c("sname","eo_id_st","pres","stratum","comid", envvar_list)
+colList <- c("sname","eo_id_st","pres","stratum","comid", "huc12", envvar_list)
 #colList <- names(df.in)
 
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
 depVarCol <- 3
-indVarCols <- c(6:length(colList)) 
+indVarCols <- c(7:length(colList)) 
 
 #re-arrange
 df.in <- df.in[,colList]
@@ -143,7 +142,7 @@ df.full <- rbind(df.in, df.abs)
 df.full$stratum <- factor(df.full$stratum)
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
-#df.full$ra <- factor(tolower(as.character(df.full$ra)))
+df.full$huc12 <- factor(tolower(as.character(df.full$huc12)))
 df.full$sname <- factor(df.full$sname)
 
 # make samp size groupings ----
@@ -199,14 +198,15 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
 
+### removed this for now because we don't have to correlation done for the aquatic variables - CT
 # first remove the bottom of the correlated vars
-for(grp in unique(corrdEVs$correlatedVarGroupings)){
-  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
-  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
-  varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
-  impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
-}
-rm(vars, imp.sub, varsToDrop)
+#for(grp in unique(corrdEVs$correlatedVarGroupings)){
+#  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
+#  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
+#  varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
+#  impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
+#}
+#rm(vars, imp.sub, varsToDrop)
 
 # set the percentile, here choosing above 25% percentile
 envarPctile <- 0.25
@@ -216,11 +216,11 @@ subsetNumberofEnvars <- length(impEnvVars)
 rm(y)
 # which columns are these, then flip the non-envars to TRUE
 impEnvVarCols <- names(df.full) %in% names(impEnvVars)
-impEnvVarCols[1:5] <- TRUE
+impEnvVarCols[1:6] <- TRUE  # changed from 5 -> 6
 # subset!
 df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
-indVarCols <- c(6:length(names(df.full)))
+indVarCols <- c(7:length(names(df.full))) # changed this to match above - CT
 
 ##
 # code above is for removing least important env vars
@@ -232,8 +232,8 @@ df.in2 <- subset(df.full,pres == "1")
 df.abs2 <- subset(df.full, pres == "0")
 df.in2$stratum <- factor(df.in2$stratum)
 df.abs2$stratum <- factor(df.abs2$stratum)
-df.in2$eo_id_st <- factor(df.in2$HUC12) # replaced eo_id_st with huc12
-df.abs2$eo_id_st <- factor(df.abs2$HUC12) # replaced eo_id_st with huc12
+df.in2$huc12 <- factor(df.in2$huc12) # replaced eo_id_st with huc12
+df.abs2$huc12 <- factor(df.abs2$huc12) # replaced eo_id_st with huc12
 df.in2$pres <- factor(df.in2$pres)
 df.abs2$pres <- factor(df.abs2$pres)
 
@@ -259,9 +259,9 @@ group <- vector("list")
 # }
 ## TODO: bring back by-polygon validation. SampSize needs to be able to handle this to make it possible
 # only validate by EO at this time:
-group$colNm <- "HUC12" ### change to HUC12
+group$colNm <- "huc12" ### change to HUC12
 group$JackknType <- "HUC12 Watershed"  #huc12 as well
-group$vals <- unique(df.in2$HUC12)
+group$vals <- unique(df.in2$huc12)
 
 #reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
@@ -510,7 +510,7 @@ rf.full <- randomForest(df.full[,indVarCols],
                         ntree=ntrees,
                         mtry=mtry,
                         strata = df.full[,"eo_id_st"],
-                        sampsize = sampSizeVec, replace = TRUE,
+                        #sampsize = sampSizeVec, replace = TRUE,
                         norm.votes = TRUE)
 
 ####
@@ -559,3 +559,4 @@ save.image(file = paste(ElementNames$Code, "_",Sys.Date(),".Rdata", sep=""))
 ## clean up ----
 # remove all objects before moving on to the next script
 rm(list=ls())
+

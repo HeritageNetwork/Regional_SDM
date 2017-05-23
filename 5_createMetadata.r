@@ -24,7 +24,7 @@ library(xtable)
 ## about line 35 where you choose which Rdata file to use,
 ## and about line 46 where you choose which record to use
 
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 
 source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 
@@ -37,15 +37,15 @@ fileName <- d[[n]]
 load(paste(loc_RDataOut,fileName, sep="/"))
 
 # get background poly data for the map
-referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries, stringsAsFactors=FALSE) # name of state boundaries file
-studyAreaExtent <- readOGR(loc_otherSpatial, nm_studyAreaExtent, stringsAsFactors=FALSE) 
+#CT#### referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries, stringsAsFactors=FALSE) # name of state boundaries file
+#CT#### studyAreaExtent <- readOGR(loc_otherSpatial, nm_studyAreaExtent, stringsAsFactors=FALSE) 
 
 r <- dir(path = loc_outRas, pattern = ".tif$",full.names=FALSE)
 r
 # which one do we want to run?
 n <- 1
 fileName <- r[[n]]
-ras <- raster(paste(loc_outRas, fileName, sep = "/"))
+#CT#### ras <- raster(paste(loc_outRas, fileName, sep = "/"))
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")

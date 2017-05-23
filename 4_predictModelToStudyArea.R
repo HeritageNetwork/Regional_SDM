@@ -28,7 +28,7 @@ load(fileList[[n]])
 
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
 setwd(loc_envVars)
-EnvVars <- read.csv("EnvVars.csv") #may need additional code for field types
+EnvVars <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character"))
 names(EnvVars) <- tolower(names(EnvVars))
 
 #Make the raster stack
@@ -48,7 +48,7 @@ shapef <- readOGR(StudyAreaReaches, layer = layer)
 # need to understand what's going on here a little more - CT
 # run prediction ----
 fileNm <- paste(loc_outRas, "/", ElementNames$Code, "_",Sys.Date(),".tif", sep = "")
-outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
+outRas <- predictRF(EnvVars, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
 ## clean up ----
 # remove all objects before moving on to the next script

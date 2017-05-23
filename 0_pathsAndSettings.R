@@ -41,7 +41,7 @@ loc_spPts <- "E:/SDM/Aquatic/inputs/species/glypmuhl/point_data"
 loc_RDataOut <- "E:/SDM/Aquatic/outputs"
 
 # output folder for grids (raster predictions)
-loc_outRas <- "K:/Reg5Modeling_Project/outputs/grids"
+loc_outRas <- "E:/SDM/Aquatic/outputs/grids"
 
 # output folder for metadata
-loc_outMetadata <- "K:/Reg5Modeling_Project/outputs/metadata"
+loc_outMetadata <- "E:/SDM/Aquatic/outputs/metadata"
