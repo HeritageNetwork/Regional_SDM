@@ -2,7 +2,6 @@
 # Purpose: attribute environmental data to presence points
 
 ## start with a fresh workspace with no objects loaded
-library(raster)
 library(rgdal)
 library(RSQLite)
 library(maptools)
@@ -17,7 +16,7 @@ loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 setwd(loc_envVars)
 
-EnvVars <- read.csv("EnvVars.csv") #may need additional code for field types
+EnvVars <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character")) 
 
 # nm <- names(EnvVars)  ## do we need this if we're not dealing with raster name limits? - CT
 # check to make sure there are no names greater than 10 chars

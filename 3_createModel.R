@@ -29,7 +29,7 @@ n <- 1
 
 presFile <- p_fileList[[n]]
 # get the presence points
-df.in <-read.csv(presFile)
+df.in <-read.csv(presFile, colClasses=c("huc12"="character"))
 
 setwd(loc_bkgReach)
 bk_fileList <- dir( pattern = "_clean.csv$")
@@ -40,10 +40,11 @@ n <- 1
 bkgFile <- bk_fileList[[n]]
 
 # absence points
-df.abs <- read.csv(bkgFile)
+df.abs <- read.csv(bkgFile, colClasses=c("HUC12"="character"))
 # get a list of env-vars for later checking of ev presence in the database
 envvar_list <- names(df.abs) # gets a list of environmental variables
-envvar_list <- envvar_list[-1:-2] # removes the OID and other unneeded fields. May want to fix this in the data prep steps
+envvar_list <- envvar_list[-1:-4] # removes the OID and other unneeded fields. May want to fix this in the data prep steps
+### ALSO REMOVES (-3,-4)  COMID and HUC12 from the list
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in),]
@@ -89,9 +90,10 @@ df.in$x.1 <- NULL
 df.in$x <- NULL
 df.in$scomname <- NULL  # not in df.abs --> causing issues on the rearrange below
 df.abs$x <- NULL
+df.abs$x.1 <- NULL
 
 # add a 'stratum' column to df.in -- missing without the RA steps.  How to fix?
-df.in$stratum <- 1
+df.in$stratum <- 1 ### CT - work here!!!!!
 
 # this is the full list of fields, arranged appropriately
 colList <- c("sname","eo_id_st","pres","stratum","comid", envvar_list)

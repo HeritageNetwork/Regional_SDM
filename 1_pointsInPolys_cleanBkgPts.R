@@ -40,7 +40,7 @@ sppCode <- shpName
 presReaches <- read.csv(fileName)
 
 shpColNms <- names(presReaches)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID") # , "HUC12"
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID") 
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop("at least one column is missing or incorrectly named")
   } else {
@@ -87,7 +87,7 @@ shapef <- readOGR(StudyAreaReaches, layer = layer)
 testcatchments <- shapef@data
 list_projCatchments <- testcatchments$COMID
 setwd(loc_envVars)
-bgpoints <- read.csv("EnvVars.csv") #may need additional code for field types
+bgpoints <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character")) 
 selectedRows <- (bgpoints$COMID %in% list_projCatchments & !(bgpoints$COMID %in% list_presReaches))
 bgpoints_cleaned <- bgpoints[selectedRows,]
 
