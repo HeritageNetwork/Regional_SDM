@@ -28,15 +28,24 @@ names(EnvVars) <- tolower(names(EnvVars))
 
 # join ev to reaches
 # Set working directory to the random points location
-setwd(loc_spCatchment)
+setwd(loc_spReaches)
+#get a list of what's in the directory
+fileList <- dir( pattern = "_prepped.csv$")
+fileList
+#look at the output and choose which shapefile you want to run
+#enter its location in the list (first = 1, second = 2, etc)
+n <- 1
 
-reaches <- read.csv("lasmcomp_prepped.csv") # TO-DO: rename this based on species code
+fileName <- fileList[[n]]
+shpName <- strsplit(fileName,"\\_prepped.")[[1]][[1]]
+sppCode <- shpName
+reaches <- read.csv(fileName)
 
-# merge two data frames by ID
+# merge two data frames by COMID
 reaches_attributed <- merge(reaches,EnvVars,by="comid")
 
 # write it out ----
-write.csv(reaches_attributed, "lasmcomp_att.csv") # TO-DO: rename this based on species code
+write.csv(reaches_attributed, paste(sppCode,"_att.csv",sep=""))
 
 ## clean up ----
 # remove all objects before moving on to the next script

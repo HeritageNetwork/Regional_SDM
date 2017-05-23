@@ -9,7 +9,6 @@ library(RSQLite)
 library(ROCR)    #for ROC plots and stats
 library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
-library(foreign) #for reading dbf files
 library(randomForest)
 
 #####
@@ -84,7 +83,6 @@ envvar_list[!envvar_list %in% names(df.in)]
 options(op)
 dbDisconnect(db)
 rm(db)
-
 
 # clean up, merge data sets -----
 df.in$x.1 <- NULL

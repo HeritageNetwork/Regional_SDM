@@ -40,7 +40,7 @@ sppCode <- shpName
 presReaches <- read.csv(fileName)
 
 shpColNms <- names(presReaches)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "HUC12")
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID") # , "HUC12"
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop("at least one column is missing or incorrectly named")
   } else {
@@ -57,7 +57,7 @@ att.reaches <- presReaches
 names(att.reaches) <- tolower(names(att.reaches))
 
 #write out the CSV file
-write.csv(att.reaches,"lasmcomp_prepped.csv") # TO-DO: rename this based on species code
+write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep="")) 
 
 # Write out various stats and data to the database ------
 # prep the data
