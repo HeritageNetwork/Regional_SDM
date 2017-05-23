@@ -34,9 +34,8 @@ EnvVars <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character"))
 names(EnvVars) <- tolower(names(EnvVars))
 EnvVars$huc12 <- NULL
 
-# need to understand what's going on here a little more - CT
-# run prediction ----
 
+# run prediction ----
 df.all <- df.full
 
 result <- predict(rf.full, df.all[,indVarCols], type="prob")

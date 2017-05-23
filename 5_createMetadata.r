@@ -36,6 +36,10 @@ n <- 1
 fileName <- d[[n]]
 load(paste(loc_RDataOut,fileName, sep="/"))
 
+# get reach data for the map
+setwd(loc_outVector)
+results_lasmcomp <- readOGR(loc_outVector, "lasmcomp_results")
+
 # get background poly data for the map
 #CT#### referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries, stringsAsFactors=FALSE) # name of state boundaries file
 #CT#### studyAreaExtent <- readOGR(loc_otherSpatial, nm_studyAreaExtent, stringsAsFactors=FALSE) 

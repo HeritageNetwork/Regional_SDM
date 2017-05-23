@@ -24,11 +24,11 @@ loc_otherSpatial <- "E:/SDM/Aquatic/other_spatial/FrenchCreek"
 
 # A shapefile showing state boundaries (or other reference boundaries)
 # used in the map produced in the metadata
-nm_refBoundaries <- "StateBoundariesAlbersConicEqualArea"
+nm_refBoundaries <- "catchments"
 
 # A shapefile showing the extent of the study area over which the model 
 # was created. This is also used in the metadata map.
-nm_studyAreaExtent <- "reg5_pred_20161027"
+nm_studyAreaExtent <- "catchments"
 
 # Set destination folders ----
 # These locations are initially locations where outputs are written. 
@@ -41,7 +41,7 @@ loc_spPts <- "E:/SDM/Aquatic/inputs/species/glypmuhl/point_data"
 loc_RDataOut <- "E:/SDM/Aquatic/outputs"
 
 # output folder for grids (raster predictions)
-loc_outRas <- "E:/SDM/Aquatic/outputs/grids"
+loc_outVector <- "E:/SDM/Aquatic/outputs/shapefiles"
 
 # output folder for metadata
 loc_outMetadata <- "E:/SDM/Aquatic/outputs/metadata"

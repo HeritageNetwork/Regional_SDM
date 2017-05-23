@@ -12,7 +12,7 @@ library(DBI)
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 23 where you choose which Rdata file to use
 
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 
 source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
        
@@ -210,19 +210,20 @@ writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
 #clean up
 rm(m, rasrc)
 
+## replace with vector version - CT
 ## continuous grid that drops cells below thresh ----
 # reclassify the raster based on the threshold into Na below thresh
-m <- cbind(
-  from = c(-Inf),
-  to = c(threshold),
-  becomes = c(NA)
-)
+#m <- cbind(
+#  from = c(-Inf),
+#  to = c(threshold),
+#  becomes = c(NA)
+#)
 
-rasrc <- reclassify(ras, m)
+#rasrc <- reclassify(ras, m)
 
 #plot(rasrc)
-outfile <- paste(loc_outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
-writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
+#outfile <- paste(loc_outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
+#writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
 
 ## clean up ----
 # remove all objects before moving on to the next script
