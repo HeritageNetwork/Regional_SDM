@@ -19,10 +19,10 @@ setwd(loc_envVars)
 
 EnvVars <- read.csv("EnvVars.csv") #may need additional code for field types
 
-nm <- names(EnvVars)
+# nm <- names(EnvVars)  ## do we need this if we're not dealing with raster name limits? - CT
 # check to make sure there are no names greater than 10 chars
-nmLen <- unlist(lapply(nm, nchar))
-max(nmLen) # if this result is greater than 10, you've got a renegade
+#nmLen <- unlist(lapply(nm, nchar))
+#max(nmLen) # if this result is greater than 10, you've got a renegade
 
 names(EnvVars) <- tolower(names(EnvVars))
 

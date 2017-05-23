@@ -19,10 +19,8 @@ nm_bkgPts <- "bkgrd_att"
 # the folder containing all environmental variable tables (csv's)
 loc_envVars <- "E:/SDM/Aquatic/env_vars"
 
-
-
 # the path where the next two shapefiles are stored
-loc_otherSpatial <- "E:/SDM/Aquatic/other_spatial"
+loc_otherSpatial <- "E:/SDM/Aquatic/other_spatial/FrenchCreek"
 
 # A shapefile showing state boundaries (or other reference boundaries)
 # used in the map produced in the metadata
@@ -31,7 +29,6 @@ nm_refBoundaries <- "StateBoundariesAlbersConicEqualArea"
 # A shapefile showing the extent of the study area over which the model 
 # was created. This is also used in the metadata map.
 nm_studyAreaExtent <- "reg5_pred_20161027"
-
 
 # Set destination folders ----
 # These locations are initially locations where outputs are written. 

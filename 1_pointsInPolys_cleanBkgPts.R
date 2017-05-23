@@ -78,9 +78,9 @@ dbDisconnect(db)
 ###
 # remove reaches from background dataset that have presence of the target species in the reach
 list_presReaches <- att.reaches$comid
-setwd("E:/SDM/Aquatic/other_spatial/FrenchCreek")
-# the name of the study area polygon
-StudyAreaReaches <- "flowlines.shp"
+
+setwd(loc_otherSpatial)
+StudyAreaReaches <- "flowlines.shp" # the name of the study area flowlines
 # read in the shapefile, get the attribute data
 layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
 shapef <- readOGR(StudyAreaReaches, layer = layer)

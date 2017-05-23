@@ -2,7 +2,7 @@
 # Purpose: create the distribution model prediction raster
 
 ## start with a fresh workspace with no objects loaded
-library(raster)
+#library(raster) # do we stil need this - CT
 library(rgdal)
 library(randomForest)
 
@@ -10,7 +10,7 @@ library(randomForest)
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 26 where you choose which Rdata file to use,
 
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 
 # get paths, other settings
 source(paste(loc_scripts,"0_pathsAndSettings.R", sep="/"))
@@ -26,21 +26,30 @@ fileList
 n <- 1
 load(fileList[[n]])
 
-##Make the raster stack
-stackOrder <- names(df.full)[indVarCols]
+# load the environmental variables -- analogous to the development of the raster stack in the terr models
 setwd(loc_envVars)
-rasL <- paste(stackOrder,".tif", sep="")
-fullL <- as.list(paste(loc_envVars, rasL, sep="/"))
-names(fullL) <- stackOrder
-envStack <- stack(fullL)
+EnvVars <- read.csv("EnvVars.csv") #may need additional code for field types
+names(EnvVars) <- tolower(names(EnvVars))
 
+#Make the raster stack
+##stackOrder <- names(df.full)[indVarCols]
+##setwd(loc_envVars)
+##rasL <- paste(stackOrder,".tif", sep="")
+##fullL <- as.list(paste(loc_envVars, rasL, sep="/"))
+##names(fullL) <- stackOrder
+##envStack <- stack(fullL)
+
+## load the reach shapefile for the study area
+setwd(loc_otherSpatial)
+StudyAreaReaches <- "flowlines.shp" # the name of the study area flowlines
+layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
+shapef <- readOGR(StudyAreaReaches, layer = layer)
+
+# need to understand what's going on here a little more - CT
 # run prediction ----
 fileNm <- paste(loc_outRas, "/", ElementNames$Code, "_",Sys.Date(),".tif", sep = "")
 outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
-#writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
-
 ## clean up ----
 # remove all objects before moving on to the next script
 rm(list=ls())
-
