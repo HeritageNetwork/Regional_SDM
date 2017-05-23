@@ -22,7 +22,8 @@ library(rgdal)
 loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 
-setwd(loc_spCatchment)
+# set the working directory to the location of the csv of species by reaches
+setwd(loc_spReaches)
 
 #get a list of what's in the directory
 fileList <- dir( pattern = ".csv$")
@@ -39,7 +40,7 @@ sppCode <- shpName
 presReaches <- read.csv(fileName)
 
 shpColNms <- names(presReaches)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID")
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "HUC12")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop("at least one column is missing or incorrectly named")
   } else {
@@ -52,10 +53,11 @@ presReaches <- presReaches[,desiredCols]
 #get the attribute table from above 
 att.reaches <- presReaches
 
-# just in case convert to lower
+# just in case convert column names to lowercase
 names(att.reaches) <- tolower(names(att.reaches))
 
-write.csv(att.reaches,"lasmcomp_prepped.csv")
+#write out the CSV file
+write.csv(att.reaches,"lasmcomp_prepped.csv") # TO-DO: rename this based on species code
 
 # Write out various stats and data to the database ------
 # prep the data
@@ -73,22 +75,21 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
 dbDisconnect(db)
 
-# remove reaches from background that have presence points
+###
+# remove reaches from background dataset that have presence of the target species in the reach
 list_presReaches <- att.reaches$comid
 setwd("E:/SDM/Aquatic/other_spatial/FrenchCreek")
 # the name of the study area polygon
-StudyAreaPoly <- "flowlines.shp"
+StudyAreaReaches <- "flowlines.shp"
 # read in the shapefile, get the attribute data
-layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
-shapef <- readOGR(StudyAreaPoly, layer = layer)
+layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
+shapef <- readOGR(StudyAreaReaches, layer = layer)
 testcatchments <- shapef@data
 list_projCatchments <- testcatchments$COMID
 setwd(loc_envVars)
 bgpoints <- read.csv("EnvVars.csv") #may need additional code for field types
 selectedRows <- (bgpoints$COMID %in% list_projCatchments & !(bgpoints$COMID %in% list_presReaches))
 bgpoints_cleaned <- bgpoints[selectedRows,]
-
-#names(bgpoints_cleaned) <- tolower(names(bgpoints_cleaned)) # this may not be needed, is it covered later?
 
 setwd(loc_bkgReach)
 write.csv(bgpoints_cleaned,"bgpoints_clean.csv")

@@ -19,7 +19,7 @@ library(randomForest)
 loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 
 source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
-setwd(loc_spCatchment)
+setwd(loc_spReaches)
 
 #get a list of what's in the directory
 p_fileList <- dir( pattern = "_att.csv$")
@@ -43,8 +43,8 @@ bkgFile <- bk_fileList[[n]]
 # absence points
 df.abs <- read.csv(bkgFile)
 # get a list of env-vars for later checking of ev presence in the database
-envvar_list <- names(df.abs)
-envvar_list <- envvar_list[-1:-2]
+envvar_list <- names(df.abs) # gets a list of environmental variables
+envvar_list <- envvar_list[-1:-2] # removes the OID and other unneeded fields. May want to fix this in the data prep steps
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in),]
@@ -59,12 +59,6 @@ df.abs <- cbind(df.abs, EO_ID_ST="pseu-a", pres=0, SNAME="background")
 # lower case column names
 names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
-
-
-
-# get a list of env vars from the folder used to create the raster stack
-#raslist <- list.files(path = loc_envVars, pattern = ".tif$")
-#rasnames <- gsub(".tif", "", raslist)
 
 # are these all in the lookup database? Checking here.
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
@@ -238,8 +232,8 @@ df.in2 <- subset(df.full,pres == "1")
 df.abs2 <- subset(df.full, pres == "0")
 df.in2$stratum <- factor(df.in2$stratum)
 df.abs2$stratum <- factor(df.abs2$stratum)
-df.in2$eo_id_st <- factor(df.in2$eo_id_st)
-df.abs2$eo_id_st <- factor(df.abs2$eo_id_st)
+df.in2$eo_id_st <- factor(df.in2$HUC12) # replaced eo_id_st with huc12
+df.abs2$eo_id_st <- factor(df.abs2$HUC12) # replaced eo_id_st with huc12
 df.in2$pres <- factor(df.in2$pres)
 df.abs2$pres <- factor(df.abs2$pres)
 
@@ -265,17 +259,17 @@ group <- vector("list")
 # }
 ## TODO: bring back by-polygon validation. SampSize needs to be able to handle this to make it possible
 # only validate by EO at this time:
-group$colNm <- "eo_id_st"
-group$JackknType <- "element occurrence"
-group$vals <- unique(df.in2$eo_id_st)
+group$colNm <- "HUC12" ### change to HUC12
+group$JackknType <- "HUC12 Watershed"  #huc12 as well
+group$vals <- unique(df.in2$HUC12)
 
 #reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
-if(length(group$vals) > 30) {
-	ntrees <- 750
-} else {
-	ntrees <- 1000
-}
+#if(length(group$vals) > 30) {
+#	ntrees <- 750
+#} else {
+#	ntrees <- 1000
+#}
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
@@ -334,12 +328,12 @@ if(length(group$vals)>1){
 		  trSet$eo_id_st <- factor(trSet$eo_id_st)
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
-		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
+		  #ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
 		  rm(trSetBG, evSetBG)
 		  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
 		                             importance=TRUE,ntree=ntrees,mtry=mtry,
-		                             strata = trSet[,group$colNm], sampsize = ssVec, replace = TRUE
+		                             strata = trSet[,group$colNm], replace = TRUE  # sampsize = ssVec,
 		                             )
 		  
 		  # run a randomForest predict on the validation data

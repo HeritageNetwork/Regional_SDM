@@ -7,7 +7,7 @@
 # These locations require data created not as part of these scripts
 
 # The folder that has your species csv data
-loc_spCatchment <- "E:/SDM/Aquatic/inputs" # replaces the polygon input
+loc_spReaches <- "E:/SDM/Aquatic/inputs" # replaces the polygon input
 
 # This is the full path and name of the information-tracking database
 nm_db_file <- "E:/SDM/Aquatic/databases/SDM_lookupAndTracking.sqlite"

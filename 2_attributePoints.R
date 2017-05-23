@@ -30,13 +30,13 @@ names(EnvVars) <- tolower(names(EnvVars))
 # Set working directory to the random points location
 setwd(loc_spCatchment)
 
-reaches <- read.csv("lasmcomp_prepped.csv")
+reaches <- read.csv("lasmcomp_prepped.csv") # TO-DO: rename this based on species code
 
 # merge two data frames by ID
 reaches_attributed <- merge(reaches,EnvVars,by="comid")
 
 # write it out ----
-write.csv(reaches_attributed, "lasmcomp_att.csv")
+write.csv(reaches_attributed, "lasmcomp_att.csv") # TO-DO: rename this based on species code
 
 ## clean up ----
 # remove all objects before moving on to the next script
