@@ -258,7 +258,7 @@ for (plotpi in 1:length(pPlots)){
   mtext("log of fraction of votes", side = 2, line = -1, outer=TRUE, cex = 0.7)
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
-Figure 3. Partial dependence plots for the eight environmental variables with the 
+Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the 
 most influence on the model. Each plot shows the effect 
 of the variable on the probability of appropriate habitat with the 
 effects of the other variables removed \cite{liaw2002}. Peaks in the line indicate 
