@@ -183,32 +183,36 @@ for(i in 1:numThresh){
 options(op)
 dbDisconnect(db)
 
-
 ## choose threshold, create binary grid ----
 # THE next lines are for creating thresholded grids. You don't need to do this here, 
 # you could do it in Arc instead. 
 
 #lets set the threshold to MTP
-threshold <- allThresh$MTP
+threshold <- as.numeric(MTP)
+# load the prediction vector
+setwd(loc_outVector)
+r <- dir(path = loc_outVector, pattern = ".shp$",full.names=FALSE)
+r
+#which one do we want to run?
+n <- 1
+fileName <- r[[n]]
+shpName <- strsplit(fileName,"\\.")[[1]][[1]]
+results_shape <- readOGR(loc_outVector, shpName) # shapefile results for mapping
 
-# load the prediction grid
-ras <- raster(paste(loc_outRas,"/",ElementNames$Code, ".tif", sep = ""))
+# reclassify the vector based on the threshold into binary 0/1
+test2 <- results_shape
+test2@data$MTP <- NA
+test2@data$MTP[test2@data$prbblty<threshold] <- 0
+test2@data$MTP[test2@data$prbblty>=threshold] <- 1
+#plot(test2)
 
-# reclassify the raster based on the threshold into binary 0/1
-m <- cbind(
-  from = c(-Inf, threshold),
-  to = c(threshold, Inf),
-  becomes = c(0, 1)
-)
-
-rasrc <- reclassify(ras, m)
-
-#plot(rasrc)
-outfile <- paste(loc_outRas,"/",ElementNames$Code,"_threshold.tif", sep = "")
-writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
+# delete the old shapefile so a replacement can be written
+file.remove(list.files(pattern=shpName))
+#write outshapefile
+writeOGR(test2,dsn=loc_outVector,layer="lasmcomp_results", driver="ESRI Shapefile")
 
 #clean up
-rm(m, rasrc)
+rm(test2)
 
 ## replace with vector version - CT
 ## continuous grid that drops cells below thresh ----

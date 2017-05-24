@@ -24,11 +24,11 @@ loc_otherSpatial <- "E:/SDM/Aquatic/other_spatial/FrenchCreek"
 
 # A shapefile showing state boundaries (or other reference boundaries)
 # used in the map produced in the metadata
-nm_refBoundaries <- "catchments"
+nm_refBoundaries <- "counties"
 
 # A shapefile showing the extent of the study area over which the model 
 # was created. This is also used in the metadata map.
-nm_studyAreaExtent <- "catchments"
+nm_studyAreaExtent <- "studyarea"
 
 # Set destination folders ----
 # These locations are initially locations where outputs are written. 

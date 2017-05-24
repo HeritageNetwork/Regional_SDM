@@ -38,18 +38,19 @@ load(paste(loc_RDataOut,fileName, sep="/"))
 
 # get reach data for the map
 setwd(loc_outVector)
-results_lasmcomp <- readOGR(loc_outVector, "lasmcomp_results")
 
-# get background poly data for the map
-#CT#### referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries, stringsAsFactors=FALSE) # name of state boundaries file
-#CT#### studyAreaExtent <- readOGR(loc_otherSpatial, nm_studyAreaExtent, stringsAsFactors=FALSE) 
-
-r <- dir(path = loc_outRas, pattern = ".tif$",full.names=FALSE)
+r <- dir(path = loc_outVector, pattern = ".shp$",full.names=FALSE)
 r
-# which one do we want to run?
+#which one do we want to run?
 n <- 1
 fileName <- r[[n]]
-#CT#### ras <- raster(paste(loc_outRas, fileName, sep = "/"))
+shpName <- strsplit(fileName,"\\.")[[1]][[1]]
+results_shape <- readOGR(loc_outVector, shpName) # shapefile results for mapping
+
+# get background poly data for the map
+setwd(loc_otherSpatial)
+studyAreaExtent <- readOGR(loc_otherSpatial,  nm_studyAreaExtent) # study area
+referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries) # name of state boundaries file
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")

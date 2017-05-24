@@ -75,12 +75,11 @@ Table 1. Input statistics.
 <<tableOneLegend, results = "asis", echo=FALSE>>= 
 cat("Polys = input polygons; EOs = element occurrences (known locations); Groups = ", group$JackknType)
 @
-BG points = background points; PR points = presence points placed throughout
-all polygons.
+BG reaches = background reaches; PR reaches = presence point placed in reaches.
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("polys","EOs","BG points","PR points"),
+	summ.table <- data.frame(Name=c("polys","EOs","BG reaches","PR reaches"),
                          Number=c(numPys,numEOs,
                          nrow(subset(df.full, pres == 0)),
                          nrow(subset(df.full, pres == 1))))
@@ -306,20 +305,20 @@ if(nrow(sdm.customComments.subset) > 0){
 #levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
 
 #equal-width class intervals of 1990 population
-plotvar <- results_lasmcomp@data$prbblty  
+plotvar <- results_shape@data$prbblty  
 nclr <- 5
 plotclr <- brewer.pal(nclr,"BuPu")
 #plotclr <- plotclr[nclr:1] # reorder colors if appropriate
 class <- classIntervals(plotvar, nclr, style="equal")
 colcode <- findColours(class, plotclr)
 
-plot(results_lasmcomp)
-plot(results_lasmcomp, col=colcode, add=T)
-title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
-legend(-117, 44, legend=names(attr(colcode, "table")), 
-    fill=attr(colcode, "palette"), cex=0.6, bty="n")
-
-
+plot(results_shape)
+plot(results_shape, col=colcode, add=T)
+plot(studyAreaExtent, add=T, border="red", lwd=1)
+plot(referenceBoundaries, add=T, border="gray13", lwd=0.5)
+#title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
+legend("bottomleft", legend=names(attr(colcode, "table")), 
+    fill=attr(colcode, "palette"), cex=0.8, bty="n")
 
 @
 
