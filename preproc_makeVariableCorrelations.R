@@ -15,6 +15,8 @@ EnvVars <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character"))
 EnvVars$X <- NULL
 EnvVars$HUC12 <- NULL
 EnvVars$COMID <- NULL
+EnvVars$OID <- NULL
+EnvVars$X.1 <- NULL
 # delete EV columns where all rows are zero (the snow/ice NLCD cover issue)
 # doing this manually for now, but I should come up with something a little more robust.
 ###  may way to look at removing variables that are the same across all reaches as well.
