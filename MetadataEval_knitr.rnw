@@ -73,14 +73,14 @@ The statistics in Table 2 report the mean and variance for these jackknifing run
 
 Table 1. Input statistics. 
 <<tableOneLegend, results = "asis", echo=FALSE>>= 
-cat("Polys = input polygons; EOs = element occurrences (known locations); Groups = ", group$JackknType)
+cat("Groups = ", group$JackknType,";")
 @
 BG reaches = background reaches; PR reaches = presence point placed in reaches.
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("polys","EOs","BG reaches","PR reaches"), #note how many HUC12 (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
-                         Number=c(numPys,numEOs,
+	summ.table <- data.frame(Name=c("HUC12s","BG reaches","PR reaches"), #note how many HUC12 (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
+                         Number=c(length(unique(df.in2$huc12)),
                          nrow(subset(df.full, pres == 0)),
                          nrow(subset(df.full, pres == 1))))
   print(xtable(summ.table),
