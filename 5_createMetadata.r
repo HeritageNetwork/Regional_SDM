@@ -14,6 +14,7 @@ library(maptools)
 library(sp)
 library(rgdal)
 library(RColorBrewer)
+library(classInt)
 library(rgdal)
 library(rasterVis)
 library(RSQLite)
@@ -32,7 +33,7 @@ source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
 d
 # which one do we want to run?
-n <- 1
+n <- 3
 fileName <- d[[n]]
 load(paste(loc_RDataOut,fileName, sep="/"))
 
@@ -85,7 +86,7 @@ if(nrow(sdm.customComments) > 1) {
 }
 
 ## Get threshold information ----
-SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPolys, capturedPts ", 
+SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedPts ", 
                   "FROM tblCutoffs ", 
                   "WHERE ElemCode='", ElementNames$Code, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
@@ -105,12 +106,12 @@ sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
-  "capturedEOs", "capturedPolys", "capturedPts", "cutDescription")]
-names(sdm.thresh.table) <- c("Threshold", "Value", "EOs","Polys","Pts","Description")
-sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
-                                     "(",sdm.thresh.table$EOs, ")", sep="")
-sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
-                              "(",sdm.thresh.table$Polys, ")", sep="")
+   "capturedPts", "cutDescription")]
+names(sdm.thresh.table) <- c("Threshold", "Value", "Pts","Description")
+#sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
+ #                                    "(",sdm.thresh.table$EOs, ")", sep="")
+#sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
+     #                         "(",sdm.thresh.table$Polys, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
                               sep="")

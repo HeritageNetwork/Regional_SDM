@@ -79,7 +79,7 @@ BG reaches = background reaches; PR reaches = presence point placed in reaches.
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("polys","EOs","BG reaches","PR reaches"),
+	summ.table <- data.frame(Name=c("polys","EOs","BG reaches","PR reaches"), #note how many HUC12 (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
                          Number=c(numPys,numEOs,
                          nrow(subset(df.full, pres == 0)),
                          nrow(subset(df.full, pres == 1))))
@@ -285,7 +285,7 @@ see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs
 <<tableThree, results="asis", echo = FALSE>>=
   tbl <- sdm.thresh.table
   #tbl$Citation <- gsub("(^.*)","\\\\cite{\\1}",sdm.thresh.table$Citation)
-  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","r","p{2.3in}")), 
+  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","p{3.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
 
