@@ -191,8 +191,19 @@ dbDisconnect(db)
 #lets set the threshold to MTP
 threshold <- allThresh$MTP
 
+# get a list of rasters in the directory for this species
+r <- dir(path = loc_outRas, 
+         pattern = paste(ElementNames$Code, ".*tif$",sep=""),full.names=FALSE)
+r
+# which one do we want to run? (default to last, assuming sorted by date stamp)
+n <- length(r)
+n
+# prefer loading a different tiff? change the next line and uncomment.
+#n <- 1
+rasName <- r[[n]]
+
 # load the prediction grid
-ras <- raster(paste(loc_outRas,"/",ElementNames$Code, ".tif", sep = ""))
+ras <- raster(paste(loc_outRas, rasName, sep = "/"))
 
 # reclassify the raster based on the threshold into binary 0/1
 m <- cbind(
