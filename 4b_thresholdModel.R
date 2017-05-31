@@ -58,33 +58,6 @@ cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
 #                    "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
 
-# get min of max values by polygon (MTPP; minimum training polygon presence)
-maxInEachPoly <- aggregate(allVotesPresPts$X1, 
-                           by=list(allVotesPresPts$stratum, allVotesPresPts$eo_id_st), max)
-names(maxInEachPoly) <- c("stratum","eo_id_st","X1")
-MTPP <- min(maxInEachPoly$X1)
-#capturedEOs <- length(unique(maxInEachPoly$eo_id_st))
-#capturedPolys <- length(unique(maxInEachPoly$stratum))
-capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPP,])
-cutList$MTPP <- list("value" = MTPP, "code" = "MTPP", 
-#                    "capturedEOs" = capturedEOs,
-#                    "capturedPolys" = capturedPolys,
-                    "capturedPts" = capturedPts)
-
-# get min of max values by EO (MTPEO; minimum training EO presence)
-maxInEachEO <- aggregate(allVotesPresPts$X1, 
-                           by=list(allVotesPresPts$eo_id_st), max)
-names(maxInEachEO) <- c("eo_id_st","X1")
-MTPEO <- min(maxInEachEO$X1)
-#capturedEOs <- length(unique(maxInEachEO$eo_id_st))
-#capturedPolys <- length(unique(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,"stratum"]))
-capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,])
-cutList$MTPEO <- list("value" = MTPEO, "code" = "MTPEO", 
-#                     "capturedEOs" = capturedEOs,
-#                     "capturedPolys" = capturedPolys,
-                     "capturedPts" = capturedPts)
-
-
 # F-measure cutoff skewed towards capturing more presence points.
 # extract the precision-recall F-measure from training data
 # set alpha very low to tip in favor of 'presence' data over 'absence' data
