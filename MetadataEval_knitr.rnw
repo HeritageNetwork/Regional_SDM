@@ -32,9 +32,9 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
   par(mar=c(0.9,0.2,0.2,0.2))
   temp <- tss.summ$mean
   thermTemp <- vector("list")
-  if (temp < .33){
+  if (temp < .50){
               thermTemp <- c("red", "poor")
-              } else if (temp < .66){
+              } else if (temp < .80){
               thermTemp <- c("yellow","fair")
               } else {
               thermTemp <- c("green", "good") }
