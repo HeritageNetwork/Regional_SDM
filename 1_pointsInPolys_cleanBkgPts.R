@@ -94,6 +94,14 @@ att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$expl_id, sep=""))
 # sample must be equal or larger than the RA sample size in the random forest model
 att.pt$ra <- factor(tolower(as.character(att.pt$ra)))
 
+# QC step: are any records attributed with values other than these?
+raLevels <- c("very high", "high", "medium", "low", "very low")
+if("FALSE" %in% c(att.pt$ra %in% raLevels)) {
+  stop("at least one record is not attributed with RA appropriately")
+} else {
+  print("RA levels attributed correctly")
+}
+
 EObyRA <- unique(att.pt[,c("expl_id", "eo_id_st","ra")])
 EObyRA$minSamps[EObyRA$ra == "very high"] <- 5
 EObyRA$minSamps[EObyRA$ra == "high"] <- 4
