@@ -12,9 +12,9 @@ library(maptools)
 ###
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 43 where you choose which random points file to use
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 setwd(loc_envVars)
 
 # create a stack
@@ -64,6 +64,3 @@ points_attributed@proj4string <- projInfo
 filename <- paste(code_name, "_att", sep="")
 writeOGR(points_attributed, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())

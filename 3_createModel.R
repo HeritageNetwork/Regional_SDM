@@ -16,9 +16,9 @@ library(randomForest)
 ## three lines need your attention. The one directly below (loc_scripts),
 ## about line 29 where you choose which Rdata file to use,
 ## and about line 40 where you choose which record to use
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 setwd(loc_spPts)
 
 #get a list of what's in the directory
@@ -521,7 +521,6 @@ rf.full <- randomForest(df.full[,indVarCols],
                         strata = df.full[,"eo_id_st"],
                         sampsize = sampSizeVec, replace = TRUE,
                         norm.votes = TRUE)
-
 ####
 # Importance measures ----
 ####
@@ -552,19 +551,23 @@ pPlots <- vector("list",9)
 		names(pPlots) <- c(1:9)
 #get the top eight partial plots
 for(i in 1:9){
-	pPlots[[i]] <- partialPlot(rf.full, df.full[,indVarCols],
-						names(f.imp[ord[i]]),
-						which.class = 1,
-						plot = FALSE)
-	pPlots[[i]]$gridName <- names(f.imp[ord[i]])
-	pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
-	cat("finished partial plot ", i, " of 9", "\n")
-	}
+  curvar <- names(f.imp[ord[i]])
+  pPlots[[i]] <- do.call("partialPlot", list(x = rf.full, pred.data = df.full[,indVarCols],
+                                             x.var = curvar,
+                                             which.class = 1,
+                                             plot = FALSE))
+  pPlots[[i]]$gridName <- curvar
+  pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
+  cat("finished partial plot ", i, " of 9", "\n")
+}
+rm(curvar)
 
 #save the project, return to the original working directory
 setwd(loc_RDataOut)
-save.image(file = paste(ElementNames$Code, "_",Sys.Date(),".Rdata", sep=""))
-
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())
+rdat_nm <- paste(ElementNames$Code, "_",Sys.Date(),".Rdata", sep="")
+fn_args$rdat_nm <- rdat_nm
+# don't save fn args/vars
+ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
+                                                             "run_steps","prompt","modelrun_meta_data","fn_args")]
+save(list = ls.save, file = rdat_nm, envir = environment())
+message(paste0("Saved rdata file: '", rdat_nm , "'."))

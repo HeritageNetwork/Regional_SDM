@@ -12,17 +12,18 @@ library(DBI)
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 23 where you choose which Rdata file to use
 
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
        
 # get a list of what's in the directory
-d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
-d
-# which one do we want to run?
-n <- 1
-fileName <- d[[n]]
-load(paste(loc_RDataOut,fileName, sep="/"))
+# d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
+# d
+# # which one do we want to run?
+# n <- 1
+# fileName <- d[[n]]
+# load(paste(loc_RDataOut,fileName, sep="/"))
+load(rdat_nm)
 
 ## Calculate different thresholds ----
 #set an empty list
@@ -234,7 +235,3 @@ rasrc <- reclassify(ras, m)
 #plot(rasrc)
 outfile <- paste(loc_outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
-
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())

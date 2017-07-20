@@ -1,13 +1,15 @@
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
-CREATE TABLE tblPrepStats 
-( "SciName" TEXT,
-	"CommName" TEXT,
-	"ElemCode" TEXT,
-	"RandomPtFile" TEXT,
-	"date" TEXT,
-	"time" TEXT,
-	"Loc_Use" TEXT 
+CREATE TABLE `tblPrepStats` (
+	`SciName`	TEXT,
+	`CommName`	TEXT,
+	`ElemCode`	TEXT,
+	`RandomPtFile`	TEXT,
+	`date`	TEXT,
+	`time`	TEXT,
+	`Loc_Use`	TEXT,
+	`model_run_name`	TEXT,
+	PRIMARY KEY(`model_run_name`)
 );
 CREATE TABLE IF NOT EXISTS "lkpDataSources" (
 	`DataSourcesID`	INTEGER NOT NULL,
@@ -182,12 +184,19 @@ INSERT INTO lkpSpecies VALUES(151923,'helobull','Helonias bullata','Swamp Pink',
 INSERT INTO lkpSpecies VALUES(159058,'aescvirg','Aeschynomene virginica','Sensitive Joint-vetch','PDFAB04080 ','P','LT',1);
 INSERT INTO lkpSpecies VALUES(802301,'ambycing','Ambystoma cingulatum','Frosted Flatwoods Salamander','AAAAA01030','A','LT',2);
 INSERT INTO lkpSpecies VALUES(817643,'phempied','Phemeranthus piedmontanus','Piedmont Fameflower','PDPOR0A010','P',NULL,1);
-CREATE TABLE IF NOT EXISTS "tblCustomModelComments" (
+CREATE TABLE `tblCustomModelComments` (
 	`ID`	INTEGER,
 	`date`	TEXT,
 	`speciesCode`	TEXT,
 	`comments`	TEXT,
-	PRIMARY KEY(`ID`)
+	`model_name`	TEXT,
+	`model_comp_name`	TEXT,
+	`modeller`	TEXT,
+	`model_start_time`	TEXT,
+	`model_end_time`	TEXT,
+	`r_version`	TEXT,
+	`model_run_name`	TEXT,
+	PRIMARY KEY(`ID`,`model_run_name`)
 );
 CREATE TABLE IF NOT EXISTS "lkpThresholdTypes" (
 	`ID`	INTEGER,

@@ -24,8 +24,8 @@ library(rgeos)
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 38 where you choose which polygon file to use
 
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 
 setwd(loc_spPoly)
 
@@ -192,13 +192,17 @@ writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile,
 
 # Write out various stats and data to the database ------
 # prep the data
+model_run_name <- paste0(sppCode, "__", model_run_name)
+modelrun_meta_data$model_run_name <- model_run_name
+
 OutPut <- data.frame(SciName = paste(att.pt[1,"sname"]),
 	CommName=paste(att.pt[1,"scomname"]),
 	ElemCode=sppCode,
 	RandomPtFile=nm.RanPtFile,
 	date = paste(Sys.Date()),
 	time = format(Sys.time(), "%X"),
-	Loc_Use=""
+	Loc_Use="",
+	model_run_name = model_run_name
 	)
 
 #Write the data to the SQLite database
@@ -233,7 +237,3 @@ backgSubset@proj4string <- projInfo
 outFileName <- paste(nm_bkgPts, "_clean", sep="")
 writeOGR(backgSubset, dsn = loc_bkgPts, layer = outFileName, 
          driver="ESRI Shapefile", overwrite_layer=TRUE)
-
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())

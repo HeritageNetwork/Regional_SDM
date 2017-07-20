@@ -24,17 +24,18 @@ library(xtable)
 ## about line 35 where you choose which Rdata file to use,
 ## and about line 46 where you choose which record to use
 
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+# loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+# source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 
 # get a list of what's in the directory
-d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
-d
-# which one do we want to run?
-n <- 1
-fileName <- d[[n]]
-load(paste(loc_RDataOut,fileName, sep="/"))
+# d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
+# d
+# # which one do we want to run?
+# n <- 1
+# fileName <- d[[n]]
+# load(paste(loc_RDataOut,fileName, sep="/"))
+load(rdat_nm)
 
 # get background poly data for the map
 referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries, stringsAsFactors=FALSE) # name of state boundaries file
@@ -127,5 +128,3 @@ knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(Eleme
 ## clean up ----
 options(op)
 dbDisconnect(db)
-# remove all objects before moving on to the next script
-rm(list=ls())
