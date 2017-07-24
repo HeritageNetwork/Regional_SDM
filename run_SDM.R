@@ -36,8 +36,12 @@ run_SDM <- function(
   prompt = FALSE
   ) {
   
-  if (paths_rdata != "runSDM_paths") {
-    load(paste0(paths_rdata, ".Rdata"))
+  if (!begin_step %in% c("1","2","3")) {
+    if (is.null(model_rdata) | is.null(loc_RDataOut)) {
+      stop("Must provide both 'loc_RDataOut' and 'model_rdata' for continuing a model run.")
+    } else {
+      load(paste0(loc_RDataOut, "/runSDM_paths.Rdata"))
+    }
   } else {
     fn_args <- list(
       loc_scripts = loc_scripts, 
@@ -86,12 +90,13 @@ run_SDM <- function(
     model_start_time <- as.character(Sys.time())
     sdat <- Sys.info()
     model_comp_name <- sdat[['nodename']]
-    model_run_name <- paste0(model_comp_name, "__", gsub(" ","_",model_start_time))
     r_version <- R.version.string
     if (modeller == "Your name") modeller <- sdat[['effective_user']]
     modelrun_meta_data <- list(model_start_time=model_start_time,
-                               model_comp_name=model_comp_name, model_run_name=model_run_name,
-                               r_version = r_version, modeller = modeller, model_comments = model_comments)
+                               model_comp_name=model_comp_name,
+                               r_version = r_version, 
+                               modeller = modeller, 
+                               model_comments = model_comments)
   } else {
     if (is.null(model_rdata)) stop("Must provide .Rdata file name if starting after step 3.")
     load(paste0(loc_RDataOut, "/", model_rdata, ".Rdata"))
@@ -111,6 +116,8 @@ run_SDM <- function(
     
     # clean up everything but loop objects
     rm(list=ls()[!ls() %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args")])
+    
+    message(paste0("Completed script ", scrpt , "..."))
     
     # ask for user input if prompt selected
     if (prompt) {

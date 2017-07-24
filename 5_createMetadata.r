@@ -42,10 +42,10 @@ referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries, stringsAsFact
 studyAreaExtent <- readOGR(loc_otherSpatial, nm_studyAreaExtent, stringsAsFactors=FALSE) 
 
 r <- dir(path = loc_outRas, pattern = ".tif$",full.names=FALSE)
-r
-# which one do we want to run?
-n <- 1
-fileName <- r[[n]]
+# r
+# # which one do we want to run?
+# n <- 1
+fileName <- r[gsub(".tif", "", r) == model_run_name]
 ras <- raster(paste(loc_outRas, fileName, sep = "/"))
 
 ## Get Program and Data Sources info ----
@@ -123,7 +123,7 @@ sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
 
 setwd(loc_outMetadata)
 
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, "_",Sys.Date(), ".tex",sep=""))
+knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
 
 ## clean up ----
 options(op)

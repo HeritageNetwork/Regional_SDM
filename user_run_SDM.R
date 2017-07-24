@@ -2,6 +2,7 @@
 # Purpose: Run a full SDM model, or pickup a 
 
 # get function
+setwd('D:/SDM/Tobacco-test/inputs/species/parahera/scripts')
 source("run_SDM.R")
 
 # execute a new model
@@ -11,39 +12,36 @@ source("run_SDM.R")
 # Optional arguments for all runs include:
 # 1. begin_step: specify as the prefix of the step to begin with: one of ("1","2","3","4","4b","4c","5").
 #     Defaults to "1", so not necessary for new runs.
-# 2. model_rdata: when beginning after step 3, you need to specify the Rdata file name (no file extension) 
-#     for the model previously created. Will be looked for in the 'loc_RDataOut' folder.
-# 3. prompt: if TRUE, the function will stop after each script, and ask if you want to continue. 
+# 2. prompt: if TRUE, the function will stop after each script, and ask if you want to continue. 
 #     Defaults to FALSE.
 
 run_SDM(
-  loc_scripts, 
-  loc_spPoly,
-  nm_db_file,
-  loc_bkgPts, 
-  nm_bkgPts,
-  loc_envVars,
-  loc_otherSpatial,
-  nm_refBoundaries,
-  nm_studyAreaExtent,
-  loc_spPts,
-  loc_RDataOut,
-  loc_outRas,
-  loc_outMetadata,
-  model_comments,
-  modeller,
-  prompt = FALSE
+  loc_scripts = "D:/SDM/Tobacco-test/inputs/species/parahera/scripts" , 
+  loc_spPoly = "D:/SDM/Tobacco-test/inputs/species/parahera/polygon_data",
+  nm_db_file = "D:/SDM/Tobacco-test/databases/VA_Spp/SDM_lookupAndTracking_VA_20170712.sqlite",
+  loc_bkgPts = "D:/SDM/Tobacco-test/inputs/background/tobacco", 
+  nm_bkgPts = "tobacco_att",
+  loc_envVars = "D:/SDM/Tobacco-test/env_vars/Tobacco",
+  loc_otherSpatial = "D:/SDM/Tobacco-test/other_spatial/shp",
+  nm_refBoundaries = "StatesVA",
+  nm_studyAreaExtent = "sdmVA_pred_20170131",
+  loc_spPts = "D:/SDM/Tobacco-test/inputs/species/parahera/point_data",
+  loc_RDataOut = "D:/SDM/Tobacco-test/outputs/parahera/rdata",
+  loc_outRas = "D:/SDM/Tobacco-test/outputs/parahera/grids",
+  loc_outMetadata = "D:/SDM/Tobacco-test/outputs/parahera/metadata",
+  model_comments = "NEW MODEL TEST runSDM fn.",
+  modeller = "Your name",
+  prompt = TRUE
 )
 
 # pick up from previous model run (uncomment below)
 
-# If picking up from a previous run, provide the full file location to the saved rdata file (no file extension)
-# holding these paths. For new runs, this file is automatically saved as "runSDM_paths" in the 
-# 'loc_RDataOut' folder of the original run.
+# If picking up from a previous run, provide the path to loc_RDataOut. If after step
+# 3, also provide the model rdata file (stored in loc_RDataOut) to 'model_rdata'.
 
 # run_SDM(
-#   paths_rdata = "PATH:/runSDM_paths",
-#   begin_step = "1",
-#   model_rdata = NULL,
-#   prompt = FALSE
+#  loc_RDataOut = "D:/SDM/Tobacco-test/outputs/parahera/rdata",
+#  model_rdata = "parahera_2017-07-24",
+#  begin_step = "4",
+#  prompt = FALSE
 # )

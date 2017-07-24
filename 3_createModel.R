@@ -564,10 +564,12 @@ rm(curvar)
 
 #save the project, return to the original working directory
 setwd(loc_RDataOut)
-rdat_nm <- paste(ElementNames$Code, "_",Sys.Date(),".Rdata", sep="")
+model_run_name <- paste0(ElementNames$Code, "_",Sys.Date())
+modelrun_meta_data$model_run_name <- model_run_name
+rdat_nm <- paste(model_run_name,".Rdata", sep="")
 fn_args$rdat_nm <- rdat_nm
 # don't save fn args/vars
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
-                                                             "run_steps","prompt","modelrun_meta_data","fn_args")]
+                                                             "run_steps","prompt","fn_args")]
 save(list = ls.save, file = rdat_nm, envir = environment())
 message(paste0("Saved rdata file: '", rdat_nm , "'."))

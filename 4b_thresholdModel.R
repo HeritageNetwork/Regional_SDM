@@ -23,6 +23,7 @@ library(DBI)
 # n <- 1
 # fileName <- d[[n]]
 # load(paste(loc_RDataOut,fileName, sep="/"))
+setwd(loc_RDataOut)
 load(rdat_nm)
 
 ## Calculate different thresholds ----
@@ -195,13 +196,13 @@ threshold <- allThresh$MTP
 # get a list of rasters in the directory for this species
 r <- dir(path = loc_outRas, 
          pattern = paste(ElementNames$Code, ".*tif$",sep=""),full.names=FALSE)
-r
-# which one do we want to run? (default to last, assuming sorted by date stamp)
-n <- length(r)
-n
+# r
+# # which one do we want to run? (default to last, assuming sorted by date stamp)
+# n <- length(r)
+# n
 # prefer loading a different tiff? change the next line and uncomment.
 #n <- 1
-rasName <- r[[n]]
+rasName <- r[gsub(".tif", "", r) == model_run_name]  # uses model_run_name to specify raster
 
 # load the prediction grid
 ras <- raster(paste(loc_outRas, rasName, sep = "/"))
