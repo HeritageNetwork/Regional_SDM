@@ -24,7 +24,7 @@ library(DBI)
 # fileName <- d[[n]]
 # load(paste(loc_RDataOut,fileName, sep="/"))
 setwd(loc_RDataOut)
-load(rdat_nm)
+load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 ## Calculate different thresholds ----
 #set an empty list

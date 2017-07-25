@@ -24,7 +24,8 @@ library(RSQLite)
 # n <- 1
 # fileName <- d[[n]]
 # load(paste(loc_RDataOut,fileName, sep="/"))
-load(rdat_nm)
+setwd(loc_RDataOut)
+load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 ## get any current documentation ----
 db <- dbConnect(SQLite(),dbname=nm_db_file)

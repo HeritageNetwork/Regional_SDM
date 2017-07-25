@@ -35,7 +35,8 @@ library(xtable)
 # n <- 1
 # fileName <- d[[n]]
 # load(paste(loc_RDataOut,fileName, sep="/"))
-load(rdat_nm)
+setwd(loc_RDataOut)
+load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 # get background poly data for the map
 referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries, stringsAsFactors=FALSE) # name of state boundaries file

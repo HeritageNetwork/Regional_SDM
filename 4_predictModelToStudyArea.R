@@ -25,7 +25,7 @@ setwd(loc_RDataOut)
 # # choose one to run, load it #### requires editing ####
 # n <- 1
 # load(fileList[[n]])
-load(rdat_nm)
+load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 
 ##Make the raster stack
