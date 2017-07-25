@@ -1,5 +1,5 @@
 # File: user_run_SDM.r
-# Purpose: Run a full SDM model, or pickup a 
+# Purpose: Run a full SDM model, or pickup an existing run executed using run_SDM.
 
 # get function
 setwd('D:/SDM/Tobacco-test/inputs/species/parahera/scripts')

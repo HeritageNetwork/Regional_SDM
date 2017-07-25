@@ -192,8 +192,6 @@ writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile,
 
 # Write out various stats and data to the database ------
 # prep the data
-model_run_name <- paste0(sppCode, "__", model_run_name)
-modelrun_meta_data$model_run_name <- model_run_name
 
 OutPut <- data.frame(SciName = paste(att.pt[1,"sname"]),
 	CommName=paste(att.pt[1,"scomname"]),
@@ -201,8 +199,7 @@ OutPut <- data.frame(SciName = paste(att.pt[1,"sname"]),
 	RandomPtFile=nm.RanPtFile,
 	date = paste(Sys.Date()),
 	time = format(Sys.time(), "%X"),
-	Loc_Use="",
-	model_run_name = model_run_name
+	Loc_Use=""
 	)
 
 #Write the data to the SQLite database
