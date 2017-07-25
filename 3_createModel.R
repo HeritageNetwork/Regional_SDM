@@ -569,5 +569,5 @@ modelrun_meta_data$model_run_name <- model_run_name
 # don't save fn args/vars
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
                                                              "run_steps","prompt","fn_args")]
-save(list = ls.save, file = rdat_nm, envir = environment())
-message(paste0("Saved rdata file: '", rdat_nm , "'."))
+save(list = ls.save, file = model_run_name, envir = environment())
+message(paste0("Saved rdata file: '", model_run_name , "'."))
