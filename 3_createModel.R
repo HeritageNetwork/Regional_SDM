@@ -566,8 +566,6 @@ rm(curvar)
 setwd(loc_RDataOut)
 model_run_name <- paste0(ElementNames$Code, "_",Sys.Date())
 modelrun_meta_data$model_run_name <- model_run_name
-rdat_nm <- paste(model_run_name,".Rdata", sep="")
-fn_args$rdat_nm <- rdat_nm
 # don't save fn args/vars
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
                                                              "run_steps","prompt","fn_args")]
