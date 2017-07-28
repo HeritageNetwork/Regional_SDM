@@ -3,8 +3,8 @@
 
 # After running, save this file in the species' 'loc_scripts' folder
 
-# Step 1: get function/scripts
-loc_scripts <- "C:/David/git/test"
+# Step 1: retrieve latest function/scripts from GitHub
+loc_scripts <- "C:/David/git/test3"
 
 # download from GitHub
 script_store <- paste0(loc_scripts, "/Regional_SDM_", Sys.Date())
@@ -12,39 +12,43 @@ if (!dir.exists(script_store)) {
   try(suppressMessages(git_repo <- git2r::clone("https://github.com/VANatHeritage/Regional_SDM.git",
                                               branch = "dev", local_path = script_store)), silent = TRUE)
   if (exists("git_repo")) {
-    rm(script_store, git_repo)
-    message("Ready to run")
+    message("Scripts downloaded. Ready to run.")
   } else {
     dir.create(script_store)
     message(paste0("Couldn't download latest scripts. \nNew folder '",
                    script_store, "' created. \nPlace latest scripts in there."))
-    rm(script_store)
   }
 } else {
   try({
     git_repo <- git2r::repository(script_store)
     git_pull <- git2r::pull(git_repo)
   })
-  if (exists("git_pull") & git_pull@up_to_date) {
-    message("Ready to run")
+  if (exists("git_pull") & (git_pull@up_to_date || git_pull@fast_forward)) {
+    message("Scripts up-to-date. Ready to run.")
   } else {
-    message(paste0("Couldn't download latest scripts.
+    message(paste0("Couldn't download latest scripts.\n
                    Make sure latest scripts are in folder '",
                    script_store, "'"))
   }
 }
+# Check messages and continue.
 loc_scripts <- script_store
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% "loc_scripts"])
 
 # set wd and load function
 setwd(loc_scripts)
 source("run_SDM.R")
+
+##############
+# End step 1 #
+##############
 
 # Step 2: execute a new model
 # Usage: For a full, new model run, provide all paths/file names to arguments 'loc_scripts' THROUGH 'modeller'.
 
 # Optional arguments for all runs include:
 # 1. begin_step: specify as the prefix of the step to begin with: one of ("1","2","3","4","4b","4c","5").
-#     Defaults to "1", so not necessary for new runs.
+#     Defaults to "1", so not necessary to specify for new runs.
 # 2. prompt: if TRUE, the function will stop after each script, and ask if you want to continue. 
 #     Defaults to FALSE.
 
