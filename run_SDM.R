@@ -34,7 +34,7 @@ run_SDM <- function(
   begin_step = "1",
   model_rdata = NULL,
   prompt = FALSE
-  ) {
+) {
   
   if (!begin_step %in% c("1","2","3")) {
     if (is.null(model_rdata) | is.null(loc_RDataOut)) {
@@ -82,7 +82,7 @@ run_SDM <- function(
                   "4b_thresholdModel.R",
                   "4c_additionalMetadataComments.R",
                   "5_createMetadata.R"
-                  )
+  )
   run_steps <- step_names[match(begin_step, all_steps) : length(all_steps)]
   
   # get data about system for model run metadata, when starting with steps 1-3 (model not created)
