@@ -15,7 +15,6 @@
 # 3. prompt: if TRUE, the function will stop after each script, and ask if you want to continue. Defaults to FALSE.
 
 run_SDM <- function(
-  paths_rdata = "runSDM_paths",
   loc_scripts, 
   loc_spPoly,
   nm_db_file,
