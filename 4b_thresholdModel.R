@@ -217,7 +217,7 @@ m <- cbind(
 rasrc <- reclassify(ras, m)
 
 #plot(rasrc)
-outfile <- paste(loc_outRas,"/",ElementNames$Code,"_threshold.tif", sep = "")
+outfile <- paste(loc_outRas,"/",model_run_name,"_threshold.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
 
 #clean up
@@ -234,5 +234,5 @@ m <- cbind(
 rasrc <- reclassify(ras, m)
 
 #plot(rasrc)
-outfile <- paste(loc_outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
+outfile <- paste(loc_outRas,"/",model_run_name,"_thresh2.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)

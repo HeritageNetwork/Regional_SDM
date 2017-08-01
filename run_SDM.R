@@ -40,6 +40,8 @@ run_SDM <- function(
       stop("Must provide both 'loc_RDataOut' and 'model_rdata' for continuing a model run.")
     } else {
       load(paste0(loc_RDataOut, "/runSDM_paths.Rdata"))
+      # can specify new script location
+      if (!is.null(loc_scripts)) fn_args$loc_scripts <- loc_scripts
     }
   } else {
     fn_args <- list(

@@ -2,6 +2,7 @@
 # Purpose: Run a full SDM model, or pickup an existing run executed using run_SDM.
 
 # After running, save this file in the species' 'loc_scripts' folder
+library(git2r)
 
 # Step 1: get function/scripts
 loc_scripts <- "C:/David/git/test"
@@ -12,13 +13,11 @@ if (!dir.exists(script_store)) {
   try(suppressMessages(git_repo <- git2r::clone("https://github.com/VANatHeritage/Regional_SDM.git",
                                               branch = "dev", local_path = script_store)), silent = TRUE)
   if (exists("git_repo")) {
-    rm(script_store, git_repo)
     message("Ready to run")
   } else {
     dir.create(script_store)
     message(paste0("Couldn't download latest scripts. \nNew folder '",
                    script_store, "' created. \nPlace latest scripts in there."))
-    rm(script_store)
   }
 } else {
   try({
@@ -33,7 +32,10 @@ if (!dir.exists(script_store)) {
                    script_store, "'"))
   }
 }
+
+# set script dir. and remove all objects except loc_scripts
 loc_scripts <- script_store
+rm(list=ls()[!ls() %in% c("loc_scripts")])
 
 # set wd and load function
 setwd(loc_scripts)
