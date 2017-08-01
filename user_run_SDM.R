@@ -5,9 +5,9 @@
 library(git2r)
 
 # Step 1: retrieve latest function/scripts from GitHub
-loc_scripts <- "C:/David/git/test3"
+loc_scripts <- "C:/script/location"
 
-# download from GitHub
+# download from GitHub, latest scripts
 script_store <- paste0(loc_scripts, "/Regional_SDM_", Sys.Date())
 if (!dir.exists(script_store)) {
   try(suppressMessages(git_repo <- git2r::clone("https://github.com/VANatHeritage/Regional_SDM.git",
@@ -32,6 +32,7 @@ if (!dir.exists(script_store)) {
                    script_store, "'"))
   }
 }
+# NOTE any messages, and download/place scripts manually if necessary
 
 # set script dir. and remove all objects except loc_scripts
 loc_scripts <- script_store
@@ -77,6 +78,8 @@ run_SDM(
 
 # If picking up from a previous run, provide the path to loc_RDataOut. If after script
 # step #3, also provide the model rdata file (stored in loc_RDataOut) to 'model_rdata'.
+# Note that you can manually update your scripts, if desired The scripts
+# will be accessed from 'loc_scripts' as specified in the original model run.
 
 # run_SDM(
 #  loc_RDataOut = "D:/SDM/Tobacco-test/outputs/parahera/rdata",

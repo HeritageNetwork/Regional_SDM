@@ -119,7 +119,7 @@ run_SDM <- function(
     message(paste0("Completed script ", scrpt , "..."))
     
     # ask for user input if prompt selected
-    if (prompt) {
+    if (prompt & scrpt != "5_createMetadata.R") {
       continue <- readline(prompt = "Continue? (1=yes; 0=no):")
       while (!continue %in% c("0","1")) continue <- readline(prompt = "Try again. Continue? (1=yes; 0=no):")
       if (as.integer(continue) == 0) break("model run stopped")
