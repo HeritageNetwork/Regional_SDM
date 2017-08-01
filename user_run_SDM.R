@@ -13,11 +13,7 @@ if (!dir.exists(script_store)) {
   try(suppressMessages(git_repo <- git2r::clone("https://github.com/VANatHeritage/Regional_SDM.git",
                                               branch = "dev", local_path = script_store)), silent = TRUE)
   if (exists("git_repo")) {
-<<<<<<< HEAD
-    message("Ready to run")
-=======
     message("Scripts downloaded. Ready to run.")
->>>>>>> 77b29f2833511b99ddcc5181d77652ab41a617d5
   } else {
     dir.create(script_store)
     message(paste0("Couldn't download latest scripts. \nNew folder '",
@@ -36,16 +32,10 @@ if (!dir.exists(script_store)) {
                    script_store, "'"))
   }
 }
-<<<<<<< HEAD
 
 # set script dir. and remove all objects except loc_scripts
 loc_scripts <- script_store
-rm(list=ls()[!ls() %in% c("loc_scripts")])
-=======
-# Check messages and continue.
-loc_scripts <- script_store
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% "loc_scripts"])
->>>>>>> 77b29f2833511b99ddcc5181d77652ab41a617d5
 
 # set wd and load function
 setwd(loc_scripts)
