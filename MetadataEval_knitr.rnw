@@ -305,7 +305,7 @@ if(nrow(sdm.customComments.subset) > 0){
 myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
 #levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
 
-levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
+levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.4,col='gray50'), data=list(referenceBoundaries=referenceBoundaries)) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'), data = list(studyAreaExtent=studyAreaExtent))
 @
 \includegraphics{figure/mapFig-1.pdf}    
 Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in black. The study area is outlined in red. 
