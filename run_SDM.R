@@ -36,11 +36,16 @@ run_SDM <- function(
   prompt = FALSE
 ) {
   
-  if (!begin_step %in% c("1","2","3")) {
-    if (is.null(model_rdata) | is.null(loc_RDataOut)) {
-      stop("Must provide both 'loc_RDataOut' and 'model_rdata' for continuing a model run.")
-    } else {
+  if (begin_step != "1") {
+    if (begin_step %in% c("2","3")) {
+      message("Loading most recent saved runSDM settings...")
       load(paste0(loc_RDataOut, "/runSDM_paths.Rdata"))
+    } else {
+      if (is.null(model_rdata) | is.null(loc_RDataOut)) {
+        stop("Must provide both 'loc_RDataOut' and 'model_rdata' for continuing a model run.")
+      } else {
+        load(paste0(loc_RDataOut, "/runSDM_paths.Rdata"))
+      }
     }
   } else {
     fn_args <- list(

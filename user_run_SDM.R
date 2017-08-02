@@ -5,7 +5,7 @@
 library(git2r)
 
 # Step 1: retrieve latest function/scripts from GitHub
-loc_scripts <- "C:/script/location"
+loc_scripts <- "D:/SDM/Tobacco/inputs/species/parahera/scripts"
 
 # download from GitHub, latest scripts
 script_store <- paste0(loc_scripts, "/Regional_SDM_", Sys.Date())
@@ -57,20 +57,21 @@ source("run_SDM.R")
 
 run_SDM(
   loc_scripts = loc_scripts, 
-  loc_spPoly = "D:/SDM/Tobacco-test/inputs/species/parahera/polygon_data",
-  nm_db_file = "D:/SDM/Tobacco-test/databases/VA_Spp/SDM_lookupAndTracking_VA_20170712.sqlite",
-  loc_bkgPts = "D:/SDM/Tobacco-test/inputs/background/tobacco", 
+  loc_spPoly = "D:/SDM/Tobacco/inputs/species/parahera/polygon_data",
+  nm_db_file = "I:/SWAPSPACE/D_Bucklin/SDM_VA_MODELING_TRACKING.sqlite",
+  loc_bkgPts = "D:/SDM/Tobacco/inputs/background/tobacco", 
   nm_bkgPts = "tobacco_att",
-  loc_envVars = "D:/SDM/Tobacco-test/env_vars/Tobacco",
-  loc_otherSpatial = "D:/SDM/Tobacco-test/other_spatial/shp",
+  loc_envVars = "D:/SDM/Tobacco/env_vars/Tobacco",
+  loc_otherSpatial = "D:/SDM/Tobacco/other_spatial/shp",
   nm_refBoundaries = "StatesVA",
   nm_studyAreaExtent = "sdmVA_pred_20170131",
-  loc_spPts = "D:/SDM/Tobacco-test/inputs/species/parahera/point_data",
-  loc_RDataOut = "D:/SDM/Tobacco-test/outputs/parahera/rdata",
-  loc_outRas = "D:/SDM/Tobacco-test/outputs/parahera/grids",
-  loc_outMetadata = "D:/SDM/Tobacco-test/outputs/parahera/metadata",
-  model_comments = "NEW MODEL TEST runSDM fn.",
-  modeller = "Your name",
+  loc_spPts = "D:/SDM/Tobacco/inputs/species/parahera/point_data",
+  loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
+  loc_outRas = "D:/SDM/Tobacco/outputs/parahera/grids",
+  loc_outMetadata = "D:/SDM/Tobacco/outputs/parahera/metadata",
+  model_comments = "running test with new model/track DB.",
+  metaData_comments = "This comment will be in the final PDF.",
+  modeller = "David Bucklin",
   prompt = TRUE
 )
 
@@ -82,8 +83,8 @@ run_SDM(
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
 # run_SDM(
-#  loc_RDataOut = "D:/SDM/Tobacco-test/outputs/parahera/rdata",
-#  model_rdata = "parahera_2017-07-24",
-#  begin_step = "4",
-#  prompt = FALSE
+#   begin_step = "4",
+#   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
+#   model_rdata = "parahera_20170802_120026",
+#   prompt = TRUE
 # )
