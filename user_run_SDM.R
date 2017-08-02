@@ -58,7 +58,7 @@ source("run_SDM.R")
 run_SDM(
   loc_scripts = loc_scripts, 
   loc_spPoly = "D:/SDM/Tobacco/inputs/species/parahera/polygon_data",
-  nm_db_file = "I:/SWAPSPACE/D_Bucklin/SDM_VA_MODELING_TRACKING.sqlite",
+  nm_db_file = "D:/SDM/Tobacco/databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite",
   loc_bkgPts = "D:/SDM/Tobacco/inputs/background/tobacco", 
   nm_bkgPts = "tobacco_att",
   loc_envVars = "D:/SDM/Tobacco/env_vars/Tobacco",
@@ -69,13 +69,13 @@ run_SDM(
   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
   loc_outRas = "D:/SDM/Tobacco/outputs/parahera/grids",
   loc_outMetadata = "D:/SDM/Tobacco/outputs/parahera/metadata",
-  model_comments = "running test with new model/track DB.",
+  model_comments = "Internal comment for modeler, stored in tblModelRuns.",
   metaData_comments = "This comment will be in the final PDF.",
   modeller = "David Bucklin",
   prompt = TRUE
 )
 
-# Step 2a: pick up from previous model run (uncomment below)
+# Step 2-alt: pick up from previous model run (uncomment below)
 
 # If picking up from a previous run, provide the path to loc_RDataOut. If after script
 # step #3, also provide the model rdata file (stored in loc_RDataOut) to 'model_rdata'.
@@ -85,6 +85,6 @@ run_SDM(
 # run_SDM(
 #   begin_step = "4",
 #   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
-#   model_rdata = "parahera_20170802_120026",
+#   model_rdata = "parahera_20170802_120026", # only provide this if picking up after step 3
 #   prompt = TRUE
 # )
