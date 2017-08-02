@@ -35,7 +35,7 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 
 SQLquery <- paste("SELECT * ",
                   " FROM tblCustomModelComments ",
-                  "WHERE model_run_name ='", model_run_name , "'; ", sep="")
+                  "WHERE modelRunName ='", model_run_name , "'; ", sep="")
 dat.in.db <- dbGetQuery(db, statement = SQLquery)
 
 #view what you've got
@@ -71,7 +71,7 @@ if (length(dat.in.db[,1]) == 1) {
   newVals <- paste(as.character(Sys.Date()), ElementNames$Code, newText, model_run_name, sep = "','")
   #clean up newline chars, send it to the DB
   SQLquery <- paste("INSERT INTO tblCustomModelComments ",
-                    "(date, speciesCode, comments, model_run_name) ",
+                    "(date, speciesCode, comments, modelRunName) ",
                     "VALUES ('", newVals ,
                     "');", sep = "")
                     
@@ -80,7 +80,7 @@ if (length(dat.in.db[,1]) == 1) {
 
 # update tblModelRuns with finish time
 SQLquery <- paste0("UPDATE tblModelRuns SET modelEndTime = '",as.character(Sys.time()),
-                   "' WHERE model_run_name ='", model_run_name , "'; ")
+                   "' WHERE modelRunName ='", model_run_name , "'; ")
 dbExecute(db, SQLquery)
 
 ## clean up ----
