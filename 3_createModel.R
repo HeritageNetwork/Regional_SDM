@@ -82,6 +82,9 @@ rasnames[!rasnames %in% namesInDB$gridName]
 ## if blank you are good to go
 rasnames[!rasnames %in% names(df.in)]
 
+# trust that the desired env vars are in df.in
+rasnames <- rasnames[rasnames %in% names(df.in)]
+
 # get a list of all distance-to env vars
 SQLquery <- "SELECT gridName FROM lkpEnvVars WHERE distToGrid = 1;"
 dtGrids <- dbGetQuery(db, statement = SQLquery)

@@ -31,8 +31,6 @@ names(gridlist) <- nm
 nmLen <- unlist(lapply(nm, nchar))
 max(nmLen) # if this result is greater than 10, you've got a renegade
 
-envStack <- stack(gridlist)
-
 # Set working directory to the random points location
 setwd(loc_spPts)
 
@@ -51,6 +49,20 @@ projInfo <- shpf@proj4string
 # Get the species code for the ranPtsFile chosen
 # assume you want first part of text string, before first underscore
 code_name <- strsplit(ranPtsFilesNoExt, "_")[[1]][1]
+
+
+# subset input env. vars by model type (terrestrial, shore, etc)
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+# get MODTYPE
+SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE CODE = '", code_name, "';")
+modType <- dbGetQuery(db, SQLQuery)$m
+
+SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;")
+gridlistSub <- dbGetQuery(db, SQLQuery)$g
+
+# make grid stack with subset
+envStack <- stack(gridlist[names(gridlist) %in% gridlistSub])
+rm(gridlistSub, modType)
 
 # extract raster data to points ----
 ##  Bilinear interpolation is a *huge* memory hog. 
