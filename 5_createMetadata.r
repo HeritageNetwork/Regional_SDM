@@ -71,7 +71,7 @@ sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
 SQLquery <- paste("SELECT ID, date, speciesCode, comments",
                   " FROM tblCustomModelComments ", 
-                  "WHERE speciesCode='", ElementNames$Code, "'; ", sep="")
+                  "WHERE modelRunName ='", model_run_name, "'; ", sep="")
 sdm.customComments <- dbGetQuery(db, statement = SQLquery)
 # assume you want the most recently entered comments, if there are multiple entries
 if(nrow(sdm.customComments) > 1) {
@@ -84,12 +84,12 @@ if(nrow(sdm.customComments) > 1) {
 ## Get threshold information ----
 SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPolys, capturedPts ", 
                   "FROM tblCutoffs ", 
-                  "WHERE ElemCode='", ElementNames$Code, "'; ", sep="")
+                  "WHERE modelRunName ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
 # filter to only most recent
-uniqueTimes <- unique(sdm.thresholds$dateTime)
-mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
-sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
+#uniqueTimes <- unique(sdm.thresholds$dateTime)
+#mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
+#sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
 
 # get info about thresholds
 SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull ", 
