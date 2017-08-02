@@ -564,10 +564,21 @@ rm(curvar)
 
 #save the project, return to the original working directory
 setwd(loc_RDataOut)
-model_run_name <- paste0(ElementNames$Code, "_",Sys.Date())
+model_run_name <- paste0(ElementNames$Code, "_",
+                         gsub(" ","_",gsub(c("-|:"),"",as.character(model_start_time))))
 modelrun_meta_data$model_run_name <- model_run_name
 # don't save fn args/vars
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
                                                              "run_steps","prompt","fn_args")]
 save(list = ls.save, file = paste0(model_run_name,".Rdata"), envir = environment())
+
+# write model metadata to db
+db <- dbConnect(SQLite(),dbname=nm_db_file)  
+insert_values <- paste(model_run_name, ElementNames$Code, model_start_time, modeller, model_comp_name, r_version, model_comments, sep = "','")
+SQLquery <- paste0("INSERT INTO tblModelRuns (modelRunName, CODE, modelBeginTime, modeller,
+modelCompName, rVersion, internalComments)
+VALUES
+('",insert_values,"');")
+dbExecute(db, SQLquery)
+
 message(paste0("Saved rdata file: '", model_run_name , "'."))

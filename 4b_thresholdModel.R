@@ -157,7 +157,8 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 # number of thresholds to write to the db
 numThresh <- length(cutList)
 
-allThresh <- data.frame("ElemCode" = rep(ElementNames$Code, numThresh),
+allThresh <- data.frame("modelRunName" = rep(modelrun_meta_data$model_run_name, numThresh),
+                        "ElemCode" = rep(ElementNames$Code, numThresh),
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
                 "cutCode" = unlist(lapply(cutList, function(x) x[2])),
                 "cutValue" = unlist(lapply(cutList, function(x) x[1])),

@@ -27,6 +27,9 @@ library(RSQLite)
 setwd(loc_RDataOut)
 load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
+for(i in 1:length(modelrun_meta_data))
+  assign(names(modelrun_meta_data)[i], modelrun_meta_data[[i]])
+
 ## get any current documentation ----
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 
@@ -49,7 +52,7 @@ dat.in.db <- dbGetQuery(db, statement = SQLquery)
 
 # copy and paste it into here and edit as needed. 
 
-newText <- model_comments
+newText <- metaData_comments
 #clean up newline chars, send it to the DB
 newText <- gsub("\n", " ", newText)
 
@@ -58,30 +61,27 @@ if (length(dat.in.db[,1]) == 1) {
 
   SQLquery <- paste("UPDATE tblCustomModelComments ",
                     "SET comments = '", newText, 
-                    "' , date = '", as.character(Sys.time()),
-                    "' , model_comp_name = '", model_comp_name,
-                    "' , modeller = '", modeller,
-                    "' , model_start_time = '", model_start_time,
-                    "' , model_end_time = '", as.character(Sys.time()),
-                    "' , r_version = '", r_version,
-                    "' WHERE model_run_name = '", 
+                    "' , date = '", as.character(Sys.Date()),
+                    "' WHERE modelRunName = '", 
                     model_run_name, "';", sep = "")
   dbExecute(db, SQLquery)
 } else {
   
   ## create a new row instead ----
-  
-  newVals <- paste(c(as.character(Sys.time()), ElementNames$Code, newText, model_comp_name, 
-                   modeller, model_start_time, as.character(Sys.time()),
-                   r_version, model_run_name), collapse = "','")
+  newVals <- paste(as.character(Sys.Date()), ElementNames$Code, newText, model_run_name, sep = "','")
   #clean up newline chars, send it to the DB
   SQLquery <- paste("INSERT INTO tblCustomModelComments ",
-                    "(date, speciesCode, comments, model_comp_name, modeller, model_start_time, model_end_time, r_version, model_run_name) ",
+                    "(date, speciesCode, comments, model_run_name) ",
                     "VALUES ('", newVals ,
                     "');", sep = "")
                     
   dbExecute(db, SQLquery)
 }
+
+# update tblModelRuns with finish time
+SQLquery <- paste0("UPDATE tblModelRuns SET modelEndTime = '",as.character(Sys.time()),
+                   "' WHERE model_run_name ='", model_run_name , "'; ")
+dbExecute(db, SQLquery)
 
 ## clean up ----
 dbDisconnect(db)

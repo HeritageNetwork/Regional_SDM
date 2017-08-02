@@ -28,8 +28,9 @@ run_SDM <- function(
   loc_RDataOut,
   loc_outRas,
   loc_outMetadata,
-  model_comments,
-  modeller,
+  model_comments = "",
+  metaData_comments = "",
+  modeller = NULL,
   begin_step = "1",
   model_rdata = NULL,
   prompt = FALSE
@@ -57,6 +58,7 @@ run_SDM <- function(
       loc_outRas = loc_outRas,
       loc_outMetadata = loc_outMetadata,
       model_comments = model_comments,
+      metaData_comments = metaData_comments,
       modeller = modeller)
     save(fn_args, file = paste0(loc_RDataOut, "/" , "runSDM_paths.Rdata"))
   }
@@ -84,19 +86,7 @@ run_SDM <- function(
   )
   run_steps <- step_names[match(begin_step, all_steps) : length(all_steps)]
   
-  # get data about system for model run metadata, when starting with steps 1-3 (model not created)
-  if (begin_step %in% c("1","2","3")) {
-    model_start_time <- as.character(Sys.time())
-    sdat <- Sys.info()
-    model_comp_name <- sdat[['nodename']]
-    r_version <- R.version.string
-    if (modeller == "Your name") modeller <- sdat[['effective_user']]
-    modelrun_meta_data <- list(model_start_time=model_start_time,
-                               model_comp_name=model_comp_name,
-                               r_version = r_version, 
-                               modeller = modeller, 
-                               model_comments = model_comments)
-  } else {
+  if (!begin_step %in% c("1","2","3")) {
     if (is.null(model_rdata)) stop("Must provide .Rdata file name if starting after step 3.")
     load(paste0(loc_RDataOut, "/", model_rdata, ".Rdata"))
   }
@@ -106,9 +96,22 @@ run_SDM <- function(
     message(paste0("Running script ", scrpt , "..."))
     # reload variables
     for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
-    if (scrpt %in% c("1_pointsInPolys_cleanBkgPts.R","4c_additionalMetadataComments.R")) 
-      for(i in 1:length(modelrun_meta_data))
-        assign(names(modelrun_meta_data)[i], modelrun_meta_data[[i]])
+    
+    # modelrun_meta_data
+    if (scrpt == "3_createModel.R") {
+      model_start_time <- as.character(Sys.time())
+      sdat <- Sys.info()
+      model_comp_name <- sdat[['nodename']]
+      r_version <- R.version.string
+      model_run_name <- gsub(" ","_",gsub(c("-|:"),"",as.character(model_start_time)))
+      if (modeller == "Your name") modeller <- sdat[['effective_user']]
+      modelrun_meta_data <- list(model_run_name = model_run_name,
+                                 model_start_time=model_start_time,
+                                 modeller = modeller,
+                                 model_comp_name=model_comp_name,
+                                 r_version = r_version,
+                                 model_comments = model_comments)
+    }
     
     # run script
     source(paste(loc_scripts, scrpt, sep = "/"), local = TRUE)
