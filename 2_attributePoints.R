@@ -19,9 +19,15 @@ setwd(loc_envVars)
 
 # create a stack
 # if using TIFFs, use this line
-raslist <- list.files(pattern = ".tif$")
+raslist <- list.files(pattern = ".tif$", recursive = TRUE)
+raslist <- raslist[-grep("OBSOLETE",raslist, fixed = TRUE)]
 # if using native R rasters, use this line
 #raslist <- list.files(pattern = ".grd$")
+
+# find temporal vars (placed in subfolders)
+raslist.t <- raslist[grep("/",raslist,fixed = TRUE)]
+# exclude temporal vars, for the moment
+# raslist <- raslist[-grep("/",raslist,fixed = TRUE)]
 
 gridlist <- as.list(paste(loc_envVars,raslist,sep = "/"))
 nm <- substr(raslist,1,nchar(raslist) - 4)
@@ -43,13 +49,18 @@ n <- 1
 ranPtsFilesNoExt <- sub(".shp","",ranPtsFiles[n])
 shpf <- readOGR(".", layer = ranPtsFilesNoExt)
 
+########## TEMPORARY#########
+# assign fake dates (years) to EOs
+fdate <- cbind(as.character(unique(shpf$stratum)),sample(1995:2017, size = length(unique(shpf$stratum)), replace = FALSE))
+shpf$date <- unlist(lapply(shpf$stratum, FUN = function(x) {fdate[,2][match(x, fdate[,1])]}))
+########## TEMPORARY#########
+
 #get projection info for later
 projInfo <- shpf@proj4string
 
 # Get the species code for the ranPtsFile chosen
 # assume you want first part of text string, before first underscore
 code_name <- strsplit(ranPtsFilesNoExt, "_")[[1]][1]
-
 
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -61,14 +72,42 @@ SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;
 gridlistSub <- dbGetQuery(db, SQLQuery)$g
 
 # make grid stack with subset
-envStack <- stack(gridlist[names(gridlist) %in% gridlistSub])
-rm(gridlistSub, modType)
+justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
+envStack <- stack(gridlist[justTheNames %in% gridlistSub])
+rm(justTheNames, gridlistSub, modType)
 
 # extract raster data to points ----
 ##  Bilinear interpolation is a *huge* memory hog. 
 ##  Do it all as 'simple' 
 
 points_attributed <- extract(envStack, shpf, method="simple", sp=TRUE)
+
+# temporal variables data handling
+pa <- points_attributed
+tv <- names(pa)[grep(".",names(pa), fixed = TRUE)]
+tvDataYear <- do.call(rbind.data.frame, strsplit(tv, "_|\\."))
+names(tvDataYear) <- c("dataset", "date", "envvar")
+tvDataYear$date <- as.numeric(as.character(tvDataYear$date))
+
+for (i in unique(tvDataYear$envvar)) {
+  tvDataYear.s <- subset(tvDataYear, tvDataYear$envvar == i)
+  yrs <- sort(unique(tvDataYear.s$date))
+  
+  closestYear <- unlist(lapply(as.numeric(pa$date) + 0.1, FUN = function(x) {
+    y <- abs(x - yrs)
+    yrs[which.min(y)]}))
+  
+  vals <- unlist(lapply(1:length(pa), FUN = function(x) {
+    eval(parse(text = paste0("pa$", tvDataYear.s$dataset[1],"_",closestYear[x],".",i, "[", x , "]")
+               ))
+  }))
+  
+  # add to pa
+  eval(parse(text = paste0("pa$", i, " <- vals")))
+}
+
+points_attributed <- pa[-grep(".", names(pa), fixed = TRUE)]
+rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals)
 
 # write it out ----
 # apply projection info
