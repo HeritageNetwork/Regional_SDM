@@ -38,6 +38,7 @@ raslist <- raslist[-grep("OBSOLETE",raslist, fixed = TRUE)]
 
 fullL <- list()
 
+# attach file names to env var names
 for (i in 1:length(stackOrder)) {
   rs <- raslist[grep(paste0(stackOrder[i],".tif"), raslist, ignore.case = TRUE)]
   if (length(rs) > 1) {

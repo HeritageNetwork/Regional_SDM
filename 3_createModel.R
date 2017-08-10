@@ -44,7 +44,7 @@ bkgFile <- bk_fileList[[n]]
 df.abs <- foreign:::read.dbf(bkgFile)
 
 #make sure we don't have any NAs
-df.in <- df.in[complete.cases(df.in),]
+df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
 df.abs <- df.abs[complete.cases(df.abs),]
 
 # align data sets, QC ----
