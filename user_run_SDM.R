@@ -34,7 +34,7 @@ if (!dir.exists(script_store)) {
 }
 # NOTE any messages, and download/place scripts manually if necessary
 
-# set script dir. and remove all objects except loc_scripts
+# this sets script dir. and remove all objects except loc_scripts
 loc_scripts <- script_store
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% "loc_scripts"])
 

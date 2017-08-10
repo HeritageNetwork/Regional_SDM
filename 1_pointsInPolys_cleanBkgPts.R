@@ -45,7 +45,7 @@ sppCode <- shpName
 presPolys <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
 #check for proper column names. If no error from next code block, then good to go
 shpColNms <- names(presPolys@data)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA", "OBSDATE")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop("at least one column is missing or incorrectly named")
   } else {
@@ -54,6 +54,14 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 
 #pare down columns
 presPolys@data <- presPolys@data[,desiredCols]
+
+# set date/year column to [nearest] year, rounding when day is given
+presPolys$date <- as.numeric(substr(presPolys$OBSDATE, 1, 4))
+roundUpYear <- format(as.Date(presPolys$OBSDATE), "%j")
+roundUpYear <- ifelse(roundUpYear < 183 | is.na(roundUpYear), 0, 1)
+presPolys$date <- presPolys$date + roundUpYear
+rm(roundUpYear)
+desiredCols <- c(desiredCols, "date")
 
 #get projection info for later
 projInfo <- presPolys@proj4string
