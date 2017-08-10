@@ -82,9 +82,9 @@ run_SDM(
 # Note that you can manually update your scripts, if desired The scripts
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
-# run_SDM(
-#   begin_step = "4",
-#   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
-#   model_rdata = "parahera_20170802_120026", # only provide this if picking up after step 3
-#   prompt = TRUE
-# )
+run_SDM(
+  begin_step = "4",
+  loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
+  model_rdata = "parahera_20170802_120026", # only provide this if picking up after step 3
+  prompt = TRUE
+)

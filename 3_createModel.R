@@ -59,8 +59,11 @@ names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = loc_envVars, pattern = ".tif$")
-rasnames <- gsub(".tif", "", raslist)
+raslist <- list.files(path = loc_envVars, pattern = ".tif$", recursive = TRUE)
+raslist <- raslist[-grep("OBSOLETE",raslist, fixed = TRUE)]
+rasnames <- unique(unlist(
+  lapply(strsplit(gsub(".tif", "", raslist), "/"), function(x) {x[length(x)]})
+  ))
 
 # are these all in the lookup database? Checking here.
 db <- dbConnect(SQLite(),dbname=nm_db_file)  

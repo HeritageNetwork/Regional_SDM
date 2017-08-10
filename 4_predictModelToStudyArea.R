@@ -29,12 +29,28 @@ load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 
 ##Make the raster stack
-#browser()
 stackOrder <- names(df.full)[indVarCols]
 setwd(loc_envVars)
-rasL <- paste(stackOrder,".tif", sep="")
-fullL <- as.list(paste(loc_envVars, rasL, sep="/"))
+
+# find matching var rasters (with folder for temporal vars)
+raslist <- list.files(pattern = ".tif$", recursive = TRUE)
+raslist <- raslist[-grep("OBSOLETE",raslist, fixed = TRUE)]
+
+fullL <- list()
+
+for (i in 1:length(stackOrder)) {
+  rs <- raslist[grep(paste0(stackOrder[i],".tif"), raslist, ignore.case = TRUE)]
+  if (length(rs) > 1) {
+    # always take most recent temporal raster
+    rs1 <- do.call(rbind.data.frame, strsplit(rs, "_|/"))
+    rs1$nm <- rs
+    rs <- rs1$nm[which.max(as.numeric(rs1[,2]))]
+  }
+  fullL[[i]] <- rs
+}
 names(fullL) <- stackOrder
+rm(rs,rs1)
+
 envStack <- stack(fullL)
 
 # run prediction ----
