@@ -11,12 +11,12 @@ library(maptools)
 ###
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 43 where you choose which random points file to use
-loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 setwd(loc_envVars)
 
 EnvVars <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character")) 
+
 
 # nm <- names(EnvVars)  ## do we need this if we're not dealing with raster name limits? - CT
 # check to make sure there are no names greater than 10 chars
@@ -40,12 +40,21 @@ shpName <- strsplit(fileName,"\\_prepped.")[[1]][[1]]
 sppCode <- shpName
 reaches <- read.csv(fileName)
 
+# subset input env. vars by model type (terrestrial, shore, etc)
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+# get MODTYPE
+SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE CODE = '", sppCode, "';")
+modType <- dbGetQuery(db, SQLQuery)$m
+
+SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua WHERE use_",modType," = 1;")
+gridlistSub <- dbGetQuery(db, SQLQuery)$g
+
+EnvVars <- EnvVars[gridlistSub]
+rm(gridlistSub, modType)
+
 # merge two data frames by COMID
 reaches_attributed <- merge(reaches,EnvVars,by="comid")
 
 # write it out ----
 write.csv(reaches_attributed, paste(sppCode,"_att.csv",sep=""))
 
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())

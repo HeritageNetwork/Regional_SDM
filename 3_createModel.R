@@ -15,9 +15,7 @@ library(randomForest)
 ## three lines need your attention. The one directly below (loc_scripts),
 ## about line 29 where you choose which Rdata file to use,
 ## and about line 40 where you choose which record to use
-loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 setwd(loc_spReaches)
 
 #get a list of what's in the directory
@@ -46,7 +44,7 @@ envvar_list <- envvar_list[-1:-4] # removes the OID and other unneeded fields. M
 ### ALSO REMOVES (-3,-4)  COMID and HUC12 from the list
 
 #make sure we don't have any NAs
-df.in <- df.in[complete.cases(df.in),]
+df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
 df.abs <- df.abs[complete.cases(df.abs),]
 
 # align data sets, QC ----
@@ -63,7 +61,7 @@ names(df.abs) <- tolower(names(df.abs))
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
 op <- options("useFancyQuotes") 
 options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
-SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (", 
+SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVarsAqua WHERE gridName in (", 
                   toString(sQuote(envvar_list)),
                   "); ", sep = "")
 namesInDB <- dbGetQuery(db, statement = SQLquery)
@@ -78,6 +76,13 @@ envvar_list[!envvar_list %in% namesInDB$gridName]
 ## in df.in (meaning it wasn't used to attribute or the name is funky)
 ## if blank you are good to go
 envvar_list[!envvar_list %in% names(df.in)]
+
+# trust that the desired env vars are in df.in
+envvar_list <- envvar_list[names(envvar_list)[envvar_list %in% names(df.in)]]
+
+# get a list of all distance-to env vars
+# SQLquery <- "SELECT gridName FROM lkpEnvVarsAqua WHERE distToGrid = 1;"
+# dtGrids <- dbGetQuery(db, statement = SQLquery)
 
 #clean up
 options(op)
@@ -128,7 +133,7 @@ ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
 
 #also get correlated env var information
-#SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings NOT NULL;"
+#SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVarsAqua WHERE correlatedVarGroupings NOT NULL;"
 #corrdEVs <- dbGetQuery(db, statement = SQLquery)
 
 dbDisconnect(db)
@@ -207,6 +212,7 @@ OriginalNumberOfEnvars <- length(impvals)
 #  impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
 #}
 #rm(vars, imp.sub, varsToDrop)
+
 
 # set the percentile, here choosing above 25% percentile
 envarPctile <- 0.25
@@ -512,7 +518,6 @@ rf.full <- randomForest(df.full[,indVarCols],
                         strata = df.full[,"eo_id_st"],
                         #sampsize = sampSizeVec, replace = TRUE,
                         norm.votes = TRUE)
-
 ####
 # Importance measures ----
 ####
@@ -524,7 +529,7 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get importance data, set up a data frame
 EnvVars <- data.frame(gridName = names(f.imp), impVal = f.imp, fullName="", stringsAsFactors = FALSE)
 #set the query for the following lookup, note it builds many queries, equal to the number of vars
-SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName COLLATE NOCASE in ('", paste(EnvVars$gridName,sep=", "),
+SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVarsAqua WHERE gridName COLLATE NOCASE in ('", paste(EnvVars$gridName,sep=", "),
 					"'); ", sep="")
 #cycle through all select statements, put the results in the df
 for(i in 1:length(EnvVars$gridName)){
@@ -543,20 +548,35 @@ pPlots <- vector("list",9)
 		names(pPlots) <- c(1:9)
 #get the top eight partial plots
 for(i in 1:9){
-	pPlots[[i]] <- partialPlot(rf.full, df.full[,indVarCols],
-						names(f.imp[ord[i]]),
-						which.class = 1,
-						plot = FALSE)
-	pPlots[[i]]$gridName <- names(f.imp[ord[i]])
-	pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
-	cat("finished partial plot ", i, " of 9", "\n")
-	}
+  curvar <- names(f.imp[ord[i]])
+  pPlots[[i]] <- do.call("partialPlot", list(x = rf.full, pred.data = df.full[,indVarCols],
+                                             x.var = curvar,
+                                             which.class = 1,
+                                             plot = FALSE))
+  pPlots[[i]]$gridName <- curvar
+  pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
+  cat("finished partial plot ", i, " of 9", "\n")
+}
+rm(curvar)
 
 #save the project, return to the original working directory
 setwd(loc_RDataOut)
-save.image(file = paste(ElementNames$Code, "_",Sys.Date(),".Rdata", sep=""))
 
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())
+model_run_name <- paste0(ElementNames$Code, "_",
+                         gsub(" ","_",gsub(c("-|:"),"",as.character(model_start_time))))
+modelrun_meta_data$model_run_name <- model_run_name
+# don't save fn args/vars
+ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
+                                                             "run_steps","prompt","fn_args")]
+save(list = ls.save, file = paste0(model_run_name,".Rdata"), envir = environment())
 
+# write model metadata to db
+db <- dbConnect(SQLite(),dbname=nm_db_file)  
+insert_values <- paste(model_run_name, ElementNames$Code, model_start_time, modeller, model_comp_name, r_version, model_comments, sep = "','")
+SQLquery <- paste0("INSERT INTO tblModelRuns (modelRunName, CODE, modelBeginTime, modeller,
+modelCompName, rVersion, internalComments)
+VALUES
+('",insert_values,"');")
+dbExecute(db, SQLquery)
+
+message(paste0("Saved rdata file: '", model_run_name , "'."))

@@ -19,8 +19,7 @@ library(rgdal)
 ###
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 38 where you choose which polygon file to use
-loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+
 
 # set the working directory to the location of the csv of species by reaches
 setwd(loc_spReaches)
@@ -40,7 +39,8 @@ sppCode <- shpName
 presReaches <- read.csv(fileName)
 
 shpColNms <- names(presReaches)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID") 
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE") 
+
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop("at least one column is missing or incorrectly named")
   } else {
@@ -49,6 +49,14 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 
 #pare down columns
 presReaches <- presReaches[,desiredCols]
+
+# set date/year column to [nearest] year, rounding when day is given
+presReaches$date <- as.numeric(substr(presReaches$OBSDATE, 1, 4))
+roundUpYear <- format(as.Date(presReaches$OBSDATE), "%j")
+roundUpYear <- ifelse(roundUpYear < 183 | is.na(roundUpYear), 0, 1)
+presReaches$date <- presReaches$date + roundUpYear
+rm(roundUpYear)
+desiredCols <- c(desiredCols, "date")
 
 #get the attribute table from above 
 att.reaches <- presReaches
@@ -93,8 +101,3 @@ bgpoints_cleaned <- bgpoints[selectedRows,]
 
 setwd(loc_bkgReach)
 write.csv(bgpoints_cleaned,"bgpoints_clean.csv")
-
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())
-

@@ -25,28 +25,15 @@ library(xtable)
 ## about line 35 where you choose which Rdata file to use,
 ## and about line 46 where you choose which record to use
 
-loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
+# source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
-
-# get a list of what's in the directory
-d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
-d
-# which one do we want to run?
-n <- 3
-fileName <- d[[n]]
-load(paste(loc_RDataOut,fileName, sep="/"))
+setwd(loc_RDataOut)
+load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 # get reach data for the map
 setwd(loc_outVector)
 
-r <- dir(path = loc_outVector, pattern = ".shp$",full.names=FALSE)
-r
-#which one do we want to run?
-n <- 1
-fileName <- r[[n]]
-shpName <- strsplit(fileName,"\\.")[[1]][[1]]
-results_shape <- readOGR(loc_outVector, shpName) # shapefile results for mapping
+results_shape <- readOGR(loc_outVector, paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
 
 # get background poly data for the map
 setwd(loc_otherSpatial)
@@ -75,7 +62,7 @@ sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
 SQLquery <- paste("SELECT ID, date, speciesCode, comments",
                   " FROM tblCustomModelComments ", 
-                  "WHERE speciesCode='", ElementNames$Code, "'; ", sep="")
+                  "WHERE modelRunName ='", model_run_name, "'; ", sep="")
 sdm.customComments <- dbGetQuery(db, statement = SQLquery)
 # assume you want the most recently entered comments, if there are multiple entries
 if(nrow(sdm.customComments) > 1) {
@@ -88,12 +75,12 @@ if(nrow(sdm.customComments) > 1) {
 ## Get threshold information ----
 SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedPts ", 
                   "FROM tblCutoffs ", 
-                  "WHERE ElemCode='", ElementNames$Code, "'; ", sep="")
+                  "WHERE modelRunName ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
 # filter to only most recent
-uniqueTimes <- unique(sdm.thresholds$dateTime)
-mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
-sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
+#uniqueTimes <- unique(sdm.thresholds$dateTime)
+#mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
+#sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
 
 # get info about thresholds
 SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull ", 
@@ -128,10 +115,8 @@ sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
 
 setwd(loc_outMetadata)
 
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, "_",Sys.Date(), ".tex",sep=""))
+knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
 
 ## clean up ----
 options(op)
 dbDisconnect(db)
-# remove all objects before moving on to the next script
-rm(list=ls())

@@ -32,9 +32,9 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
   par(mar=c(0.9,0.2,0.2,0.2))
   temp <- tss.summ$mean
   thermTemp <- vector("list")
-  if (temp < .33){
+  if (temp < .50){
               thermTemp <- c("red", "poor")
-              } else if (temp < .66){
+              } else if (temp < .80){
               thermTemp <- c("yellow","fair")
               } else {
               thermTemp <- c("green", "good") }
@@ -257,7 +257,7 @@ for (plotpi in 1:length(pPlots)){
   mtext("log of fraction of votes", side = 2, line = -1, outer=TRUE, cex = 0.7)
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
-Figure 3. Partial dependence plots for the nine environmental variables with the 
+Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the 
 most influence on the model. Each plot shows the effect 
 of the variable on the probability of appropriate habitat with the 
 effects of the other variables removed \cite{liaw2002}. Peaks in the line indicate 
@@ -319,7 +319,6 @@ plot(referenceBoundaries, add=T, border="gray13", lwd=0.5)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
 legend("bottomleft", legend=names(attr(colcode, "table")), 
     fill=attr(colcode, "palette"), cex=0.8, bty="n")
-
 @
 
 \includegraphics{figure/mapFig-1.pdf}    
