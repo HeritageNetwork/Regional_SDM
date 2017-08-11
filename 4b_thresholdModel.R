@@ -192,7 +192,7 @@ dbDisconnect(db)
 # you could do it in Arc instead. 
 
 #lets set the threshold to MTP
-threshold <- allThresh$MTP
+threshold <- allThresh$cutValue[allThresh$cutCode == "MTP"]
 
 # get a list of rasters in the directory for this species
 r <- dir(path = loc_outRas, 
