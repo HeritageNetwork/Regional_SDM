@@ -267,6 +267,8 @@ appropriate habitat. The distribution of each category (thin red = BG points,
 thick blue = PR points) is depicted at the top margin. 
 
 \medskip
+\medskip
+\medskip
 \noindent
 Element distribution models map places of similar environmental
 conditions to the submitted locations (PR points). No model will ever depict sites where
@@ -278,10 +280,11 @@ additional GIS tools to further direct search efforts. A lower threshold depicti
 
 \medskip
 \noindent
+\begin{minipage}{\linewidth} %keep table header with table
 Table 3. Thresholds calculated from the final model. For discussions of these different thresholds
 see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of EOs, polygons, and PR points used in the final model are reported in Table 1.
 
-\smallskip
+\medskip
 \noindent
 <<tableThree, results="asis", echo = FALSE>>=
   tbl <- sdm.thresh.table
@@ -289,6 +292,7 @@ see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs
   print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","r","p{2.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
+\end{minipage}
 
 \medskip
 \noindent
@@ -308,7 +312,7 @@ myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
 levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
 @
 \includegraphics{figure/mapFig-1.pdf}    
-Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in black. The study area is outlined in red. 
+Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in gray. The study area is outlined in red. 
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
