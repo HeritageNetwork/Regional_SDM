@@ -33,6 +33,8 @@ run_SDM <- function(
   modeller = NULL,
   begin_step = "1",
   model_rdata = NULL,
+  add_vars = NULL,
+  remove_vars = NULL,
   prompt = FALSE
 ) {
   
@@ -64,6 +66,8 @@ run_SDM <- function(
       loc_outMetadata = loc_outMetadata,
       model_comments = model_comments,
       metaData_comments = metaData_comments,
+      add_vars = add_vars,
+      remove_vars = remove_vars,
       modeller = modeller)
     save(fn_args, file = paste0(loc_RDataOut, "/" , "runSDM_paths.Rdata"))
   }

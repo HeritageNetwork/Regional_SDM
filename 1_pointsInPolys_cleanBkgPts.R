@@ -57,10 +57,15 @@ presPolys@data <- presPolys@data[,desiredCols]
 
 # set date/year column to [nearest] year, rounding when day is given
 presPolys$date <- as.numeric(substr(presPolys$OBSDATE, 1, 4))
-roundUpYear <- format(as.Date(presPolys$OBSDATE), "%j")
-roundUpYear <- ifelse(roundUpYear < 183 | is.na(roundUpYear), 0, 1)
-presPolys$date <- presPolys$date + roundUpYear
-rm(roundUpYear)
+try({
+  roundUpYear <- format(as.Date(presPolys$OBSDATE), "%j")
+  roundUpYear <- ifelse(roundUpYear < 183 | is.na(roundUpYear), 0, 1)
+  roundUpYear <- ifelse(roundUpYear < 183 | is.na(roundUpYear), 0, 1)
+}, silent = TRUE)
+if(exists("roundUpYear")) {
+  presPolys$date <- presPolys$date + roundUpYear
+  rm(roundUpYear)
+}
 desiredCols <- c(desiredCols, "date")
 
 #get projection info for later

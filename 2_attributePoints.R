@@ -65,6 +65,10 @@ modType <- dbGetQuery(db, SQLQuery)$m
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;")
 gridlistSub <- dbGetQuery(db, SQLQuery)$g
 
+## account for add/remove vars
+if (!is.null(add_vars)) gridlistSub <- c(gridlistSub, add_vars)
+if (!is.null(remove_vars)) gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
+
 # make grid stack with subset
 justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
 envStack <- stack(gridlist[justTheNames %in% gridlistSub])
