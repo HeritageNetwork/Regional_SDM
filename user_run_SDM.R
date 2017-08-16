@@ -55,11 +55,11 @@ run_SDM(
   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
   loc_outRas = "D:/SDM/Tobacco/outputs/parahera/grids",
   loc_outMetadata = "D:/SDM/Tobacco/outputs/parahera/metadata",
-  model_comments = "Internal comment for modeler, stored in tblModelRuns.",
+  model_comments = "testing add/remove vars",
   metaData_comments = "This comment will be in the final PDF.",
   modeller = "David Bucklin",
-  add_vars = NULL,
-  remove_vars = NULL,
+  # add_vars = c("sgoclay"),
+  remove_vars = c("tp100x1000", "nlcdopn"),
   prompt = TRUE
 )
 
@@ -70,9 +70,9 @@ run_SDM(
 # Note that you can manually update your scripts, if desired The scripts
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
-# run_SDM(
-#   begin_step = "3",
-#   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
-#   # model_rdata = "parahera_20170802_120026", # need to provide this if picking up after step 3, otherwise leave it out
-#   prompt = TRUE
-# )
+run_SDM(
+  begin_step = "3",
+  loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
+  # model_rdata = "parahera_20170802_120026", # need to provide this if picking up after step 3, otherwise leave it out
+  prompt = TRUE
+)

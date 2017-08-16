@@ -243,7 +243,7 @@ backgSubset <- backgShapef[backgShapef@data$insideBuff == FALSE,]
 # projection info doesn't stick, apply from what we grabbed earlier
 backgSubset@proj4string <- projInfo
 
-# write it out ---
+# write it out (note that `background` folder must exist in base species folder)---
 outFileName <- paste(nm_bkgPts, "_clean", sep="")
-writeOGR(backgSubset, dsn = loc_bkgPts, layer = outFileName, 
+writeOGR(backgSubset, dsn = "../background", layer = outFileName, 
          driver="ESRI Shapefile", overwrite_layer=TRUE)

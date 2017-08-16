@@ -32,7 +32,7 @@ presFile <- p_fileList[[n]]
 # get the presence points
 df.in <-read.dbf(presFile)
 
-setwd(loc_bkgPts)
+setwd("../background")
 bk_fileList <- dir( pattern = "_clean.dbf$")
 bk_fileList
 #look at the output and choose which shapefile you want to run
