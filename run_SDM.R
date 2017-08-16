@@ -50,6 +50,17 @@ run_SDM <- function(
       }
     }
   } else {
+    # add comments for added/excluded vars
+    if (!is.null(add_vars)) {
+      model_comments <- paste0(model_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
+      metaData_comments <- paste0(metaData_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
+    }
+    
+    if (!is.null(remove_vars)) {
+      model_comments <- paste0(model_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
+      metaData_comments <- paste0(metaData_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
+    }
+    
     fn_args <- list(
       loc_scripts = loc_scripts, 
       loc_spPoly = loc_spPoly,

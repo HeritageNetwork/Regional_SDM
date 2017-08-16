@@ -15,7 +15,7 @@ library(randomForest)
 # get paths, other settings
 #source(paste(loc_scripts,"0_pathsAndSettings.R", sep="/"))
 # get the customized version of the predict function
-source(paste(loc_scripts, "RasterPredictMod.R", sep = "/"))
+source(paste(loc_scripts, "RasterPredictMod.R", sep = "/"), local = TRUE)
 
 # load data ----
 # get the rdata file
@@ -53,6 +53,9 @@ names(fullL) <- stackOrder
 rm(rs,rs1)
 
 envStack <- stack(fullL)
+## TESTING CLIP FOR FAST EXECUTION
+# envStack <- crop(envStack, c(1200000, 1200500, 1600000, 1600500))
+## DELETE THIS LATER
 
 # run prediction ----
 fileNm <- paste(loc_outRas, "/", model_run_name ,".tif", sep = "")

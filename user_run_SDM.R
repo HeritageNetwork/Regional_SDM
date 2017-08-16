@@ -42,6 +42,7 @@ source("run_SDM.R")
 # If picking up from a previous run (after step 1), use Step 2-alt below
 # update the function arguments below as necessary, and run the function
 run_SDM(
+  begin_step = "1",
   loc_scripts = loc_scripts, 
   loc_spPoly = "D:/SDM/Tobacco/inputs/species/parahera/polygon_data",
   nm_db_file = "D:/SDM/Tobacco/databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite",
@@ -55,24 +56,27 @@ run_SDM(
   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
   loc_outRas = "D:/SDM/Tobacco/outputs/parahera/grids",
   loc_outMetadata = "D:/SDM/Tobacco/outputs/parahera/metadata",
-  model_comments = "testing add/remove vars",
-  metaData_comments = "This comment will be in the final PDF.",
+  model_comments = "",
+  metaData_comments = "",
   modeller = "David Bucklin",
-  # add_vars = c("sgoclay"),
-  remove_vars = c("tp100x1000", "nlcdopn"),
-  prompt = TRUE
+  add_vars = NULL,
+  remove_vars = NULL,
+  prompt = FALSE
 )
 
 # Step 2-alt: pick up from previous model run (uncomment below)
 
-# If picking up from a previous run, provide the path to loc_RDataOut. If after script
-# step #3, also provide the model rdata file (stored in loc_RDataOut) to 'model_rdata'.
-# Note that you can manually update your scripts, if desired The scripts
-# will be accessed from 'loc_scripts' as specified in the original model run.
+# If picking up from a previous run, provide the begin_step and path to loc_RDataOut. 
+# If after script step #3, also provide the model rdata file (stored in loc_RDataOut)
+# to 'model_rdata'.
+# 
+# Note that you can manually update the scripts, if desired. The scripts
+# will automatically be accessed from 'loc_scripts' location 
+# that was specified for the original model run.
 
-run_SDM(
-  begin_step = "3",
-  loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
-  # model_rdata = "parahera_20170802_120026", # need to provide this if picking up after step 3, otherwise leave it out
-  prompt = TRUE
-)
+# run_SDM(
+#   begin_step = "3",
+#   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
+#   # model_rdata = "parahera_20170816_144716", # need to provide this if picking up after step 3, otherwise leave it out
+#   prompt = FALSE
+# )
