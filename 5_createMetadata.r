@@ -90,7 +90,7 @@ mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
 sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
 
 # get info about thresholds
-SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull ", 
+SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull, sortOrder ", 
                   "FROM lkpThresholdTypes ", 
                   "WHERE cutCode IN (", 
                   toString(sQuote(sdm.thresholds$cutCode)),
@@ -98,7 +98,8 @@ SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort
 sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
 
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
-
+#sort it
+sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
   "capturedEOs", "capturedPolys", "capturedPts", "cutDescription")]
 names(sdm.thresh.table) <- c("Threshold", "Value", "EOs","Polys","Pts","Description")
