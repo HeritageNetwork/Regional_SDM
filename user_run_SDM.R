@@ -27,7 +27,7 @@ source("E:/git/Regional_SDM/get_scripts.R", local = TRUE)
 # 2. prompt: if TRUE, the function will stop after each script, and ask if you want to continue. 
 #     Defaults to FALSE.
 
-# manually set loc_scripts if running step 1 seperately from step 2 (on different computers)
+# manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
 loc_scripts <- script_store
 
 # remove everything but loc_scripts

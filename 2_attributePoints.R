@@ -65,13 +65,27 @@ modType <- dbGetQuery(db, SQLQuery)$m
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;")
 gridlistSub <- dbGetQuery(db, SQLQuery)$g
 
+# get just names of grids (removes folder for temporal vars)
+justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
+
 ## account for add/remove vars
-if (!is.null(add_vars)) gridlistSub <- c(gridlistSub, add_vars)
-if (!is.null(remove_vars)) gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
+if (!is.null(add_vars)) {
+  if (!all(tolower(add_vars) %in% tolower(justTheNames))) {
+    stop("Some environmental variables listed in `add_vars` were not found in `loc_EnvVars` folder: ",
+         paste(add_vars[!tolower(add_vars) %in% tolower(justTheNames)], collapse = ", "), ".")
+  }
+  gridlistSub <- c(gridlistSub, add_vars)
+}
+if (!is.null(remove_vars)) {
+  if (!all(tolower(remove_vars) %in% tolower(justTheNames))) {
+    warning("Some environmental variables listed in `remove_vars` were not found in the `loc_EnvVars` folder: ",
+         paste(remove_vars[!tolower(remove_vars) %in% tolower(justTheNames)], collapse = ", "), ".")
+  } 
+  gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
+}
 
 # make grid stack with subset
-justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
-envStack <- stack(gridlist[justTheNames %in% gridlistSub])
+envStack <- stack(gridlist[tolower(justTheNames) %in% tolower(gridlistSub)])
 rm(justTheNames, gridlistSub, modType)
 
 # extract raster data to points ----
