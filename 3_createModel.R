@@ -27,7 +27,7 @@ n <- 1
 presFile <- p_fileList[[n]]
 # get the presence points
 df.in <-read.csv(presFile, colClasses=c("huc12"="character"))
-
+# need to address this class setting - probably should do it later
 
 # absence points
 setwd(loc_bkgReach)
@@ -37,10 +37,13 @@ bk_fileList
 #enter its location in the list (first = 1, second = 2, etc)
 n <- 1
 bkgFile <- bk_fileList[[n]]
-df.abs <- read.csv(bkgFile, colClasses=c("HUC12"="character"))
+df.abs <- read.csv(bkgFile, colClasses=c("huc12"="character"))
 # get a list of env-vars for later checking of ev presence in the database
-envvar_list <- names(df.abs) # gets a list of environmental variables
-envvar_list <- envvar_list[-1:-4] # removes the OID and other unneeded fields. May want to fix this in the data prep steps
+envvar_list <- names(df.abs)[!names(df.abs) %in% c("huc12","comid")] # gets a list of environmental variables
+
+## NEED TO ADDRESS THIS
+# can skip since the DB decided envvars around line 89
+# envvar_list <- envvar_list[-1:-2] # removes the OID and other unneeded fields. May want to fix this in the data prep steps
 ### ALSO REMOVES (-3,-4)  COMID and HUC12 from the list
 
 #make sure we don't have any NAs
@@ -78,7 +81,7 @@ envvar_list[!envvar_list %in% namesInDB$gridName]
 envvar_list[!envvar_list %in% names(df.in)]
 
 # trust that the desired env vars are in df.in
-envvar_list <- envvar_list[names(envvar_list)[envvar_list %in% names(df.in)]]
+envvar_list <- envvar_list[envvar_list %in% names(df.in)]
 
 # get a list of all distance-to env vars
 # SQLquery <- "SELECT gridName FROM lkpEnvVarsAqua WHERE distToGrid = 1;"
@@ -144,7 +147,7 @@ df.abs$eo_id_st <- factor(df.abs$eo_id_st)
 df.full <- rbind(df.in, df.abs)
 
 # reset these factors
-df.full$stratum <- factor(df.full$stratum)
+df.full$stratum <- 0  # this is set below, just resetting and maintaining the column order
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
 df.full$huc12 <- factor(tolower(as.character(df.full$huc12)))
@@ -169,6 +172,15 @@ df.full$sname <- factor(df.full$sname)
 #sampSizeVec <- EObySS$sampSize
 #names(sampSizeVec) <- as.character(EObySS$eo_id_st)
 
+# USE strata column to assign stratum (by HUC12, EO_ID, something else? )
+# using HUC12 for now
+df.full$stratum[df.full$pres == 0] <- "pseu-a"
+df.full$stratum[df.full$pres == 1] <- as.character(df.full$huc12[df.full$pres == 1])
+df.full$stratum <- factor(df.full$stratum)
+
+sampSizeVec <- table(df.full$stratum) # CHANGE THIS?? (sample sizes by HUC12? would need to change pseu-abs record values in that case)
+# sampSizeVec <- floor((sampSizeVec*0.5)+0.5) # should we not take full presence sample from reaches in a HUC12?
+sampSizeVec["pseu-a"] <- sum(sampSizeVec) - sampSizeVec["pseu-a"]  # set samples of absences equal to total presences
 
 ##
 # tune mtry ----
@@ -176,14 +188,14 @@ df.full$sname <- factor(df.full$sname)
 x <- tuneRF(df.full[,indVarCols],
              y=df.full[,depVarCol],
              ntreeTry = 300, stepFactor = 2, mtryStart = 6,
-            strata = df.full$eo_id_st, replace = TRUE)  #sampsize = sampSizeVec, 
+            strata = df.full$stratum, replace = TRUE, sampsize = sampSizeVec)
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
-            strata = df.full$eo_id_st, replace = TRUE) # sampsize = sampSizeVec, 
+            strata = df.full$stratum, replace = TRUE, sampsize = sampSizeVec)
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
 rm(x,y)
@@ -198,7 +210,7 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
                         importance=TRUE,
                         ntree=ntrees,
                         mtry=mtry,
-                        strata = df.full$eo_id_st, replace = TRUE) # sampsize = sampSizeVec, 
+                        strata = df.full$stratum, replace = TRUE, sampsize = sampSizeVec) 
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
@@ -247,7 +259,7 @@ df.abs2$pres <- factor(df.abs2$pres)
 row.names(df.in2) <- 1:nrow(df.in2)
 row.names(df.abs2) <- 1:nrow(df.abs2)
 
-#how many polygons do we have?
+#how many strata (HUC12) do we have?
 numPys <-  nrow(table(df.in2$stratum))
 #how many EOs do we have?
 numEOs <- nrow(table(df.in2$eo_id_st))
@@ -265,9 +277,9 @@ group <- vector("list")
 # }
 ## TODO: bring back by-polygon validation. SampSize needs to be able to handle this to make it possible
 # only validate by EO at this time:
-group$colNm <- "huc12" ### change to HUC12
-group$JackknType <- "HUC12 Watershed"  #huc12 as well
-group$vals <- unique(df.in2$huc12)
+group$colNm <- "stratum"
+group$JackknType <- "HUC12 Watershed" 
+group$vals <- unique(df.in2$stratum)
 
 #reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
@@ -331,15 +343,17 @@ if(length(group$vals)>1){
 		  trSetBG <-  df.abs2[-TrBGsamps,]  #get everything that isn't in TrBGsamps
 		   # join em, clean up
 		  trSet <- rbind(trSet, trSetBG)
-		  trSet$eo_id_st <- factor(trSet$eo_id_st)
+		  trSet$stratum <- factor(trSet$stratum)
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
-		  #ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
+		  # pseu-a is resized to match training sample (originally was not)
+		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
+		  ssVec["pseu-a"] <- sum(ssVec) - ssVec["pseu-a"]
 		  rm(trSetBG, evSetBG)
 		  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
 		                             importance=TRUE,ntree=ntrees,mtry=mtry,
-		                             strata = trSet[,group$colNm], replace = TRUE  # sampsize = ssVec,
+		                             strata = trSet[,group$colNm], replace = TRUE, sampsize = ssVec
 		                             )
 		  
 		  # run a randomForest predict on the validation data
@@ -426,7 +440,7 @@ if(length(group$vals)>1){
 
 	for(i in 1:length(group$vals)){
 		#apply the cutoff to the validation data
-		v.rf.pred.cut <- predict(trRes[[i]], evSet[[i]],type="response", cutoff=cutval.rf)
+	  v.rf.pred.cut <- predict(trRes[[i]], evSet[[i]],type="response", cutoff=cutval.rf)
 		#make the confusion matrix
 		v.y[[i]] <- table(observed = evSet[[i]][,"pres"],
 			predicted = v.rf.pred.cut)
@@ -515,8 +529,8 @@ rf.full <- randomForest(df.full[,indVarCols],
                         importance=TRUE,
                         ntree=ntrees,
                         mtry=mtry,
-                        strata = df.full[,"eo_id_st"],
-                        #sampsize = sampSizeVec, replace = TRUE,
+                        strata = df.full[,"stratum"],
+                        sampsize = sampSizeVec, replace = TRUE,
                         norm.votes = TRUE)
 ####
 # Importance measures ----
@@ -544,10 +558,11 @@ dbDisconnect(db)
 #get the order for the importance charts
 ord <- order(EnvVars$impVal, decreasing = TRUE)[1:length(indVarCols)]
 #set up a list to hold the plot data
-pPlots <- vector("list",9)
-		names(pPlots) <- c(1:9)
-#get the top eight partial plots
-for(i in 1:9){
+n.plots <- min(c(length(f.imp), 9))
+pPlots <- vector("list",n.plots)
+		names(pPlots) <- c(1:n.plots)
+#get the top partial plots
+for(i in 1:n.plots){
   curvar <- names(f.imp[ord[i]])
   pPlots[[i]] <- do.call("partialPlot", list(x = rf.full, pred.data = df.full[,indVarCols],
                                              x.var = curvar,
@@ -555,9 +570,9 @@ for(i in 1:9){
                                              plot = FALSE))
   pPlots[[i]]$gridName <- curvar
   pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
-  cat("finished partial plot ", i, " of 9", "\n")
+  cat("finished partial plot ", i, " of ",n.plots, "\n")
 }
-rm(curvar)
+rm(curvar, n.plots)
 
 #save the project, return to the original working directory
 setwd(loc_RDataOut)

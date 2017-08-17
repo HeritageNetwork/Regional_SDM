@@ -19,12 +19,13 @@ run_SDM <- function(
   loc_spReaches,
   nm_db_file,
   loc_bkgReach, 
-  nm_bkgPts,
+  # nm_bkgPts,
   loc_envVars,
   loc_otherSpatial,
+  nm_allflowlines,
   nm_refBoundaries,
   nm_studyAreaExtent,
-  loc_spPts,
+  # loc_spPts,
   loc_RDataOut,
   loc_outVector,
   loc_outMetadata,
@@ -53,12 +54,13 @@ run_SDM <- function(
       loc_spReaches = loc_spReaches,
       nm_db_file = nm_db_file,
       loc_bkgReach = loc_bkgReach, 
-      nm_bkgPts = nm_bkgPts,
+      # nm_bkgPts = nm_bkgPts,
       loc_envVars = loc_envVars,
       loc_otherSpatial = loc_otherSpatial,
+      nm_allflowlines = nm_allflowlines,
       nm_refBoundaries = nm_refBoundaries,
       nm_studyAreaExtent = nm_studyAreaExtent,
-      loc_spPts = loc_spPts,
+      # loc_spPts = loc_spPts,
       loc_RDataOut = loc_RDataOut,
       loc_outVector = loc_outVector,
       loc_outMetadata = loc_outMetadata,
@@ -73,7 +75,7 @@ run_SDM <- function(
   
   # check for missing packages
   req.pack <- c("RSQLite","rgdal","sp","rgeos","raster","maptools","ROCR","vcd","abind",
-                "foreign","randomForest","DBI","knitr","RColorBrewer","rasterVis","xtable","data.table")
+                "foreign","randomForest","DBI","knitr","RColorBrewer","rasterVis","xtable","data.table","classInt")
   miss.pack <- req.pack[!req.pack %in% names(installed.packages()[,1])]
   if (length(miss.pack) > 0) {
     stop("Need to install the following package(s) before running this function: ", paste(miss.pack, collapse = ", "))

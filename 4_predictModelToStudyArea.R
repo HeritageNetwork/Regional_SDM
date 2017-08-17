@@ -43,19 +43,18 @@ result <- predict(rf.full, df.all[,indVarCols], type="prob")
 
 #### CHECK THIS - uses numeric index for columns; likely need to change it
 result <- result[,-1]
-df.all[ ,(ncol(df.all)+1)] <- result
-setnames(df.all, "V34", "probability")
-results_join_table <- df.all[,c(5,34)]
+df.all$probability <- result
+results_join_table <- df.all[c("comid","probability")]
 #### END CHECK
 
 # load the reach shapefile for the study area
 setwd(loc_otherSpatial)
-StudyAreaReaches <- "flowlines.shp" # the name of the study area flowlines
+StudyAreaReaches <- nm_allflowlines # the name of the study area flowlines
 layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
-shapef <- readOGR(StudyAreaReaches, layer = layer)
+shapef <- readOGR(loc_otherSpatial, layer = layer)
 
 # join probability to shapefile -- https://stackoverflow.com/questions/5732064/merge-data-vector-to-shapefile-data-slot
-shapef@data <- data.frame(shapef@data, results_join_table[match(shapef@data$COMID, results_join_table$comid),])
+shapef@data <- data.frame(shapef@data, results_join_table[match(shapef@data$comid, results_join_table$comid),])
 
 
 # write the shapefile

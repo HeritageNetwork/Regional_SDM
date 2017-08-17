@@ -52,10 +52,14 @@ presReaches <- presReaches[,desiredCols]
 
 # set date/year column to [nearest] year, rounding when day is given
 presReaches$date <- as.numeric(substr(presReaches$OBSDATE, 1, 4))
+try({
 roundUpYear <- format(as.Date(presReaches$OBSDATE), "%j")
 roundUpYear <- ifelse(roundUpYear < 183 | is.na(roundUpYear), 0, 1)
-presReaches$date <- presReaches$date + roundUpYear
-rm(roundUpYear)
+}, silent = TRUE)
+if(exists("roundUpYear")) {
+  presReaches$date <- presReaches$date + roundUpYear
+  rm(roundUpYear)
+}
 desiredCols <- c(desiredCols, "date")
 
 #get the attribute table from above 
@@ -65,7 +69,8 @@ att.reaches <- presReaches
 names(att.reaches) <- tolower(names(att.reaches))
 
 #write out the CSV file
-write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep="")) 
+# moved to end of script, to attach huc12 ids
+# write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep=""), row.names = FALSE) 
 
 # Write out various stats and data to the database ------
 # prep the data
@@ -88,16 +93,26 @@ dbDisconnect(db)
 list_presReaches <- att.reaches$comid
 
 setwd(loc_otherSpatial)
-StudyAreaReaches <- "flowlines.shp" # the name of the study area flowlines
+StudyAreaReaches <- nm_allflowlines # the name of the study area flowlines
 # read in the shapefile, get the attribute data
 layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
-shapef <- readOGR(StudyAreaReaches, layer = layer)
+shapef <- readOGR(loc_otherSpatial, layer = layer)
 testcatchments <- shapef@data
-list_projCatchments <- testcatchments$COMID
+names(testcatchments) <- tolower(names(testcatchments))
+list_projCatchments <- testcatchments$comid
+
 setwd(loc_envVars)
-bgpoints <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character")) 
-selectedRows <- (bgpoints$COMID %in% list_projCatchments & !(bgpoints$COMID %in% list_presReaches))
+bgpoints <- read.csv("EnvVars.csv")
+names(bgpoints) <- tolower(names(bgpoints))
+selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_presReaches))
 bgpoints_cleaned <- bgpoints[selectedRows,]
 
+# write species reach data with huc12 IDS
+setwd(loc_spReaches)
+att.reaches <- merge(att.reaches, testcatchments[c("comid","huc12")], by = "comid")
+write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep=""), row.names = FALSE) 
+
+# wtite background reach data with huc12 IDS
 setwd(loc_bkgReach)
-write.csv(bgpoints_cleaned,"bgpoints_clean.csv")
+bgpoints_cleaned <- merge(bgpoints_cleaned, testcatchments[c("comid","huc12")], by = "comid")
+write.csv(bgpoints_cleaned,"bgpoints_clean.csv", row.names = FALSE)

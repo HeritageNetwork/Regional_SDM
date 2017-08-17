@@ -5,7 +5,7 @@
 library(git2r)
 
 # Step 1: retrieve latest function/scripts from GitHub
-loc_scripts <- "D:/SDM/Tobacco/inputs/species/parahera/scripts"
+loc_scripts <- "D:/SDM/Tobacco/inputs/species/chrotenn/scripts"
 
 # download from GitHub, latest scripts
 script_store <- paste0(loc_scripts, "/Regional_SDM_", Sys.Date())
@@ -38,6 +38,8 @@ if (!dir.exists(script_store)) {
 loc_scripts <- script_store
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% "loc_scripts"])
 
+
+loc_scripts <- "E:/git/aquatic/Regional_SDM"
 # set wd and load function
 setwd(loc_scripts)
 source("run_SDM.R")
@@ -57,22 +59,21 @@ source("run_SDM.R")
 
 run_SDM(
   loc_scripts = loc_scripts, 
-  loc_spReaches = "D:/SDM/Tobacco/inputs/species/parahera/polygon_data",
+  loc_spReaches = "D:/SDM/Tobacco/inputs/species/chrotenn/reach_data",
   nm_db_file = "D:/SDM/Tobacco/databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite",
-  loc_bkgReach = "D:/SDM/Tobacco/inputs/background/tobacco", 
-  nm_bkgPts = "tobacco_att",
-  loc_envVars = "D:/SDM/Tobacco/env_vars/Tobacco",
-  loc_otherSpatial = "D:/SDM/Tobacco/other_spatial/shp",
-  nm_refBoundaries = "StatesVA",
+  loc_bkgReach = "D:/SDM/Tobacco/inputs/species/chrotenn/background", 
+  loc_envVars = "D:/SDM/Tobacco/env_vars/Tobacco_aqua",
+  loc_otherSpatial = "D:/SDM/Tobacco/other_spatial/shp/aqua",
+  nm_allflowlines = "all_VA_flowlines_wHUC12",
+  nm_refBoundaries = "StatesEast",
   nm_studyAreaExtent = "sdmVA_pred_20170131",
-  loc_spPts = "D:/SDM/Tobacco/inputs/species/parahera/point_data",
-  loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
-  loc_outVector = "D:/SDM/Tobacco/outputs/parahera/grids",
-  loc_outMetadata = "D:/SDM/Tobacco/outputs/parahera/metadata",
-  model_comments = "Internal comment for modeler, stored in tblModelRuns.",
+  loc_RDataOut = "D:/SDM/Tobacco/outputs/chrotenn/rdata",
+  loc_outVector = "D:/SDM/Tobacco/outputs/chrotenn/shapefiles",
+  loc_outMetadata = "D:/SDM/Tobacco/outputs/chrotenn/metadata",
+  model_comments = "Aqua model testing..., minimal env vars",
   metaData_comments = "This comment will be in the final PDF.",
   modeller = "David Bucklin",
-  prompt = TRUE
+  prompt = FALSE
 )
 
 # Step 2-alt: pick up from previous model run (uncomment below)
@@ -82,9 +83,9 @@ run_SDM(
 # Note that you can manually update your scripts, if desired The scripts
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
-# run_SDM(
-#   begin_step = "4",
-#   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
-#   model_rdata = "parahera_20170802_120026", # need to provide this if picking up after step 3, otherwise leave it out
-#   prompt = TRUE
-# )
+run_SDM(
+  begin_step = "4b",
+  loc_RDataOut = "D:/SDM/Tobacco/outputs/chrotenn/rdata",
+  model_rdata = "chrotenn_20170817_152419", # need to provide this if picking up after step 3, otherwise leave it out
+  prompt = TRUE
+)

@@ -31,7 +31,8 @@ cutList <- list()
 allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("eo_id_st", "stratum")])
 allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
 
-MTP <- min(allVotesPresPts$X1)
+# na.rm = TRUE for testing
+MTP <- min(allVotesPresPts$X1, na.rm = TRUE)
 ###capturedEOs <- length(unique(allVotesPresPts$eo_id_st))  # only captured points, not EO and poly
 ###capturedPolys <- length(unique(allVotesPresPts$stratum))
 capturedPts <- nrow(allVotesPresPts)
@@ -41,7 +42,8 @@ cutList$MTP <- list("value" = MTP, "code" = "MTP",
                     "capturedPts" = capturedPts)
 
 #get 10 percentile training presence
-TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1))
+# na.rm = TRUE for testing
+TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1), na.rm = TRUE)
 TenPctilePts <- allVotesPresPts[allVotesPresPts$X1 >= TenPctile,]
 #capturedEOs <- length(unique(TenPctilePts$eo_id_st))
 #capturedPolys <- length(unique(TenPctilePts$stratum))

@@ -48,13 +48,14 @@ modType <- dbGetQuery(db, SQLQuery)$m
 
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua WHERE use_",modType," = 1;")
 gridlistSub <- dbGetQuery(db, SQLQuery)$g
+dbDisconnect(db)
 
-EnvVars <- EnvVars[gridlistSub]
+EnvVars <- EnvVars[c("comid",gridlistSub)]
 rm(gridlistSub, modType)
 
 # merge two data frames by COMID
 reaches_attributed <- merge(reaches,EnvVars,by="comid")
 
 # write it out ----
-write.csv(reaches_attributed, paste(sppCode,"_att.csv",sep=""))
+write.csv(reaches_attributed, paste(sppCode,"_att.csv",sep=""), row.names = FALSE)
 
