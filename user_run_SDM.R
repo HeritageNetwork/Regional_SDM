@@ -2,47 +2,14 @@
 # Purpose: Run a full SDM model, or pickup an existing run executed using run_SDM.
 
 # After running, save this file in the species' 'loc_scripts' folder
-library(git2r)
 
 # Step 1: retrieve latest function/scripts from GitHub
 loc_scripts <- "D:/SDM/Tobacco/inputs/species/chrotenn/scripts"
 
-# download from GitHub, latest scripts
-script_store <- paste0(loc_scripts, "/Regional_SDM_", Sys.Date())
-if (!dir.exists(script_store)) {
-  try(suppressMessages(git_repo <- git2r::clone("https://github.com/PNHP/Regional_SDM.git",
-                                              branch = "aqua_dev", local_path = script_store)), silent = TRUE)
-  if (exists("git_repo")) {
-    message("Scripts downloaded. Ready to run.")
-  } else {
-    dir.create(script_store)
-    message(paste0("Couldn't download latest scripts. \nNew folder '",
-                   script_store, "' created. \nPlace latest scripts in there."))
-  }
-} else {
-  try({
-    git_repo <- git2r::repository(script_store)
-    git_pull <- git2r::pull(git_repo)
-  })
-  if (exists("git_pull") & (git_pull@up_to_date || git_pull@fast_forward)) {
-    message("Scripts up-to-date. Ready to run.")
-  } else {
-    message(paste0("Couldn't download latest scripts.\n
-                   Make sure latest scripts are in folder '",
-                   script_store, "'"))
-  }
-}
+# this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
+# file anywhere on your computer, so you don't have to change the path)
+source("E:/git/aquatic/Regional_SDM/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
-
-# this sets script dir. and remove all objects except loc_scripts
-loc_scripts <- script_store
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% "loc_scripts"])
-
-
-loc_scripts <- "E:/git/aquatic/Regional_SDM"
-# set wd and load function
-setwd(loc_scripts)
-source("run_SDM.R")
 
 ##############
 # End step 1 #
@@ -56,6 +23,19 @@ source("run_SDM.R")
 #     Defaults to "1", so not necessary to specify for new runs.
 # 2. prompt: if TRUE, the function will stop after each script, and ask if you want to continue. 
 #     Defaults to FALSE.
+
+# manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
+loc_scripts <- script_store
+
+# remove everything but loc_scripts
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% "loc_scripts"])
+
+# during testing, just set to local git repo
+loc_scripts <- "E:/git/aquatic/Regional_SDM"
+
+# set wd and load function
+setwd(loc_scripts)
+source("run_SDM.R")
 
 run_SDM(
   loc_scripts = loc_scripts, 
@@ -84,8 +64,8 @@ run_SDM(
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
 run_SDM(
-  begin_step = "4b",
+  begin_step = "3",
   loc_RDataOut = "D:/SDM/Tobacco/outputs/chrotenn/rdata",
-  model_rdata = "chrotenn_20170817_152419", # need to provide this if picking up after step 3, otherwise leave it out
+  # model_rdata = "chrotenn_20170817_152419", # need to provide this if picking up after step 3, otherwise leave it out
   prompt = TRUE
 )
