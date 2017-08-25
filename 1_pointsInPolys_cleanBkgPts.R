@@ -57,15 +57,18 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 presPolys@data <- presPolys@data[,desiredCols]
 
 # set date/year column to [nearest] year, rounding when day is given
-presPolys$date <- as.numeric(substr(presPolys$OBSDATE, 1, 4))
-try({
-  roundUpYear <- format(as.Date(presPolys$OBSDATE), "%j")
-  roundUpYear <- ifelse(roundUpYear < 183 | is.na(roundUpYear), 0, 1)
-  roundUpYear <- ifelse(roundUpYear < 183 | is.na(roundUpYear), 0, 1)
-}, silent = TRUE)
-if(exists("roundUpYear")) {
-  presPolys$date <- presPolys$date + roundUpYear
-  rm(roundUpYear)
+presPolys$OBSDATE <- as.character(presPolys$OBSDATE)
+presPolys$date <- NA
+for (d in 1:length(presPolys$OBSDATE)) {
+  if (grepl("-", presPolys$OBSDATE[d])) {
+      dt <- as.Date(presPolys$OBSDATE[d])
+    } else if (grepl("-", presPolys$OBSDATE[d])) {
+      dt <- as.Date(presPolys$OBSDATE[d], format = "%m/%d/%Y") 
+    } else {
+      dt <- Sys.Date()
+    }
+    dt <- round(as.numeric(format(dt, "%Y")) + (as.numeric(format(dt,"%j"))/365.25))
+    presPolys$date[d] <- dt
 }
 desiredCols <- c(desiredCols, "date")
 
