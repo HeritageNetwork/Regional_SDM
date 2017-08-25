@@ -53,9 +53,6 @@ names(fullL) <- stackOrder
 rm(rs,rs1)
 
 envStack <- stack(fullL)
-## TESTING CLIP FOR FAST EXECUTION
-# envStack <- crop(envStack, c(1200000, 1200500, 1600000, 1600500))
-## DELETE THIS LATER
 
 # run prediction ----
 fileNm <- paste(loc_outRas, "/", model_run_name ,".tif", sep = "")

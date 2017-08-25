@@ -56,11 +56,11 @@ run_SDM(
   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
   loc_outRas = "D:/SDM/Tobacco/outputs/parahera/grids",
   loc_outMetadata = "D:/SDM/Tobacco/outputs/parahera/metadata",
-  model_comments = "",
-  metaData_comments = "",
+  model_comments = "This is an internal comment.",
+  metaData_comments = "This comment will appear in the output PDF.",
   modeller = "David Bucklin",
   add_vars = NULL,
-  remove_vars = NULL,
+  remove_vars = c("nlcdopn100", "nlcdopn10", "nlcdopn1"),
   prompt = FALSE
 )
 
@@ -75,8 +75,8 @@ run_SDM(
 # that was specified for the original model run.
 
 # run_SDM(
-#   begin_step = "3",
+#   begin_step = "4",
 #   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
-#   # model_rdata = "parahera_20170816_144716", # need to provide this if picking up after step 3, otherwise leave it out
+#   # model_rdata = "parahera_20170816_152627", # need to provide this if picking up after step 3, otherwise leave it out
 #   prompt = FALSE
 # )

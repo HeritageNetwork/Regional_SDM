@@ -17,11 +17,10 @@ if (!dir.exists(script_store)) {
     git_repo <- git2r::repository(script_store)
     git_pull <- git2r::pull(git_repo)
   })
-  if (exists("git_pull") & (git_pull@up_to_date || git_pull@fast_forward)) {
+  if (exists("git_pull") && (git_pull@up_to_date || git_pull@fast_forward)) {
     message("Scripts up-to-date. Ready to run.")
   } else {
-    message(paste0("Couldn't download latest scripts.\n
-                   Make sure latest scripts are in folder '",
+    message(paste0("Couldn't download latest scripts. Make sure latest scripts are in folder '",
                    script_store, "'"))
   }
 }
