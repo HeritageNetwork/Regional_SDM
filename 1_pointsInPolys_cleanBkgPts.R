@@ -44,6 +44,7 @@ sppCode <- shpName
 
 presPolys <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
 #check for proper column names. If no error from next code block, then good to go
+presPolys$RA <- presPolys$SFRACalc
 shpColNms <- names(presPolys@data)
 desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA", "OBSDATE")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
