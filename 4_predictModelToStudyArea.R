@@ -34,7 +34,6 @@ setwd(loc_envVars)
 
 # find matching var rasters (with folder for temporal vars)
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
-raslist <- raslist[-grep("OBSOLETE",raslist, fixed = TRUE)]
 
 fullL <- list()
 

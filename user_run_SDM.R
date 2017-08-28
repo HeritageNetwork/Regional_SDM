@@ -60,7 +60,7 @@ run_SDM(
   metaData_comments = "This comment will appear in the output PDF.",
   modeller = "David Bucklin",
   add_vars = NULL,
-  remove_vars = c("nlcdopn100", "nlcdopn10", "nlcdopn1"),
+  remove_vars = NULL,
   prompt = FALSE
 )
 
@@ -68,11 +68,12 @@ run_SDM(
 
 # If picking up from a previous run, provide the begin_step and path to loc_RDataOut. 
 # If after script step #3, also provide the model rdata file (stored in loc_RDataOut)
-# to 'model_rdata'.
+# to 'model_rdata', and any other arguments that you wish to change from 
+# the previous run (e.g., model_comments, add/remove_vars)
 # 
 # Note that you can manually update the scripts, if desired. The scripts
 # will automatically be accessed from 'loc_scripts' location 
-# that was specified for the original model run.
+# that was specified for the original model run. 
 
 # run_SDM(
 #   begin_step = "4",

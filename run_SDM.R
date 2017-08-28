@@ -38,6 +38,10 @@ run_SDM <- function(
   prompt = FALSE
 ) {
   
+  if ((hasArg(add_vars) | hasArg(remove_vars)) & !begin_step %in% c("1","2")) 
+    stop("Need to begin on step 1 or 2 if adding or removing variables.")
+  
+  # check if new or picked-up run
   if (begin_step != "1") {
     if (begin_step %in% c("2","3")) {
       message("Loading most recent saved runSDM settings...")
@@ -49,18 +53,13 @@ run_SDM <- function(
         load(paste0(loc_RDataOut, "/runSDM_paths.Rdata"))
       }
     }
+    # re-write modified variables
+    for (na in names(fn_args)) {
+      if (eval(parse(text = paste0("hasArg(",na,")")))) fn_args[[na]] <- eval(parse(text=na))
+    }
+    rm(na)
+    
   } else {
-    # add comments for added/excluded vars
-    if (!is.null(add_vars)) {
-      model_comments <- paste0(model_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
-      metaData_comments <- paste0(metaData_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
-    }
-    
-    if (!is.null(remove_vars)) {
-      model_comments <- paste0(model_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
-      metaData_comments <- paste0(metaData_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
-    }
-    
     fn_args <- list(
       loc_scripts = loc_scripts, 
       loc_spPoly = loc_spPoly,
@@ -80,9 +79,25 @@ run_SDM <- function(
       add_vars = add_vars,
       remove_vars = remove_vars,
       modeller = modeller)
-    save(fn_args, file = paste0(loc_RDataOut, "/" , "runSDM_paths.Rdata"))
   }
   
+  # add comments for added/excluded vars
+  if (!hasArg(model_comments)) model_comments <- fn_args$model_comments
+  if (!hasArg(metaData_comments)) metaData_comments <- fn_args$metaData_comments
+  if (!is.null(add_vars)) {
+    model_comments <- paste0(model_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
+    fn_args$model_comments <- model_comments
+    metaData_comments <- paste0(metaData_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
+    fn_args$metaData_comments <- metaData_comments
+  }
+  if (!is.null(remove_vars)) {
+    model_comments <- paste0(model_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
+    fn_args$model_comments <- model_comments
+    metaData_comments <- paste0(metaData_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
+    fn_args$metaData_comments <- metaData_comments
+  }
+  # save fn_args
+  save(fn_args, file = paste0(loc_RDataOut, "/" , "runSDM_paths.Rdata"))
   # assign objects
   for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
   

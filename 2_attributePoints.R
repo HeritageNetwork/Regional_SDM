@@ -20,7 +20,6 @@ setwd(loc_envVars)
 # create a stack
 # if using TIFFs, use this line
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
-raslist <- raslist[-grep("OBSOLETE",raslist, fixed = TRUE)]
 # if using native R rasters, use this line
 #raslist <- list.files(pattern = ".grd$")
 
