@@ -30,9 +30,6 @@ loc_scripts <- script_store
 # remove everything but loc_scripts
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% "loc_scripts"])
 
-# during testing, just set to local git repo
-loc_scripts <- "E:/git/aquatic/Regional_SDM"
-
 # set wd and load function
 setwd(loc_scripts)
 source("run_SDM.R")
@@ -50,7 +47,7 @@ run_SDM(
   loc_RDataOut = "D:/SDM/Tobacco/outputs/chrotenn/rdata",
   loc_outVector = "D:/SDM/Tobacco/outputs/chrotenn/shapefiles",
   loc_outMetadata = "D:/SDM/Tobacco/outputs/chrotenn/metadata",
-  model_comments = "Aqua model testing..., minimal env vars",
+  model_comments = "This is an internal comment stored in the database.",
   metaData_comments = "This comment will be in the final PDF.",
   modeller = "David Bucklin",
   prompt = FALSE
@@ -63,9 +60,9 @@ run_SDM(
 # Note that you can manually update your scripts, if desired The scripts
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
-run_SDM(
-  begin_step = "3",
-  loc_RDataOut = "D:/SDM/Tobacco/outputs/chrotenn/rdata",
-  # model_rdata = "chrotenn_20170817_152419", # need to provide this if picking up after step 3, otherwise leave it out
-  prompt = TRUE
-)
+# run_SDM(
+#  begin_step = "3",
+#  loc_RDataOut = "D:/SDM/Tobacco/outputs/chrotenn/rdata",
+#  # model_rdata = "chrotenn_20170817_152419", # need to provide this if picking up after step 3, otherwise leave it out
+#  prompt = TRUE
+#)
