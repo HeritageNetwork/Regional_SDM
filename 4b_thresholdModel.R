@@ -139,7 +139,11 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
                        "capturedPts" = capturedPts)
 
 # upper left corner of ROC plot
-### this is the same as maxSSS (pretty sure), so commented out for now
+### NO, it looks like these calculations are technically not the upper left corner
+### and the upper left corner is different from these others.
+### So this needs reworking to represent ROC if it is ever used. Need to use
+### pythagorean formula, I think. Liu etal 2005 and Cantor et al 1999 don't seem 
+### to provide formula. Aha, see package OptimalCutpoints
 # rf.full.perf <- performance(rf.full.pred, "tpr","fpr")
 # cutpt <- which.max(abs(rf.full.perf@x.values[[1]]-rf.full.perf@y.values[[1]]))
 # ROCupperleft <- rf.full.perf@alpha.values[[1]][cutpt]

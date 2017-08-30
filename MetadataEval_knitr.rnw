@@ -71,12 +71,7 @@ The statistics in Table 2 report the mean and variance for these jackknifing run
 
 \smallskip     %dummy first line to align with next minipage
 
-Table 1. Input statistics. 
-<<tableOneLegend, results = "asis", echo=FALSE>>= 
-cat("Polys = input polygons; EOs = element occurrences (known locations); Groups = ", group$JackknType)
-@
-BG points = background points; PR points = presence points placed throughout
-all polygons.
+Table 1. Input statistics. Polys = input polygons; EOs = element occurrences (known locations); BG points = background points placed throughout study area excluding known species locations; PR points = presence points placed throughout all polygons.
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
@@ -93,8 +88,7 @@ all polygons.
 
 Table 2. Validation statistics for jackknife trials. Overall Accuracy = 
 Correct Classification Rate, TSS = True Skill Statistic, AUC = 
-area under the ROC curve; see \cite{allouche2006, vaughan2005,
-fielding2002}.
+area under the ROC curve; see \cite{fielding2002, allouche2006, vaughan2005}.
 \smallskip
 
 \begin{center}
@@ -132,7 +126,8 @@ par(mar=c(2.8,2.5,.5,10),   #bottom, left, top, right
     cex=0.6,     #text size
     mgp=c(1.6,0.4,0) #placement of axis title, labels, line
     )
-plot(perf,lwd=2,
+
+  plot(perf,lwd=2,
         avg="threshold", colorize = TRUE,
         #print.cutoffs.at = c(rf.full.ctoff[2], cutval.rf[2]),
         #text.adj=c(-0.6,1.5), points.pch=19, points.cex=0.8, text.cex=0.8,
@@ -145,8 +140,11 @@ plot(perf,lwd=2,
   # set the color palette
   rl.colors <- rev(rainbow(256,start=3/6, end=0))
   # find the min and max of the cutoffs, as used in the ROC plot
-  rl.max.alpha <- max(unlist(perf@alpha.values))
-  rl.min.alpha <- min(unlist(perf@alpha.values))
+  # for some reason perf gives some values over one, which confuses legend. Set it manually.
+  #rl.max.alpha <- max(unlist(perf@alpha.values))
+  rl.max.alpha <- 1
+  #rl.min.alpha <- min(unlist(perf@alpha.values))
+  rl.min.alpha <- 0
   # get the y min and max of the ROC plot
   rl.max.y <- max(axTicks(4))
   rl.min.y <- min(axTicks(4))
@@ -189,7 +187,7 @@ averaged along cutoffs.
 
 \smallskip  %dummy first line to align with previous minipage
 
-<<importanceFig, fig.width=3.0, fig.height=6.75, include=FALSE, echo=FALSE>>=
+<<importanceFig, fig.width=3.0, fig.height=6.72, include=FALSE, echo=FALSE>>=
 par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
     mgp=c(1.3,0.4,0) #placement of axis title, labels, line
@@ -208,7 +206,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
-model using all sites as input. Abbreviations used: calc = calcareous, CP = coastal plain, dist = distance, fresh = freshwater, precip = precipitation, temp = temperature, max = maximum, min = minimum.
+model using all background and presence points as input. Abbreviations used: calc = calcareous, CP = coastal plain, dist = distance, fresh = freshwater, precip = precipitation, temp = temperature, max = maximum, min = minimum.
 
 \end{minipage} 
 
@@ -267,6 +265,8 @@ appropriate habitat. The distribution of each category (thin red = BG points,
 thick blue = PR points) is depicted at the top margin. 
 
 \medskip
+\medskip
+\medskip
 \noindent
 Element distribution models map places of similar environmental
 conditions to the submitted locations (PR points). No model will ever depict sites where
@@ -278,10 +278,11 @@ additional GIS tools to further direct search efforts. A lower threshold depicti
 
 \medskip
 \noindent
+\begin{minipage}{\linewidth} %keep table header with table
 Table 3. Thresholds calculated from the final model. For discussions of these different thresholds
 see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of EOs, polygons, and PR points used in the final model are reported in Table 1.
 
-\smallskip
+\medskip
 \noindent
 <<tableThree, results="asis", echo = FALSE>>=
   tbl <- sdm.thresh.table
@@ -289,6 +290,7 @@ see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs
   print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","r","p{2.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
+\end{minipage}
 
 \medskip
 \noindent
@@ -308,7 +310,7 @@ myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
 levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.4,col='gray50'), data=list(referenceBoundaries=referenceBoundaries)) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'), data = list(studyAreaExtent=studyAreaExtent))
 @
 \includegraphics{figure/mapFig-1.pdf}    
-Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in black. The study area is outlined in red. 
+Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in gray. The study area is outlined in red. 
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
