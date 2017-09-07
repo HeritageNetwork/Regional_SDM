@@ -50,7 +50,7 @@ code_name <- ranPtsFile
 
 # do it, write it ----
 x <- extract(envStack, shpf, method="simple", sp=TRUE)
-filename <- paste(code_name, "_att", sep="")
+filename <- code_name #paste(code_name, "_att", sep="")
 writeOGR(x, pathToPts, layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 ## clean up ----

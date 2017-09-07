@@ -60,15 +60,19 @@ presPolys@data <- presPolys@data[,desiredCols]
 presPolys$OBSDATE <- as.character(presPolys$OBSDATE)
 presPolys$date <- NA
 for (d in 1:length(presPolys$OBSDATE)) {
-  if (grepl("-", presPolys$OBSDATE[d])) {
+  if (grepl("^[0-9]{4}$", presPolys$OBSDATE[d])) {
+    dt <- as.numeric(presPolys$OBSDATE[d])
+  } else {
+    if (grepl("^[0-9]{4}-", presPolys$OBSDATE[d])) {
       dt <- as.Date(presPolys$OBSDATE[d])
-    } else if (grepl("-", presPolys$OBSDATE[d])) {
+    } else if (grepl("[0-9]+/[0-9]+/[0-9]+", presPolys$OBSDATE[d])) {
       dt <- as.Date(presPolys$OBSDATE[d], format = "%m/%d/%Y") 
     } else {
       dt <- Sys.Date()
     }
     dt <- round(as.numeric(format(dt, "%Y")) + (as.numeric(format(dt,"%j"))/365.25))
-    presPolys$date[d] <- dt
+  }
+  presPolys$date[d] <- dt
 }
 desiredCols <- c(desiredCols, "date")
 
