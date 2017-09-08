@@ -59,7 +59,7 @@ run_SDM(
   model_comments = "This is an internal comment.",
   metaData_comments = "This comment will appear in the output PDF.",
   modeller = "David Bucklin",
-  add_vars = NULL,
+  add_vars = "distcaco3",
   remove_vars = NULL,
   prompt = FALSE
 )
@@ -78,6 +78,6 @@ run_SDM(
 # run_SDM(
 #   begin_step = "4",
 #   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
-#   # model_rdata = "parahera_20170816_152627", # need to provide this if picking up after step 3, otherwise leave it out
+#   # model_rdata = "parahera_20170907_175218", # need to provide this if picking up after step 3, otherwise leave it out
 #   prompt = FALSE
 # )

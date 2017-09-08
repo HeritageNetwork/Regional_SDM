@@ -143,7 +143,7 @@ ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
 
 #also get correlated env var information
-SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings NOT NULL;"
+SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
 corrdEVs <- dbGetQuery(db, statement = SQLquery)
 
 dbDisconnect(db)
@@ -214,6 +214,7 @@ impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
 
 # first remove the bottom of the correlated vars
+corrdEVs <- corrdEVs[tolower(corrdEVs$gridName) %in% row.names(impvals),]
 for(grp in unique(corrdEVs$correlatedVarGroupings)){
   vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
   imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
