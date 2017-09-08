@@ -106,7 +106,7 @@ dtRas <- rasnames[rasnames %in% dtGrids$gridName]
 # what's the closest distance for each?
 dtRas.min <- apply(df.in[,dtRas], 2, min)
 # remove those whose closest distance is greater than 10km
-dtRas.sub <- dtRas.min[dtRas.min > 10000]
+dtRas.sub <- dtRas.min[dtRas.min > 5000]
 rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
 
 # clean up, merge data sets -----

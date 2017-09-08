@@ -56,10 +56,10 @@ run_SDM(
   loc_RDataOut = "D:/SDM/Tobacco/outputs/parahera/rdata",
   loc_outRas = "D:/SDM/Tobacco/outputs/parahera/grids",
   loc_outMetadata = "D:/SDM/Tobacco/outputs/parahera/metadata",
-  model_comments = "This is an internal comment.",
-  metaData_comments = "This comment will appear in the output PDF.",
+  model_comments = "Comment for internal database",
+  metaData_comments = "Comment for PDF metadata sheet.",
   modeller = "David Bucklin",
-  add_vars = "distcaco3",
+  add_vars = NULL,
   remove_vars = NULL,
   prompt = FALSE
 )
