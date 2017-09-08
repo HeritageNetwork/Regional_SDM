@@ -91,7 +91,7 @@ shp_expl@data <- cbind(shp_expl@data,
 shp_expl@proj4string <- projInfo
 #write out the exploded polygon set
 nm.PyFile <- paste(sppCode, "_expl", sep = "")
-writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
+writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=FALSE)
   
 #name of random points output shapefile; add path to (now input) polygon file
 nm.RanPtFile <- paste(loc_spPts,"/", sppCode, "_RanPts", sep = "")

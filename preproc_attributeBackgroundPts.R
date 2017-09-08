@@ -10,7 +10,7 @@ pathToRas <- "D:/SDM/Tobacco/env_vars/Tobacco"
 # path to background points shapefile
 pathToPts <- "D:/SDM/Tobacco/inputs/background/tobacco"
 # background points shapefile
-ranPtsFile <- "tobacco_att"
+ranPtsFile <- "tobacco_RanPts"
 
 ## create a stack ----
 setwd(pathToRas)
@@ -50,7 +50,7 @@ code_name <- ranPtsFile
 
 # do it, write it ----
 x <- extract(envStack, shpf, method="simple", sp=TRUE)
-filename <- code_name #paste(code_name, "_att", sep="")
+filename <- paste(code_name, "_att", sep="")
 writeOGR(x, pathToPts, layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 ## clean up ----
