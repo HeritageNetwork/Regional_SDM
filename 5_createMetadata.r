@@ -61,7 +61,7 @@ SQLquery <- paste("Select lkpModelers.ProgramName, lkpModelers.FullOrganizationN
   "WHERE lkpSpecies.CODE='", ElementNames$Code, "'; ", sep="")
 sdm.modeler <- dbGetQuery(db, statement = SQLquery)
 
-SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
+SQLquery <- paste("SELECT DISTINCT sp.CODE, sr.ProgramName, sr.State ",
   "FROM lkpSpecies as sp ",
   "INNER JOIN mapDataSourcesToSpp as mp ON mp.EstID=sp.EST_ID ",
   "INNER JOIN lkpDataSources as sr ON mp.DataSourcesID=sr.DataSourcesID ",
