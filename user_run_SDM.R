@@ -90,9 +90,11 @@ run_SDM(
 # that was specified for the original model run. 
 
 # UNCOMMENT BELOW
-# run_SDM(
-#   begin_step = "2",
-#   loc_RDataOut = paste0(project_folder, "outputs/", model_species ,"/rdata"),
-#   # model_rdata = paste0(model_species ,"_20170907_175218"), # need to provide this if picking up after step 3, otherwise leave it out
-#   prompt = FALSE
-# )
+run_SDM(
+  loc_scripts = loc_scripts, 
+  begin_step = "4c",
+  loc_RDataOut = paste0(project_folder, "outputs/", model_species ,"/rdata"),
+  model_rdata = "ambymabe_20170908_173408", # need to provide this if picking up after step 3, otherwise leave it out
+  # metaData_comments = "Updated metadata comment.",
+  prompt = FALSE
+)

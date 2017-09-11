@@ -52,7 +52,7 @@ dat.in.db <- dbGetQuery(db, statement = SQLquery)
 
 # copy and paste it into here and edit as needed. 
 
-newText <- metaData_comments
+newText <- fn_args$metaData_comments
 #clean up newline chars, send it to the DB
 newText <- gsub("\n", " ", newText)
 
