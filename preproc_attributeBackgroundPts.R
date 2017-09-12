@@ -46,7 +46,7 @@ shpf <- readOGR(".", layer = ranPtsFileNoExt)[,"stratum"] # we only want one col
 #shpf@data <- shpf@data[,c(1,83)]
   
 # Get a list of the codes (this assumes all the input files had '_RanPts.shp' that shall be stripped)
-code_name <- ranPtsFile
+code_name <- strsplit(ranPtsFile, "_RanPts")[[1]][1]
 
 # do it, write it ----
 x <- extract(envStack, shpf, method="simple", sp=TRUE)
