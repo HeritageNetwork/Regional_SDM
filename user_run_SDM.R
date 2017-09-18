@@ -8,7 +8,7 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "parahera"
+model_species <- "ambymabe"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "inputs/species/", model_species ,"/scripts")
@@ -94,7 +94,7 @@ run_SDM(
   loc_scripts = loc_scripts, 
   begin_step = "2",
   loc_RDataOut = paste0(project_folder, "outputs/", model_species ,"/rdata"),
-  # model_rdata = "sigmwhit_20170911_172537", # need to provide this if picking up after step 3, otherwise leave it out
+  # model_rdata = "parahera_20170912_122715", # need to provide this if picking up after step 3, otherwise leave it out
   # model_comments = "Updated model comment.",
   # metaData_comments = "Updated metadata comment.",
   prompt = FALSE
