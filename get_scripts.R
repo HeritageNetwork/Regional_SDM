@@ -1,7 +1,8 @@
 if (!"git2r" %in% names(installed.packages()[,1])) stop ("Need to install 'git2r' package first.")
 library(git2r)
 
-script_store <- paste0(loc_scripts, "/Regional_SDM_", Sys.Date())
+if (exists("model_rdata")) dt <- as.Date(strsplit(model_rdata,"_")[[1]][2], format = "%Y%m%d") else (dt <- Sys.Date())
+script_store <- paste0(loc_scripts, "/Regional_SDM_", dt)
 if (!dir.exists(script_store)) {
   try(suppressMessages(git_repo <- git2r::clone("https://github.com/VANatHeritage/Regional_SDM.git",
                                                 branch = "dev", local_path = script_store)), silent = TRUE)

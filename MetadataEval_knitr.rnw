@@ -46,6 +46,7 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
     text (1,1, paste("TSS=",format(round(temp,digits=2)),sep=""),
         adj = c(0.5,6), cex = .75, col = "black", xpd=NA)
   } else {
+    plot(1,1, col = "white", axes = FALSE)
     box("outer","dotted") #show the outline of the fig box when debugging
     text (1,1, "No evaluation",
         adj = c(0.5,4), cex = .75, col = "black", xpd=NA)
