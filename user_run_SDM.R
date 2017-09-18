@@ -8,7 +8,7 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "ambymabe"
+model_species <- "sigmwhit"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "inputs/species/", model_species ,"/scripts")
@@ -89,12 +89,36 @@ run_SDM(
 # will automatically be accessed from 'loc_scripts' location 
 # that was specified for the original model run. 
 
+# set project folder and species code for this run
+project_folder <- "D:/SDM/Tobacco/"
+model_species <- "sigmwhit"
+# set model rdata, if starting at step 4 or later
+model_rdata <- "sigmwhit_20170914_134637"
+
+# path where you want to save model run scripts
+loc_scripts <- paste0(project_folder, "inputs/species/", model_species ,"/scripts")
+
+# this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
+# file anywhere on your computer, so you don't have to change the path)
+source("E:/git/Regional_SDM/get_scripts.R", local = TRUE)
+# NOTE any messages, and download/place scripts manually if necessary
+
+# manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
+loc_scripts <- script_store
+
+# remove everything but necessary variables
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts","model_rdata")])
+
+# set wd and load function
+setwd(loc_scripts)
+source("run_SDM.R")
+
 # UNCOMMENT BELOW
 run_SDM(
-  loc_scripts = loc_scripts, 
-  begin_step = "2",
+  # loc_scripts = loc_scripts, # if script location is changed, make sure this is set
+  begin_step = "3",
   loc_RDataOut = paste0(project_folder, "outputs/", model_species ,"/rdata"),
-  # model_rdata = "parahera_20170912_122715", # need to provide this if picking up after step 3, otherwise leave it out
+  # model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
   # model_comments = "Updated model comment.",
   # metaData_comments = "Updated metadata comment.",
   prompt = FALSE
