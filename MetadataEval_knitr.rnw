@@ -123,14 +123,16 @@ area under the ROC curve; see \cite{fielding2002, allouche2006, vaughan2005}.
 \end{center}
 
 \medskip
-<<checkEvalExists, echo=FALSE>>=
+<<checkEvalExists, include=FALSE, echo=FALSE>>=
 if (exists("n.var")) {
-txt <- "Validation runs used \\Sexpr{n.var} environmental 
-variables, the most important of \\Sexpr{OriginalNumberOfEnvars} 
-variables (top \\Sexpr{(1-envarPctile)*100} percent).
-Each tree was built with \\Sexpr{trRes[[1]]$mtry} variables 
-tried at each split (mtry) and \\Sexpr{trRes[[1]]$ntree} trees built."
-} else { txt <- "Validation was not possible for this model (too few EOs)." }
+  txt <- paste0("Validation runs used ",n.var," environmental 
+  variables, the most important of ",OriginalNumberOfEnvars," 
+  variables (top ",(1-envarPctile)*100," percent).
+  Each tree was built with ",trRes[[1]]$mtry," variables 
+  tried at each split (mtry) and ",trRes[[1]]$ntree," trees built.")
+} else { 
+  txt <- "Validation was not possible for this model (too few EOs)." 
+}
 @
 
 <<EvalTextPrint, results='asis', echo=FALSE>>=

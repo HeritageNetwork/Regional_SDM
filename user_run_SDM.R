@@ -8,7 +8,7 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "sigmwhit"
+model_species <- "neonmitc"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "inputs/species/", model_species ,"/scripts")
@@ -71,6 +71,9 @@ run_SDM(
   prompt = FALSE
 )
 
+#############################################################################
+#############################################################################
+#############################################################################
 
 # Step 2-alt: run additional model, or pick up from previous model run
 
@@ -91,9 +94,9 @@ run_SDM(
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "sigmwhit"
+model_species <- "neonmitc"
 # set model rdata, if starting at step 4 or later
-model_rdata <- "sigmwhit_20170914_134637"
+# model_rdata <- "speciescode_20170101_123456"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "inputs/species/", model_species ,"/scripts")
@@ -116,9 +119,9 @@ source("run_SDM.R")
 # UNCOMMENT BELOW
 run_SDM(
   # loc_scripts = loc_scripts, # if script location is changed, make sure this is set
-  begin_step = "3",
+  begin_step = "5",
   loc_RDataOut = paste0(project_folder, "outputs/", model_species ,"/rdata"),
-  # model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
+  model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
   # model_comments = "Updated model comment.",
   # metaData_comments = "Updated metadata comment.",
   prompt = FALSE
