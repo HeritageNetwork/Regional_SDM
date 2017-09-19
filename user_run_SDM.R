@@ -8,7 +8,7 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "neonmitc"
+model_species <- "glypmuhl"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "inputs/species/", model_species ,"/scripts")
@@ -94,7 +94,7 @@ run_SDM(
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "neonmitc"
+model_species <- "glypmuhl"
 # set model rdata, if starting at step 4 or later
 # model_rdata <- "speciescode_20170101_123456"
 
