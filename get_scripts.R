@@ -2,7 +2,7 @@ if (!"git2r" %in% names(installed.packages()[,1])) stop ("Need to install 'git2r
 library(git2r)
 
 ld <- list.dirs(loc_scripts, recursive = FALSE, full.names = FALSE)
-ld <- max(ld[grepl("Regional_SDM_[0-9]{4}-[0-9]{2}-[0-9]{2}$", ld)])
+suppressWarnings(ld <- max(ld[grepl("Regional_SDM_[0-9]{4}-[0-9]{2}-[0-9]{2}$", ld)]))
 if (is.na(ld)) script_store <- paste0(loc_scripts, "/Regional_SDM_", Sys.Date()) else script_store <- paste0(loc_scripts, "/", ld)
 if (!dir.exists(script_store)) {
   try(suppressMessages(git_repo <- git2r::clone("https://github.com/VANatHeritage/Regional_SDM.git",
