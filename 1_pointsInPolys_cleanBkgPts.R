@@ -65,7 +65,7 @@ for (d in 1:length(presPolys$OBSDATE)) {
   } else {
     if (grepl("^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}", presPolys$OBSDATE[d])) {
       dt <- as.Date(presPolys$OBSDATE[d])
-    } else if (grepl("[0-9]+/[0-9]+/[0-9]+", presPolys$OBSDATE[d])) {
+    } else if (grepl("^[0-9]+/[0-9]+/[0-9]+", presPolys$OBSDATE[d])) {
       dt <- as.Date(presPolys$OBSDATE[d], format = "%m/%d/%Y") 
     } else {
       dt <- Sys.Date()
