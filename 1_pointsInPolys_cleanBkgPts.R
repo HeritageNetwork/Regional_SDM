@@ -36,10 +36,10 @@ n <- 1
 fileName <- fileList[[n]]
 shpName <- strsplit(fileName,"\\.")[[1]][[1]]
 sppCode <- shpName
-presReaches <- read.csv(fileName)
+presReaches <- read.csv(fileName, colClasses = c("huc12"="character"))
 
 shpColNms <- names(presReaches)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE") 
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","huc12") 
 
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop("at least one column is missing or incorrectly named")
