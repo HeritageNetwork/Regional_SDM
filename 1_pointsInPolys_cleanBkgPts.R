@@ -109,10 +109,10 @@ bgpoints_cleaned <- bgpoints[selectedRows,]
 
 # write species reach data with huc12 IDS
 setwd(loc_spReaches)
-att.reaches <- merge(att.reaches, testcatchments[c("comid","huc12")], by = "comid")
+# att.reaches <- merge(att.reaches, testcatchments[c("comid","huc12")], by = "comid")
 write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep=""), row.names = FALSE) 
 
 # wtite background reach data with huc12 IDS
 setwd(loc_bkgReach)
-bgpoints_cleaned <- merge(bgpoints_cleaned, testcatchments[c("comid","huc12")], by = "comid")
+# bgpoints_cleaned <- merge(bgpoints_cleaned, testcatchments[c("comid","huc12")], by = "comid")
 write.csv(bgpoints_cleaned,"bgpoints_clean.csv", row.names = FALSE)

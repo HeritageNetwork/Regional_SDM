@@ -15,7 +15,7 @@ library(maptools)
 #source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 setwd(loc_envVars)
 
-EnvVars <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character")) 
+EnvVars <- read.csv("EnvVars.csv", colClasses=c("huc12"="character")) 
 
 
 # nm <- names(EnvVars)  ## do we need this if we're not dealing with raster name limits? - CT
