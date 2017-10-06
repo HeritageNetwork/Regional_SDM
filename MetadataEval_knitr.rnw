@@ -199,7 +199,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
   #create importance dot chart
   dotchart(EnvVars$impVal[ord], xlab = expression("lower" %->% "greater"),
     xlim = c(xmin.i, max(EnvVars$impVal)), labels = EnvVars$fullName[ord],
-    cex = 0.62     #character size
+    cex = 0.4     #character size
   )
   mtext("importance", side = 1, line = 2, cex = 0.62)
 @
@@ -299,7 +299,7 @@ if(nrow(sdm.customComments.subset) > 0){
 
 \pagebreak
 \medskip
-<<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE>>=
+<<mapFig, fig.width=7, fig.height=6, include=FALSE, echo=FALSE>>=
 
 #myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
 #levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
@@ -309,20 +309,20 @@ plotvar <- results_shape@data$prbblty
 nclr <- 5
 plotclr <- brewer.pal(nclr,"BuPu")
 #plotclr <- plotclr[nclr:1] # reorder colors if appropriate
-class <- classIntervals(plotvar, nclr, style="equal")
+class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2)
 colcode <- findColours(class, plotclr)
 
-plot(results_shape)
-plot(results_shape, col=colcode, add=T)
-plot(studyAreaExtent, add=T, border="red", lwd=1)
-plot(referenceBoundaries, add=T, border="gray13", lwd=0.5)
+plot(results_shape, lwd = 0.1, axes = TRUE)
+plot(results_shape, col=colcode, lwd = 0.45, add=T)
+plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), add=T, border="red", lwd=0.2)
+plot(spTransform(referenceBoundaries, CRSobj = results_shape@proj4string), add=T, border="gray80", lwd=0.2)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
 legend("bottomleft", legend=names(attr(colcode, "table")), 
     fill=attr(colcode, "palette"), cex=0.8, bty="n")
 @
 
 \includegraphics{figure/mapFig-1.pdf}    
-Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in black. The study area is outlined in red. 
+Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey. The study area is outlined in red. 
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:

@@ -5,7 +5,7 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "chrotenn"
+model_species <- "lemirimo"
 
 # Step 1: retrieve latest function/scripts from GitHub
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
@@ -40,7 +40,7 @@ source("run_SDM.R")
 
 run_SDM(
   loc_scripts = loc_scripts, 
-  loc_spReaches = paste0(project_folder, "inputs/species/", model_species , "/reach_data"), ### just speciescode.csv
+  loc_spReaches = paste0(project_folder, "inputs/species/", model_species , "/reach_data"), ### name of file is speciescode.csv
   nm_db_file = paste0(project_folder, "databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite"),
   loc_bkgReach = paste0(project_folder, "inputs/species/", model_species , "/background"),  ## output folder
   loc_envVars = paste0(project_folder, "env_vars/Tobacco_aqua"), # all reaches with env var attributes (EnvVars.csv)
@@ -51,11 +51,11 @@ run_SDM(
   loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
   loc_outVector = paste0(project_folder, "outputs/", model_species , "/shapefiles"),
   loc_outMetadata = paste0(project_folder, "outputs/", model_species , "/metadata"),
-  model_comments = "This is an internal comment stored in the database.",
-  metaData_comments = "This comment will be in the final PDF.",
+  model_comments = "",
+  metaData_comments = "",
   modeller = "David Bucklin",
   begin_step = "1",
-  prompt = TRUE
+  prompt = FALSE
 )
 
 # Step 2-alt: pick up from previous model run (uncomment below)
@@ -65,9 +65,9 @@ run_SDM(
 # Note that you can manually update your scripts, if desired. The scripts
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
-# run_SDM(
-#  begin_step = "3",
-#  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
-#  # model_rdata = "", model_species , "_20170817_152419", # need to provide this if picking up after step 3, otherwise leave it out
-#  prompt = TRUE
-#)
+run_SDM(
+ begin_step = "5",
+ loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
+ model_rdata = paste0(model_species , "_20171006_131856"), # need to provide this if picking up after step 3, otherwise leave it out
+ prompt = TRUE
+)
