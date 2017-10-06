@@ -3,8 +3,12 @@
 
 # After running, save this file in the species' 'loc_scripts' folder
 
+# set project folder and species code for this run
+project_folder <- "D:/SDM/Tobacco/"
+model_species <- "chrotenn"
+
 # Step 1: retrieve latest function/scripts from GitHub
-loc_scripts <- "D:/SDM/Tobacco/inputs/species/chrotenn/scripts"
+loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
 
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
@@ -28,7 +32,7 @@ source("E:/git/aquatic/Regional_SDM/get_scripts.R", local = TRUE)
 loc_scripts <- script_store
 
 # remove everything but loc_scripts
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% "loc_scripts"])
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
 
 # set wd and load function
 setwd(loc_scripts)
@@ -36,33 +40,34 @@ source("run_SDM.R")
 
 run_SDM(
   loc_scripts = loc_scripts, 
-  loc_spReaches = "D:/SDM/Tobacco/inputs/species/chrotenn/reach_data",
-  nm_db_file = "D:/SDM/Tobacco/databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite",
-  loc_bkgReach = "D:/SDM/Tobacco/inputs/species/chrotenn/background", 
-  loc_envVars = "D:/SDM/Tobacco/env_vars/Tobacco_aqua",
-  loc_otherSpatial = "D:/SDM/Tobacco/other_spatial/shp/aqua",
-  nm_allflowlines = "all_VA_flowlines_wHUC12",
+  loc_spReaches = paste0(project_folder, "inputs/species/", model_species , "/reach_data"), ### just speciescode.csv
+  nm_db_file = paste0(project_folder, "databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite"),
+  loc_bkgReach = paste0(project_folder, "inputs/species/", model_species , "/background"),  ## output folder
+  loc_envVars = paste0(project_folder, "env_vars/Tobacco_aqua"), # all reaches with env var attributes (EnvVars.csv)
+  loc_otherSpatial = paste0(project_folder, "other_spatial/shp/aqua"),
+  nm_allflowlines = "VA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
   nm_refBoundaries = "StatesEast",
   nm_studyAreaExtent = "sdmVA_pred_20170131",
-  loc_RDataOut = "D:/SDM/Tobacco/outputs/chrotenn/rdata",
-  loc_outVector = "D:/SDM/Tobacco/outputs/chrotenn/shapefiles",
-  loc_outMetadata = "D:/SDM/Tobacco/outputs/chrotenn/metadata",
+  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
+  loc_outVector = paste0(project_folder, "outputs/", model_species , "/shapefiles"),
+  loc_outMetadata = paste0(project_folder, "outputs/", model_species , "/metadata"),
   model_comments = "This is an internal comment stored in the database.",
   metaData_comments = "This comment will be in the final PDF.",
   modeller = "David Bucklin",
-  prompt = FALSE
+  begin_step = "1",
+  prompt = TRUE
 )
 
 # Step 2-alt: pick up from previous model run (uncomment below)
 
 # If picking up from a previous run, provide the path to loc_RDataOut. If after script
 # step #3, also provide the model rdata file (stored in loc_RDataOut) to 'model_rdata'.
-# Note that you can manually update your scripts, if desired The scripts
+# Note that you can manually update your scripts, if desired. The scripts
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
 # run_SDM(
 #  begin_step = "3",
-#  loc_RDataOut = "D:/SDM/Tobacco/outputs/chrotenn/rdata",
-#  # model_rdata = "chrotenn_20170817_152419", # need to provide this if picking up after step 3, otherwise leave it out
+#  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
+#  # model_rdata = "", model_species , "_20170817_152419", # need to provide this if picking up after step 3, otherwise leave it out
 #  prompt = TRUE
 #)

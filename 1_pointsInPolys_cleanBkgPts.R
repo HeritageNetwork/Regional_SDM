@@ -77,7 +77,7 @@ names(att.reaches) <- tolower(names(att.reaches))
 OutPut <- data.frame(SciName = paste(att.reaches[1,"sname"]),
 	CommName=paste(att.reaches[1,"scomname"]),
 	ElemCode=sppCode,
-	#RandomPtFile=nm.RanPtFile, # do we need this?
+	RandomPtFile= "NA/Aquatic", # do we need this?
 	date = paste(Sys.Date()),
 	time = format(Sys.time(), "%X"),
 	Loc_Use=""
