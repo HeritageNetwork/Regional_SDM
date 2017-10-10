@@ -136,8 +136,8 @@ ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
 ElementNames
 
 #also get correlated env var information
-#SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVarsAqua WHERE correlatedVarGroupings NOT NULL;"
-#corrdEVs <- dbGetQuery(db, statement = SQLquery)
+SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVarsAqua WHERE correlatedVarGroupings NOT NULL;"
+corrdEVs <- dbGetQuery(db, statement = SQLquery)
 
 dbDisconnect(db)
 rm(db)
@@ -217,13 +217,13 @@ OriginalNumberOfEnvars <- length(impvals)
 
 ### removed this for now because we don't have to correlation done for the aquatic variables - CT
 # first remove the bottom of the correlated vars
-#for(grp in unique(corrdEVs$correlatedVarGroupings)){
-#  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
-#  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
-#  varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
-#  impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
-#}
-#rm(vars, imp.sub, varsToDrop)
+for(grp in unique(corrdEVs$correlatedVarGroupings)){
+ vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
+ imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
+ varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
+ impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
+}
+rm(vars, imp.sub, varsToDrop)
 
 
 # set the percentile, here choosing above 25% percentile

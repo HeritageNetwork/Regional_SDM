@@ -5,7 +5,7 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "lemirimo"
+model_species <- "epioflor"
 
 # Step 1: retrieve latest function/scripts from GitHub
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
@@ -42,7 +42,7 @@ run_SDM(
   loc_scripts = loc_scripts, 
   loc_spReaches = paste0(project_folder, "inputs/species/", model_species , "/reach_data"), ### name of file is speciescode.csv
   nm_db_file = paste0(project_folder, "databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite"),
-  loc_bkgReach = paste0(project_folder, "inputs/species/", model_species , "/background"),  ## output folder
+  loc_bkgReach = paste0(project_folder, "inputs/species/", model_species , "/background"),
   loc_envVars = paste0(project_folder, "env_vars/Tobacco_aqua"), # all reaches with env var attributes (EnvVars.csv)
   loc_otherSpatial = paste0(project_folder, "other_spatial/shp/aqua"),
   nm_allflowlines = "VA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
