@@ -50,6 +50,22 @@ SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua WHERE use_",modType," 
 gridlistSub <- dbGetQuery(db, SQLQuery)$g
 dbDisconnect(db)
 
+## account for add/remove vars
+if (!is.null(add_vars)) {
+  if (!all(tolower(add_vars) %in% gridlistSub)) {
+    stop("Some environmental variables listed in `add_vars` were not found in `loc_EnvVars` dataset: ",
+         paste(add_vars[!tolower(add_vars) %in% gridlistSub], collapse = ", "), ".")
+  }
+  gridlistSub <- c(gridlistSub, add_vars)
+}
+if (!is.null(remove_vars)) {
+  if (!all(tolower(remove_vars) %in% gridlistSub)) {
+    warning("Some environmental variables listed in `remove_vars` were not found in the `loc_EnvVars` dataset: ",
+            paste(remove_vars[!tolower(remove_vars) %in% gridlistSub], collapse = ", "), ".")
+  } 
+  gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
+}
+
 EnvVars <- EnvVars[c("comid",gridlistSub)]
 rm(gridlistSub, modType)
 

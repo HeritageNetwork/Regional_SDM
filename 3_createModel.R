@@ -221,7 +221,7 @@ for(grp in unique(corrdEVs$correlatedVarGroupings)){
  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
  varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
- impvals <- impvals[!rownames(impvals) %in% varsToDrop,,drop = FALSE]
+ impvals <- impvals[!rownames(impvals) %in% rownames(varsToDrop),,drop = FALSE]
 }
 rm(vars, imp.sub, varsToDrop)
 

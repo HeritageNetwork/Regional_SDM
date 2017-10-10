@@ -5,7 +5,7 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "epioflor"
+model_species <- "chrotenn"
 
 # Step 1: retrieve latest function/scripts from GitHub
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
@@ -66,8 +66,10 @@ run_SDM(
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
 run_SDM(
- begin_step = "5",
+ begin_step = "3",
+ model_comments = "implemented correlated variable removal",
+ metaData_comments = "",
  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
- model_rdata = paste0(model_species , "_20171006_131856"), # need to provide this if picking up after step 3, otherwise leave it out
- prompt = TRUE
+ # model_rdata = paste0(model_species , "_20170928_123026"), # need to provide this if picking up after step 3, otherwise leave it out
+ prompt = FALSE
 )
