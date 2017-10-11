@@ -73,7 +73,7 @@ The statistics in Table 2 report the mean and variance for these jackknifing run
 
 Table 1. Input statistics. 
 <<tableOneLegend, results = "asis", echo=FALSE>>= 
-cat("Groups = ", group$JackknType,";")
+cat("Groups = ", group$JackknType,";", sep = "")
 @
 BG reaches = background reaches; PR reaches = presence point placed in reaches.
 \smallskip
@@ -121,7 +121,7 @@ variables (top \Sexpr{(1-envarPctile)*100} percent).
 Each tree was built with \Sexpr{trRes[[1]]$mtry} variables 
 tried at each split (mtry) and \Sexpr{trRes[[1]]$ntree} trees built.
 The final model was built using \Sexpr{rf.full$ntree} trees, all presence 
-and background points, with an mtry of \Sexpr{rf.full$mtry}, and the same
+and background reaches, with an mtry of \Sexpr{rf.full$mtry}, and the same
 number of environmental variables.
 
 \begin{center}
@@ -306,14 +306,14 @@ if(nrow(sdm.customComments.subset) > 0){
 
 #equal-width class intervals of 1990 population
 plotvar <- results_shape@data$prbblty  
-nclr <- 5
-plotclr <- brewer.pal(nclr,"BuPu")
+nclr <- 10
+plotclr <- brewer.pal(nclr,"Spectral")
 #plotclr <- plotclr[nclr:1] # reorder colors if appropriate
 class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2)
 colcode <- findColours(class, plotclr)
 
 plot(results_shape, lwd = 0.1, axes = TRUE)
-plot(results_shape, col=colcode, lwd = 0.45, add=T)
+plot(results_shape, col=colcode, lwd = 0.2*results_shape$strord, add=T)
 plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), add=T, border="red", lwd=0.2)
 plot(spTransform(referenceBoundaries, CRSobj = results_shape@proj4string), add=T, border="gray80", lwd=0.2)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"

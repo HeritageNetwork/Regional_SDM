@@ -5,8 +5,8 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-# TO RERUN - lemirimo
-model_species <- "epioflor"
+
+model_species <- "iofluv"
 
 # Step 1: retrieve latest function/scripts from GitHub
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
@@ -67,7 +67,7 @@ run_SDM(
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
 run_SDM(
- begin_step = "3",
+ begin_step = "2",
  model_comments = "implemented correlated variable removal",
  metaData_comments = "",
  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
