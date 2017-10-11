@@ -31,7 +31,7 @@ load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
 setwd(loc_envVars)
 
-EnvVars <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character"))
+EnvVars <- read.csv("EnvVars.csv", colClasses=c("huc12"="character"))
 names(EnvVars) <- tolower(names(EnvVars))
 EnvVars$huc12 <- NULL
 
