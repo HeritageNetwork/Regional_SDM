@@ -152,7 +152,7 @@ run_SDM <- function(
     source(paste(loc_scripts, scrpt, sep = "/"), local = TRUE)
     
     # clean up everything but loop objects
-    rm(list=ls()[!ls() %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args")])
+    rm(list=ls()[!ls() %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args","add_vars","remove_vars")])
     
     message(paste0("Completed script ", scrpt , "..."))
     
