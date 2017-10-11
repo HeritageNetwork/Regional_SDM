@@ -262,13 +262,13 @@ most influence on the model. Each plot shows the effect
 of the variable on the probability of appropriate habitat with the 
 effects of the other variables removed \cite{liaw2002}. Peaks in the line indicate 
 where this variable had the strongest influence on predicting 
-appropriate habitat. The distribution of each category (thin red = BG points, 
-thick blue = PR points) is depicted at the top margin. 
+appropriate habitat. The distribution of each category (thin red = BG reaches, 
+thick blue = PR reaches) is depicted at the top margin. 
 
 \medskip
 \noindent
 Element distribution models map places of similar environmental
-conditions to the submitted locations (PR points). No model will ever depict sites where
+conditions to the submitted locations (PR reaches). No model will ever depict sites where
 a targeted element will occur with certainty, it can \textit{only} depict locations it interprets
 as appropriate habitat for the targeted element. SDMs can be used in many ways and the 
 depiction of appropriate habitat should be varied depending on intended use. For targeting
@@ -278,7 +278,7 @@ additional GIS tools to further direct search efforts. A lower threshold depicti
 \medskip
 \noindent
 Table 3. Thresholds calculated from the final model. For discussions of these different thresholds
-see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of EOs, polygons, and PR points used in the final model are reported in Table 1.
+see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR reaches predicted having suitable habitat. Total numbers of EOs, polygons, and PR reaches used in the final model are reported in Table 1.
 
 \smallskip
 \noindent
@@ -306,19 +306,24 @@ if(nrow(sdm.customComments.subset) > 0){
 
 #equal-width class intervals of 1990 population
 plotvar <- results_shape@data$prbblty  
-nclr <- 10
-plotclr <- brewer.pal(nclr,"Spectral")
+nclr <- 5
+plotclr <- brewer.pal(nclr+1,"BuPu")[2:(nclr+1)]
 #plotclr <- plotclr[nclr:1] # reorder colors if appropriate
 class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2)
 colcode <- findColours(class, plotclr)
+results_shape$colcode <- colcode
 
-plot(results_shape, lwd = 0.1, axes = TRUE)
-plot(results_shape, col=colcode, lwd = 0.2*results_shape$strord, add=T)
+plot(results_shape, lwd = 0.05, col = "red", axes = TRUE)
+# plot(results_shape, col=results_shape$colcode, lwd = 0.15*results_shape$strord, add=T)
+for (i in 1:nclr) {
+  sub <- results_shape[results_shape$colcode == plotclr[i],]
+  plot(sub, col=sub$colcode, lwd = 0.15*sub$strord, add=T)
+}
 plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), add=T, border="red", lwd=0.2)
 plot(spTransform(referenceBoundaries, CRSobj = results_shape@proj4string), add=T, border="gray80", lwd=0.2)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
-legend("bottomleft", legend=names(attr(colcode, "table")), 
-    fill=attr(colcode, "palette"), cex=0.8, bty="n")
+legend("topleft", legend=names(attr(colcode, "table")), 
+    col=attr(colcode, "palette"), cex=0.8, bty="o", lwd = 4, bg = "grey95")
 @
 
 \includegraphics{figure/mapFig-1.pdf}    
