@@ -575,7 +575,7 @@ model_run_name <- paste0(ElementNames$Code, "_",
 modelrun_meta_data$model_run_name <- model_run_name
 # don't save fn args/vars
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
-                                                             "run_steps","prompt","fn_args")]
+                                                             "run_steps","prompt","fn_args", names(fn_args))]
 save(list = ls.save, file = paste0(model_run_name,".Rdata"), envir = environment())
 
 # write model metadata to db
