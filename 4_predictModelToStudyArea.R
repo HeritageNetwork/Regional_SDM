@@ -54,8 +54,8 @@ layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
 shapef <- readOGR(loc_otherSpatial, layer = layer)
 
 # join probability to shapefile -- https://stackoverflow.com/questions/5732064/merge-data-vector-to-shapefile-data-slot
-shapef@data <- data.frame(shapef@data, results_join_table[match(shapef@data$comid, results_join_table$comid),])
-
+# shapef@data <- data.frame(shapef@data, results_join_table[match(shapef@data$comid, results_join_table$comid),])
+shapef <- merge(shapef, results_join_table, by = "comid")
 
 # write the shapefile
 writeOGR(obj=shapef, dsn= loc_outVector, layer= paste0(modelrun_meta_data$model_run_name, "_results"), driver="ESRI Shapefile")

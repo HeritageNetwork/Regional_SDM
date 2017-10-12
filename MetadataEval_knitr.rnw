@@ -307,17 +307,28 @@ if(nrow(sdm.customComments.subset) > 0){
 #equal-width class intervals of 1990 population
 plotvar <- results_shape@data$prbblty  
 nclr <- 5
-plotclr <- brewer.pal(nclr+1,"BuPu")[2:(nclr+1)]
+plotclr <- brewer.pal(nclr,"BuPu")
 #plotclr <- plotclr[nclr:1] # reorder colors if appropriate
 class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2)
 colcode <- findColours(class, plotclr)
 results_shape$colcode <- colcode
 
-plot(results_shape, lwd = 0.05, col = "red", axes = TRUE)
+plot(results_shape, col = NA, axes = TRUE)
+
+# plot aqua area polygons by mean value of reaches in area
+aqua.pred <- do.call(data.frame, aggregate(results_shape$prbblty,
+                                           by = list(results_shape$wacomid),
+                                           FUN = function(x) c(mn = mean(x, na.rm = TRUE), n = length(x))))
+colnames(aqua.pred) <- c("comid","pred","count")
+area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
+area.wb.pred$colcode <- plotclr[findInterval(area.wb.pred$pred, class$brks)]
+
+plot(area.wb.pred, col = area.wb.pred$colcode, border = NA, add = TRUE)
+
 # plot(results_shape, col=results_shape$colcode, lwd = 0.15*results_shape$strord, add=T)
 for (i in 1:nclr) {
   sub <- results_shape[results_shape$colcode == plotclr[i],]
-  plot(sub, col=sub$colcode, lwd = 0.15*sub$strord, add=T)
+  plot(sub, col=sub$colcode, lwd = 0.1*sub$strord, add=T)
 }
 plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), add=T, border="red", lwd=0.2)
 plot(spTransform(referenceBoundaries, CRSobj = results_shape@proj4string), add=T, border="gray80", lwd=0.2)
@@ -399,5 +410,3 @@ References
 \end{thebibliography}
 
 \end{document}
-
-

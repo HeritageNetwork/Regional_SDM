@@ -39,6 +39,7 @@ results_shape <- readOGR(loc_outVector, paste0(modelrun_meta_data$model_run_name
 setwd(loc_otherSpatial)
 studyAreaExtent <- readOGR(loc_otherSpatial,  nm_studyAreaExtent) # study area
 referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries) # name of state boundaries file
+aquaPolys <- readOGR(loc_otherSpatial, nm_aquaArea) # aquatic area features (lakes, large rivers, etc.)
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
@@ -46,17 +47,17 @@ options(useFancyQuotes = FALSE)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
 SQLquery <- paste("Select lkpModelers.ProgramName, lkpModelers.FullOrganizationName, ",
-  "lkpModelers.City, lkpModelers.State, lkpSpecies.CODE ",
-  "FROM lkpModelers ", 
-  "INNER JOIN lkpSpecies ON lkpModelers.ModelerID=lkpSpecies.ModelerID ", 
-  "WHERE lkpSpecies.CODE='", ElementNames$Code, "'; ", sep="")
+                  "lkpModelers.City, lkpModelers.State, lkpSpecies.CODE ",
+                  "FROM lkpModelers ", 
+                  "INNER JOIN lkpSpecies ON lkpModelers.ModelerID=lkpSpecies.ModelerID ", 
+                  "WHERE lkpSpecies.CODE='", ElementNames$Code, "'; ", sep="")
 sdm.modeler <- dbGetQuery(db, statement = SQLquery)
 
 SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
-  "FROM lkpSpecies as sp ",
-  "INNER JOIN mapDataSourcesToSpp as mp ON mp.EstID=sp.EST_ID ",
-  "INNER JOIN lkpDataSources as sr ON mp.DataSourcesID=sr.DataSourcesID ",
-  "WHERE sp.CODE='", ElementNames$Code, "'; ", sep="")
+                  "FROM lkpSpecies as sp ",
+                  "INNER JOIN mapDataSourcesToSpp as mp ON mp.EstID=sp.EST_ID ",
+                  "INNER JOIN lkpDataSources as sr ON mp.DataSourcesID=sr.DataSourcesID ",
+                  "WHERE sp.CODE='", ElementNames$Code, "'; ", sep="")
 sdm.dataSources <- dbGetQuery(db, statement = SQLquery)
 sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
@@ -93,12 +94,12 @@ sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
-   "capturedPts", "cutDescription")]
+                                        "capturedPts", "cutDescription")]
 names(sdm.thresh.table) <- c("Threshold", "Value", "Pts","Description")
 #sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
- #                                    "(",sdm.thresh.table$EOs, ")", sep="")
+#                                    "(",sdm.thresh.table$EOs, ")", sep="")
 #sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
-     #                         "(",sdm.thresh.table$Polys, ")", sep="")
+#                         "(",sdm.thresh.table$Polys, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
                               sep="")

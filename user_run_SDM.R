@@ -48,7 +48,8 @@ run_SDM(
   loc_otherSpatial = paste0(project_folder, "other_spatial/shp/aqua"),
   nm_allflowlines = "VA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
   nm_refBoundaries = "StatesEast",
-  nm_studyAreaExtent = "sdmVA_pred_20170131",
+  nm_studyAreaExtent = "VA_HUC_predarea",
+  nm_aquaArea = "VA_nhdarea_wb",
   loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
   loc_outVector = paste0(project_folder, "outputs/", model_species , "/shapefiles"),
   loc_outMetadata = paste0(project_folder, "outputs/", model_species , "/metadata"),
@@ -67,10 +68,8 @@ run_SDM(
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
 run_SDM(
- begin_step = "2",
- model_comments = "implemented correlated variable removal",
- metaData_comments = "",
+ begin_step = "5",
  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
- # model_rdata = paste0(model_species , "_20170928_123026"), # need to provide this if picking up after step 3, otherwise leave it out
+ model_rdata = paste0(model_species , "_20171012_102855"), # need to provide this if picking up after step 3, otherwise leave it out
  prompt = FALSE
 )
