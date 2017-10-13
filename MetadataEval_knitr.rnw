@@ -334,7 +334,7 @@ plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), add=T, bo
 plot(spTransform(referenceBoundaries, CRSobj = results_shape@proj4string), add=T, border="gray80", lwd=0.2)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
 legend("topleft", legend=names(attr(colcode, "table")), 
-    col=attr(colcode, "palette"), cex=0.8, bty="o", lwd = 4, bg = "grey95")
+    col=attr(colcode, "palette"), cex=0.8, bty="o", lwd = 4, bg = "white")
 @
 
 \includegraphics{figure/mapFig-1.pdf}    

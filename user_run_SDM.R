@@ -5,8 +5,8 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-
-model_species <- "iofluv"
+#lemirimo, epioflor
+model_species <- "chrotenn"
 
 # Step 1: retrieve latest function/scripts from GitHub
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
@@ -68,8 +68,11 @@ run_SDM(
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
 run_SDM(
- begin_step = "5",
+ begin_step = "3",
  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
- model_rdata = paste0(model_species , "_20171012_102855"), # need to provide this if picking up after step 3, otherwise leave it out
+ nm_aquaArea = "VA_nhdarea_wb",
+ nm_studyAreaExtent = "VA_HUC_predarea",
+ model_comments = "HUC updates + aquatic areas added",
+ # model_rdata = paste0(model_species , "_20171012_163530"), # need to provide this if picking up after step 3, otherwise leave it out
  prompt = FALSE
 )
