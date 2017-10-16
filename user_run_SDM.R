@@ -5,8 +5,8 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-#lemirimo, epioflor
-model_species <- "chrotenn"
+
+model_species <- "epioflor"
 
 # Step 1: retrieve latest function/scripts from GitHub
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
@@ -39,6 +39,7 @@ rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","mo
 setwd(loc_scripts)
 source("run_SDM.R")
 
+# run a full, new model
 run_SDM(
   loc_scripts = loc_scripts, 
   loc_spReaches = paste0(project_folder, "inputs/species/", model_species , "/reach_data"), ### name of file is speciescode.csv
@@ -53,7 +54,7 @@ run_SDM(
   loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
   loc_outVector = paste0(project_folder, "outputs/", model_species , "/shapefiles"),
   loc_outMetadata = paste0(project_folder, "outputs/", model_species , "/metadata"),
-  model_comments = "",
+  model_comments = "reach-HUC corrections, new base variable set (4 variables removed due to nodata issues)",
   metaData_comments = "",
   modeller = "David Bucklin",
   begin_step = "1",
@@ -67,12 +68,19 @@ run_SDM(
 # Note that you can manually update your scripts, if desired. The scripts
 # will be accessed from 'loc_scripts' as specified in the original model run.
 
+# same prep steps as above
+project_folder <- "D:/SDM/Tobacco/"
+model_species <- "alasviri"
+loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
+source("E:/git/aquatic/Regional_SDM/get_scripts.R", local = TRUE)
+loc_scripts <- script_store
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
+
+# pick-up a model run after step 1
 run_SDM(
  begin_step = "3",
  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
- nm_aquaArea = "VA_nhdarea_wb",
- nm_studyAreaExtent = "VA_HUC_predarea",
- model_comments = "HUC updates + aquatic areas added",
+ model_comments = "reach-HUC corrections, new base variable set (4 variables removed due to nodata issues)",
  # model_rdata = paste0(model_species , "_20171012_163530"), # need to provide this if picking up after step 3, otherwise leave it out
  prompt = FALSE
 )

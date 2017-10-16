@@ -39,7 +39,7 @@ results_shape <- readOGR(loc_outVector, paste0(modelrun_meta_data$model_run_name
 setwd(loc_otherSpatial)
 studyAreaExtent <- readOGR(loc_otherSpatial,  nm_studyAreaExtent) # study area
 referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries) # name of state boundaries file
-aquaPolys <- readOGR(loc_otherSpatial, nm_aquaArea) # aquatic area features (lakes, large rivers, etc.)
+if (!is.null(nm_aquaArea)) aquaPolys <- readOGR(loc_otherSpatial, nm_aquaArea) # aquatic area features (lakes, large rivers, etc.)
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")

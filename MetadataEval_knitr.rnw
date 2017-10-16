@@ -315,15 +315,17 @@ results_shape$colcode <- colcode
 
 plot(results_shape, col = NA, axes = TRUE)
 
-# plot aqua area polygons by mean value of reaches in area
-aqua.pred <- do.call(data.frame, aggregate(results_shape$prbblty,
-                                           by = list(results_shape$wacomid),
-                                           FUN = function(x) c(mn = mean(x, na.rm = TRUE), n = length(x))))
-colnames(aqua.pred) <- c("comid","pred","count")
-area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
-area.wb.pred$colcode <- plotclr[findInterval(area.wb.pred$pred, class$brks)]
-
-plot(area.wb.pred, col = area.wb.pred$colcode, border = NA, add = TRUE)
+if (!is.null(nm_aquaArea)) {
+  # plot aqua area polygons by mean value of reaches in area
+  aqua.pred <- do.call(data.frame, aggregate(results_shape$prbblty,
+                                             by = list(results_shape$wacomid),
+                                             FUN = function(x) c(mn = mean(x, na.rm = TRUE), n = length(x))))
+  colnames(aqua.pred) <- c("comid","pred","count")
+  area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
+  area.wb.pred$colcode <- plotclr[findInterval(area.wb.pred$pred, class$brks)]
+  
+  plot(area.wb.pred, col = area.wb.pred$colcode, border = NA, add = TRUE)
+}
 
 # plot(results_shape, col=results_shape$colcode, lwd = 0.15*results_shape$strord, add=T)
 for (i in 1:nclr) {

@@ -25,7 +25,7 @@ run_SDM <- function(
   nm_allflowlines,
   nm_refBoundaries,
   nm_studyAreaExtent,
-  nm_aquaArea,
+  nm_aquaArea = NULL,
   # loc_spPts,
   loc_RDataOut,
   loc_outVector,
