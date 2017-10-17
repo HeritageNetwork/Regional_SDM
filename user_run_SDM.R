@@ -6,7 +6,7 @@
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
 
-model_species <- "epioflor"
+model_species <- "spcode"
 
 # Step 1: retrieve latest function/scripts from GitHub
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
@@ -54,7 +54,7 @@ run_SDM(
   loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
   loc_outVector = paste0(project_folder, "outputs/", model_species , "/shapefiles"),
   loc_outMetadata = paste0(project_folder, "outputs/", model_species , "/metadata"),
-  model_comments = "reach-HUC corrections, new base variable set (4 variables removed due to nodata issues)",
+  model_comments = "",
   metaData_comments = "",
   modeller = "David Bucklin",
   begin_step = "1",
@@ -70,17 +70,20 @@ run_SDM(
 
 # same prep steps as above
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "alasviri"
+model_species <- "lemirimo"
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
 source("E:/git/aquatic/Regional_SDM/get_scripts.R", local = TRUE)
 loc_scripts <- script_store
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
+setwd(loc_scripts)
+source("run_SDM.R")
 
-# pick-up a model run after step 1
-run_SDM(
- begin_step = "3",
- loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
- model_comments = "reach-HUC corrections, new base variable set (4 variables removed due to nodata issues)",
- # model_rdata = paste0(model_species , "_20171012_163530"), # need to provide this if picking up after step 3, otherwise leave it out
- prompt = FALSE
-)
+# pick-up a model run after step 1 (uncomment below)
+# run_SDM(
+#  begin_step = "5",
+#  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
+#  nm_aquaArea = NULL,
+#  model_comments = "reach-HUC corrections, new base variable set (4 variables removed due to nodata issues)",
+#  model_rdata = paste0(model_species , "_20171013_081456"), # need to provide this if picking up after step 3, otherwise leave it out
+#  prompt = FALSE
+# )

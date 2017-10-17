@@ -48,7 +48,7 @@ envvar_list <- names(df.abs)[!names(df.abs) %in% c("huc12","comid")] # gets a li
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
-df.abs <- df.abs[complete.cases(df.abs),]
+# df.abs <- df.abs[complete.cases(df.abs),] # this is done later, after variables are removed to match df.in
 
 # align data sets, QC ----
 # add some fields to each
@@ -114,6 +114,8 @@ indVarCols <- c(7:length(colList))
 #re-arrange
 df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
+# now remove rows with NAs
+df.abs <- df.abs[complete.cases(df.abs),]
 
 #Fire up SQLite
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
