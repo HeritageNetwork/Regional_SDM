@@ -585,6 +585,6 @@ SQLquery <- paste0("INSERT INTO tblModelRuns (modelRunName, CODE, modelBeginTime
 modelCompName, rVersion, internalComments)
 VALUES
 ('",insert_values,"');")
-dbExecute(db, SQLquery)
+dbSendQuery(db, SQLquery) #dbExecute
 
 message(paste0("Saved rdata file: '", model_run_name , "'."))

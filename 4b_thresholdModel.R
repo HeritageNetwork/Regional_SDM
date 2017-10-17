@@ -183,7 +183,7 @@ for(i in 1:numThresh){
                     ") VALUES (",
                     toString(sQuote(allThresh[i,])),
                     ");", sep = "")
-  dbExecute(db, SQLquery)
+  dbSendQuery(db, SQLquery)
 }
 
 # clean up

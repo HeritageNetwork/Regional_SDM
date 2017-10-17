@@ -64,7 +64,7 @@ if (length(dat.in.db[,1]) == 1) {
                     "' , date = '", as.character(Sys.Date()),
                     "' WHERE modelRunName = '", 
                     model_run_name, "';", sep = "")
-  dbExecute(db, SQLquery)
+  dbSendQuery(db, SQLquery)
 } else {
   
   ## create a new row instead ----
@@ -75,13 +75,13 @@ if (length(dat.in.db[,1]) == 1) {
                     "VALUES ('", newVals ,
                     "');", sep = "")
                     
-  dbExecute(db, SQLquery)
+  dbSendQuery(db, SQLquery)
 }
 
 # update tblModelRuns with finish time
 SQLquery <- paste0("UPDATE tblModelRuns SET modelEndTime = '",as.character(Sys.time()),
                    "' WHERE modelRunName ='", model_run_name , "'; ")
-dbExecute(db, SQLquery)
+dbSendQuery(db, SQLquery)
 
 ## clean up ----
 dbDisconnect(db)
