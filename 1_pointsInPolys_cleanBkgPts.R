@@ -48,11 +48,13 @@ presPolys$RA <- presPolys$SFRACalc
 shpColNms <- names(presPolys@data)
 desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA", "OBSDATE")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
-	  stop("at least one column is missing or incorrectly named")
+	  stop(paste0("Column(s) are missing or incorrectly named: ", paste(desiredCols[!desiredCols %in% shpColNms], collapse = ", ")))
   } else {
     print("Required columns are present")
   }
-
+if(any(!complete.cases(presPolys@data[c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")]))) {
+  stop("The columns 'EO_ID_ST','SNAME','SCOMNAME', and 'RA' cannot have NA values.")
+}
 #pare down columns
 presPolys@data <- presPolys@data[,desiredCols]
 
