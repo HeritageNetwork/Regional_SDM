@@ -70,7 +70,7 @@ run_SDM(
 
 # same prep steps as above
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "lemirimo"
+model_species <- "notrathe"
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
 source("E:/git/aquatic/Regional_SDM/get_scripts.R", local = TRUE)
 loc_scripts <- script_store
@@ -79,11 +79,10 @@ setwd(loc_scripts)
 source("run_SDM.R")
 
 # pick-up a model run after step 1 (uncomment below)
-# run_SDM(
-#  begin_step = "5",
-#  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
-#  nm_aquaArea = NULL,
-#  model_comments = "reach-HUC corrections, new base variable set (4 variables removed due to nodata issues)",
-#  model_rdata = paste0(model_species , "_20171013_081456"), # need to provide this if picking up after step 3, otherwise leave it out
-#  prompt = FALSE
-# )
+run_SDM(
+ begin_step = "3",
+ loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
+ model_comments = "fixed complete.cases bug, so more reaches included in bkgrd for this model",
+ # model_rdata = paste0(model_species , "_20171013_081456"), # need to provide this if picking up after step 3, otherwise leave it out
+ prompt = FALSE
+)

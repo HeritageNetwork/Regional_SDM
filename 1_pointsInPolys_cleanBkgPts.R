@@ -7,6 +7,7 @@
 
 library(RSQLite)
 library(rgdal)
+library(rgeos)
 
 ####
 # Assumptions
@@ -39,13 +40,16 @@ sppCode <- shpName
 presReaches <- read.csv(fileName, colClasses = c("huc12"="character"))
 
 shpColNms <- names(presReaches)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","huc12") 
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","group_id") 
 
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
-	  stop("at least one column is missing or incorrectly named")
-  } else {
-    print("Required columns are present")
-  }
+  stop(paste0("Column(s) are missing or incorrectly named: ", paste(desiredCols[!desiredCols %in% shpColNms], collapse = ", ")))
+} else {
+  print("Required columns are present")
+}
+if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id")]))) {
+  stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID', and 'group_id' cannot have NA values.")
+}
 
 #pare down columns
 presReaches <- presReaches[,desiredCols]
@@ -101,10 +105,18 @@ testcatchments <- shapef@data
 names(testcatchments) <- tolower(names(testcatchments))
 list_projCatchments <- testcatchments$comid
 
+# find presence and presence-adjacent reaches
+pres.geom <- shapef[shapef$comid %in% list_presReaches,]
+bkgd.int <- gIntersects(pres.geom, shapef, byid = TRUE, returnDense = TRUE)
+bkgd.int <- apply(bkgd.int, 1, FUN = any)
+bkgd.int <- names(bkgd.int)[as.vector(bkgd.int)]
+bkgd.int <- shapef[row.names(shapef) %in% bkgd.int,]
+list_removeBkgd <- bkgd.int$comid
+
 setwd(loc_envVars)
 bgpoints <- read.csv("EnvVars.csv")
 names(bgpoints) <- tolower(names(bgpoints))
-selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_presReaches))
+selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd))
 bgpoints_cleaned <- bgpoints[selectedRows,]
 
 # write species reach data with huc12 IDS
