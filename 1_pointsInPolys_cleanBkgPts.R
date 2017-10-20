@@ -40,7 +40,7 @@ sppCode <- shpName
 presReaches <- read.csv(fileName, colClasses = c("huc12"="character"))
 
 shpColNms <- names(presReaches)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","group_id") 
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","group_id","huc12") 
 
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
   stop(paste0("Column(s) are missing or incorrectly named: ", paste(desiredCols[!desiredCols %in% shpColNms], collapse = ", ")))
