@@ -79,8 +79,8 @@ BG reaches = background reaches; PR reaches = presence point placed in reaches.
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("HUC12s","BG reaches","PR reaches"), #note how many HUC12 (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
-                         Number=c(length(unique(df.in2$huc12)),
+	summ.table <- data.frame(Name=c("Reach groups","BG reaches","PR reaches"), #note how many reache groups (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
+                         Number=c(length(unique(df.in2$stratum)),
                          nrow(subset(df.full, pres == 0)),
                          nrow(subset(df.full, pres == 1))))
   print(xtable(summ.table),

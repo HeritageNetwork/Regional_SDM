@@ -100,7 +100,7 @@ df.abs$x <- NULL # can probably eliminate with better csv data prep from GIS
 df.abs$x.1 <- NULL # can probably eliminate with better csv data prep from GIS
 
 # add a 'stratum' column to df.in -- missing without the RA steps.  How to fix?
-df.in$stratum <- 1 ### CT - work here!!!!!
+df.in$stratum <- as.character(df.in$group_id) # group_id used for model stratification
 
 # this is the full list of fields, arranged appropriately
 colList <- c("sname","eo_id_st","pres","stratum","comid", "huc12", envvar_list)
@@ -149,7 +149,7 @@ df.abs$eo_id_st <- factor(df.abs$eo_id_st)
 df.full <- rbind(df.in, df.abs)
 
 # reset these factors
-df.full$stratum <- 0  # this is set below, just resetting and maintaining the column order
+df.full$stratum <- factor(df.full$stratum) # this is set below, just resetting and maintaining the column order
 df.full$eo_id_st <- factor(df.full$eo_id_st)
 df.full$pres <- factor(df.full$pres)
 df.full$huc12 <- factor(tolower(as.character(df.full$huc12)))
@@ -175,10 +175,10 @@ df.full$sname <- factor(df.full$sname)
 #names(sampSizeVec) <- as.character(EObySS$eo_id_st)
 
 # USE strata column to assign stratum (by HUC12, EO_ID, something else? )
-# using HUC12 for now
-df.full$stratum[df.full$pres == 0] <- "pseu-a"
-df.full$stratum[df.full$pres == 1] <- as.character(df.full$huc12[df.full$pres == 1])
-df.full$stratum <- factor(df.full$stratum)
+# using HUC12 for now  (commented out since already set above)
+# df.full$stratum[df.full$pres == 0] <- "pseu-a"
+# df.full$stratum[df.full$pres == 1] <- as.character(df.full$huc12[df.full$pres == 1])
+# df.full$stratum <- factor(df.full$stratum)
 
 sampSizeVec <- table(df.full$stratum) # CHANGE THIS?? (sample sizes by HUC12? would need to change pseu-abs record values in that case)
 # sampSizeVec <- floor((sampSizeVec*0.5)+0.5) # should we not take full presence sample from reaches in a HUC12?
@@ -252,8 +252,8 @@ df.in2 <- subset(df.full,pres == "1")
 df.abs2 <- subset(df.full, pres == "0")
 df.in2$stratum <- factor(df.in2$stratum)
 df.abs2$stratum <- factor(df.abs2$stratum)
-df.in2$huc12 <- factor(df.in2$huc12) # replaced eo_id_st with huc12
-df.abs2$huc12 <- factor(df.abs2$huc12) # replaced eo_id_st with huc12
+df.in2$huc12 <- factor(df.in2$huc12) 
+df.abs2$huc12 <- factor(df.abs2$huc12)
 df.in2$pres <- factor(df.in2$pres)
 df.abs2$pres <- factor(df.abs2$pres)
 
@@ -261,7 +261,7 @@ df.abs2$pres <- factor(df.abs2$pres)
 row.names(df.in2) <- 1:nrow(df.in2)
 row.names(df.abs2) <- 1:nrow(df.abs2)
 
-#how many strata (HUC12) do we have?
+#how many strata (adjacent reach groups) do we have?
 numPys <-  nrow(table(df.in2$stratum))
 #how many EOs do we have?
 numEOs <- nrow(table(df.in2$eo_id_st))
@@ -280,7 +280,7 @@ group <- vector("list")
 ## TODO: bring back by-polygon validation. SampSize needs to be able to handle this to make it possible
 # only validate by EO at this time:
 group$colNm <- "stratum"
-group$JackknType <- "HUC12 Watershed" 
+group$JackknType <- "Adjacent presence reach groups" 
 group$vals <- unique(df.in2$stratum)
 
 #reduce the number of trees if group$vals has more than 30 entries

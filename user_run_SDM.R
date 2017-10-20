@@ -6,7 +6,7 @@
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
 
-model_species <- "spcode"
+model_species <- "iofluv"
 
 # Step 1: retrieve latest function/scripts from GitHub
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
