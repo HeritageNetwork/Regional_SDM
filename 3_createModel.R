@@ -65,8 +65,7 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 op <- options("useFancyQuotes") 
 options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
 SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVarsAqua WHERE gridName in (", 
-                  toString(sQuote(envvar_list)),
-                  ") AND use_A = 1; ", sep = "")
+                  toString(sQuote(envvar_list)), "); ", sep = "")
 namesInDB <- dbGetQuery(db, statement = SQLquery)
 namesInDB$gridName <- tolower(namesInDB$gridName)
 envvar_list <- tolower(envvar_list)
