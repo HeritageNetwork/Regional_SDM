@@ -278,7 +278,7 @@ additional GIS tools to further direct search efforts. A lower threshold depicti
 \medskip
 \noindent
 Table 3. Thresholds calculated from the final model. For discussions of these different thresholds
-see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR reaches predicted having suitable habitat. Total numbers of EOs, polygons, and PR reaches used in the final model are reported in Table 1.
+see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Pct indicates the percentage of PR reaches predicted having suitable habitat. Total numbers of PR reaches and contiguous PR reach groups used in the final model are reported in Table 1.
 
 \smallskip
 \noindent

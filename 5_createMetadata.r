@@ -102,7 +102,7 @@ names(sdm.thresh.table) <- c("Threshold", "Value", "Pct","Description")
 #sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
 #                         "(",sdm.thresh.table$Polys, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
-sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
+sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),
                               sep="")
 
 ## Run knitr and create metadata ----
