@@ -199,7 +199,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
   #create importance dot chart
   dotchart(EnvVars$impVal[ord], xlab = expression("lower" %->% "greater"),
     xlim = c(xmin.i, max(EnvVars$impVal)), labels = EnvVars$fullName[ord],
-    cex = 0.4     #character size
+    cex = 0.62     #character size
   )
   mtext("importance", side = 1, line = 2, cex = 0.62)
 @

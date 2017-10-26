@@ -36,15 +36,16 @@ names(EnvVars) <- tolower(names(EnvVars))
 EnvVars$huc12 <- NULL
 
 
-# run prediction ----
+# run prediction, using all rows in EnvVars with complete cases----
 df.all <- df.full
+df.all.pred <- EnvVars[c("comid",names(df.all)[indVarCols])]
+df.all.pred <- df.all.pred[complete.cases(df.all.pred),]
 
-result <- predict(rf.full, df.all[,indVarCols], type="prob")
+result <- predict(rf.full, df.all.pred[names(df.all)[indVarCols]], type="prob")
 
 #### CHECK THIS - uses numeric index for columns; likely need to change it
-result <- result[,-1]
-df.all$probability <- result
-results_join_table <- df.all[c("comid","probability")]
+result <- result[,2]
+results_join_table <- data.frame(comid=df.all.pred$comid, prbblty=result)
 #### END CHECK
 
 # load the reach shapefile for the study area

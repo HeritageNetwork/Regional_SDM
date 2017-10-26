@@ -139,6 +139,7 @@ ElementNames
 #also get correlated env var information
 SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVarsAqua WHERE correlatedVarGroupings NOT NULL;"
 corrdEVs <- dbGetQuery(db, statement = SQLquery)
+corrdEVs <- corrdEVs[corrdEVs$gridName %in% envvar_list,]
 
 dbDisconnect(db)
 rm(db)
@@ -220,12 +221,12 @@ OriginalNumberOfEnvars <- length(impvals)
 # first remove the bottom of the correlated vars
 for(grp in unique(corrdEVs$correlatedVarGroupings)){
  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
+ print(vars)
  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
  varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
  impvals <- impvals[!rownames(impvals) %in% rownames(varsToDrop),,drop = FALSE]
 }
 rm(vars, imp.sub, varsToDrop)
-
 
 # set the percentile, here choosing above 25% percentile
 envarPctile <- 0.5

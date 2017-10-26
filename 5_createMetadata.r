@@ -96,7 +96,7 @@ sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
                                         "capturedPts", "cutDescription")]
-names(sdm.thresh.table) <- c("Threshold", "Value", "Pts","Description")
+names(sdm.thresh.table) <- c("Threshold", "Value", "Pct","Description")
 #sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
 #                                    "(",sdm.thresh.table$EOs, ")", sep="")
 #sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
