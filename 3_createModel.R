@@ -221,7 +221,6 @@ OriginalNumberOfEnvars <- length(impvals)
 # first remove the bottom of the correlated vars
 for(grp in unique(corrdEVs$correlatedVarGroupings)){
  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
- print(vars)
  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
  varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
  impvals <- impvals[!rownames(impvals) %in% rownames(varsToDrop),,drop = FALSE]
