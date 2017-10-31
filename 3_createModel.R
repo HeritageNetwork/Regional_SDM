@@ -227,12 +227,16 @@ for(grp in unique(corrdEVs$correlatedVarGroupings)){
 }
 rm(vars, imp.sub, varsToDrop)
 
+# remove variables with negative/0 imporatance values (replaces percentile variable choosing)
+impEnvVars <- impvals[impvals > 0,]
+
 # set the percentile, here choosing above 25% percentile
-envarPctile <- 0.5
-y <- quantile(impvals, probs = envarPctile)
-impEnvVars <- impvals[impvals > y,]
+# envarPctile <- 0.5
+# y <- quantile(impvals, probs = envarPctile)
+# impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
-rm(y)
+# rm(y)
+
 # which columns are these, then flip the non-envars to TRUE
 impEnvVarCols <- names(df.full) %in% names(impEnvVars)
 impEnvVarCols[1:6] <- TRUE  # changed from 5 -> 6

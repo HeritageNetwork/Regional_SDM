@@ -116,8 +116,8 @@ fielding2002}.
 
 \medskip
 Validation runs used \Sexpr{n.var} environmental 
-variables, the most important of \Sexpr{OriginalNumberOfEnvars} 
-variables (top \Sexpr{(1-envarPctile)*100} percent).
+variables, the most important of \Sexpr{OriginalNumberOfEnvars}. 
+%variables (top \Sexpr{(1-envarPctile)*100} percent).
 Each tree was built with \Sexpr{trRes[[1]]$mtry} variables 
 tried at each split (mtry) and \Sexpr{trRes[[1]]$ntree} trees built.
 The final model was built using \Sexpr{rf.full$ntree} trees, all presence 
