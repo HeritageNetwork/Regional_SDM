@@ -304,12 +304,10 @@ if(nrow(sdm.customComments.subset) > 0){
 #myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
 #levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
 
-#equal-width class intervals of 1990 population
+#equal-width class intervals
 plotvar <- results_shape@data$prbblty
-plotvar[plotvar == 0] <- NA
 nclr <- 5
 plotclr <- brewer.pal(nclr,"BuPu")
-#plotclr <- plotclr[nclr:1] # reorder colors if appropriate
 class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2)
 colcode <- findColours(class, plotclr)
 results_shape$colcode <- colcode
