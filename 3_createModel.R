@@ -168,13 +168,15 @@ EObyRA$sampSize[EObyRA$ra == "medium"] <- 3
 EObyRA$sampSize[EObyRA$ra == "low"] <- 2
 EObyRA$sampSize[EObyRA$ra == "very low"] <- 1
 # set the background pts to the sum of the EO samples
-EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
+# EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
 
 # there appear to be cases where more than one 
 # RA is assigned per EO. Handle it here by 
 # taking max value
 EObySS <- aggregate(EObyRA$sampSize, by=list(EObyRA$eo_id_st), max)
+# set the background pts to the sum of the EO samples
 names(EObySS) <- c("eo_id_st","sampSize")
+EObySS$sampSize[EObySS$eo_id_st == "pseu-a"] <- sum(EObySS[!EObySS$eo_id_st == "pseu-a", "sampSize"])
 
 sampSizeVec <- EObySS$sampSize
 names(sampSizeVec) <- as.character(EObySS$eo_id_st)
@@ -344,6 +346,9 @@ if(length(group$vals)>1){
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
 		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
+		  # re-calc pseudo-absence samples to match input training samples
+		  ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
+		  
 		  rm(trSetBG, evSetBG)
 		  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
