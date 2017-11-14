@@ -283,7 +283,7 @@ group <- vector("list")
 ## TODO: bring back by-polygon validation. SampSize needs to be able to handle this to make it possible
 # only validate by EO at this time:
 group$colNm <- "stratum"
-group$JackknType <- "Adjacent presence reach groups" 
+group$JackknType <- "adjacent presence reach groups" 
 group$vals <- unique(df.in2$stratum)
 
 #reduce the number of trees if group$vals has more than 30 entries

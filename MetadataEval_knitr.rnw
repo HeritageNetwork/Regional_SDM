@@ -329,17 +329,21 @@ if (!is.null(nm_aquaArea)) {
 # plot(results_shape, col=results_shape$colcode, lwd = 0.15*results_shape$strord, add=T)
 for (i in 1:nclr) {
   sub <- results_shape[results_shape$colcode == plotclr[i],]
-  plot(sub, col=sub$colcode, lwd = 0.1*sub$strord, add=T)
+  plot(sub, col=sub$colcode, lwd = 0.12*sub$strord, add=T)
 }
-plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), add=T, border="red", lwd=0.2)
-plot(spTransform(referenceBoundaries, CRSobj = results_shape@proj4string), add=T, border="gray80", lwd=0.2)
+# plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), add=T, border="red", lwd=0.2)
+plot(spTransform( referenceBoundaries[referenceBoundaries$STATE_NAME != "Virginia",]
+                  , CRSobj = results_shape@proj4string), add=T, border="gray50", lwd=0.3, col = "white")
+plot(spTransform( referenceBoundaries[referenceBoundaries$STATE_NAME == "Virginia",]
+                  , CRSobj = results_shape@proj4string), add=T, border="black", lwd=0.7)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
 legend("topleft", legend=names(attr(colcode, "table")), 
     col=attr(colcode, "palette"), cex=0.8, bty="o", lwd = 4, bg = "white")
+box()
 @
 
 \includegraphics{figure/mapFig-1.pdf}    
-Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey. The study area is outlined in red. 
+Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey. The Virginia border is outlined in black. 
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
