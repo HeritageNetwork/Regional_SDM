@@ -65,11 +65,13 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 This SDM incorporates the number of known and background locations
 indicated in Table 1, modeled with the random forests 
 routine \cite{breiman2001, iverson2004} in the R statistical environment 
-\cite{liaw2002, r}. We validated the model by jackknifing 
-(also called leave-one-out, see
-\cite{fielding1997, fielding2002, pearson2007})
+\cite{liaw2002, r}. The modeling unit was a stream reach, as defined in 
+the National Hydrography Dataset Plus \cite{NHD}. Adjacent presence reaches 
+were combined into "reach groups". We validated the model by jackknifing 
+(also called leave-one-out, see \cite{fielding1997, fielding2002, pearson2007})
 by \Sexpr{as.character(group$JackknType)} for a total of \Sexpr{length(group$vals)} groups.
-The statistics in Table 2 report the mean and variance for these jackknifing runs.
+The statistics in Table 2 report the mean and variance of 
+validation statistics for these jackknifing runs.
 
 \smallskip
 
@@ -82,11 +84,11 @@ Table 1. Input statistics.
 <<tableOneLegend, results = "asis", echo=FALSE>>= 
 cat("Groups = ", group$JackknType,";", sep = "")
 @
-BG reaches = background reaches; PR reaches = presence point placed in reaches.
+BG reaches = background reaches; PR reaches = presence reaches 
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("Reach groups","BG reaches","PR reaches"), #note how many reache groups (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
+	summ.table <- data.frame(Name=c("Reach groups","BG reaches","PR reaches"), #note how many reach groups (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
                          Number=c(length(unique(df.in2$stratum)),
                          nrow(subset(df.full, pres == 0)),
                          nrow(subset(df.full, pres == 1))))
@@ -233,7 +235,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
-model using all sites as input. Abbreviations used: calc = calcareous, CP = coastal plain, dist = distance, fresh = freshwater, precip = precipitation, temp = temperature, max = maximum, min = minimum.
+model using all sites as input. See Table 4 for variable descriptions.
 
 \end{minipage} 
 
@@ -292,19 +294,18 @@ appropriate habitat. The distribution of each category (thin red = BG reaches,
 thick blue = PR reaches) is depicted at the top margin. 
 
 \medskip
-\noindent
-Element distribution models map places of similar environmental
+Species distribution models map places of similar environmental
 conditions to the submitted locations (PR reaches). No model will ever depict sites where
 a targeted element will occur with certainty, it can \textit{only} depict locations it interprets
 as appropriate habitat for the targeted element. SDMs can be used in many ways and the 
 depiction of appropriate habitat should be varied depending on intended use. For targeting
 field surveys, an SDM may be used to refine the search area; users should always employ
-additional GIS tools to further direct search efforts. A lower threshold depicting more land area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less land area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
+additional GIS tools to further direct search efforts. A lower threshold depicting additional reaches may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows fewer reaches, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
 
-\medskip
+\pagebreak
 \noindent
 Table 3. Thresholds calculated from the final model. For discussions of these different thresholds
-see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Pct indicates the percentage of PR reaches predicted having suitable habitat. Total numbers of PR reaches and contiguous PR reach groups used in the final model are reported in Table 1.
+see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; Pct indicates the percentage of PR reaches predicted having suitable habitat. Total numbers of PR reaches and contiguous PR reach groups used in the final model are reported in Table 1.
 
 \smallskip
 \noindent
@@ -367,7 +368,7 @@ box()
 @
 
 \includegraphics{figure/mapFig-1.pdf}    
-Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey. The Virginia border is outlined in black. 
+Figure 4. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey. The Virginia border is outlined in black. 
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
@@ -386,7 +387,7 @@ for(i in 1:length(sdm.dataSources$ProgramName)){
 \end{itemize}
 
 \medskip
-This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, New York Natural Heritage Program, Pennsylvania Natural Heritage Program, and Virginia Natural Heritage Program. It is one of a suite of distribution models developed using the same methods, the same scripts, and the same environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output. This work was supported by the US Fish and Wildlife Service, and the South Atlantic Landscape Conservation Cooperative.
+This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, New York Natural Heritage Program, Pennsylvania Natural Heritage Program, and Virginia Natural Heritage Program. It is one of a suite of aqautic species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output. This work was supported by the Virginia Tobacco Region Revitalization Commission.
 
 \medskip
 \noindent
@@ -435,6 +436,10 @@ References
   \bibitem{LiuEtAl2015} Liu, C., G. Newell, and M. White. 2015. On the selection of 
     thresholds for predicting species occurrence with presence-only data. Ecology and 
     Evolution 6:337–348. 
+  \bibitem{NHD} U.S. Environmental Protection Agency (USEPA) and the U.S. Geological Survey (USGS). 2012.
+    National Hydrography Dataset Plus - NHDPlus. Version 2. http://www.epa.gov/waters.
+  \bibite{streamcat} Hill, Ryan A., Marc H. Weber, Scott G. Leibowitz, Anthony R. Olsen, and Darren J. Thornbrugh. 
+    The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. 2016. Journal of the American Water     Resources Association (JAWRA) 52:120-128.
 
 \end{thebibliography}
 
