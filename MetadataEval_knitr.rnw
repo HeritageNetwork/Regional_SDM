@@ -308,13 +308,14 @@ Table 3. Thresholds calculated from the final model. For discussions of these di
 see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; Pct indicates the percentage of PR reaches predicted having suitable habitat. Total numbers of PR reaches and contiguous PR reach groups used in the final model are reported in Table 1.
 
 \smallskip
-\noindent
+\begin{center}
 <<tableThree, results="asis", echo = FALSE>>=
   tbl <- sdm.thresh.table
   #tbl$Citation <- gsub("(^.*)","\\\\cite{\\1}",sdm.thresh.table$Citation)
   print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","p{3.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
+\end{center}
 
 \medskip
 \noindent
