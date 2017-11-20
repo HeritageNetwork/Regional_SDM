@@ -324,7 +324,6 @@ if(nrow(sdm.customComments.subset) > 0){
 }
 @
 
-\pagebreak
 \medskip
 <<mapFig, fig.width=7.5, fig.height=6.5, include=FALSE, echo=FALSE>>=
 
@@ -336,7 +335,7 @@ class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2)
 colcode <- findColours(class, plotclr)
 results_shape$colcode <- colcode
 par(mar=c(2,2,2,2.5), #bottom, left, top, right
-    cex=0.8)    #text size
+    cex=0.9)    #text size
 plot(results_shape, col = NA, axes = TRUE)
 
 if (!is.null(nm_aquaArea)) {
@@ -438,7 +437,7 @@ References
     Evolution 6:337–348. 
   \bibitem{NHD} U.S. Environmental Protection Agency (USEPA) and the U.S. Geological Survey (USGS). 2012.
     National Hydrography Dataset Plus - NHDPlus. Version 2. http://www.epa.gov/waters.
-  \bibite{streamcat} Hill, Ryan A., Marc H. Weber, Scott G. Leibowitz, Anthony R. Olsen, and Darren J. Thornbrugh. 
+  \bibitem{streamcat} Hill, Ryan A., Marc H. Weber, Scott G. Leibowitz, Anthony R. Olsen, and Darren J. Thornbrugh. 
     The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. 2016. Journal of the American Water     Resources Association (JAWRA) 52:120-128.
 
 \end{thebibliography}
