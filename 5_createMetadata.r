@@ -105,6 +105,15 @@ numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),
                               sep="")
 
+
+# Get env. var lookup table
+var_names <- names(df.full)[7:length(names(df.full))]
+SQLquery <- paste("SELECT fullName, category, description ",
+                  "FROM lkpEnvVarsAqua ",
+                  "WHERE fullName IN (",
+                  toString(sQuote(var_names)),
+                  ") ORDER BY fullName;", sep = "")
+sdm.var.info <- dbGetQuery(db, statement = SQLquery)
 ## Run knitr and create metadata ----
 
 # writing to the same folder as a grid might cause problems.

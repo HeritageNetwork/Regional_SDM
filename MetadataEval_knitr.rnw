@@ -442,5 +442,15 @@ References
     The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. 2016. Journal of the American Water     Resources Association (JAWRA) 52:120-128.
 
 \end{thebibliography}
+\pagebreak
+
+\smallskip
+\begin{center}
+<<tableFour, results="asis", echo = FALSE>>=
+  # For variable descriptions, get variable name, source, description (3 columns)
+  print(xtable(sdm.var.info),
+             floating = FALSE, include.rownames=FALSE)
+@
+\end{center}
 
 \end{document}
