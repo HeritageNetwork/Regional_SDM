@@ -114,6 +114,7 @@ SQLquery <- paste("SELECT fullName, category, description ",
                   toString(sQuote(var_names)),
                   ") ORDER BY fullName;", sep = "")
 sdm.var.info <- dbGetQuery(db, statement = SQLquery)
+names(sdm.var.info) <- c("Variable Name", "Source", "Variable Description")
 ## Run knitr and create metadata ----
 
 # writing to the same folder as a grid might cause problems.
