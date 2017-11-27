@@ -69,7 +69,7 @@ This SDM incorporates the number of known and background locations
 indicated in Table 1, modeled with the random forests 
 routine \cite{breiman2001, iverson2004} in the R statistical environment 
 \cite{liaw2002, r}. The modeling unit was a stream reach, as defined in 
-the National Hydrography Dataset Plus \cite{NHD}. Adjacent presence reaches 
+the National Hydrography Dataset Plus \cite{nhd}. Adjacent presence reaches 
 were combined into "reach groups". We validated the model by jackknifing 
 (also called leave-one-out, see \cite{fielding1997, fielding2002, pearson2007})
 by \Sexpr{tolower(as.character(group$JackknType))} for a total of \Sexpr{length(group$vals)} groups.
@@ -340,6 +340,7 @@ colcode <- findColours(class, plotclr)
 results_shape$colcode <- colcode
 par(mar=c(2,2,2,2.5), #bottom, left, top, right
     cex=0.9)    #text size
+
 plot(results_shape, col = NA, axes = TRUE)
 
 if (!is.null(nm_aquaArea)) {
@@ -439,14 +440,16 @@ References
   \bibitem{LiuEtAl2015} Liu, C., G. Newell, and M. White. 2015. On the selection of 
     thresholds for predicting species occurrence with presence-only data. Ecology and 
     Evolution 6:337–348. 
-  \bibitem{NHD} U.S. Environmental Protection Agency (USEPA) and the U.S. Geological Survey (USGS). 2012.
+  \bibitem{nhd} U.S. Environmental Protection Agency (USEPA) and the U.S. Geological Survey (USGS). 2012.
     National Hydrography Dataset Plus - NHDPlus. Version 2. http://www.epa.gov/waters.
   \bibitem{streamcat} Hill, Ryan A., Marc H. Weber, Scott G. Leibowitz, Anthony R. Olsen, and Darren J. Thornbrugh. 
     The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. 2016. Journal of the American Water Resources Association (JAWRA) 52:120-128.
 
 \end{thebibliography}
 
-\smallskip
+\pagebreak
+\noindent
+Table 4. Descriptions for environmental variables included in model. Variables were derived from the StreamCat \cite{streamcat} and National Hydrography Dataset, Plus \cite{nhd} datasets.
 \begin{center}
 <<tableFour, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
@@ -454,9 +457,10 @@ addtorow <- list()
 addtorow$pos <- list()
 addtorow$pos[[1]] <- c(0)
 addtorow$command <- c(paste("\\hline \n","\\hline \n",sep=""))
-print(xtable(sdm.var.info, label = NULL, caption = "Table 4. Descriptions for environmental variables included in model."),
-        include.rownames=FALSE, scalebox = 0.7, floating = TRUE, #floating.environment = "sidewaystable",
-        caption.placement = "top", sanitize.text = force, add.to.row = addtorow)
+print(xtable(sdm.var.info, label = NULL), # caption = "Table 4. Descriptions for environmental variables included in model."),
+      include.rownames=FALSE, scalebox = 0.7, #floating = TRUE, #floating.environment = "sidewaystable",
+      #caption.placement = "top", 
+      sanitize.text = force, add.to.row = addtorow)
 @
 \end{center}
 
