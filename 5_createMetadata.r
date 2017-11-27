@@ -107,14 +107,24 @@ sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),
 
 
 # Get env. var lookup table
-var_names <- names(df.full)[7:length(names(df.full))]
-SQLquery <- paste("SELECT fullName, category, description ",
+var_names <- names(df.full)[7:length(names(df.full))] # uses index; make sure to change if fixed # of columns changes
+SQLquery <- paste("SELECT fullName, description ",
                   "FROM lkpEnvVarsAqua ",
                   "WHERE fullName IN (",
                   toString(sQuote(var_names)),
                   ") ORDER BY fullName;", sep = "")
 sdm.var.info <- dbGetQuery(db, statement = SQLquery)
-names(sdm.var.info) <- c("Variable Name", "Source", "Variable Description")
+names(sdm.var.info) <- c("Variable Name","Variable Description")
+
+# escape symbols
+ls <- c("&","%","$","#","_","{","}")
+for (l in ls) {
+  sdm.var.info$`Variable Name` <- gsub(l, paste0("\\",l), sdm.var.info$`Variable Name`, fixed = T)
+  sdm.var.info$`Variable Description` <- gsub(l, paste0("\\",l), sdm.var.info$`Variable Description`, fixed = T)
+}
+sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Variable Description`,"}")
+
+
 ## Run knitr and create metadata ----
 
 # writing to the same folder as a grid might cause problems.
