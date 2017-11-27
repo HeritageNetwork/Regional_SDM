@@ -440,8 +440,7 @@ References
   \bibitem{LiuEtAl2015} Liu, C., G. Newell, and M. White. 2015. On the selection of 
     thresholds for predicting species occurrence with presence-only data. Ecology and 
     Evolution 6:337–348. 
-  \bibitem{nhd} U.S. Environmental Protection Agency (USEPA) and the U.S. Geological Survey (USGS). 2012.
-    National Hydrography Dataset Plus - NHDPlus. Version 2. http://www.epa.gov/waters.
+  \bibitem{nhd} U.S. Environmental Protection Agency (USEPA) and the U.S. Geological Survey (USGS). 2012. National Hydrography Dataset Plus - NHDPlus. Version 2. http://www.epa.gov/waters.
   \bibitem{streamcat} Hill, Ryan A., Marc H. Weber, Scott G. Leibowitz, Anthony R. Olsen, and Darren J. Thornbrugh. 
     The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. 2016. Journal of the American Water Resources Association (JAWRA) 52:120-128.
 
