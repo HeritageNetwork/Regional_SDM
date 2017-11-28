@@ -341,7 +341,7 @@ if(length(group$vals)>1){
 		  trSet <- do.call("subset",list(df.in2, trSelStr))
 		  evSet[[i]] <- do.call("subset",list(df.in2, evSelStr))
 		   # use sample to grab a random subset from the background points
-		  BGsampSz <- nrow(evSet[[i]])
+		  BGsampSz <- nrow(evSet[[i]]) * 10
 		  evSetBG <- df.abs2[sample(nrow(df.abs2), BGsampSz , replace = FALSE, prob = NULL),]
 		   # get the other portion for the training set
 		  TrBGsamps <- attr(evSetBG, "row.names") #get row.names as integers
