@@ -453,8 +453,10 @@ if(length(group$vals)>1){
 		v.y[[i]] <- cbind(v.y[[i]],
 			"accuracy" = c(v.y[[i]][1,1]/sum(v.y[[i]][1,]), v.y[[i]][2,2]/sum(v.y[[i]][2,])))
 		#add row, col names
-		rownames(v.y[[i]]) <- c("background/abs", "known pres")
-		colnames(v.y[[i]]) <- c("pred. abs", "pred. pres", "accuracy")
+		rownames(v.y[[i]])[rownames(v.y[[i]]) == "0"] <- "background/abs"
+		rownames(v.y[[i]])[rownames(v.y[[i]]) == "1"] <- "known pres"
+		colnames(v.y[[i]])[colnames(v.y[[i]]) == "0"] <- "pred. abs"
+		colnames(v.y[[i]])[colnames(v.y[[i]]) == "1"] <- "pred. pres"
 		print(v.y[[i]])
 		#Generate kappa statistics for the confusion matrices
 		v.kappa[[i]] <- Kappa(v.y[[i]][1:2,1:2])
