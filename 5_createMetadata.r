@@ -60,12 +60,13 @@ SQLquery <- paste("Select lkpModelers.ProgramName, lkpModelers.FullOrganizationN
   "INNER JOIN lkpSpecies ON lkpModelers.ModelerID=lkpSpecies.ModelerID ", 
   "WHERE lkpSpecies.CODE='", ElementNames$Code, "'; ", sep="")
 sdm.modeler <- dbGetQuery(db, statement = SQLquery)
-
+# NOTE: use column should be populated with 1/0 for sources of data used
 SQLquery <- paste("SELECT DISTINCT sp.CODE, sr.ProgramName, sr.State ",
   "FROM lkpSpecies as sp ",
   "INNER JOIN mapDataSourcesToSpp as mp ON mp.EstID=sp.EST_ID ",
   "INNER JOIN lkpDataSources as sr ON mp.DataSourcesID=sr.DataSourcesID ",
-  "WHERE sp.CODE='", ElementNames$Code, "'; ", sep="")
+  "WHERE mp.use = 1 ",
+  "AND sp.CODE='", ElementNames$Code, "'; ", sep="")
 sdm.dataSources <- dbGetQuery(db, statement = SQLquery)
 sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
