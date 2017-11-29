@@ -500,10 +500,12 @@ if(length(group$vals)>1){
 	#Specificity and Sensitivity
 	v.y.flat <- abind(v.y,along=1)  #collapsed confusion matrices
 	v.y.flat.sp <- v.y.flat[rownames(v.y.flat)=="background/abs",]
-	specif <- v.y.flat.sp[,1]/(v.y.flat.sp[,1] + v.y.flat.sp[,2])   #specificity
+	v.y.flat.sp <- as.data.frame(v.y.flat.sp, row.names = 1:length(v.y.flat.sp[,1]))
+	specif <- v.y.flat.sp[,"pred. abs"]/(v.y.flat.sp[,"pred. abs"] + v.y.flat.sp[,"pred. pres"])   #specificity
 	specif.summ <- data.frame("mean"=mean(specif), "sd"=sd(specif),"sem"= sd(specif)/sqrt(length(specif)))
 	v.y.flat.sn <- v.y.flat[rownames(v.y.flat)=="known pres",]
-	sensit <- v.y.flat.sn[,2]/(v.y.flat.sn[,1] + v.y.flat.sn[,2])    #sensitivity
+	v.y.flat.sn <- as.data.frame(v.y.flat.sn, row.names = 1:length(v.y.flat.sn[,1]))
+	sensit <- v.y.flat.sn[,"pred. pres"]/(v.y.flat.sn[,"pred. pres"] + v.y.flat.sn[,"pred. abs"])    #sensitivity
 	sensit.summ <- data.frame("mean"=mean(sensit), "sd"=sd(sensit),"sem"= sd(sensit)/sqrt(length(sensit)))
 
 	summ.table <- data.frame(Name=c("Weighted Kappa", "Unweighted Kappa", "AUC",
