@@ -117,12 +117,13 @@ SQLquery <- paste("SELECT fullName, description ",
 sdm.var.info <- dbGetQuery(db, statement = SQLquery)
 names(sdm.var.info) <- c("Variable Name","Variable Description")
 
-# escape symbols
+# escape symbols for latex
 ls <- c("&","%","$","#","_","{","}")
 for (l in ls) {
   sdm.var.info$`Variable Name` <- gsub(l, paste0("\\",l), sdm.var.info$`Variable Name`, fixed = T)
   sdm.var.info$`Variable Description` <- gsub(l, paste0("\\",l), sdm.var.info$`Variable Description`, fixed = T)
 }
+# put descriptions in parboxes for multiple lines
 sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Variable Description`,"}")
 
 
@@ -139,6 +140,7 @@ sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Va
 setwd(loc_outMetadata)
 
 knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep="")) # 2nd run to apply citation numbers
 
 ## clean up ----
 options(op)
