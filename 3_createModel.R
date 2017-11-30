@@ -437,8 +437,10 @@ if(length(group$vals)>1){
 		v.y[[i]] <- cbind(v.y[[i]],
 			"accuracy" = c(v.y[[i]][1,1]/sum(v.y[[i]][1,]), v.y[[i]][2,2]/sum(v.y[[i]][2,])))
 		#add row, col names
-		rownames(v.y[[i]]) <- c("background/abs", "known pres")
-		colnames(v.y[[i]]) <- c("pred. abs", "pred. pres", "accuracy")
+		rownames(v.y[[i]])[rownames(v.y[[i]]) == "0"] <- "background/abs"
+		rownames(v.y[[i]])[rownames(v.y[[i]]) == "1"] <- "known pres"
+		colnames(v.y[[i]])[colnames(v.y[[i]]) == "0"] <- "pred. abs"
+		colnames(v.y[[i]])[colnames(v.y[[i]]) == "1"] <- "pred. pres"
 		print(v.y[[i]])
 		#Generate kappa statistics for the confusion matrices
 		v.kappa[[i]] <- Kappa(v.y[[i]][1:2,1:2])
@@ -482,10 +484,12 @@ if(length(group$vals)>1){
 	#Specificity and Sensitivity
 	v.y.flat <- abind(v.y,along=1)  #collapsed confusion matrices
 	v.y.flat.sp <- v.y.flat[rownames(v.y.flat)=="background/abs",]
-	specif <- v.y.flat.sp[,1]/(v.y.flat.sp[,1] + v.y.flat.sp[,2])   #specificity
+	v.y.flat.sp <- as.data.frame(v.y.flat.sp, row.names = 1:length(v.y.flat.sp[,1]))
+	specif <- v.y.flat.sp[,"pred. abs"]/(v.y.flat.sp[,"pred. abs"] + v.y.flat.sp[,"pred. pres"])   #specificity
 	specif.summ <- data.frame("mean"=mean(specif), "sd"=sd(specif),"sem"= sd(specif)/sqrt(length(specif)))
 	v.y.flat.sn <- v.y.flat[rownames(v.y.flat)=="known pres",]
-	sensit <- v.y.flat.sn[,2]/(v.y.flat.sn[,1] + v.y.flat.sn[,2])    #sensitivity
+	v.y.flat.sn <- as.data.frame(v.y.flat.sn, row.names = 1:length(v.y.flat.sn[,1]))
+	sensit <- v.y.flat.sn[,"pred. pres"]/(v.y.flat.sn[,"pred. pres"] + v.y.flat.sn[,"pred. abs"])    #sensitivity
 	sensit.summ <- data.frame("mean"=mean(sensit), "sd"=sd(sensit),"sem"= sd(sensit)/sqrt(length(sensit)))
 
 	summ.table <- data.frame(Name=c("Weighted Kappa", "Unweighted Kappa", "AUC",
