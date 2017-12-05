@@ -141,7 +141,7 @@ if (exists("n.var")) {
   Each tree was built with ",trRes[[1]]$mtry," variables 
   tried at each split (mtry) and ",trRes[[1]]$ntree," trees built.")
 } else { 
-  txt <- "Validation was not possible for this model (too few reach groups)." 
+  txt <- "Validation was not possible for this model (not enough reach groups)." 
 }
 @
 

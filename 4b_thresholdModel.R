@@ -1,8 +1,7 @@
 # File: 4b_thresholdModel.r
-# Purpose: threshold the distribution model prediction raster
+# Purpose: threshold the probabilities in the results shapefile
 
 ## start with a fresh workspace with no objects loaded
-library(raster)
 library(rgdal)
 library(ROCR)
 library(RSQLite)
@@ -11,9 +10,6 @@ library(DBI)
 ### find and load model data ----
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 23 where you choose which Rdata file to use
-
-#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
-       
 setwd(loc_RDataOut)
 load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
@@ -21,18 +17,12 @@ load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 #set an empty list
 cutList <- list()
 
-#### restructure here onward
-# total number of EOs (subtract absence class)
-##totEOs <- length(unique(df.full$eo_id_st)) - 1
-# total number of polys
-##totPolys <- length(unique(df.full$stratum)) - 1
-
 #get minimum training presence
 allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("eo_id_st", "stratum")])
 allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
 
 # na.rm = TRUE for testing
-MTP <- min(allVotesPresPts$X1, na.rm = TRUE)
+MTP <- min(allVotesPresPts$X1, na.rm = FALSE)
 ###capturedEOs <- length(unique(allVotesPresPts$eo_id_st))  # only captured points, not EO and poly
 ###capturedPolys <- length(unique(allVotesPresPts$stratum))
 capturedPts <- nrow(allVotesPresPts)
@@ -42,8 +32,7 @@ cutList$MTP <- list("value" = MTP, "code" = "MTP",
                     "capturedPts" = capturedPts)
 
 #get 10 percentile training presence
-# na.rm = TRUE for testing
-TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1), na.rm = TRUE)
+TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1), na.rm = FALSE)
 TenPctilePts <- allVotesPresPts[allVotesPresPts$X1 >= TenPctile,]
 #capturedEOs <- length(unique(TenPctilePts$eo_id_st))
 #capturedPolys <- length(unique(TenPctilePts$stratum))
@@ -135,8 +124,6 @@ allThresh <- data.frame("modelRunName" = rep(modelrun_meta_data$model_run_name, 
                 stringsAsFactors = FALSE)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
-
-
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
 
@@ -154,7 +141,7 @@ options(op)
 dbDisconnect(db)
 
 ## choose threshold, create binary grid ----
-# THE next lines are for creating thresholded grids. You don't need to do this here, 
+# THE next lines are for creating threshold column(s) in the shapefile
 # you could do it in Arc instead. 
 
 #lets set the threshold to MTP
@@ -168,7 +155,6 @@ test2 <- results_shape
 test2@data$MTP <- NA
 test2@data$MTP[test2@data$prbblty<threshold] <- 0
 test2@data$MTP[test2@data$prbblty>=threshold] <- 1
-#plot(test2)
 
 #write outshapefile
 writeOGR(test2,dsn=loc_outVector,layer=paste0(modelrun_meta_data$model_run_name, "_results")

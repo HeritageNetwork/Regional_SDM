@@ -45,18 +45,18 @@ run_SDM(
   loc_spReaches = paste0(project_folder, "inputs/species/", model_species , "/reach_data"), ### name of file is speciescode.csv
   nm_db_file = paste0(project_folder, "databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite"),
   loc_bkgReach = paste0(project_folder, "inputs/species/", model_species , "/background"),
-  loc_envVars = paste0(project_folder, "env_vars/Tobacco_aqua"), # all reaches with env var attributes (EnvVars.csv)
+  loc_envVars = paste0(project_folder, "env_vars/Tobacco_aqua"), ### all reaches with env. var. attributes (name of file is EnvVars.csv)
   loc_otherSpatial = paste0(project_folder, "other_spatial/shp/aqua"),
   nm_allflowlines = "VA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
   nm_refBoundaries = "StatesEast",
   nm_studyAreaExtent = "VA_HUC_predarea",
-  nm_aquaArea = "VA_nhdarea_wb",
+  # nm_aquaArea = "VA_nhdarea_wb", ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
   loc_outVector = paste0(project_folder, "outputs/", model_species , "/shapefiles"),
   loc_outMetadata = paste0(project_folder, "outputs/", model_species , "/metadata"),
   model_comments = "",
   metaData_comments = "",
-  modeller = "David Bucklin",
+  modeller = "Your Name",
   begin_step = "1",
   prompt = FALSE
 )
@@ -71,6 +71,7 @@ run_SDM(
 # same prep steps as above
 project_folder <- "D:/SDM/Tobacco/"
 model_species <- "iofluv"
+# model_rdata <- paste0(model_species , "_20171013_081456")
 loc_scripts <- paste0(project_folder, "inputs/species/",model_species,"/scripts")
 source("E:/git/aquatic/Regional_SDM/get_scripts.R", local = TRUE)
 loc_scripts <- script_store
@@ -82,6 +83,6 @@ source("run_SDM.R")
 run_SDM(
  begin_step = "5",
  loc_RDataOut = paste0(project_folder, "outputs/", model_species , "/rdata"),
- # model_rdata = paste0(model_species , "_20171013_081456"), # need to provide this if picking up after step 3, otherwise leave it out
+ # model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
  prompt = FALSE
 )

@@ -1,9 +1,8 @@
 # File: 1_pointsInPolys_cleanBkgPts.r
 # Purpose: 
-# 1. Sampling of EDM polygons to create random points within the polygons
-#  these are the random presence points being created here, from polygon presence data.
-# 2. Removing any points from the background points dataset that overlap or are near
-#  the input presence polygon dataset.
+# 1. Check input presence reach dataset for missing columns or data
+# 2. Removing any reaches from the background dataset that are adjacent to
+#  the input presence reach dataset.
 
 library(RSQLite)
 library(rgdal)
@@ -13,13 +12,13 @@ library(rgeos)
 # Assumptions
 # - the csv is named with the species code that is used in the lookup table (e.g. glypmuhl.shp)
 # - There is lookup data in the sqlite database to link to other element information (full name, common name, etc.)
-# - the csv has at least these fields EO_ID_ST, SNAME, SCOMNAME, RA
+# - the csv has at least these fields EO_ID_ST, SNAME, SCOMNAME, COMID, OBSDATE, group_id, huc12
 
 ####
 #### load input reaches ----
 ###
 ## two lines need your attention. The one directly below (loc_scripts)
-## and about line 38 where you choose which polygon file to use
+## and about line 38 where you choose which file to use
 
 
 # set the working directory to the location of the csv of species by reaches
@@ -42,27 +41,37 @@ presReaches <- read.csv(fileName, colClasses = c("huc12"="character"))
 shpColNms <- names(presReaches)
 desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","group_id","huc12") 
 
+# check if all required names are in file
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
   stop(paste0("Column(s) are missing or incorrectly named: ", paste(desiredCols[!desiredCols %in% shpColNms], collapse = ", ")))
 } else {
   print("Required columns are present")
 }
+# check if all columns have complete data
 if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id")]))) {
   stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID', and 'group_id' cannot have NA values.")
 }
 
-#pare down columns
+# arrange, pare down columns
 presReaches <- presReaches[,desiredCols]
 
 # set date/year column to [nearest] year, rounding when day is given
-presReaches$date <- as.numeric(substr(presReaches$OBSDATE, 1, 4))
-try({
-roundUpYear <- format(as.Date(presReaches$OBSDATE), "%j")
-roundUpYear <- ifelse(roundUpYear < 183 | is.na(roundUpYear), 0, 1)
-}, silent = TRUE)
-if(exists("roundUpYear")) {
-  presReaches$date <- presReaches$date + roundUpYear
-  rm(roundUpYear)
+presReaches$OBSDATE <- as.character(presReaches$OBSDATE)
+presReaches$date <- NA
+for (d in 1:length(presReaches$OBSDATE)) {
+  if (grepl("^[0-9]{4}.{0,3}$", presReaches$OBSDATE[d])) {
+    dt <- as.numeric(substring(presReaches$OBSDATE[d],1,4))
+  } else {
+    if (grepl("^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}", presReaches$OBSDATE[d])) {
+      dt <- as.Date(presReaches$OBSDATE[d])
+    } else if (grepl("^[0-9]+/[0-9]+/[0-9]+", presReaches$OBSDATE[d])) {
+      dt <- as.Date(presReaches$OBSDATE[d], format = "%m/%d/%Y") 
+    } else {
+      dt <- Sys.Date()
+    }
+    dt <- round(as.numeric(format(dt, "%Y")) + (as.numeric(format(dt,"%j"))/365.25))
+  }
+  presReaches$date[d] <- dt
 }
 desiredCols <- c(desiredCols, "date")
 
@@ -105,7 +114,7 @@ testcatchments <- shapef@data
 names(testcatchments) <- tolower(names(testcatchments))
 list_projCatchments <- testcatchments$comid
 
-# find presence and presence-adjacent reaches
+# find presence and presence-adjacent reaches by intersection
 pres.geom <- shapef[shapef$comid %in% list_presReaches,]
 bkgd.int <- gIntersects(pres.geom, shapef, byid = TRUE, returnDense = TRUE)
 bkgd.int <- apply(bkgd.int, 1, FUN = any)
@@ -119,12 +128,10 @@ names(bgpoints) <- tolower(names(bgpoints))
 selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd))
 bgpoints_cleaned <- bgpoints[selectedRows,]
 
-# write species reach data with huc12 IDS
+# write species reach data
 setwd(loc_spReaches)
-# att.reaches <- merge(att.reaches, testcatchments[c("comid","huc12")], by = "comid")
 write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep=""), row.names = FALSE) 
 
-# wtite background reach data with huc12 IDS
+# wtite background reach data
 setwd(loc_bkgReach)
-# bgpoints_cleaned <- merge(bgpoints_cleaned, testcatchments[c("comid","huc12")], by = "comid")
 write.csv(bgpoints_cleaned,"bgpoints_clean.csv", row.names = FALSE)

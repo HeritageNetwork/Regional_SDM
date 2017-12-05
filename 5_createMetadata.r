@@ -9,14 +9,12 @@
 library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp10/2009-February/189936.html
 library(randomForest)
 library(knitr)
-library(raster)
 library(maptools)
 library(sp)
 library(rgdal)
 library(RColorBrewer)
 library(classInt)
 library(rgdal)
-library(rasterVis)
 library(RSQLite)
 library(xtable)
 
@@ -24,8 +22,6 @@ library(xtable)
 ## three lines need your attention. The one directly below (loc_scripts),
 ## about line 35 where you choose which Rdata file to use,
 ## and about line 46 where you choose which record to use
-
-# source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 
 setwd(loc_RDataOut)
 load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
@@ -35,7 +31,7 @@ setwd(loc_outVector)
 
 results_shape <- readOGR(loc_outVector, paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
 
-# get background poly data for the map
+# get background poly data for the map (study area, reference boundaries, and aquatic areas)
 setwd(loc_otherSpatial)
 studyAreaExtent <- readOGR(loc_otherSpatial,  nm_studyAreaExtent) # study area
 referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries) # name of state boundaries file
@@ -79,10 +75,6 @@ SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedPts ",
                   "FROM tblCutoffs ", 
                   "WHERE modelRunName ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
-# filter to only most recent
-#uniqueTimes <- unique(sdm.thresholds$dateTime)
-#mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
-#sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
 
 # get info about thresholds
 SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull ", 
@@ -106,12 +98,11 @@ numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),
                               sep="")
 
-
 # Get env. var lookup table
 var_names <- names(df.full)[7:length(names(df.full))] # uses index; make sure to change if fixed # of columns changes
 SQLquery <- paste("SELECT fullName, description ",
                   "FROM lkpEnvVarsAqua ",
-                  "WHERE fullName IN (",
+                  "WHERE gridName IN (",
                   toString(sQuote(var_names)),
                   ") ORDER BY fullName;", sep = "")
 sdm.var.info <- dbGetQuery(db, statement = SQLquery)
@@ -126,13 +117,12 @@ for (l in ls) {
 # put descriptions in parboxes for multiple lines
 sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Variable Description`,"}")
 
-
 ## Run knitr and create metadata ----
 
 # writing to the same folder as a grid might cause problems.
 # if errors check that first
-#   more explanation: tex looks for and uses aux files, which are also used
-#   by esri. If there's a non-tex aux file, knitr bails. 
+# more explanation: tex looks for and uses aux files, which are also used
+# by esri. If there's a non-tex aux file, knitr bails. 
 
 # Also, might need to run this twice. First time through tex builds the reference
 # list, second time through it can then number the refs in the doc.

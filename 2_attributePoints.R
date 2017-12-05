@@ -11,18 +11,8 @@ library(maptools)
 ###
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 43 where you choose which random points file to use
-
-#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 setwd(loc_envVars)
-
 EnvVars <- read.csv("EnvVars.csv", colClasses=c("huc12"="character")) 
-
-
-# nm <- names(EnvVars)  ## do we need this if we're not dealing with raster name limits? - CT
-# check to make sure there are no names greater than 10 chars
-#nmLen <- unlist(lapply(nm, nchar))
-#max(nmLen) # if this result is greater than 10, you've got a renegade
-
 names(EnvVars) <- tolower(names(EnvVars))
 
 # join ev to reaches
@@ -30,7 +20,6 @@ names(EnvVars) <- tolower(names(EnvVars))
 setwd(loc_spReaches)
 #get a list of what's in the directory
 fileList <- dir( pattern = "_prepped.csv$")
-fileList
 #look at the output and choose which shapefile you want to run
 #enter its location in the list (first = 1, second = 2, etc)
 n <- 1
@@ -65,7 +54,7 @@ if (!is.null(remove_vars)) {
   } 
   gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
 }
-
+# get desired env. var. columns + comid
 EnvVars <- EnvVars[c("comid",gridlistSub)]
 rm(gridlistSub, modType)
 
@@ -74,4 +63,3 @@ reaches_attributed <- merge(reaches,EnvVars,by="comid")
 
 # write it out ----
 write.csv(reaches_attributed, paste(sppCode,"_att.csv",sep=""), row.names = FALSE)
-
