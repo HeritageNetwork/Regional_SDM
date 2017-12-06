@@ -10,23 +10,14 @@ library(randomForest)
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 26 where you choose which Rdata file to use,
 
-#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
-
 # get paths, other settings
-#source(paste(loc_scripts,"0_pathsAndSettings.R", sep="/"))
 # get the customized version of the predict function
-source(paste(loc_scripts, "RasterPredictMod.R", sep = "/"), local = TRUE)
+# source(paste(loc_scripts, "RasterPredictMod.R", sep = "/"), local = TRUE)
 
 # load data ----
 # get the rdata file
 setwd(loc_RDataOut)
-# fileList <- dir(pattern = ".Rdata$",full.names=FALSE)
-# fileList
-# # choose one to run, load it #### requires editing ####
-# n <- 1
-# load(fileList[[n]])
 load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
-
 
 ##Make the raster stack
 stackOrder <- names(df.full)[indVarCols]
@@ -55,7 +46,24 @@ envStack <- stack(fullL)
 
 # run prediction ----
 fileNm <- paste(loc_outRas, "/", model_run_name ,".tif", sep = "")
-outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 
-#writeRaster(outRas, filename=paste(fileNm, "_2",sep=""), format = "GTiff", overwrite = TRUE)
-
+# outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
+# use parallel processing if packages installed
+if (all(c("snow","parallel") %in% installed.packages())) {
+  try({
+    beginCluster(type = "SOCK")
+    outRas <- clusterR(envStack, predict, args = list(model=rf.full, type = "prob", index = 2), verbose = T)
+    writeRaster(outRas, filename = fileNm, format = "GTiff", overwrite = TRUE)
+  })
+  try(endCluster())
+  if (!exists("outRas")) {
+    cat("Cluster processing failed. Falling back to single-core processing...\n")
+    outRas <- predict(object=envStack, model=rf.full, type = "prob", index=2,
+                      filename=fileNm, format = "GTiff", overwrite=TRUE)
+  }
+# otherwise regular processing
+} else {
+  cat("Using single-core processing for prediction.\nInstall package 'snow' for faster cluster (multi-core) processing.\n")
+  outRas <- predict(object=envStack, model=rf.full, type = "prob", index=2,
+                    filename=fileNm, format = "GTiff", overwrite=TRUE)
+}

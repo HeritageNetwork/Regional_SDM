@@ -218,12 +218,25 @@ m <- cbind(
   to = c(threshold, Inf),
   becomes = c(0, 1)
 )
-
-rasrc <- reclassify(ras, m)
+# reclassify (multi-core try)
+if (all(c("snow","parallel") %in% installed.packages())) {
+  try({
+    cat("Using multi-core processing...\n")
+    beginCluster(type = "SOCK")
+    rasrc <- clusterR(ras, reclassify, args = list(rcl = m))
+  })
+  try(endCluster())
+  if (!exists("rasrc")) {
+    cat("Cluster processing failed. Falling back to single-core processing...\n")
+    rasrc <- reclassify(ras, m)
+  }
+} else {
+  rasrc <- reclassify(ras, m)
+}
 
 #plot(rasrc)
 outfile <- paste(loc_outRas,"/",model_run_name,"_threshold.tif", sep = "")
-writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
+writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE, datatype = "INT2U")
 
 #clean up
 rm(m, rasrc)
@@ -236,7 +249,21 @@ m <- cbind(
   becomes = c(NA)
 )
 
-rasrc <- reclassify(ras, m)
+# reclassify (multi-core try)
+if (all(c("snow","parallel") %in% installed.packages())) {
+  try({
+    cat("Using multi-core processing...\n")
+    beginCluster(type = "SOCK")
+    rasrc <- clusterR(ras, reclassify, args = list(rcl = m))
+  })
+  try(endCluster())
+  if (!exists("rasrc")) {
+    cat("Cluster processing failed. Falling back to single-core processing...\n")
+    rasrc <- reclassify(ras, m)
+  }
+} else {
+  rasrc <- reclassify(ras, m)
+}
 
 #plot(rasrc)
 outfile <- paste(loc_outRas,"/",model_run_name,"_thresh2.tif", sep = "")
