@@ -279,7 +279,7 @@ v.rocr.pred <- vector("list",length(group$vals))
 ## Validation stats in tabular form are the final product.
 #######
       
-if(length(group$vals)>1){
+if(length(group$vals)>2){
 	for(i in 1:length(group$vals)){
 		   # Create an object that stores the select command, to be used by subset.
 		  trSelStr <- parse(text=paste(group$colNm[1]," != '", group$vals[[i]],"'",sep=""))
@@ -308,7 +308,7 @@ if(length(group$vals)>1){
 		  ssVec <- c(npres, npres)
 		  names(ssVec) <- c("0", "1")
 		  rm(npres)
-		  
+		  browser()
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
 		                             importance=TRUE,ntree=ntrees,mtry=mtry,
 		                             # strata = trSet[,group$colNm], replace = TRUE, sampsize = ssVec
@@ -476,7 +476,7 @@ if(length(group$vals)>1){
 									sensit.summ$sem))
 	summ.table
 } else {
-	cat("Only one stratum, can't do validation", "\n")
+	cat("Less than 3 stratum, can't do validation", "\n")
 	cutval <- NA
 }
 
