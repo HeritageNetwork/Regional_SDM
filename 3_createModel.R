@@ -308,7 +308,7 @@ if(length(group$vals)>2){
 		  ssVec <- c(npres, npres)
 		  names(ssVec) <- c("0", "1")
 		  rm(npres)
-		  browser()
+		  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
 		                             importance=TRUE,ntree=ntrees,mtry=mtry,
 		                             # strata = trSet[,group$colNm], replace = TRUE, sampsize = ssVec
