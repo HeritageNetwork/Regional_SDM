@@ -17,19 +17,19 @@ if (!dir.exists(script_store)) {
 } else {
   try({
     git_repo <- git2r::repository(script_store)
-    git2r::checkout(git_repo, branch = branch, force = FALSE)
+    git_chk <- git2r::checkout(git_repo, branch = branch, force = FALSE)
     git_pull <- git2r::pull(git_repo)
   })
-  if (exists("git_pull") && (git_pull@up_to_date || git_pull@fast_forward)) {
+  if (exists("git_pull") && any(git_pull@up_to_date, git_pull@fast_forward)) {
     message("Scripts up-to-date. Ready to run.")
     message(paste0("Set 'loc_scripts' to '", script_store ,"'."))
   } else {
     message(paste0("Couldn't download latest scripts. \nYou can manually place latest scripts in folder '",
                    script_store, "' and set 'loc_scripts' to that path."))
-    if (exists("git_repo")) {
+    if (exists("git_repo") & exists("git_chk")) {
       message("Reason for error (git status) is: ") 
       print(status(git_repo))
     }
   }
 }
-suppressWarnings(rm(git_repo, git_pull))
+suppressWarnings(rm(git_repo, git_pull, git_chk))
