@@ -12,7 +12,7 @@ if (!dir.exists(script_store)) {
   } else {
     dir.create(script_store)
     message(paste0("Couldn't download latest scripts. \nNew folder '",
-                   script_store, "' created. \nPlace latest scripts in there."))
+                   script_store, "' created. \nManually place latest scripts in there."))
   }
 } else {
   try({
@@ -22,10 +22,14 @@ if (!dir.exists(script_store)) {
   })
   if (exists("git_pull") && (git_pull@up_to_date || git_pull@fast_forward)) {
     message("Scripts up-to-date. Ready to run.")
+    message(paste0("Set 'loc_scripts' to '", script_store ,"'."))
   } else {
-    message(paste0("Couldn't download latest scripts. Make sure latest scripts are in folder '",
-                   script_store, "'"))
+    message(paste0("Couldn't download latest scripts. \nYou can manually place latest scripts in folder '",
+                   script_store, "' and set 'loc_scripts' to that path."))
+    if (exists("git_repo")) {
+      message("Reason for error (git status) is: ") 
+      print(status(git_repo))
+    }
   }
 }
 suppressWarnings(rm(git_repo, git_pull))
-message(paste0("Set loc_scripts to '", script_store ,"'."))
