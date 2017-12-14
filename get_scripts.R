@@ -6,7 +6,7 @@ suppressWarnings(ld <- max(ld[grepl("Regional_SDM_[0-9]{4}-[0-9]{2}-[0-9]{2}$", 
 if (is.na(ld)) script_store <- paste0(loc_scripts, "/Regional_SDM_", Sys.Date()) else script_store <- paste0(loc_scripts, "/", ld)
 if (!dir.exists(script_store)) {
   try(suppressMessages(git_repo <- git2r::clone("https://github.com/VANatHeritage/Regional_SDM.git",
-                                                branch = "dev", local_path = script_store)), silent = TRUE)
+                                                branch = branch, local_path = script_store)), silent = TRUE)
   if (exists("git_repo")) {
     message("Scripts downloaded. Ready to run.")
   } else {
@@ -17,6 +17,7 @@ if (!dir.exists(script_store)) {
 } else {
   try({
     git_repo <- git2r::repository(script_store)
+    git2r::checkout(git_repo, branch = branch, force = FALSE)
     git_pull <- git2r::pull(git_repo)
   })
   if (exists("git_pull") && (git_pull@up_to_date || git_pull@fast_forward)) {

@@ -8,15 +8,27 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco/"
-model_species <- "glypmuhl"
+model_species <- "ammohens"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "inputs/species/", model_species ,"/scripts")
+# github branch to download
+branch <- "dev"
 
-# this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
+# this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
 source("E:/git/Regional_SDM/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
+
+# manually set loc_scripts path here if get_scripts fails
+loc_scripts <- script_store
+
+# remove everything but necessary variables
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
+
+# set wd and load function
+setwd(loc_scripts)
+source("run_SDM.R")
 
 ##############
 # End step 1 #
@@ -34,16 +46,6 @@ source("E:/git/Regional_SDM/get_scripts.R", local = TRUE)
 #     include in the model run.
 # 4. remove_vars: variables that are part of the standard set for this species, which you wish to
 #     remove from the model run.
-
-# manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
-loc_scripts <- script_store
-
-# remove everything but necessary variables
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
-
-# set wd and load function
-setwd(loc_scripts)
-source("run_SDM.R")
 
 # RUN A NEW MODEL (ALL STEPS 1-5)
 # If picking up from a previous run (after step 1), use Step 2-alt below
@@ -63,7 +65,7 @@ run_SDM(
   loc_RDataOut = paste0(project_folder, "outputs/", model_species ,"/rdata"),
   loc_outRas = paste0(project_folder, "outputs/", model_species ,"/grids"),
   loc_outMetadata = paste0(project_folder, "outputs/", model_species ,"/metadata"),
-  model_comments = "",
+  model_comments = "Updated sp. occurrences.",
   metaData_comments = "",
   modeller = "David Bucklin",
   add_vars = NULL,
