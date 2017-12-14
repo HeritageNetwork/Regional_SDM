@@ -13,7 +13,7 @@ model_species <- "ammohens"
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "inputs/species/", model_species ,"/scripts")
 # github branch to download
-branch <- "dev"
+branch <- "master"
 
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
