@@ -9,6 +9,7 @@ library(RSQLite)
 library(rgdal)
 library(sp)
 library(rgeos)
+library(raster)
 
 ####
 # Assumptions
@@ -87,8 +88,8 @@ shp_expl <- disaggregate(presPolys)
 #add some columns (explode id and area)
 shp_expl@data <- cbind(shp_expl@data, 
 	EXPL_ID = rownames(shp_expl@data), 
-	AREAM2 = sapply(slot(shp_expl, "polygons"), slot, "area"))
-		
+	AREAM2 = raster::area(shp_expl))
+
 # projection info doesn't stick, apply from what we grabbed earlier
 shp_expl@proj4string <- projInfo
 #write out the exploded polygon set
@@ -242,7 +243,8 @@ projInfo <- backgShapef@proj4string
 
 # find coincident points ----
 #buffer the poly shapefile 30 m
-polybuff <- gBuffer(presPolys, width = 30)
+polybuff <- spTransform(presPolys, projInfo) # transform just to be sure
+polybuff <- gBuffer(polybuff, width = 30)
 
 # find points that fall within the buffered polygons, subset the sp object
 coincidentPts <- gContains(polybuff, backgShapef, byid = TRUE)
