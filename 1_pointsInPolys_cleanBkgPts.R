@@ -51,6 +51,10 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id")]))) {
   stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID', and 'group_id' cannot have NA values.")
 }
+# check if file already exists (only check first written file)
+if (file.exists(paste(sppCode,"_prepped.csv",sep=""))) stop("File '", paste(sppCode,"_prepped.csv",sep=""), "' already exists.\n",
+                                                            "Delete it to begin a new modeling run. All other previous input\n",
+                                                            "datasets will be overwritten.")
 
 # arrange, pare down columns
 presReaches <- presReaches[,desiredCols]
