@@ -7,6 +7,7 @@ library(rgdal)
 library(ROCR)
 library(RSQLite)
 library(DBI)
+removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
 ### find and load model data ----
 ## two lines need your attention. The one directly below (loc_scripts)

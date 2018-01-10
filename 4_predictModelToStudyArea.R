@@ -5,6 +5,7 @@
 library(raster)
 library(rgdal)
 library(randomForest)
+removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
 ####
 ## two lines need your attention. The one directly below (loc_scripts)
