@@ -64,11 +64,14 @@ presPolys$OBSDATE <- as.character(presPolys$OBSDATE)
 presPolys$date <- NA
 for (d in 1:length(presPolys$OBSDATE)) {
   if (grepl("^[0-9]{4}.{0,3}$", presPolys$OBSDATE[d])) {
+    # year only formats
     dt <- as.numeric(substring(presPolys$OBSDATE[d],1,4))
   } else {
-    if (grepl("^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}", presPolys$OBSDATE[d])) {
+    if (grepl("^[0-9]{4}[-|/][0-9]{1,2}[-|/][0-9]{1,2}", presPolys$OBSDATE[d])) {
+      # ymd formats
       dt <- as.Date(presPolys$OBSDATE[d])
-    } else if (grepl("^[0-9]+/[0-9]+/[0-9]+", presPolys$OBSDATE[d])) {
+    } else if (grepl("^[0-9]{1,2}[-|/][0-9]{1,2}[-|/][0-9]{4}", presPolys$OBSDATE[d])) {
+      # mdy formats
       dt <- as.Date(presPolys$OBSDATE[d], format = "%m/%d/%Y") 
     } else {
       dt <- Sys.Date()
