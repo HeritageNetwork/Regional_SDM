@@ -63,14 +63,35 @@ presReaches <- presReaches[,desiredCols]
 presReaches$OBSDATE <- as.character(presReaches$OBSDATE)
 presReaches$date <- NA
 for (d in 1:length(presReaches$OBSDATE)) {
-  if (grepl("^[0-9]{4}.{0,3}$", presReaches$OBSDATE[d])) {
-    dt <- as.numeric(substring(presReaches$OBSDATE[d],1,4))
+  dt <- NA
+  do <- presReaches$OBSDATE[d]
+  if (grepl("^[0-9]{4}.{0,3}$", do)) {
+    # year only formats
+    dt <- as.numeric(substring(do,1,4))
   } else {
-    if (grepl("^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}", presReaches$OBSDATE[d])) {
-      dt <- as.Date(presReaches$OBSDATE[d])
-    } else if (grepl("^[0-9]+/[0-9]+/[0-9]+", presReaches$OBSDATE[d])) {
-      dt <- as.Date(presReaches$OBSDATE[d], format = "%m/%d/%Y") 
-    } else {
+    if (grepl("^[0-9]{4}[-|/][0-9]{1,2}[-|/][0-9]{1,2}", do)) {
+      # ymd formats
+      try(dt <- as.Date(do), silent = TRUE)
+    } else if (grepl("^[0-9]{1,2}[-|/][0-9]{1,2}[-|/][0-9]{4}", do)) {
+      # mdy formats
+      try(dt <- as.Date(do, format = "%m/%d/%Y"), silent = TRUE)
+    }
+    # if still no match, or if failed
+    if (is.na(dt)) {
+      if (grepl("[0-9]{4}", do)) {
+        # use first 4-digit sequence as year
+        dt <- regmatches(do, regexpr("[0-9]{4}", do))
+        if (as.integer(dt) < 1900 | as.integer(dt) > format(Sys.Date(), "%Y")) {
+          # years before 1900 and after current year get discarded
+          dt <- Sys.Date()
+        } else {
+          dt <- as.Date(paste0(dt,"-01-01"))
+        }
+      }
+      # put additional date formats here
+    }
+    # give up and assign current date
+    if (is.na(dt)) {
       dt <- Sys.Date()
     }
     dt <- round(as.numeric(format(dt, "%Y")) + (as.numeric(format(dt,"%j"))/365.25))
