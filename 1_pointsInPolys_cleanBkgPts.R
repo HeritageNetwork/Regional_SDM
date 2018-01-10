@@ -71,10 +71,10 @@ for (d in 1:length(presPolys$OBSDATE)) {
   } else {
     if (grepl("^[0-9]{4}[-|/][0-9]{1,2}[-|/][0-9]{1,2}", do)) {
       # ymd formats
-      try(dt <- as.Date(do))
+      try(dt <- as.Date(do), silent = TRUE)
     } else if (grepl("^[0-9]{1,2}[-|/][0-9]{1,2}[-|/][0-9]{4}", do)) {
       # mdy formats
-      try(dt <- as.Date(do, format = "%m/%d/%Y"))
+      try(dt <- as.Date(do, format = "%m/%d/%Y"), silent = TRUE)
     }
     # if still no match, or if failed
     if (is.na(dt)) {
