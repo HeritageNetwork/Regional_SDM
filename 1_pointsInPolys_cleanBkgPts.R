@@ -54,7 +54,7 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
     print("Required columns are present")
   }
 if(any(!complete.cases(presPolys@data[c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")]))) {
-  stop("The columns 'EO_ID_ST','SNAME','SCOMNAME', and 'RA' cannot have NA values.")
+  stop("The columns 'EO_ID_ST','SNAME','SCOMNAME', and 'RA' (SFRACalc) cannot have NA values.")
 }
 #pare down columns
 presPolys@data <- presPolys@data[,desiredCols]

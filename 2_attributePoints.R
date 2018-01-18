@@ -96,32 +96,34 @@ points_attributed <- extract(envStack, shpf, method="simple", sp=TRUE)
 # temporal variables data handling
 pa <- points_attributed
 tv <- names(pa)[grep(".",names(pa), fixed = TRUE)]
-tvDataYear <- do.call(rbind.data.frame, strsplit(tv, "_|\\."))
-names(tvDataYear) <- c("dataset", "date", "envvar")
-tvDataYear$date <- as.numeric(as.character(tvDataYear$date))
-
-# loop over temporal variables
-for (i in unique(tvDataYear$envvar)) {
-  tvDataYear.s <- subset(tvDataYear, tvDataYear$envvar == i)
-  yrs <- sort(unique(tvDataYear.s$date))
+if (length(tv) > 0) {
+  tvDataYear <- do.call(rbind.data.frame, strsplit(tv, "_|\\."))
+  names(tvDataYear) <- c("dataset", "date", "envvar")
+  tvDataYear$date <- as.numeric(as.character(tvDataYear$date))
   
-  # add 0.1 to occurrence date/year, avoiding cases where date is exactly between two years
-  closestYear <- unlist(lapply(as.numeric(pa$date) + 0.1, FUN = function(x) {
-    y <- abs(x - yrs)
-    yrs[which.min(y)]}))
+  # loop over temporal variables
+  for (i in unique(tvDataYear$envvar)) {
+    tvDataYear.s <- subset(tvDataYear, tvDataYear$envvar == i)
+    yrs <- sort(unique(tvDataYear.s$date))
+    
+    # add 0.1 to occurrence date/year, avoiding cases where date is exactly between two years
+    closestYear <- unlist(lapply(as.numeric(pa$date) + 0.1, FUN = function(x) {
+      y <- abs(x - yrs)
+      yrs[which.min(y)]}))
+    
+    # DECIDE IF THERE SHOULD BE A CUTOFF FOR WHEN OBSERVATION YEAR IS NOT CLOSE TO ANY OF THE DATES #
+    
+    vals <- unlist(lapply(1:length(pa), FUN = function(x) {
+      eval(parse(text = paste0("pa$", tvDataYear.s$dataset[1],"_",closestYear[x],".",i, "[", x , "]")
+                 ))
+    }))
+    
+    # add to pa
+    eval(parse(text = paste0("pa$", i, " <- vals")))
+  }
   
-  # DECIDE IF THERE SHOULD BE A CUTOFF FOR WHEN OBSERVATION YEAR IS NOT CLOSE TO ANY OF THE DATES #
-  
-  vals <- unlist(lapply(1:length(pa), FUN = function(x) {
-    eval(parse(text = paste0("pa$", tvDataYear.s$dataset[1],"_",closestYear[x],".",i, "[", x , "]")
-               ))
-  }))
-  
-  # add to pa
-  eval(parse(text = paste0("pa$", i, " <- vals")))
+  points_attributed <- pa[-grep(".", names(pa), fixed = TRUE)]
 }
-
-points_attributed <- pa[-grep(".", names(pa), fixed = TRUE)]
 rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa)
 
 # write it out ----
