@@ -1,8 +1,7 @@
 # File: 4b_thresholdModel.r
-# Purpose: threshold the distribution model prediction raster
+# Purpose: threshold the probabilities in the results shapefile
 
 ## start with a fresh workspace with no objects loaded
-library(raster)
 library(rgdal)
 library(ROCR)
 library(RSQLite)
@@ -11,34 +10,19 @@ library(DBI)
 ### find and load model data ----
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 23 where you choose which Rdata file to use
-
-loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
-
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
-       
-# get a list of what's in the directory
-d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
-d
-# which one do we want to run?
-n <- 3
-fileName <- d[[n]]
-load(paste(loc_RDataOut,fileName, sep="/"))
+setwd(loc_RDataOut)
+load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 ## Calculate different thresholds ----
 #set an empty list
 cutList <- list()
 
-#### restructure here onward
-# total number of EOs (subtract absence class)
-##totEOs <- length(unique(df.full$eo_id_st)) - 1
-# total number of polys
-##totPolys <- length(unique(df.full$stratum)) - 1
-
 #get minimum training presence
 allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("eo_id_st", "stratum")])
 allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
 
-MTP <- min(allVotesPresPts$X1)
+# na.rm = TRUE for testing
+MTP <- min(allVotesPresPts$X1, na.rm = FALSE)
 ###capturedEOs <- length(unique(allVotesPresPts$eo_id_st))  # only captured points, not EO and poly
 ###capturedPolys <- length(unique(allVotesPresPts$stratum))
 capturedPts <- nrow(allVotesPresPts)
@@ -48,7 +32,7 @@ cutList$MTP <- list("value" = MTP, "code" = "MTP",
                     "capturedPts" = capturedPts)
 
 #get 10 percentile training presence
-TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1))
+TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1), na.rm = FALSE)
 TenPctilePts <- allVotesPresPts[allVotesPresPts$X1 >= TenPctile,]
 #capturedEOs <- length(unique(TenPctilePts$eo_id_st))
 #capturedPolys <- length(unique(TenPctilePts$stratum))
@@ -129,7 +113,8 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 # number of thresholds to write to the db
 numThresh <- length(cutList)
 
-allThresh <- data.frame("ElemCode" = rep(ElementNames$Code, numThresh),
+allThresh <- data.frame("modelRunName" = rep(modelrun_meta_data$model_run_name, numThresh),
+                        "ElemCode" = rep(ElementNames$Code, numThresh),
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
                 "cutCode" = unlist(lapply(cutList, function(x) x[2])),
                 "cutValue" = unlist(lapply(cutList, function(x) x[1])),
@@ -139,8 +124,6 @@ allThresh <- data.frame("ElemCode" = rep(ElementNames$Code, numThresh),
                 stringsAsFactors = FALSE)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
-
-
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
 
@@ -158,51 +141,24 @@ options(op)
 dbDisconnect(db)
 
 ## choose threshold, create binary grid ----
-# THE next lines are for creating thresholded grids. You don't need to do this here, 
+# THE next lines are for creating threshold column(s) in the shapefile
 # you could do it in Arc instead. 
 
 #lets set the threshold to MTP
 threshold <- as.numeric(MTP)
 # load the prediction vector
 setwd(loc_outVector)
-r <- dir(path = loc_outVector, pattern = ".shp$",full.names=FALSE)
-r
-#which one do we want to run?
-n <- 1
-fileName <- r[[n]]
-shpName <- strsplit(fileName,"\\.")[[1]][[1]]
-results_shape <- readOGR(loc_outVector, shpName) # shapefile results for mapping
+results_shape <- readOGR(loc_outVector, paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
 
 # reclassify the vector based on the threshold into binary 0/1
 test2 <- results_shape
 test2@data$MTP <- NA
 test2@data$MTP[test2@data$prbblty<threshold] <- 0
 test2@data$MTP[test2@data$prbblty>=threshold] <- 1
-#plot(test2)
 
-# delete the old shapefile so a replacement can be written
-file.remove(list.files(pattern=shpName))
 #write outshapefile
-writeOGR(test2,dsn=loc_outVector,layer="lasmcomp_results", driver="ESRI Shapefile")
+writeOGR(test2,dsn=loc_outVector,layer=paste0(modelrun_meta_data$model_run_name, "_results")
+         , driver="ESRI Shapefile", overwrite_layer = TRUE)
 
 #clean up
 rm(test2)
-
-## replace with vector version - CT
-## continuous grid that drops cells below thresh ----
-# reclassify the raster based on the threshold into Na below thresh
-#m <- cbind(
-#  from = c(-Inf),
-#  to = c(threshold),
-#  becomes = c(NA)
-#)
-
-#rasrc <- reclassify(ras, m)
-
-#plot(rasrc)
-#outfile <- paste(loc_outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
-#writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
-
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())

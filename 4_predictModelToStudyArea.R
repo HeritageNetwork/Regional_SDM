@@ -1,65 +1,45 @@
 # File: 4_predictModelToStudyArea.r
-# Purpose: create the distribution model prediction raster
+# Purpose: create the shapefile with model predictions
 
 ## start with a fresh workspace with no objects loaded
-#library(raster) # do we stil need this - CT
-library(raster)
 library(rgdal)
 library(randomForest)
 library(data.table)
 
 ####
 ## two lines need your attention. The one directly below (loc_scripts)
-## and about line 26 where you choose which Rdata file to use,
-
-loc_scripts <- "E:/SDM/Aquatic/scripts/Regional_SDM"
-
-# get paths, other settings
-source(paste(loc_scripts,"0_pathsAndSettings.R", sep="/"))
-# get the customized version of the predict function
-#source(paste(loc_scripts, "RasterPredictMod.R", sep = "/"))
+## and about line 26 where you choose which Rdata file to use
 
 # load data ----
 # get the rdata file
 setwd(loc_RDataOut)
-fileList <- dir(pattern = ".Rdata$",full.names=FALSE)
-fileList
-# choose one to run, load it #### requires editing ####
-n <- 1
-load(fileList[[n]])
+load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
 setwd(loc_envVars)
-EnvVars <- read.csv("EnvVars.csv", colClasses=c("HUC12"="character"))
+EnvVars <- read.csv("EnvVars.csv", colClasses=c("huc12"="character"))
 names(EnvVars) <- tolower(names(EnvVars))
 EnvVars$huc12 <- NULL
 
-
-# run prediction ----
+# run prediction, using all rows in EnvVars with complete cases----
 df.all <- df.full
+df.all.pred <- EnvVars[c("comid",names(df.all)[indVarCols])]
+df.all.pred <- df.all.pred[complete.cases(df.all.pred),]
 
-result <- predict(rf.full, df.all[,indVarCols], type="prob")
-result <- result[,-1]
-df.all[ ,(ncol(df.all)+1)] <- result
-setnames(df.all, "V34", "probability")
-results_join_table <- df.all[,c(5,34)]
+result <- as.data.frame(predict(rf.full, df.all.pred[names(df.all)[indVarCols]], type="prob"))
 
-#fileNm <- paste(loc_outRas, "/", ElementNames$Code, "_",Sys.Date(),".tif", sep = "")
-#outRas <- predictRF(EnvVars, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
+## get probability for presence (column name = "1")
+result <- result[,"1"]
+results_join_table <- data.frame(comid=df.all.pred$comid, prbblty=result)
 
 # load the reach shapefile for the study area
 setwd(loc_otherSpatial)
-StudyAreaReaches <- "flowlines.shp" # the name of the study area flowlines
+StudyAreaReaches <- nm_allflowlines # the name of the study area flowlines
 layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
-shapef <- readOGR(StudyAreaReaches, layer = layer)
+shapef <- readOGR(loc_otherSpatial, layer = layer)
 
-# join probability to shapefile -- https://stackoverflow.com/questions/5732064/merge-data-vector-to-shapefile-data-slot
-shapef@data <- data.frame(shapef@data, results_join_table[match(shapef@data$COMID, results_join_table$comid),])
-
+# join probability to shapefile
+shapef <- merge(shapef, results_join_table, by = "comid")
 
 # write the shapefile
-writeOGR(obj=shapef, dsn="E:/SDM/Aquatic/outputs/shapefiles", layer="lasmcomp_results", driver="ESRI Shapefile")
-
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())
+writeOGR(obj=shapef, dsn= loc_outVector, layer= paste0(modelrun_meta_data$model_run_name, "_results"), driver="ESRI Shapefile")
