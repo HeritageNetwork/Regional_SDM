@@ -1,3 +1,5 @@
+-- run this code on a new, empty SQLITE database to create a new project database
+-- see the file example_data.sql for template data to add.
 BEGIN TRANSACTION;
 CREATE TABLE "tblPrepStats" (
 	`SciName`	TEXT,
