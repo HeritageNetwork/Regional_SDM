@@ -85,9 +85,9 @@ run_SDM <- function(
   if (!hasArg(model_comments)) model_comments <- fn_args$model_comments
   if (!hasArg(metaData_comments)) metaData_comments <- fn_args$metaData_comments
   if (!is.null(add_vars)) {
-    model_comments <- paste0(model_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
+    model_comments <- paste0("Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model. ", model_comments)
     fn_args$model_comments <- model_comments
-    metaData_comments <- paste0(metaData_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
+    metaData_comments <- paste0("Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model. ", metaData_comments)
     fn_args$metaData_comments <- metaData_comments
   }
   if (!is.null(remove_vars)) {
