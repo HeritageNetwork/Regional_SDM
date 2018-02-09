@@ -29,6 +29,7 @@ p_fileList
 n <- 1
 
 presFile <- p_fileList[[n]]
+fileElemCode <- gsub("_att.dbf$", "", presFile)
 # get the presence points
 df.in <-read.dbf(presFile)
 
@@ -125,22 +126,12 @@ df.abs <- df.abs[,colList]
 #Fire up SQLite
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
   
-ElementNames <- as.list(c(SciName="",CommName="",Code="",Type=""))
-ElementNames[1] <- as.character(df.in[1,"sname"])
+ElementNames <- as.list(c(SciName=as.character(df.in[1,"sname"]), CommName="", Code=fileElemCode, Type=""))
 
-# get the names used in metadata output
-SQLquery <- paste("SELECT CODE FROM lkpSpecies WHERE SCIEN_NAME = '", 
-	ElementNames[1],"' ;", sep="")
-ElementNames[3] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
-# populate the common name field
-SQLquery <- paste("SELECT COMMONNAME FROM lkpSpecies WHERE SCIEN_NAME = '", 
-	ElementNames[1],"';", sep="")
-ElementNames[2] <- dbGetQuery(db, statement = SQLquery)
-# populate element type (A or P)
-SQLquery <- paste("SELECT ELEMTYPE FROM lkpSpecies WHERE SCIEN_NAME = '", 
-	ElementNames[1],"';", sep="")
-ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
-ElementNames
+# populate the common name, elemtype field
+SQLquery <- paste("SELECT COMMONNAME, ELEMTYPE FROM lkpSpecies WHERE CODE = '", 
+                  ElementNames["Code"],"';", sep="")
+ElementNames[c(2,4)] <- dbGetQuery(db, statement = SQLquery)[1,]
 
 #also get correlated env var information
 SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
