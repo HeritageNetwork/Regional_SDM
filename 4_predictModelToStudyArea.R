@@ -13,7 +13,7 @@ removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
 # get paths, other settings
 # get the customized version of the predict function
-# source(paste(loc_scripts, "RasterPredictMod.R", sep = "/"), local = TRUE)
+# source(paste(loc_scripts, "helper/RasterPredictMod.R", sep = "/"), local = TRUE)
 
 # load data ----
 # get the rdata file
