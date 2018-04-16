@@ -41,7 +41,13 @@ dbDisconnect(db)
 
 ## account for add/remove vars
 if (!is.null(add_vars)) {
-  if (!all(tolower(add_vars) %in% gridlistSub)) {
+  # get all aquatic vars (including ones marked use_A = 0)
+  db <- dbConnect(SQLite(),dbname=nm_db_file)
+  SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua;")
+  gridlistAll <- dbGetQuery(db, SQLQuery)$g
+  dbDisconnect(db)
+  
+  if (!all(tolower(add_vars) %in% gridlistAll)) {
     stop("Some environmental variables listed in `add_vars` were not found in `loc_EnvVars` dataset: ",
          paste(add_vars[!tolower(add_vars) %in% gridlistSub], collapse = ", "), ".")
   }
