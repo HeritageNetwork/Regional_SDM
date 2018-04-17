@@ -1,6 +1,7 @@
 %This knitr document is called by the knit2pdf call in 5_createMetadata.r
 \documentclass{article}
-\usepackage[utf8]{inputenc} 
+\usepackage[utf8]{inputenc}
+\DeclareUnicodeCharacter{B0}{$^{\circ}$}
 \usepackage{geometry}
 \usepackage{fancyhdr}     %for headers,footers
 \usepackage{underscore}  %needed if any text has underscores
