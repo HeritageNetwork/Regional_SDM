@@ -4,7 +4,7 @@
 pkg_list <- c("RSQLite","rgdal","sp","rgeos","raster","maptools",
               "ROCR","vcd","abind","foreign","randomForest",
               "snow", "DBI", "knitr","RColorBrewer","rasterVis","xtable",
-              "git2r","spsurvey","classInt")
+              "git2r","spsurvey","classInt","tinytex")
 installed <- installed.packages()
 to_inst <- pkg_list[!pkg_list %in% installed[,1]]
 

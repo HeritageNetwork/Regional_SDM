@@ -17,6 +17,7 @@ library(classInt)
 library(rgdal)
 library(RSQLite)
 library(xtable)
+library(tinytex)
 
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
@@ -129,8 +130,12 @@ sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Va
 
 setwd(loc_outMetadata)
 
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep="")) # 2nd run to apply citation numbers
+#knit2pdf errors for some reason...just knit then call directly
+knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex")
+system(call)
+system(call) # 2nd run to apply citation numbers
+
 
 ## clean up ----
 options(op)
