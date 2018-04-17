@@ -8,12 +8,12 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco"
-model_species <- "alashete"
+model_species <- "alasviri"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
 # github branch to download
-branch <- "aqua_dev"
+branch <- "Aquatic"
 
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
@@ -95,22 +95,16 @@ run_SDM(
 # that was specified for the original model run. 
 
 # same prep steps as above
-library(RSQLite)
-db <- dbConnect(SQLite(),dbname="D:/SDM/Tobacco/databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite")
-biglist <- dbGetQuery(db, "SELECT code from lkpSpecies where modtype = 'A';")$CODE
-biglist <- biglist[!biglist %in% c("alashete","lasmsubv","pleucoll","chrotenn")]
-for (ms in biglist) {
-print(ms)
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco"
-model_species <- ms
+model_species <- "alasviri"
 # set model rdata, if starting at step 4 or later
-# model_rdata <- "speciescode_20170101_123456"
+model_rdata <- "alasviri_20171129_143248"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
 # github branch to download
-branch <- "aqua_dev"
+branch <- "Aquatic"
 
 # this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
@@ -129,10 +123,9 @@ source("helper/run_SDM.R")
 
 # pick-up a model run after step 1 (uncomment below)
 run_SDM(
- begin_step = "3",
+ begin_step = "5",
  loc_RDataOut = paste0(project_folder, "/outputs/", model_species , "/rdata"),
- # model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
- model_comments = "variable set <1% missing by variable. New sampling method (75% of all reaches), affects thresholds.",
+ model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
+ # metaData_comments = "New metadata comment.",
  prompt = FALSE
 )
-}
