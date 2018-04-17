@@ -7,17 +7,17 @@
 # which are used for new modeling runs
 
 # set project folder and species code for this run
-project_folder <- "D:/SDM/Tobacco"
-model_species <- "alashete"
+project_folder <- "E:/SDM/Aquatic"
+model_species <- "alasvari"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
 # github branch to download
-branch <- "aqua_dev"
+branch <- "Aquatic"
 
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
-source("E:/git/aquatic/Regional_SDM/get_scripts.R", local = TRUE)
+source("E:/SDM/Aquatic/scripts/Regional_SDM/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts path here if get_scripts fails
@@ -53,20 +53,20 @@ source("run_SDM.R")
 run_SDM(
   loc_scripts = loc_scripts, 
   loc_spReaches = paste0(project_folder, "/inputs/species/", model_species , "/reach_data"), ### name of file is speciescode.csv
-  nm_db_file = paste0(project_folder, "/databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite"),
+  nm_db_file = paste0(project_folder, "/databases/SDM_lookupAndTracking_new.sqlite"),
   loc_bkgReach = paste0(project_folder, "/inputs/species/", model_species , "/background"),
-  loc_envVars = paste0(project_folder, "/env_vars/Tobacco_aqua"), ### all reaches with env. var. attributes (name of file is EnvVars.csv)
-  loc_otherSpatial = paste0(project_folder, "/other_spatial/shp/aqua"),
-  nm_allflowlines = "VA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
+  loc_envVars = paste0(project_folder, "/env_vars"), ### all reaches with env. var. attributes (name of file is EnvVars.csv)
+  loc_otherSpatial = paste0(project_folder, "/other_spatial"),
+  nm_allflowlines = "PA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
   nm_refBoundaries = "StatesEast",
-  nm_studyAreaExtent = "VA_HUC_predarea",
-  nm_aquaArea = "VA_nhdarea_wb", ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
+  nm_studyAreaExtent = "PA_HUC_predarea", #"PA_HUC_predarea"
+  nm_aquaArea = "PA_nhdarea_wb", ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   loc_RDataOut = paste0(project_folder, "/outputs/", model_species , "/rdata"),
   loc_outVector = paste0(project_folder, "/outputs/", model_species , "/shapefiles"),
   loc_outMetadata = paste0(project_folder, "/outputs/", model_species , "/metadata"),
   model_comments = "",
   metaData_comments = "",
-  modeller = "Your Name",
+  modeller = "Christopher Tracey",
   begin_step = "1",
   add_vars = NULL,
   remove_vars = NULL,
@@ -96,23 +96,23 @@ run_SDM(
 
 # same prep steps as above
 library(RSQLite)
-db <- dbConnect(SQLite(),dbname="D:/SDM/Tobacco/databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite")
+db <- dbConnect(SQLite(),dbname="E:/SDM/Aquatic/databases/SDM_lookupAndTracking_new.sqlite")
 biglist <- dbGetQuery(db, "SELECT code from lkpSpecies where modtype = 'A';")$CODE
-biglist <- biglist[!biglist %in% c("alashete","lasmsubv","pleucoll","chrotenn")]
+biglist <- biglist[!biglist %in% c("lampradi")]
 for (ms in biglist) {
 print(ms)
 # set project folder and species code for this run
-project_folder <- "D:/SDM/Tobacco"
+project_folder <- "E:/SDM/Aquatic"
 model_species <- ms
 # set model rdata, if starting at step 4 or later
-# model_rdata <- "speciescode_20170101_123456"
+ model_rdata <- "alasvari_20180207_124154"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
 
 # this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
-source("E:/git/aquatic/Regional_SDM/get_scripts.R", local = TRUE)
+source("E:/SDM/Aquatic/scripts/Regional_SDM/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
@@ -127,10 +127,13 @@ source("run_SDM.R")
 
 # pick-up a model run after step 1 (uncomment below)
 run_SDM(
- begin_step = "3",
+ begin_step = "5",
  loc_RDataOut = paste0(project_folder, "/outputs/", model_species , "/rdata"),
- # model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
+  model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
+ nm_aquaArea = "PA_nhdarea_wb",
+ nm_refBoundaries = "StatesEast",
  model_comments = "variable set <1% missing by variable. New sampling method (75% of all reaches), affects thresholds.",
  prompt = FALSE
 )
 }
+
