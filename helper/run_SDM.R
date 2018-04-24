@@ -108,7 +108,8 @@ run_SDM <- function(
                 "foreign","randomForest","DBI","knitr","RColorBrewer","rasterVis","xtable","data.table","classInt")
   miss.pack <- req.pack[!req.pack %in% names(installed.packages()[,1])]
   if (length(miss.pack) > 0) {
-    stop("Need to install the following package(s) before running this function: ", paste(miss.pack, collapse = ", "))
+    stop("Need to install the following package(s) before running this function: ", paste(miss.pack, collapse = ", "),
+         ". Run script helper/pkg_check.R to download/update.")
   }
   
   # steps to run

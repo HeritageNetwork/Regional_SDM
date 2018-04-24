@@ -28,7 +28,7 @@ rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","mo
 
 # set wd and load function
 setwd(loc_scripts)
-source("run_SDM.R")
+source("helper/run_SDM.R")
 
 ##############
 # End step 1 #
@@ -109,6 +109,8 @@ model_species <- ms
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
+# github branch to download
+branch <- "Aquatic"
 
 # this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
@@ -123,13 +125,13 @@ rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","mo
 
 # set wd and load function
 setwd(loc_scripts)
-source("run_SDM.R")
+source("helper/run_SDM.R")
 
 # pick-up a model run after step 1 (uncomment below)
 run_SDM(
  begin_step = "5",
  loc_RDataOut = paste0(project_folder, "/outputs/", model_species , "/rdata"),
-  model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
+ model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
  nm_aquaArea = "PA_nhdarea_wb",
  nm_refBoundaries = "StatesEast",
  model_comments = "variable set <1% missing by variable. New sampling method (75% of all reaches), affects thresholds.",
