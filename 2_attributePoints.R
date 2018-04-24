@@ -7,7 +7,6 @@ library(RSQLite)
 library(maptools)
 
 # load data, QC ----
-
 ###
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 43 where you choose which random points file to use
@@ -37,6 +36,7 @@ modType <- dbGetQuery(db, SQLQuery)$m
 
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua WHERE use_",modType," = 1;")
 gridlistSub <- dbGetQuery(db, SQLQuery)$g
+gridlistSub <- tolower(gridlistSub)
 dbDisconnect(db)
 
 ## account for add/remove vars
@@ -45,6 +45,7 @@ if (!is.null(add_vars)) {
   db <- dbConnect(SQLite(),dbname=nm_db_file)
   SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua;")
   gridlistAll <- dbGetQuery(db, SQLQuery)$g
+  gridlistAll <- tolower(gridlistAll)
   dbDisconnect(db)
   
   if (!all(tolower(add_vars) %in% gridlistAll)) {
