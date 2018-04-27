@@ -96,19 +96,19 @@ run_SDM(
 
 # same prep steps as above
 # set project folder and species code for this run
-project_folder <- "D:/SDM/VA_non-TRRC"
-model_species <- "acipoxyr"
+project_folder <- "E:/SDM/Aquatic2"
+model_species <- "alasvari"
 # set model rdata, if starting at step 4 or later
-model_rdata <- "speciescode_20170101_123456"
+model_rdata <- "alasvari_att.csv_20180424_152135"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
 # github branch to download
-branch <- "aqua_dev"
+branch <- "aqua_chris"
 
 # this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
-source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
+source("E:/SDM/Aquatic2/scripts/Regional_SDM/helper/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
