@@ -86,7 +86,7 @@ validation statistics for these jackknifing runs.
 \smallskip     %dummy first line to align with next minipage
 
 Table 1. Input statistics. 
-<<tableOneLegend, results = "asis", echo=FALSE>>= 
+<<tableOneLegend, results = "asis", echo=FALSE>>=
 cat("Groups = ", group$JackknType,";", sep = "")
 @
 BG reaches = background reaches; PR reaches = presence reaches 
@@ -331,7 +331,7 @@ if(nrow(sdm.customComments.subset) > 0){
 @
 
 \medskip
-<<mapFig, fig.width=7.5, fig.height=6.5, include=FALSE, echo=FALSE>>=
+<<mapFig, include = FALSE, echo = FALSE, dev='png',fig.height=5, fig.width=7, dpi = 300>>=
 
 #equal-width class intervals
 plotvar <- results_shape@data$prbblty
@@ -343,7 +343,8 @@ results_shape$colcode <- colcode
 par(mar=c(2,2,2,2.5), #bottom, left, top, right
     cex=0.9)    #text size
 
-plot(results_shape, col = NA, axes = TRUE)
+# set up plot based on study area extent
+plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), col = NA, border = NA, axes = TRUE)
 
 if (!is.null(nm_aquaArea)) {
   # plot aqua area polygons by mean value of reaches in area
@@ -357,12 +358,12 @@ if (!is.null(nm_aquaArea)) {
   plot(area.wb.pred, col = area.wb.pred$colcode, border = NA, add = TRUE)
 }
 
-# plot(results_shape, col=results_shape$colcode, lwd = 0.15*results_shape$strord, add=T)
+# plot(results_shape, col=results_shape$colcode, lwd = 0.15*results_shape$strord, add=T) # original plotting
 for (i in 1:nclr) {
   sub <- results_shape[results_shape$colcode == plotclr[i],]
   plot(sub, col=sub$colcode, lwd = 0.12*sub$strord, add=T)
 }
-# plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), add=T, border="red", lwd=0.2)
+# plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), add=T, border="red", lwd=0.2) #not plotting study area
 plot(spTransform( referenceBoundaries[referenceBoundaries$STATE_NAME != "Virginia",]
                   , CRSobj = results_shape@proj4string), add=T, border="gray50", lwd=0.3, col = "white")
 plot(spTransform( referenceBoundaries[referenceBoundaries$STATE_NAME == "Virginia",]
@@ -373,7 +374,7 @@ legend("topleft", legend=names(attr(colcode, "table")),
 box()
 @
 
-\includegraphics{figure/mapFig-1.pdf}    
+\includegraphics{figure/mapFig-1.png}    
 Figure 4. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey. The Virginia border is outlined in black. 
 
 \pagebreak
