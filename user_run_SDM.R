@@ -16,8 +16,8 @@ loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scrip
 branch <- "Aquatic"
 
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
-# file anywhere on your computer, so you don't have to change the path)
-source("E:/SDM/Aquatic/scripts/Regional_SDM/get_scripts.R", local = TRUE)
+# best to provide path to the file that exists in your master git repository.
+source("E:/SDM/Aquatic/scripts/Regional_SDM/helper/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts path here if get_scripts fails
@@ -112,9 +112,9 @@ loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scrip
 # github branch to download
 branch <- "Aquatic"
 
-# this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
-# file anywhere on your computer, so you don't have to change the path)
-source("E:/SDM/Aquatic/scripts/Regional_SDM/get_scripts.R", local = TRUE)
+# this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
+# best to provide path to the file that exists in your master git repository.
+source("E:/SDM/Aquatic/scripts/Regional_SDM/helper/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
