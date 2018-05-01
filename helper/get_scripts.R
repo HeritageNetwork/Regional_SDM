@@ -3,6 +3,7 @@ library(git2r)
 
 ld <- list.dirs(loc_scripts, recursive = FALSE, full.names = FALSE)
 suppressWarnings(ld <- max(ld[grepl("Regional_SDM_[0-9]{4}-[0-9]{2}-[0-9]{2}$", ld)]))
+
 if (is.na(ld) || !in_repository(paste0(loc_scripts, "/", ld))) {
     script_store <- paste0(loc_scripts, "/Regional_SDM_", Sys.Date())
     message("No script folder, or the latest folder is not a git repository.")
@@ -12,6 +13,7 @@ if (is.na(ld) || !in_repository(paste0(loc_scripts, "/", ld))) {
   }
 if (!dir.exists(script_store)) {
   try(suppressMessages(git_repo <- clone("https://github.com/PNHP/Regional_SDM.git",
+
                                                 branch = branch, local_path = script_store)), silent = TRUE)
   if (exists("git_repo")) {
     message("Scripts downloaded. Ready to run.")
