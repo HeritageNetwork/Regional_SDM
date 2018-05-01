@@ -22,12 +22,13 @@ loc_envVars <- "E:/SDM/Aquatic2/env_vars"
 # the path where the next two shapefiles are stored
 loc_otherSpatial <- "E:/SDM/Aquatic2/other_spatial"
 
+
 # A shapefile containing all flowlines in the study area (used for background)
 nm_allflowlines <- "PA_all_flowlines"
 
 # A shapefile showing state boundaries (or other reference boundaries)
 # used in the map produced in the metadata
-nm_refBoundaries <- "StatesEast"
+nm_refBoundaries <- "states"
 
 # A shapefile showing the extent of the study area over which the model 
 # was created. This is also used in the metadata map.
@@ -48,3 +49,4 @@ loc_outVector <- "E:/SDM/Aquatic2/outputs/shapefiles"
 
 # output folder for metadata
 loc_outMetadata <- "E:/SDM/Aquatic2/outputs/metadata"
+

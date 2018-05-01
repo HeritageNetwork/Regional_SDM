@@ -45,7 +45,7 @@ if (!is.null(add_vars)) {
   db <- dbConnect(SQLite(),dbname=nm_db_file)
   SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua;")
   gridlistAll <- dbGetQuery(db, SQLQuery)$g
-  gridlistAll <- tolower(gridlistAll)
+
   dbDisconnect(db)
   
   if (!all(tolower(add_vars) %in% gridlistAll)) {
