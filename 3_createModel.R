@@ -20,7 +20,7 @@ p_fileList
 #enter its location in the list (first = 1, second = 2, etc)
 n <- 1
 presFile <- p_fileList[[n]]
-fileElemCode <- gsub("_att.dbf$", "", presFile)
+fileElemCode <- gsub("_att.csv$", "", presFile)
 # get the presence points
 df.in <-read.csv(presFile, colClasses=c("huc12"="character"))
 
