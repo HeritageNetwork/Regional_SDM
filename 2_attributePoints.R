@@ -35,31 +35,33 @@ SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE CODE = '", sppCode, "
 modType <- dbGetQuery(db, SQLQuery)$m
 
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua WHERE use_",modType," = 1;")
-gridlistSub <- dbGetQuery(db, SQLQuery)$g
-gridlistSub <- tolower(gridlistSub)
+gridlistSub <- tolower(dbGetQuery(db, SQLQuery)$g)
 dbDisconnect(db)
 
 ## account for add/remove vars
 if (!is.null(add_vars)) {
+  add_vars1 <- add_vars
+  add_vars <- tolower(add_vars)
   # get all aquatic vars (including ones marked use_A = 0)
   db <- dbConnect(SQLite(),dbname=nm_db_file)
   SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua;")
-  gridlistAll <- dbGetQuery(db, SQLQuery)$g
-
+  gridlistAll <- tolower(dbGetQuery(db, SQLQuery)$g)
   dbDisconnect(db)
   
-  if (!all(tolower(add_vars) %in% gridlistAll)) {
+  if (!all(add_vars %in% gridlistAll)) {
     stop("Some environmental variables listed in `add_vars` were not found in `loc_EnvVars` dataset: ",
-         paste(add_vars[!tolower(add_vars) %in% gridlistSub], collapse = ", "), ".")
+         paste(add_vars1[!add_vars %in% gridlistSub], collapse = ", "), ".")
   }
   gridlistSub <- c(gridlistSub, add_vars)
 }
 if (!is.null(remove_vars)) {
-  if (!all(tolower(remove_vars) %in% gridlistSub)) {
-    warning("Some environmental variables listed in `remove_vars` were not found in the `loc_EnvVars` dataset: ",
-            paste(remove_vars[!tolower(remove_vars) %in% gridlistSub], collapse = ", "), ".")
+  remove_vars1 <- remove_vars
+  remove_vars <- tolower(remove_vars)
+  if (!all(remove_vars %in% gridlistSub)) {
+    message("Some environmental variables listed in `remove_vars` were not found in the `loc_EnvVars` dataset: ",
+            paste(remove_vars1[!remove_vars %in% gridlistSub], collapse = ", "), ".")
   } 
-  gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
+  gridlistSub <- gridlistSub[!gridlistSub %in% remove_vars]
 }
 # get desired env. var. columns + comid
 EnvVars <- EnvVars[c("comid",gridlistSub)]
