@@ -8,7 +8,6 @@
 
 # set project folder and species code for this run
 project_folder <- "E:/SDM/Aquatic2"
-
 model_species <- "alasvari"
 
 # path where you want to save model run scripts
@@ -19,7 +18,6 @@ branch <- "aqua_chris"
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
 source("E:/SDM/Aquatic2/scripts/Regional_SDM/helper/get_scripts.R", local = TRUE)
-
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts path here if get_scripts fails
