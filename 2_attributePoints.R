@@ -29,12 +29,6 @@ shpName <- strsplit(fileName,"\\_prepped.")[[1]][[1]]
 sppCode <- shpName
 reaches <- read.csv(fileName)
 
-# subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
-reaches$huc12 <- str_pad(reaches$huc12, 12, pad=0) # make sure huc12 values leading zeros
-reaches$huc4 <- substr(reaches$huc12, 1, 4) # subset to HUC4.  We should make this selectable in the function.
-HUCsubset <- unique(reaches$huc4) # gets a unique list of the HUC4s that have training presences
-EnvVars <- EnvVars[ which(substr(EnvVars$huc12,1,4) %in% HUCsubset), ]  # subset EnvVar by the above list
-
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get MODTYPE
