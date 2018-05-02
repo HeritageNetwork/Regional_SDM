@@ -105,7 +105,7 @@ run_SDM <- function(
   
   # check for missing packages
   req.pack <- c("RSQLite","rgdal","sp","rgeos","raster","maptools","ROCR","vcd","abind",
-                "foreign","randomForest","DBI","knitr","RColorBrewer","rasterVis","xtable","data.table","classInt")
+                "foreign","randomForest","DBI","knitr","RColorBrewer","rasterVis","xtable","data.table","classInt","stringr")
   miss.pack <- req.pack[!req.pack %in% names(installed.packages()[,1])]
   if (length(miss.pack) > 0) {
     stop("Need to install the following package(s) before running this function: ", paste(miss.pack, collapse = ", "),
