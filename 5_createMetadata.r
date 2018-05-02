@@ -103,7 +103,7 @@ sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),
 var_names <- names(df.full)[7:length(names(df.full))] # uses index; make sure to change if fixed # of columns changes
 SQLquery <- paste("SELECT fullName, description ",
                   "FROM lkpEnvVarsAqua ",
-                  "WHERE gridName IN (",
+                  "WHERE gridName COLLATE NOCASE IN (",
                   toString(sQuote(var_names)),
                   ") ORDER BY fullName;", sep = "")
 sdm.var.info <- dbGetQuery(db, statement = SQLquery)
