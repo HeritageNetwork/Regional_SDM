@@ -5,6 +5,7 @@
 library(rgdal)
 library(RSQLite)
 library(maptools)
+library(stringr)
 
 # load data, QC ----
 ###

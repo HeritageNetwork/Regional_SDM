@@ -7,6 +7,7 @@
 library(RSQLite)
 library(rgdal)
 library(rgeos)
+library(stringr)
 
 ####
 # Assumptions
@@ -48,8 +49,8 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
   print("Required columns are present")
 }
 # check if all columns have complete data
-if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id")]))) {
-  stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID', and 'group_id' cannot have NA values.")
+if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id","huc12")]))) {
+  stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID','huc12', and 'group_id' cannot have NA values.")
 }
 # check if file already exists (only check first written file)
 if (file.exists(paste(sppCode,"_prepped.csv",sep=""))) stop("File '", paste(sppCode,"_prepped.csv",sep=""), "' already exists.\n",
@@ -58,6 +59,15 @@ if (file.exists(paste(sppCode,"_prepped.csv",sep=""))) stop("File '", paste(sppC
 
 # arrange, pare down columns
 presReaches <- presReaches[,desiredCols]
+
+# subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
+presReaches$huc12 <- str_pad(presReaches$huc12, 12, pad=0) # make sure huc12 values leading zeros
+presReaches$huc4 <- substr(presReaches$huc12, 1, 4) # subset to HUC4.  We should make this selectable in the function.
+HUCsubset <- unique(presReaches$huc4) # gets a unique list of the HUC4s that have training presences
+presReaches$huc4 <- NULL
+## subset EnvVars farther down below
+
+
 
 # set date/year column to [nearest] year, rounding when day is given
 presReaches$OBSDATE <- as.character(presReaches$OBSDATE)
@@ -148,8 +158,10 @@ bkgd.int <- shapef[row.names(shapef) %in% bkgd.int,]
 list_removeBkgd <- bkgd.int$comid
 
 setwd(loc_envVars)
-bgpoints <- read.csv("EnvVars.csv")
+bgpoints <- read.csv("EnvVars.csv", colClasses=c("huc12"="character"))
 names(bgpoints) <- tolower(names(bgpoints))
+bgpoints <- bgpoints[ which(substr(bgpoints$huc12,1,4) %in% HUCsubset), ]  # subset EnvVar by the above list
+
 selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd))
 bgpoints_cleaned <- bgpoints[selectedRows,]
 
