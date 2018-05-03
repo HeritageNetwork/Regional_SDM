@@ -7,21 +7,21 @@
 # which are used for new modeling runs
 
 # set project folder and species code for this run
-project_folder <- "D:/SDM/testing"
-model_species <- "alasviri"
+project_folder <- "E:/SDM/Aquatic2"
+model_species <- "alasvari"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
 # github branch to download
-branch <- "Aquatic"
+branch <- "aqua_chris"
 
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
-source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
+source("E:/SDM/Aquatic2/scripts/Regional_SDM/helper/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts path here if get_scripts fails
-loc_scripts <- "E:/git/aquatic/Regional_SDM"
+loc_scripts <- script_store
 
 # remove everything but necessary variables
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
