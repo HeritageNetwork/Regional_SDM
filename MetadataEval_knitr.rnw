@@ -343,8 +343,9 @@ results_shape$colcode <- colcode
 par(mar=c(2,2,2,2.5), #bottom, left, top, right
     cex=0.9)    #text size
 
-# set up plot based on study area extent
-plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), col = NA, border = NA, axes = TRUE)
+# set up plot based on study area extent (unless huc region defined)
+if (!is.null(huc_level)) plot(results_shape, col = NA, axes = TRUE) else
+  plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), col = NA, border = NA, axes = TRUE)
 
 if (!is.null(nm_aquaArea)) {
   # plot aqua area polygons by mean value of reaches in area
@@ -362,7 +363,7 @@ if (!is.null(nm_aquaArea)) {
 # orderer plotting (plotting order based on color)
 for (i in 1:nclr) {
   sub <- results_shape[results_shape$colcode == plotclr[i],]
-  plot(sub, col=sub$colcode, lwd = 0.12*sub$strord, add=T)
+  plot(sub, col=sub$colcode, lwd = 0.14*sub$strord, add=T)
 }
 
 plot(spTransform( referenceBoundaries[!referenceBoundaries$STATE_NAME %in% studyAreaExtent$STATE_NAME,]

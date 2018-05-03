@@ -19,6 +19,14 @@ load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 setwd(loc_envVars)
 EnvVars <- read.csv("EnvVars.csv", colClasses=c("huc12"="character"))
 names(EnvVars) <- tolower(names(EnvVars))
+
+if (!is.null(huc_level)) {
+  # subset to huc if requested
+  EnvVars$huc12 <- str_pad(EnvVars$huc12, 12, pad=0)
+  presHUC <- str_pad(as.character(df.full$huc12[df.full$pres==1]), 12, pad = 0 )
+  HUCsubset <- unique(substr(presHUC, 1, huc_level)) # subset to number of huc digits
+  EnvVars <- EnvVars[substr(EnvVars$huc12,1, huc_level) %in% HUCsubset,]
+}
 EnvVars$huc12 <- NULL
 
 # run prediction, using all rows in EnvVars with complete cases----
@@ -39,7 +47,7 @@ layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
 shapef <- readOGR(loc_otherSpatial, layer = layer)
 
 # join probability to shapefile
-shapef <- merge(shapef, results_join_table, by = "comid")
+shapef <- merge(shapef, results_join_table, by = "comid", all.x = F)
 
 # write the shapefile
-writeOGR(obj=shapef, dsn= loc_outVector, layer= paste0(modelrun_meta_data$model_run_name, "_results"), driver="ESRI Shapefile")
+writeOGR(obj=shapef, dsn= loc_outVector, layer= paste0(modelrun_meta_data$model_run_name, "_results"), driver="ESRI Shapefile", overwrite_layer = TRUE)

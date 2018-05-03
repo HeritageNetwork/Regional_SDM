@@ -59,15 +59,8 @@ if (file.exists(paste(sppCode,"_prepped.csv",sep=""))) stop("File '", paste(sppC
 
 # arrange, pare down columns
 presReaches <- presReaches[,desiredCols]
-
 # subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
-presReaches$huc12 <- str_pad(presReaches$huc12, 12, pad=0) # make sure huc12 values leading zeros
-presReaches$huc4 <- substr(presReaches$huc12, 1, 4) # subset to HUC4.  We should make this selectable in the function.
-HUCsubset <- unique(presReaches$huc4) # gets a unique list of the HUC4s that have training presences
-presReaches$huc4 <- NULL
-## subset EnvVars farther down below
-
-
+presReaches$huc12 <- str_pad(presReaches$huc12, 12, pad=0) # make sure huc12 values have leading zeros
 
 # set date/year column to [nearest] year, rounding when day is given
 presReaches$OBSDATE <- as.character(presReaches$OBSDATE)
@@ -116,10 +109,6 @@ att.reaches <- presReaches
 # just in case convert column names to lowercase
 names(att.reaches) <- tolower(names(att.reaches))
 
-#write out the CSV file
-# moved to end of script, to attach huc12 ids
-# write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep=""), row.names = FALSE) 
-
 # Write out various stats and data to the database ------
 # prep the data
 OutPut <- data.frame(SciName = paste(att.reaches[1,"sname"]),
@@ -147,7 +136,17 @@ layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
 shapef <- readOGR(loc_otherSpatial, layer = layer)
 testcatchments <- shapef@data
 names(testcatchments) <- tolower(names(testcatchments))
-list_projCatchments <- testcatchments$comid
+testcatchments$huc12 <- str_pad(testcatchments$huc12, 12, pad=0)
+
+# define project background
+if (!is.null(huc_level)) {
+  # subset to huc if requested
+  HUCsubset <- unique(substr(presReaches$huc12, 1, huc_level)) # subset to number of huc digits
+  list_projCatchments <- testcatchments$comid[substr(testcatchments$huc12,1,huc_level) %in% HUCsubset]
+} else {
+  # otherwise take all reaches
+  list_projCatchments <- testcatchments$comid
+}
 
 # find presence and presence-adjacent reaches by intersection
 pres.geom <- shapef[shapef$comid %in% list_presReaches,]
@@ -160,10 +159,10 @@ list_removeBkgd <- bkgd.int$comid
 setwd(loc_envVars)
 bgpoints <- read.csv("EnvVars.csv", colClasses=c("huc12"="character"))
 names(bgpoints) <- tolower(names(bgpoints))
-bgpoints <- bgpoints[ which(substr(bgpoints$huc12,1,4) %in% HUCsubset), ]  # subset EnvVar by the above list
+bgpoints$huc12 <- str_pad(bgpoints$huc12, 12, pad=0)
 
-selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd))
-bgpoints_cleaned <- bgpoints[selectedRows,]
+selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd)) 
+bgpoints_cleaned <- bgpoints[selectedRows,] # selects rows by comid in list of project reaches, and also not bordering presence reaches
 
 # write species reach data
 setwd(loc_spReaches)

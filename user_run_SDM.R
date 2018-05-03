@@ -46,6 +46,9 @@ source("helper/run_SDM.R")
 #     include in the model run.
 # 4. remove_vars: variables that are part of the standard set for this species, which you wish to
 #     remove from the model run.
+# 5. huc_level: a numeric, 2-12. if used, will subset the background/prediction are of the model to 
+#     the given HUC-level watershed(s) that presence reaches are within. Requires the 'huc12' column
+#     to be in presence reaches csv, env. vars csv, and all flowlines shapefile.
 
 # RUN A NEW MODEL (ALL STEPS 1-5)
 # If picking up from a previous run (after step 1), use Step 2-alt below
@@ -56,7 +59,7 @@ run_SDM(
   nm_db_file = paste0(project_folder, "/databases/SDM_lookupAndTracking_new.sqlite"),
   loc_bkgReach = paste0(project_folder, "/inputs/species/", model_species , "/background"),
   loc_envVars = paste0(project_folder, "/env_vars"), ### all reaches with env. var. attributes (name of file is EnvVars.csv)
-  loc_otherSpatial = paste0(project_folder, "/other_spatial"),
+  loc_otherSpatial = paste0(project_folder, "/other_spatial/"),
   nm_allflowlines = "PA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
   nm_refBoundaries = "StatesEast",
   nm_studyAreaExtent = "PA_HUC_predarea", #"PA_HUC_predarea"
@@ -70,6 +73,7 @@ run_SDM(
   begin_step = "1",
   add_vars = NULL,
   remove_vars = NULL,
+  huc_level = 2,
   prompt = FALSE
 )
 
