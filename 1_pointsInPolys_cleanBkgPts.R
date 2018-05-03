@@ -109,10 +109,6 @@ att.reaches <- presReaches
 # just in case convert column names to lowercase
 names(att.reaches) <- tolower(names(att.reaches))
 
-#write out the CSV file
-# moved to end of script, to attach huc12 ids
-# write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep=""), row.names = FALSE) 
-
 # Write out various stats and data to the database ------
 # prep the data
 OutPut <- data.frame(SciName = paste(att.reaches[1,"sname"]),
@@ -142,10 +138,11 @@ testcatchments <- shapef@data
 names(testcatchments) <- tolower(names(testcatchments))
 testcatchments$huc12 <- str_pad(testcatchments$huc12, 12, pad=0)
 
-if (!is.null(huc_sub)) {
+# define project background
+if (!is.null(huc_level)) {
   # subset to huc if requested
-  HUCsubset <- unique(substr(presReaches$huc12, 1, huc_sub)) # subset to number of huc digits
-  list_projCatchments <- testcatchments$comid[substr(testcatchments$huc12,1,huc_sub) %in% HUCsubset]
+  HUCsubset <- unique(substr(presReaches$huc12, 1, huc_level)) # subset to number of huc digits
+  list_projCatchments <- testcatchments$comid[substr(testcatchments$huc12,1,huc_level) %in% HUCsubset]
 } else {
   # otherwise take all reaches
   list_projCatchments <- testcatchments$comid
@@ -164,8 +161,8 @@ bgpoints <- read.csv("EnvVars.csv", colClasses=c("huc12"="character"))
 names(bgpoints) <- tolower(names(bgpoints))
 bgpoints$huc12 <- str_pad(bgpoints$huc12, 12, pad=0)
 
-selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd)) # in list of project reaches, and also not bordering presence reaches
-bgpoints_cleaned <- bgpoints[selectedRows,]
+selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd)) 
+bgpoints_cleaned <- bgpoints[selectedRows,] # selects rows by comid in list of project reaches, and also not bordering presence reaches
 
 # write species reach data
 setwd(loc_spReaches)

@@ -19,14 +19,12 @@ run_SDM <- function(
   loc_spReaches,
   nm_db_file,
   loc_bkgReach, 
-  # nm_bkgPts,
   loc_envVars,
   loc_otherSpatial,
   nm_allflowlines,
   nm_refBoundaries,
   nm_studyAreaExtent,
   nm_aquaArea = NULL,
-  # loc_spPts,
   loc_RDataOut,
   loc_outVector,
   loc_outMetadata,
@@ -37,12 +35,16 @@ run_SDM <- function(
   model_rdata = NULL,
   add_vars = NULL,
   remove_vars = NULL,
-  huc_sub = NULL,
+  huc_level = NULL,
   prompt = FALSE
 ) {
   
   if ((hasArg(add_vars) | hasArg(remove_vars)) & !begin_step %in% c("1","2")) 
     stop("Need to begin on step 1 or 2 if adding or removing variables.")
+  if (hasArg(huc_level) & begin_step != "1") 
+    stop("Need to begin on step 1 if using HUC subset.")
+  if (hasArg(huc_level) & !huc_level %in% c(2,4,6,8,10,12))
+    stop("Valid 'huc_level' values are 2, 4, 6, 8, 10, or 12.")
   
   if (begin_step != "1") {
     if (begin_step %in% c("2","3")) {
@@ -67,21 +69,19 @@ run_SDM <- function(
       loc_spReaches = loc_spReaches,
       nm_db_file = nm_db_file,
       loc_bkgReach = loc_bkgReach, 
-      # nm_bkgPts = nm_bkgPts,
       loc_envVars = loc_envVars,
       loc_otherSpatial = loc_otherSpatial,
       nm_allflowlines = nm_allflowlines,
       nm_refBoundaries = nm_refBoundaries,
       nm_studyAreaExtent = nm_studyAreaExtent,
       nm_aquaArea = nm_aquaArea,
-      # loc_spPts = loc_spPts,
       loc_RDataOut = loc_RDataOut,
       loc_outVector = loc_outVector,
       loc_outMetadata = loc_outMetadata,
       model_comments = model_comments,
       metaData_comments = metaData_comments,
       modeller = modeller,
-      huc_sub = huc_sub)
+      huc_level = huc_level)
   }
   
   # add comments for added/excluded vars
