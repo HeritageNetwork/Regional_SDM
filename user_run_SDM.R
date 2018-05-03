@@ -59,7 +59,7 @@ run_SDM(
   nm_db_file = paste0(project_folder, "/databases/SDM_lookupAndTracking_new.sqlite"),
   loc_bkgReach = paste0(project_folder, "/inputs/species/", model_species , "/background"),
   loc_envVars = paste0(project_folder, "/env_vars"), ### all reaches with env. var. attributes (name of file is EnvVars.csv)
-  loc_otherSpatial = paste0(project_folder, "/other_spatial/"),
+  loc_otherSpatial = paste0(project_folder, "/other_spatial"),
   nm_allflowlines = "PA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
   nm_refBoundaries = "StatesEast",
   nm_studyAreaExtent = "PA_HUC_predarea", #"PA_HUC_predarea"
