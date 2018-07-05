@@ -42,6 +42,13 @@ cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
 #                    "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
 
+# get MTPG (by group)
+MTPG <- min(aggregate(allVotesPresPts$X1, by = list(allVotesPresPts$stratum), FUN = max)$x)
+MTPGPts <- allVotesPresPts[allVotesPresPts$X1 >= MTPG,]
+capturedPts <- nrow(MTPGPts)
+cutList$MTPG <- list("value" = MTPG, "code" = "MTPG", 
+                     "capturedPts" = capturedPts)
+
 # F-measure cutoff skewed towards capturing more presence points.
 # extract the precision-recall F-measure from training data
 # set alpha very low to tip in favor of 'presence' data over 'absence' data

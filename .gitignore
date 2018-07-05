@@ -9,6 +9,6 @@
 .RData
 
 # RStudio project
-.Rproj
+*.Rproj
 .Rproj.user
 *.Rdata
