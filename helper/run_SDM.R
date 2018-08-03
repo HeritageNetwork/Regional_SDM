@@ -17,6 +17,7 @@
 run_SDM <- function(
   loc_scripts, 
   loc_spPoly,
+  nm_spPoly,
   nm_db_file,
   loc_bkgPts, 
   nm_bkgPts,
@@ -63,6 +64,7 @@ run_SDM <- function(
     fn_args <- list(
       loc_scripts = loc_scripts, 
       loc_spPoly = loc_spPoly,
+      nm_spPoly = nm_spPoly,
       nm_db_file = nm_db_file,
       loc_bkgPts = loc_bkgPts, 
       nm_bkgPts = nm_bkgPts,
