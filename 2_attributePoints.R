@@ -16,17 +16,11 @@ EnvVars <- read.csv("EnvVars.csv", colClasses=c("huc12"="character"))
 names(EnvVars) <- tolower(names(EnvVars))
 
 # join ev to reaches
-# Set working directory to the random points location
-setwd(loc_spReaches)
-#get a list of what's in the directory
-fileList <- dir( pattern = "_prepped.csv$")
-#look at the output and choose which shapefile you want to run
-#enter its location in the list (first = 1, second = 2, etc)
-n <- 1
+# Set working directory to the prepped reaches location
+setwd(loc_modelIn)
 
-fileName <- fileList[[n]]
-shpName <- strsplit(fileName,"\\_prepped.")[[1]][[1]]
-sppCode <- shpName
+fileName <- paste0(spReaches, "_prepped.csv")
+sppCode <- strsplit(fileName, "_")[[1]][1] # assume species code is everything before first underscore
 reaches <- read.csv(fileName)
 
 # subset input env. vars by model type (terrestrial, shore, etc)

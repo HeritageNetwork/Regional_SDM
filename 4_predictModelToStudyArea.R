@@ -12,8 +12,8 @@ library(data.table)
 
 # load data ----
 # get the rdata file
-setwd(loc_RDataOut)
-load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
+setwd(loc_modelOut)
+load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
 setwd(loc_envVars)
@@ -50,4 +50,4 @@ shapef <- readOGR(loc_otherSpatial, layer = layer)
 shapef <- merge(shapef, results_join_table, by = "comid", all.x = F)
 
 # write the shapefile
-writeOGR(obj=shapef, dsn= loc_outVector, layer= paste0(modelrun_meta_data$model_run_name, "_results"), driver="ESRI Shapefile", overwrite_layer = TRUE)
+writeOGR(obj=shapef, dsn= paste0(loc_modelOut, "/model_predictions"), layer= paste0(modelrun_meta_data$model_run_name, "_results"), driver="ESRI Shapefile", overwrite_layer = TRUE)

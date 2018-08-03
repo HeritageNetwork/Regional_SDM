@@ -7,24 +7,26 @@
 # which are used for new modeling runs
 
 # set project folder and species code for this run
-project_folder <- "E:/SDM/Aquatic2"
-model_species <- "alasvari"
+project_folder <- "D:/testing_SDM/dum"
+model_species <- "alashete"
+spReaches <- "alashete_test1"
 
 # path where you want to save model run scripts
-loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
+loc_scripts <- paste0(project_folder, "/species/", model_species ,"/inputs/scripts")
 # github branch to download
-branch <- "aqua_chris"
+branch <- "aqua_dev"
 
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
-source("E:/SDM/Aquatic2/scripts/Regional_SDM/helper/get_scripts.R", local = TRUE)
+source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts path here if get_scripts fails
 loc_scripts <- script_store
+loc_scripts <- "E:/git/aquatic/Regional_SDM"
 
 # remove everything but necessary variables
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts", "spReaches")])
 
 # set wd and load function
 setwd(loc_scripts)
@@ -55,26 +57,25 @@ source("helper/run_SDM.R")
 # update the function arguments below as necessary, and run the function
 run_SDM(
   loc_scripts = loc_scripts, 
-  loc_spReaches = paste0(project_folder, "/inputs/species/", model_species , "/reach_data"), ### name of file is speciescode.csv
-  nm_db_file = paste0(project_folder, "/databases/SDM_lookupAndTracking_new.sqlite"),
-  loc_bkgReach = paste0(project_folder, "/inputs/species/", model_species , "/background"),
-  loc_envVars = paste0(project_folder, "/env_vars"), ### all reaches with env. var. attributes (name of file is EnvVars.csv)
-  loc_otherSpatial = paste0(project_folder, "/other_spatial"),
-  nm_allflowlines = "PA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
-  nm_refBoundaries = "StatesEast",
-  nm_studyAreaExtent = "PA_HUC_predarea", #"PA_HUC_predarea"
-  nm_aquaArea = "PA_nhdarea_wb", ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
-  loc_RDataOut = paste0(project_folder, "/outputs/", model_species , "/rdata"),
-  loc_outVector = paste0(project_folder, "/outputs/", model_species , "/shapefiles"),
-  loc_outMetadata = paste0(project_folder, "/outputs/", model_species , "/metadata"),
-  model_comments = "",
-  metaData_comments = "",
-  modeller = "Christopher Tracey",
+  loc_spReaches = paste0(project_folder, "/species/", model_species , "/inputs/presence"), ### name of file is speciescode.csv
+  nm_spReaches = spReaches,
+  nm_db_file = paste0(project_folder, "/databases/sdm_tracking_dum.sqlite"),
+  loc_modelIn = paste0(project_folder, "/species/", model_species , "/inputs/model_input"),
+  loc_envVars = paste0(project_folder, "/env_vars/tabular"), ### all reaches with env. var. attributes (name of file is EnvVars.csv)
+  loc_otherSpatial = paste0(project_folder, "/other_spatial/feature"),
+  nm_allflowlines = "VA_all_flowlines", ### shapefile of all flowlines w/ comid, huc12 columns
+  nm_refBoundaries = "StatesEast", # background refernce lines in map
+  nm_studyAreaExtent = "VA_HUC_predarea", # outline boundary for study area in map
+  nm_aquaArea = "VA_nhdarea_wb", ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
+  loc_modelOut = paste0(project_folder, "/species/", model_species, "/outputs"), # replaces seperate metadata, rdata, shapefiles variables
+  model_comments = "test run new structure",
+  metaData_comments = "bla bla bla",
+  modeller = "David Bucklin",
   begin_step = "1",
   add_vars = NULL,
   remove_vars = NULL,
   huc_level = 2,
-  prompt = FALSE
+  prompt = TRUE
 )
 
 #############################################################################
@@ -99,26 +100,21 @@ run_SDM(
 # that was specified for the original model run. 
 
 # same prep steps as above
-library(RSQLite)
-db <- dbConnect(SQLite(),dbname="E:/SDM/Aquatic/databases/SDM_lookupAndTracking_new.sqlite")
-biglist <- dbGetQuery(db, "SELECT code from lkpSpecies where modtype = 'A';")$CODE
-biglist <- biglist[!biglist %in% c("lampradi")]
-for (ms in biglist) {
-print(ms)
+
 # set project folder and species code for this run
-project_folder <- "E:/SDM/Aquatic"
-model_species <- ms
+project_folder <- "D:/testing_SDM/dum"
+model_species <- "alashete"
 # set model rdata, if starting at step 4 or later
- model_rdata <- "alasvari_20180207_124154"
+model_rdata <- "alashete_20180803_123306"
 
 # path where you want to save model run scripts
-loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
+loc_scripts <- paste0(project_folder, "/species/", model_species ,"/inputs/scripts")
 # github branch to download
-branch <- "aqua_chris"
+branch <- "aqua_dev"
 
 # this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
-source("E:/SDM/Aquatic2/scripts/Regional_SDM/helper/get_scripts.R", local = TRUE)
+source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
 
 # NOTE any messages, and download/place scripts manually if necessary
 
@@ -134,13 +130,10 @@ source("helper/run_SDM.R")
 
 # pick-up a model run after step 1 (uncomment below)
 run_SDM(
- begin_step = "5",
- loc_RDataOut = paste0(project_folder, "/outputs/", model_species , "/rdata"),
+ begin_step = "4",
+ loc_modelOut = paste0(project_folder, "/species/", model_species, "/outputs"),
  model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
- nm_aquaArea = "PA_nhdarea_wb",
- nm_refBoundaries = "StatesEast",
- model_comments = "variable set <1% missing by variable. New sampling method (75% of all reaches), affects thresholds.",
+ model_comments = "none",
  prompt = FALSE
 )
-}
 

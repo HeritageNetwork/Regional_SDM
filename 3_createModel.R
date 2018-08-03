@@ -11,7 +11,7 @@ library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
 library(randomForest)
 
-setwd(loc_spReaches)
+setwd(loc_modelIn)
 
 #get a list of what's in the directory
 p_fileList <- dir( pattern = "_att.csv$")
@@ -25,7 +25,6 @@ fileElemCode <- gsub("_att.csv$", "", presFile)
 df.in <-read.csv(presFile, colClasses=c("huc12"="character"))
 
 # absence points
-setwd(loc_bkgReach)
 bk_fileList <- dir( pattern = "_clean.csv$")
 bk_fileList
 #look at the output and choose which shapefile you want to run
@@ -516,9 +515,11 @@ n.plots <- min(c(length(f.imp), 9))
 pPlots <- vector("list",n.plots)
 		names(pPlots) <- c(1:n.plots)
 #get the top partial plots
+pplotSamp <- min(c(length(df.full[,1])/10, 10000)) # take 10% of samples, or 10000, whichever is less
+pplotSamp <- sample(1:length(df.full[,1]), size = round(pplotSamp), replace = F)
 for(i in 1:n.plots){
   curvar <- names(f.imp[ord[i]])
-  pPlots[[i]] <- do.call("partialPlot", list(x = rf.full, pred.data = df.full[,indVarCols],
+  pPlots[[i]] <- do.call("partialPlot", list(x = rf.full, pred.data = df.full[pplotSamp,indVarCols],
                                              x.var = curvar,
                                              which.class = 1,
                                              plot = FALSE))
@@ -526,10 +527,10 @@ for(i in 1:n.plots){
   pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
   cat("finished partial plot ", i, " of ",n.plots, "\n")
 }
-rm(curvar, n.plots)
+rm(curvar, n.plots, pplotSamp)
 
 # save the project, return to the original working directory
-setwd(loc_RDataOut)
+setwd(loc_modelOut)
 # set model_run_name
 model_run_name <- paste0(ElementNames$Code, "_",
                          gsub(" ","_",gsub(c("-|:"),"",as.character(model_start_time))))
@@ -537,7 +538,7 @@ modelrun_meta_data$model_run_name <- model_run_name
 # remove fn args/vars from the save object
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
                                                              "run_steps","prompt","fn_args", names(fn_args))]
-save(list = ls.save, file = paste0(model_run_name,".Rdata"), envir = environment())
+save(list = ls.save, file = paste0("rdata/", model_run_name,".Rdata"), envir = environment())
 
 # write model metadata to db
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
