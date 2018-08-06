@@ -35,7 +35,7 @@ fileName <- nm_spPoly
 shpName <- strsplit(fileName,"\\.")[[1]][[1]]
 sppCode <- shpName
 
-presPolys <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
+presPolys <- readOGR(dsn=loc_spPoly, layer = shpName) #Z-dimension discarded msg is OK
 #check for proper column names. If no error from next code block, then good to go
 presPolys$RA <- presPolys$SFRACalc
 shpColNms <- names(presPolys@data)
