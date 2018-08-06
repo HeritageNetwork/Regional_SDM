@@ -24,16 +24,13 @@ library(tinytex)
 ## about line 35 where you choose which Rdata file to use,
 ## and about line 46 where you choose which record to use
 
-setwd(loc_RDataOut)
-load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
+setwd(loc_modelOut)
+load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
 # get reach data for the map
-setwd(loc_outVector)
-
-results_shape <- readOGR(loc_outVector, paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
+results_shape <- readOGR("model_predictions", paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
 
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
-setwd(loc_otherSpatial)
 studyAreaExtent <- readOGR(loc_otherSpatial,  nm_studyAreaExtent) # study area
 referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries) # name of state boundaries file
 if (!is.null(nm_aquaArea)) aquaPolys <- readOGR(loc_otherSpatial, nm_aquaArea) # aquatic area features (lakes, large rivers, etc.)
@@ -128,7 +125,7 @@ sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Va
 # Also, might need to run this twice. First time through tex builds the reference
 # list, second time through it can then number the refs in the doc.
 
-setwd(loc_outMetadata)
+setwd("./metadata")
 
 #knit2pdf errors for some reason...just knit then call directly
 knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
