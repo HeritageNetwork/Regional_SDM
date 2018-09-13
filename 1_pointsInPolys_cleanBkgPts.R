@@ -54,6 +54,21 @@ presReaches <- presReaches[,desiredCols]
 # subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
 presReaches$huc12 <- str_pad(presReaches$huc12, 12, pad=0) # make sure huc12 values have leading zeros
 
+# test at what level HUCS are the same, and choose that level to run the predictions at.  For example, if all know occurences are within the same HUC6, then the study area will be clipped to that HUC6.  If they are not same at any level, then the model will be run at the full extant of the predictor layer.  THis is used to define the project background below.
+#if (is.null(huc_level)) {
+  if(length(unique(substr(presReaches$huc12,1,8)))==1){
+    huc_level <- 8
+  } else if(length(unique(substr(presReaches$huc12,1,6)))==1){
+    huc_level <- 6  
+  } else if(length(unique(substr(presReaches$huc12,1,4)))==1){
+    huc_level <- 4  
+  } else if(length(unique(substr(presReaches$huc12,1,2)))==1){
+    huc_level <- 2
+  } else {
+    huc_level <- NULL
+  }
+#}
+
 # set date/year column to [nearest] year, rounding when day is given
 presReaches$OBSDATE <- as.character(presReaches$OBSDATE)
 presReaches$date <- NA
@@ -130,6 +145,8 @@ testcatchments <- shapef@data
 names(testcatchments) <- tolower(names(testcatchments))
 testcatchments$huc12 <- str_pad(testcatchments$huc12, 12, pad=0)
 
+
+ 
 # define project background
 if (!is.null(huc_level)) {
   # subset to huc if requested

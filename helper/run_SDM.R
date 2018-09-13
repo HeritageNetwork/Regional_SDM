@@ -77,8 +77,7 @@ run_SDM <- function(
       loc_modelOut = loc_modelOut,
       model_comments = model_comments,
       metaData_comments = metaData_comments,
-      modeller = modeller,
-      huc_level = huc_level)
+      modeller = modeller)
   }
   
   # add comments for added/excluded vars

@@ -7,9 +7,10 @@
 # which are used for new modeling runs
 
 # set project folder and species code for this run
-project_folder <- "D:/testing_SDM/dum"
-model_species <- "alashete"
+project_folder <- "E:/SDM/Aquatic"
+model_species <- "lasmcoml"
 spReaches <- "alashete_test1"
+
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/species/", model_species ,"/inputs/scripts")
@@ -18,7 +19,7 @@ branch <- "aqua_dev"
 
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
-source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
+source("E:/SDM/Aquatic/scripts/Regional_SDM/helper/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts path here if get_scripts fails
@@ -76,6 +77,7 @@ run_SDM(
   remove_vars = NULL,
   huc_level = 2,
   prompt = TRUE
+
 )
 
 #############################################################################
@@ -114,8 +116,7 @@ branch <- "aqua_dev"
 
 # this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
-source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
-
+source("E:/SDM/Aquatic/scripts/Regional_SDM/helper/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
