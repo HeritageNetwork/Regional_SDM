@@ -367,7 +367,7 @@ for (i in 1:nclr) {
 }
 
 plot(spTransform( referenceBoundaries[!referenceBoundaries$STATE_NAME %in% studyAreaExtent$STATE_NAME,]
-                  , CRSobj = results_shape@proj4string), add=T, border="gray50", lwd=0.3, col = "white")
+                  , CRSobj = results_shape@proj4string), add=T, border="gray50", lwd=0.3)
 plot(spTransform( studyAreaExtent
                   , CRSobj = results_shape@proj4string), add=T, border="black", lwd=0.7)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"

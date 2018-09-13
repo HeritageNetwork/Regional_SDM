@@ -10,8 +10,8 @@ library(DBI)
 ### find and load model data ----
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 23 where you choose which Rdata file to use
-setwd(loc_RDataOut)
-load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
+setwd(loc_modelOut)
+load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 ## Calculate different thresholds ----
 #set an empty list
@@ -41,6 +41,13 @@ cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
 #                    "capturedEOs" = capturedEOs,
 #                    "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
+
+# get MTPG (by group)
+MTPG <- min(aggregate(allVotesPresPts$X1, by = list(allVotesPresPts$stratum), FUN = max)$x)
+MTPGPts <- allVotesPresPts[allVotesPresPts$X1 >= MTPG,]
+capturedPts <- nrow(MTPGPts)
+cutList$MTPG <- list("value" = MTPG, "code" = "MTPG", 
+                     "capturedPts" = capturedPts)
 
 # F-measure cutoff skewed towards capturing more presence points.
 # extract the precision-recall F-measure from training data
@@ -147,8 +154,7 @@ dbDisconnect(db)
 #lets set the threshold to MTP
 threshold <- as.numeric(MTP)
 # load the prediction vector
-setwd(loc_outVector)
-results_shape <- readOGR(loc_outVector, paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
+results_shape <- readOGR(paste0(loc_modelOut, "/model_predictions"), paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
 
 # reclassify the vector based on the threshold into binary 0/1
 test2 <- results_shape
@@ -157,7 +163,7 @@ test2@data$MTP[test2@data$prbblty<threshold] <- 0
 test2@data$MTP[test2@data$prbblty>=threshold] <- 1
 
 #write outshapefile
-writeOGR(test2,dsn=loc_outVector,layer=paste0(modelrun_meta_data$model_run_name, "_results")
+writeOGR(test2,dsn=paste0(loc_modelOut, "/model_predictions"),layer=paste0(modelrun_meta_data$model_run_name, "_results")
          , driver="ESRI Shapefile", overwrite_layer = TRUE)
 
 #clean up

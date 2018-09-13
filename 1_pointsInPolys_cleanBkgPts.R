@@ -25,16 +25,8 @@ library(stringr)
 # set the working directory to the location of the csv of species by reaches
 setwd(loc_spReaches)
 
-#get a list of what's in the directory
-fileList <- dir( pattern = ".csv$")
-fileList
-
-#look at the output and choose which shapefile you want to run
-#enter its location in the list (first = 1, second = 2, etc)
-n <- 1
-
 # load data, QC ----
-fileName <- fileList[[n]]
+fileName <- paste0(nm_spReaches, ".csv")
 shpName <- strsplit(fileName,"\\.")[[1]][[1]]
 sppCode <- shpName
 presReaches <- read.csv(fileName, colClasses = c("huc12"="character"))
@@ -165,9 +157,8 @@ selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in%
 bgpoints_cleaned <- bgpoints[selectedRows,] # selects rows by comid in list of project reaches, and also not bordering presence reaches
 
 # write species reach data
-setwd(loc_spReaches)
+setwd(loc_modelIn)
 write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep=""), row.names = FALSE) 
 
 # wtite background reach data
-setwd(loc_bkgReach)
 write.csv(bgpoints_cleaned,"bgpoints_clean.csv", row.names = FALSE)
