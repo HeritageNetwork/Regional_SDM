@@ -6,10 +6,11 @@
 # Usage: to put the latest modeling scripts in a new folder created in 'loc_scripts' (set below),
 # which are used for new modeling runs
 
-# set project folder and species code for this run
-project_folder <- "D:/testing_SDM/dum"
-model_species <- "alashete"
-spReaches <- "alashete_test1"
+# set project folder, db, species code, and species reaches filename for this run
+project_folder <- "D:/testing_SDM/"
+project_db <- "sdm_tracking_dev.sqlite"
+model_species <- "ammoclar"
+spReaches <- "ammoclar"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/species/", model_species ,"/inputs/scripts")
@@ -23,10 +24,9 @@ source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
 
 # manually set loc_scripts path here if get_scripts fails
 loc_scripts <- script_store
-loc_scripts <- "E:/git/aquatic/Regional_SDM"
 
 # remove everything but necessary variables
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts", "spReaches")])
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","project_db","model_species","loc_scripts", "spReaches")])
 
 # set wd and load function
 setwd(loc_scripts)
@@ -50,7 +50,7 @@ source("helper/run_SDM.R")
 #     remove from the model run.
 # 5. huc_level: a numeric, 2-12. if used, will subset the background/prediction are of the model to 
 #     the given HUC-level watershed(s) that presence reaches are within. Requires the 'huc12' column
-#     to be in presence reaches csv, env. vars csv, and all flowlines shapefile.
+#     to be present and populated in the presence reaches csv, env. vars csv, and all flowlines shapefile.
 
 # RUN A NEW MODEL (ALL STEPS 1-5)
 # If picking up from a previous run (after step 1), use Step 2-alt below
@@ -59,7 +59,7 @@ run_SDM(
   loc_scripts = loc_scripts, 
   loc_spReaches = paste0(project_folder, "/species/", model_species , "/inputs/presence"), ### name of file is speciescode.csv
   nm_spReaches = spReaches,
-  nm_db_file = paste0(project_folder, "/databases/sdm_tracking_dum.sqlite"),
+  nm_db_file = paste0(project_folder, "/databases/", project_db),
   loc_modelIn = paste0(project_folder, "/species/", model_species , "/inputs/model_input"),
   loc_envVars = paste0(project_folder, "/env_vars/tabular"), ### all reaches with env. var. attributes (name of file is EnvVars.csv)
   loc_otherSpatial = paste0(project_folder, "/other_spatial/feature"),
@@ -68,14 +68,14 @@ run_SDM(
   nm_studyAreaExtent = "VA_HUC_predarea", # outline boundary for study area in map
   nm_aquaArea = "VA_nhdarea_wb", ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   loc_modelOut = paste0(project_folder, "/species/", model_species, "/outputs"), # replaces seperate metadata, rdata, shapefiles variables
-  model_comments = "test run new structure",
+  model_comments = "test run new structure in aqua_dev",
   metaData_comments = "bla bla bla",
   modeller = "David Bucklin",
   begin_step = "1",
   add_vars = NULL,
   remove_vars = NULL,
   huc_level = 2,
-  prompt = TRUE
+  prompt = FALSE
 )
 
 #############################################################################
@@ -90,8 +90,8 @@ run_SDM(
 
 # If picking up from a previously started run,
 # provide the begin_step and path to loc_RDataOut. 
-# When starting at script #4 or later, also provide the model rdata file 
-# (stored in 'loc_RDataOut') to 'model_rdata', and any other 
+# When starting at script #4 or later, also provide the name of the 
+# model rdata file (stored in 'loc_modelOut') to 'model_rdata', and any other 
 # arguments that you wish to change from 
 # the previous run (e.g., model_comments).
 # 
@@ -99,41 +99,21 @@ run_SDM(
 # will automatically be accessed from 'loc_scripts' location 
 # that was specified for the original model run. 
 
-# same prep steps as above
-
 # set project folder and species code for this run
-project_folder <- "D:/testing_SDM/dum"
-model_species <- "alashete"
+project_folder <- "D:/testing_SDM/aqua_terr"
+model_species <- "ammoclar"
 # set model rdata, if starting at step 4 or later
-model_rdata <- "alashete_20180803_123306"
-
-# path where you want to save model run scripts
-loc_scripts <- paste0(project_folder, "/species/", model_species ,"/inputs/scripts")
-# github branch to download
-branch <- "aqua_dev"
-
-# this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
-# file anywhere on your computer, so you don't have to change the path)
-source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
-
-# NOTE any messages, and download/place scripts manually if necessary
-
-# manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
-loc_scripts <- script_store
-
-# remove everything but necessary variables
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts","model_rdata")])
+model_rdata <- "ammoclar_20180917_171957"
 
 # set wd and load function
 setwd(loc_scripts)
 source("helper/run_SDM.R")
 
-# pick-up a model run after step 1 (uncomment below)
+# pick-up a model run after step 1
 run_SDM(
- begin_step = "4",
+ begin_step = "5",
  loc_modelOut = paste0(project_folder, "/species/", model_species, "/outputs"),
  model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
  model_comments = "none",
  prompt = FALSE
 )
-

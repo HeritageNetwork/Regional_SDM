@@ -18,6 +18,7 @@ library(rgdal)
 library(RSQLite)
 library(xtable)
 library(tinytex)
+library(stringi)
 
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
@@ -112,6 +113,12 @@ for (l in ls) {
   sdm.var.info$`Variable Name` <- gsub(l, paste0("\\",l), sdm.var.info$`Variable Name`, fixed = T)
   sdm.var.info$`Variable Description` <- gsub(l, paste0("\\",l), sdm.var.info$`Variable Description`, fixed = T)
 }
+# replace degree symbols
+for (l in 1:length(sdm.var.info$`Variable Description`)) {
+  new.desc <- stri_escape_unicode(sdm.var.info$`Variable Description`[l])
+  if (grepl("\\u00b0",new.desc, fixed = T)) 
+    sdm.var.info$`Variable Description`[l] <- gsub("\\u00b0", "$^\\circ$", new.desc, fixed = T)
+}
 # put descriptions in parboxes for multiple lines
 sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Variable Description`,"}")
 
@@ -129,7 +136,8 @@ setwd("./metadata")
 
 #knit2pdf errors for some reason...just knit then call directly
 knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex")
+call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
+# call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex")
 system(call)
 system(call) # 2nd run to apply citation numbers
 
