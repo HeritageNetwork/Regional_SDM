@@ -69,7 +69,7 @@ run_SDM(
   nm_refBoundaries = "D:/SDM/Tobacco/other_spatial/shp/aqua/StatesEast.shp", # background grey refernce lines in map
   nm_studyAreaExtent = "D:/SDM/Tobacco/other_spatial/shp/aqua/VA_HUC_predarea.shp", # outline black boundary line for study area in map
   nm_aquaArea = "D:/SDM/Tobacco/other_spatial/shp/aqua/VA_nhdarea_wb.shp", ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
-  model_comments = "testing aqua_dev",
+  model_comments = "testing dev",
   metaData_comments = "bla bla",
   modeller = "David Bucklin",
   begin_step = "1",
@@ -98,20 +98,19 @@ run_SDM(
 # 
 # Note that you can manually update the scripts, if desired. 
 # The scripts will automatically be accessed from 'loc_scripts' (if provided) 
-# or the location that was specified for the original model run. 
+# or (if not provided) the location that was specified for the original model run.
 
 # set project folder and species code for this run
 project_db <- "D:/testing_SDM/dev/databases/sdm_tracking_dev.sqlite"
 loc_model <- "D:/testing_SDM/dev/species"
 
-# set wd and load function
-loc_scripts <- "E:/git/aquatic/Regional_SDM/"
+# load function
 setwd(loc_scripts)
 source("helper/run_SDM.R")
 
-# example pick-up a model run at step 3 (new model, same presence/bkgd data)
+# example pick-up a model run at step 2 (same presence/bkgd data, new model with different variables)
   # if starting at step 2/3, provide an input tableCode to nm_presFile 
-  # to add/remove vars, begin at step 2
+  # to add/remove variables, begin at step 2
   # to just run new model, begin at step 3
 run_SDM(
   begin_step = "2",
@@ -124,9 +123,9 @@ run_SDM(
 # example pick-up a model run at step 4c (metadata/comment update)
   # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
-  begin_step = "4b",
-  model_species = "chrocumb",
+  begin_step = "4c",
+  model_species = "alashete",
   loc_model = loc_model,
-  model_rdata = "chrocumb_20180919_101201",
-  metaData_comments = "UPDATED METADATA COMMENT"
+  model_rdata = "alashete_20180919_093614",
+  metaData_comments = "UPDATED METADATA COMMENT."
 )
