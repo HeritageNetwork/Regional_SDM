@@ -25,17 +25,27 @@ library(stringi)
 ## about line 35 where you choose which Rdata file to use,
 ## and about line 46 where you choose which record to use
 
-setwd(loc_modelOut)
+setwd(loc_model)
+dir.create(paste0(model_species,"/outputs/metadata"), recursive = T, showWarnings = F)
+setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
 # get reach data for the map
 results_shape <- readOGR("model_predictions", paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
 
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
-studyAreaExtent <- readOGR(loc_otherSpatial,  nm_studyAreaExtent) # study area
-referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries) # name of state boundaries file
-if (!is.null(nm_aquaArea)) aquaPolys <- readOGR(loc_otherSpatial, nm_aquaArea) # aquatic area features (lakes, large rivers, etc.)
-
+layerdir <- dirname(nm_studyAreaExtent)
+layer <- strsplit(basename(nm_studyAreaExtent),"\\.")[[1]][[1]]
+studyAreaExtent <- readOGR(layerdir,  layer = layer) # study area
+# get background poly data for the map (study area, reference boundaries, and aquatic areas)
+layerdir <- dirname(nm_refBoundaries)
+layer <- strsplit(basename(nm_refBoundaries),"\\.")[[1]][[1]]
+referenceBoundaries <- readOGR(layerdir,  layer = layer) # name of state boundaries file
+if (!is.null(nm_aquaArea)) {
+  layerdir <- dirname(nm_aquaArea)
+  layer <- strsplit(basename(nm_aquaArea),"\\.")[[1]][[1]]
+  aquaPolys <- readOGR(layerdir,  layer = layer) # aquatic area features (lakes, large rivers, etc.)
+}
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
@@ -45,7 +55,7 @@ SQLquery <- paste("Select lkpModelers.ProgramName, lkpModelers.FullOrganizationN
                   "lkpModelers.City, lkpModelers.State, lkpSpecies.CODE ",
                   "FROM lkpModelers ", 
                   "INNER JOIN lkpSpecies ON lkpModelers.ModelerID=lkpSpecies.ModelerID ", 
-                  "WHERE lkpSpecies.CODE='", ElementNames$Code, "'; ", sep="")
+                  "WHERE lkpSpecies.CODE='", model_species, "'; ", sep="")
 sdm.modeler <- dbGetQuery(db, statement = SQLquery)
 # NOTE: use column should be populated with 1/0 for sources of data used
 SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
@@ -53,7 +63,7 @@ SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
                   "INNER JOIN mapDataSourcesToSpp as mp ON mp.EstID=sp.EST_ID ",
                   "INNER JOIN lkpDataSources as sr ON mp.DataSourcesID=sr.DataSourcesID ",
                   "WHERE mp.use = 1 ",
-                  "AND sp.CODE='", ElementNames$Code, "'; ", sep="")
+                  "AND sp.CODE='", model_species, "'; ", sep="")
 sdm.dataSources <- dbGetQuery(db, statement = SQLquery)
 sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
@@ -134,10 +144,10 @@ sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Va
 
 setwd("./metadata")
 
-#knit2pdf errors for some reason...just knit then call directly
+# knit2pdf errors for some reason...just knit then call directly
 knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
 call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
-# call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex")
+# call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex") # this stops execution if there is an error. Not really necessary
 system(call)
 system(call) # 2nd run to apply citation numbers
 

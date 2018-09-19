@@ -10,7 +10,8 @@ library(DBI)
 ### find and load model data ----
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 23 where you choose which Rdata file to use
-setwd(loc_modelOut)
+setwd(loc_model)
+setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 ## Calculate different thresholds ----
@@ -154,7 +155,7 @@ dbDisconnect(db)
 #lets set the threshold to MTP
 threshold <- as.numeric(MTP)
 # load the prediction vector
-results_shape <- readOGR(paste0(loc_modelOut, "/model_predictions"), paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
+results_shape <- readOGR("model_predictions", paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
 
 # reclassify the vector based on the threshold into binary 0/1
 test2 <- results_shape
@@ -163,7 +164,7 @@ test2@data$MTP[test2@data$prbblty<threshold] <- 0
 test2@data$MTP[test2@data$prbblty>=threshold] <- 1
 
 #write outshapefile
-writeOGR(test2,dsn=paste0(loc_modelOut, "/model_predictions"),layer=paste0(modelrun_meta_data$model_run_name, "_results")
+writeOGR(test2,dsn="model_predictions",layer=paste0(modelrun_meta_data$model_run_name, "_results")
          , driver="ESRI Shapefile", overwrite_layer = TRUE)
 
 #clean up

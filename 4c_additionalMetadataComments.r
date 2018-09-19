@@ -15,7 +15,8 @@ library(RSQLite)
 ## and about line 45 where you choose which record to use
 
 # load Rdata
-setwd(loc_modelOut)
+setwd(loc_model)
+setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
 for(i in 1:length(modelrun_meta_data))
