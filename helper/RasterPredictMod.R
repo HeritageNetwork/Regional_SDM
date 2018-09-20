@@ -4,12 +4,12 @@
 # Licence GPL v3
 # modified for randomForest x,y structure by Tim Howard, 2015
 
-# This script is sourced (and the function called) in 3_createModel.R
+# This script is sourced (and the function called) in 4_predictModelToStudyArea.R
 
-if (!isGeneric("predictRF")) {
+# if (!isGeneric("predictRF")) {
 	setGeneric("predictRF", function(object, ...)
 		standardGeneric("predictRF"))
-}	
+# }	
 
 setMethod('predictRF', signature(object='Raster'), 
 	function(object, model, filename="", fun=predict, ext=NULL, const=NULL, index=1, se.fit=FALSE, na.rm=TRUE, progress='', ...) {

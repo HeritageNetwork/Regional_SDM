@@ -16,9 +16,9 @@ library(randomForest)
 ## three lines need your attention. The one directly below (loc_scripts),
 ## about line 29 where you choose which Rdata file to use,
 ## and about line 40 where you choose which record to use
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 setwd(loc_spPts)
 
 #get a list of what's in the directory
@@ -29,10 +29,11 @@ p_fileList
 n <- 1
 
 presFile <- p_fileList[[n]]
+fileElemCode <- gsub("_att.dbf$", "", presFile)
 # get the presence points
 df.in <-read.dbf(presFile)
 
-setwd(loc_bkgPts)
+setwd("../background")
 bk_fileList <- dir( pattern = "_clean.dbf$")
 bk_fileList
 #look at the output and choose which shapefile you want to run
@@ -44,7 +45,7 @@ bkgFile <- bk_fileList[[n]]
 df.abs <- foreign:::read.dbf(bkgFile)
 
 #make sure we don't have any NAs
-df.in <- df.in[complete.cases(df.in),]
+df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
 df.abs <- df.abs[complete.cases(df.abs),]
 
 # align data sets, QC ----
@@ -59,8 +60,10 @@ names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
-raslist <- list.files(path = loc_envVars, pattern = ".tif$")
-rasnames <- gsub(".tif", "", raslist)
+raslist <- list.files(path = loc_envVars, pattern = ".tif$", recursive = TRUE)
+rasnames <- unique(unlist(
+  lapply(strsplit(gsub(".tif", "", raslist), "/"), function(x) {x[length(x)]})
+  ))
 
 # are these all in the lookup database? Checking here.
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
@@ -82,6 +85,9 @@ rasnames[!rasnames %in% namesInDB$gridName]
 ## if blank you are good to go
 rasnames[!rasnames %in% names(df.in)]
 
+# trust that the desired env vars are in df.in
+rasnames <- rasnames[rasnames %in% names(df.in)]
+
 # get a list of all distance-to env vars
 SQLquery <- "SELECT gridName FROM lkpEnvVars WHERE distToGrid = 1;"
 dtGrids <- dbGetQuery(db, statement = SQLquery)
@@ -101,7 +107,7 @@ dtRas <- rasnames[rasnames %in% dtGrids$gridName]
 # what's the closest distance for each?
 dtRas.min <- apply(df.in[,dtRas], 2, min)
 # remove those whose closest distance is greater than 10km
-dtRas.sub <- dtRas.min[dtRas.min > 10000]
+dtRas.sub <- dtRas.min[dtRas.min > 5000]
 rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
 
 # clean up, merge data sets -----
@@ -120,25 +126,15 @@ df.abs <- df.abs[,colList]
 #Fire up SQLite
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
   
-ElementNames <- as.list(c(SciName="",CommName="",Code="",Type=""))
-ElementNames[1] <- as.character(df.in[1,"sname"])
+ElementNames <- as.list(c(SciName=as.character(df.in[1,"sname"]), CommName="", Code=fileElemCode, Type=""))
 
-# get the names used in metadata output
-SQLquery <- paste("SELECT CODE FROM lkpSpecies WHERE SCIEN_NAME = '", 
-	ElementNames[1],"' ;", sep="")
-ElementNames[3] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
-# populate the common name field
-SQLquery <- paste("SELECT COMMONNAME FROM lkpSpecies WHERE SCIEN_NAME = '", 
-	ElementNames[1],"';", sep="")
-ElementNames[2] <- dbGetQuery(db, statement = SQLquery)
-# populate element type (A or P)
-SQLquery <- paste("SELECT ELEMTYPE FROM lkpSpecies WHERE SCIEN_NAME = '", 
-	ElementNames[1],"';", sep="")
-ElementNames[4] <- as.list(dbGetQuery(db, statement = SQLquery)[1,1])
-ElementNames
+# populate the common name, elemtype field
+SQLquery <- paste("SELECT COMMONNAME, ELEMTYPE FROM lkpSpecies WHERE CODE = '", 
+                  ElementNames["Code"],"';", sep="")
+ElementNames[c(2,4)] <- dbGetQuery(db, statement = SQLquery)[1,]
 
 #also get correlated env var information
-SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings NOT NULL;"
+SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
 corrdEVs <- dbGetQuery(db, statement = SQLquery)
 
 dbDisconnect(db)
@@ -163,13 +159,15 @@ EObyRA$sampSize[EObyRA$ra == "medium"] <- 3
 EObyRA$sampSize[EObyRA$ra == "low"] <- 2
 EObyRA$sampSize[EObyRA$ra == "very low"] <- 1
 # set the background pts to the sum of the EO samples
-EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
+# EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
 
 # there appear to be cases where more than one 
 # RA is assigned per EO. Handle it here by 
 # taking max value
 EObySS <- aggregate(EObyRA$sampSize, by=list(EObyRA$eo_id_st), max)
+# set the background pts to the sum of the EO samples
 names(EObySS) <- c("eo_id_st","sampSize")
+EObySS$sampSize[EObySS$eo_id_st == "pseu-a"] <- sum(EObySS[!EObySS$eo_id_st == "pseu-a", "sampSize"])
 
 sampSizeVec <- EObySS$sampSize
 names(sampSizeVec) <- as.character(EObySS$eo_id_st)
@@ -209,6 +207,7 @@ impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
 
 # first remove the bottom of the correlated vars
+corrdEVs <- corrdEVs[tolower(corrdEVs$gridName) %in% row.names(impvals),]
 for(grp in unique(corrdEVs$correlatedVarGroupings)){
   vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
   imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
@@ -338,6 +337,9 @@ if(length(group$vals)>1){
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
 		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
+		  # re-calc pseudo-absence samples to match input training samples
+		  ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
+		  
 		  rm(trSetBG, evSetBG)
 		  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
@@ -525,7 +527,6 @@ rf.full <- randomForest(df.full[,indVarCols],
                         strata = df.full[,"eo_id_st"],
                         sampsize = sampSizeVec, replace = TRUE,
                         norm.votes = TRUE)
-
 ####
 # Importance measures ----
 ####
@@ -556,19 +557,34 @@ pPlots <- vector("list",9)
 		names(pPlots) <- c(1:9)
 #get the top eight partial plots
 for(i in 1:9){
-	pPlots[[i]] <- partialPlot(rf.full, df.full[,indVarCols],
-						names(f.imp[ord[i]]),
-						which.class = 1,
-						plot = FALSE)
-	pPlots[[i]]$gridName <- names(f.imp[ord[i]])
-	pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
-	cat("finished partial plot ", i, " of 9", "\n")
-	}
+  curvar <- names(f.imp[ord[i]])
+  pPlots[[i]] <- do.call("partialPlot", list(x = rf.full, pred.data = df.full[,indVarCols],
+                                             x.var = curvar,
+                                             which.class = 1,
+                                             plot = FALSE))
+  pPlots[[i]]$gridName <- curvar
+  pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
+  cat("finished partial plot ", i, " of 9", "\n")
+}
+rm(curvar)
 
 #save the project, return to the original working directory
 setwd(loc_RDataOut)
-save.image(file = paste(ElementNames$Code, "_",Sys.Date(),".Rdata", sep=""))
+model_run_name <- paste0(ElementNames$Code, "_",
+                         gsub(" ","_",gsub(c("-|:"),"",as.character(model_start_time))))
+modelrun_meta_data$model_run_name <- model_run_name
+# don't save fn args/vars
+ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
+                                                             "run_steps","prompt","fn_args", names(fn_args))]
+save(list = ls.save, file = paste0(model_run_name,".Rdata"), envir = environment())
 
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())
+# write model metadata to db
+db <- dbConnect(SQLite(),dbname=nm_db_file)  
+insert_values <- paste(model_run_name, ElementNames$Code, model_start_time, modeller, model_comp_name, r_version, model_comments, sep = "','")
+SQLquery <- paste0("INSERT INTO tblModelRuns (modelRunName, CODE, modelBeginTime, modeller,
+modelCompName, rVersion, internalComments)
+VALUES
+('",insert_values,"');")
+dbSendQuery(db, SQLquery) #dbExecute
+
+message(paste0("Saved rdata file: '", model_run_name , "'."))

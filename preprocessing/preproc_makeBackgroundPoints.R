@@ -6,11 +6,11 @@ library(rgdal)
 
 ## set paths ----
 # This is the directory that has your study area polygon.
-setwd("G:/SDM_test/other_spatial")
+setwd("D:/SDM/Tobacco/other_spatial/shp")
 
 
 # the name of the study area polygon
-StudyAreaPoly <- "testArea_Albers.shp"
+StudyAreaPoly <- "sdmVA_pred_20170131.shp"
 
 # read in the shapefile, get the attribute data
 layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]

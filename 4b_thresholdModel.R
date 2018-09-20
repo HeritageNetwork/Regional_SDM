@@ -7,22 +7,25 @@ library(rgdal)
 library(ROCR)
 library(RSQLite)
 library(DBI)
+removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
 ### find and load model data ----
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 23 where you choose which Rdata file to use
 
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
        
 # get a list of what's in the directory
-d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
-d
-# which one do we want to run?
-n <- 1
-fileName <- d[[n]]
-load(paste(loc_RDataOut,fileName, sep="/"))
+# d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
+# d
+# # which one do we want to run?
+# n <- 1
+# fileName <- d[[n]]
+# load(paste(loc_RDataOut,fileName, sep="/"))
+setwd(loc_RDataOut)
+load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 ## Calculate different thresholds ----
 #set an empty list
@@ -159,7 +162,8 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 # number of thresholds to write to the db
 numThresh <- length(cutList)
 
-allThresh <- data.frame("ElemCode" = rep(ElementNames$Code, numThresh),
+allThresh <- data.frame("modelRunName" = rep(modelrun_meta_data$model_run_name, numThresh),
+                        "ElemCode" = rep(ElementNames$Code, numThresh),
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
                 "cutCode" = unlist(lapply(cutList, function(x) x[2])),
                 "cutValue" = unlist(lapply(cutList, function(x) x[1])),
@@ -180,7 +184,7 @@ for(i in 1:numThresh){
                     ") VALUES (",
                     toString(sQuote(allThresh[i,])),
                     ");", sep = "")
-  dbExecute(db, SQLquery)
+  dbSendQuery(db, SQLquery)
 }
 
 # clean up
@@ -193,18 +197,18 @@ dbDisconnect(db)
 # you could do it in Arc instead. 
 
 #lets set the threshold to MTP
-threshold <- allThresh$MTP
+threshold <- allThresh$cutValue[allThresh$cutCode == "MTP"]
 
 # get a list of rasters in the directory for this species
 r <- dir(path = loc_outRas, 
          pattern = paste(ElementNames$Code, ".*tif$",sep=""),full.names=FALSE)
-r
-# which one do we want to run? (default to last, assuming sorted by date stamp)
-n <- length(r)
-n
+# r
+# # which one do we want to run? (default to last, assuming sorted by date stamp)
+# n <- length(r)
+# n
 # prefer loading a different tiff? change the next line and uncomment.
 #n <- 1
-rasName <- r[[n]]
+rasName <- r[gsub(".tif", "", r) == model_run_name]  # uses model_run_name to specify raster
 
 # load the prediction grid
 ras <- raster(paste(loc_outRas, rasName, sep = "/"))
@@ -263,9 +267,5 @@ if (all(c("snow","parallel") %in% installed.packages())) {
 }
 
 #plot(rasrc)
-outfile <- paste(loc_outRas,"/",ElementNames$Code,"_thresh2.tif", sep = "")
+outfile <- paste(loc_outRas,"/",model_run_name,"_thresh2.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
-
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())
