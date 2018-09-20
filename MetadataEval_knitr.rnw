@@ -30,21 +30,28 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 \begin{minipage}[b]{2in}   %minipage for thermometer  
 <<thermometer1, fig.height=1, fig.width=1, include=FALSE, echo=FALSE>>=
   par(mar=c(0.9,0.2,0.2,0.2))
-  temp <- tss.summ$mean
-  thermTemp <- vector("list")
-  if (temp < .50){
-              thermTemp <- c("red", "poor")
-              } else if (temp < .80){
-              thermTemp <- c("yellow","fair")
-              } else {
-              thermTemp <- c("green", "good") }
-  symbols(1, 1, thermometers=cbind(0.5, 1, temp), inches=.5, fg = thermTemp[[1]],
-         xaxt = "n", yaxt = "n", ann = FALSE, bty = "n", pin = c(1.2,1.2) )
-  text (1,1, thermTemp[[2]],
-      adj = c(0.5,4), cex = .75, col = "black", xpd=NA)
-  text (1,1, paste("TSS=",format(round(temp,digits=2)),sep=""),
-      adj = c(0.5,6), cex = .75, col = "black", xpd=NA)
-  #box("outer","dotted") #show the outline of the fig box when debugging
+  if (exists("tss.summ")) {
+    temp <- tss.summ$mean
+    thermTemp <- vector("list")
+    if (temp < .50){
+                thermTemp <- c("red", "poor")
+                } else if (temp < .80){
+                thermTemp <- c("yellow","fair")
+                } else {
+                thermTemp <- c("green", "good") }
+    symbols(1, 1, thermometers=cbind(0.5, 1, temp), inches=.5, fg = thermTemp[[1]],
+           xaxt = "n", yaxt = "n", ann = FALSE, bty = "n", pin = c(1.2,1.2) )
+    text (1,1, thermTemp[[2]],
+        adj = c(0.5,4), cex = .75, col = "black", xpd=NA)
+    text (1,1, paste("TSS=",format(round(temp,digits=2)),sep=""),
+        adj = c(0.5,6), cex = .75, col = "black", xpd=NA)
+  } else {
+    plot(1,1, col = "white", axes = FALSE)
+    box("outer","dotted") #show the outline of the fig box when debugging
+    text (1,1, "No evaluation",
+        adj = c(0.5,4), cex = .75, col = "black", xpd=NA)
+  }
+  
 @
   \begin{center}
   \includegraphics{figure/thermometer1-1.pdf} \\     %place it
@@ -93,31 +100,47 @@ area under the ROC curve; see \cite{fielding2002, allouche2006, vaughan2005}.
 
 \begin{center}
 <<tableTwo, results="asis", echo = FALSE>>=
-  summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
-                                 "TSS", "Kappa", "AUC"), 
-                         Mean=c(OvAc.summ$mean, specif.summ$mean,sensit.summ$mean,
-                                tss.summ$mean,Kappa.unw.summ$mean,
-                                auc.summ$mean),
-                         SD=c(OvAc.summ$sd, specif.summ$sd,sensit.summ$sd,
-                                tss.summ$sd,Kappa.unw.summ$sd, 
-                                auc.summ$sd),
-                         SEM=c(OvAc.summ$sem, specif.summ$sem,sensit.summ$sem,
-                                tss.summ$sem,Kappa.unw.summ$sem, 
-                                auc.summ$sem))
-  print(xtable(summ.table), 
-              floating=FALSE, include.rownames=FALSE)
+  if (exists("tss.summ")) {
+    summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
+                                   "TSS", "Kappa", "AUC"), 
+                           Mean=c(OvAc.summ$mean, specif.summ$mean,sensit.summ$mean,
+                                  tss.summ$mean,Kappa.unw.summ$mean,
+                                  auc.summ$mean),
+                           SD=c(OvAc.summ$sd, specif.summ$sd,sensit.summ$sd,
+                                  tss.summ$sd,Kappa.unw.summ$sd, 
+                                  auc.summ$sd),
+                           SEM=c(OvAc.summ$sem, specif.summ$sem,sensit.summ$sem,
+                                  tss.summ$sem,Kappa.unw.summ$sem, 
+                                  auc.summ$sem))
+  } else {
+    summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
+                                   "TSS", "Kappa", "AUC"),
+                             Mean = rep(NA, 6), SD = rep(NA, 6), SEM = rep(NA, 6))
+  }
+    print(xtable(summ.table), 
+                floating=FALSE, include.rownames=FALSE)
 @
 \end{center}
 
 \medskip
-Validation runs used \Sexpr{n.var} environmental 
-variables, the most important of \Sexpr{OriginalNumberOfEnvars} 
-variables (top \Sexpr{(1-envarPctile)*100} percent).
-Each tree was built with \Sexpr{trRes[[1]]$mtry} variables 
-tried at each split (mtry) and \Sexpr{trRes[[1]]$ntree} trees built.
+<<checkEvalExists, include=FALSE, echo=FALSE>>=
+if (exists("n.var")) {
+  txt <- paste0("Validation runs used ",n.var," environmental 
+  variables, the most important of ",OriginalNumberOfEnvars," 
+  variables (top ",(1-envarPctile)*100," percent).
+  Each tree was built with ",trRes[[1]]$mtry," variables 
+  tried at each split (mtry) and ",trRes[[1]]$ntree," trees built.")
+} else { 
+  txt <- "Validation was not possible for this model (too few EOs)." 
+}
+@
+
+<<EvalTextPrint, results='asis', echo=FALSE>>=
+cat(txt)
+@
 The final model was built using \Sexpr{rf.full$ntree} trees, all presence 
-and background points, with an mtry of \Sexpr{rf.full$mtry}, and the same
-number of environmental variables.
+and background points, with an mtry of \Sexpr{rf.full$mtry}, and \Sexpr{length(EnvVars$impVal)} environmental variables.
+
 
 \begin{center}
 <<ROCplot, fig.width=2.9, fig.height=1.6, include=FALSE, echo=FALSE>>=
@@ -126,52 +149,57 @@ par(mar=c(2.8,2.5,.5,10),   #bottom, left, top, right
     cex=0.6,     #text size
     mgp=c(1.6,0.4,0) #placement of axis title, labels, line
     )
-
-  plot(perf,lwd=2,
-        avg="threshold", colorize = TRUE,
-        #print.cutoffs.at = c(rf.full.ctoff[2], cutval.rf[2]),
-        #text.adj=c(-0.6,1.5), points.pch=19, points.cex=0.8, text.cex=0.8,
-        xlab="Avg. false positive rate", ylab="Avg. true positive rate",
-        colorkey.relwidth = 0.5,
-        colorize.palette=rainbow(256,start=3/6, end=0), colorkey.line = 1,
-        colorkey = FALSE
-        )
-
-  # set the color palette
-  rl.colors <- rev(rainbow(256,start=3/6, end=0))
-  # find the min and max of the cutoffs, as used in the ROC plot
-  # for some reason perf gives some values over one, which confuses legend. Set it manually.
-  #rl.max.alpha <- max(unlist(perf@alpha.values))
-  rl.max.alpha <- 1
-  #rl.min.alpha <- min(unlist(perf@alpha.values))
-  rl.min.alpha <- 0
-  # get the y min and max of the ROC plot
-  rl.max.y <- max(axTicks(4))
-  rl.min.y <- min(axTicks(4))
-  # interpolate the cutoffs to the y axis
-  rl.alpha.ticks <- approxfun(c(rl.min.y, rl.max.y),
-                           c(rl.min.alpha, rl.max.alpha))(axTicks(4))
-  # set up a vector the length of colors ranging from min to max values
-  rl.col.cutoffs <- rev(seq(rl.min.alpha,rl.max.alpha, length=length( rl.colors )))
-  # create a function to do the interpolation in later commands 
-  rl.alpha2y <- approxfun(c(min(rl.alpha.ticks), max(rl.alpha.ticks)),
-                       c(rl.min.y,rl.max.y))
-  # place the axis, using the correct labeling scheme
-axis(at=rl.alpha2y(rl.alpha.ticks),labels=round((rl.alpha.ticks),2), side=4, line=3.5)
-  # set up definition for what to display and then apply to y breaks and colors
-  rl.display.bool <- (rl.col.cutoffs >= min(rl.alpha.ticks) &
-                   rl.col.cutoffs < max(rl.alpha.ticks))
-  rl.y.lower <- rl.alpha2y(rl.col.cutoffs)[rl.display.bool]
-  rl.colors <- rl.colors[rl.display.bool]
-  rl.y.width <- rl.y.lower[2] - rl.y.lower[1]
-  rl.y.upper <- rl.y.lower + rl.y.width
-  # manually define x locations way off graph to minimize confusion
-  rl.x.left <- 1.3
-  rl.x.right <- 1.32
-  # place the bar, then the legend label
-rect(rl.x.left, rl.y.lower, rl.x.right, rl.y.upper, col=rl.colors, border=rl.colors, xpd=NA)
-mtext("cutoff", side=1, at = c(1.35), line = 0, cex=0.6)
-mtext("legend", side=1, at = c(1.35), line = 1, cex=0.6)
+if (exists("perf")) {
+    plot(perf,lwd=2,
+          avg="threshold", colorize = TRUE,
+          #print.cutoffs.at = c(rf.full.ctoff[2], cutval.rf[2]),
+          #text.adj=c(-0.6,1.5), points.pch=19, points.cex=0.8, text.cex=0.8,
+          xlab="Avg. false positive rate", ylab="Avg. true positive rate",
+          colorkey.relwidth = 0.5,
+          colorize.palette=rainbow(256,start=3/6, end=0), colorkey.line = 1,
+          colorkey = FALSE
+          )
+  
+    # set the color palette
+    rl.colors <- rev(rainbow(256,start=3/6, end=0))
+    # find the min and max of the cutoffs, as used in the ROC plot
+    # for some reason perf gives some values over one, which confuses legend. Set it manually.
+    #rl.max.alpha <- max(unlist(perf@alpha.values))
+    rl.max.alpha <- 1
+    #rl.min.alpha <- min(unlist(perf@alpha.values))
+    rl.min.alpha <- 0
+    # get the y min and max of the ROC plot
+    rl.max.y <- max(axTicks(4))
+    rl.min.y <- min(axTicks(4))
+    # interpolate the cutoffs to the y axis
+    rl.alpha.ticks <- approxfun(c(rl.min.y, rl.max.y),
+                             c(rl.min.alpha, rl.max.alpha))(axTicks(4))
+    # set up a vector the length of colors ranging from min to max values
+    rl.col.cutoffs <- rev(seq(rl.min.alpha,rl.max.alpha, length=length( rl.colors )))
+    # create a function to do the interpolation in later commands 
+    rl.alpha2y <- approxfun(c(min(rl.alpha.ticks), max(rl.alpha.ticks)),
+                         c(rl.min.y,rl.max.y))
+    # place the axis, using the correct labeling scheme
+  axis(at=rl.alpha2y(rl.alpha.ticks),labels=round((rl.alpha.ticks),2), side=4, line=3.5)
+    # set up definition for what to display and then apply to y breaks and colors
+    rl.display.bool <- (rl.col.cutoffs >= min(rl.alpha.ticks) &
+                     rl.col.cutoffs < max(rl.alpha.ticks))
+    rl.y.lower <- rl.alpha2y(rl.col.cutoffs)[rl.display.bool]
+    rl.colors <- rl.colors[rl.display.bool]
+    rl.y.width <- rl.y.lower[2] - rl.y.lower[1]
+    rl.y.upper <- rl.y.lower + rl.y.width
+    # manually define x locations way off graph to minimize confusion
+    rl.x.left <- 1.3
+    rl.x.right <- 1.32
+    # place the bar, then the legend label
+  rect(rl.x.left, rl.y.lower, rl.x.right, rl.y.upper, col=rl.colors, border=rl.colors, xpd=NA)
+  mtext("cutoff", side=1, at = c(1.35), line = 0, cex=0.6)
+  mtext("legend", side=1, at = c(1.35), line = 1, cex=0.6)
+} else {
+  plot(0.5,0.5,lwd=0, col = "white", xlim = c(0,1), ylim = c(0,1),
+          xlab="Avg. false positive rate", ylab="Avg. true positive rate")
+  text(0.5,0.5, "No evaluation")
+}
 
   #clean up
 rm(list=ls(pattern="rl."))
@@ -193,7 +221,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
     mgp=c(1.3,0.4,0) #placement of axis title, labels, line
     )
   #get the order for the importance charts
-  ord <- rev(order(EnvVars$impVal, decreasing = TRUE)[1:n.var])
+  ord <- rev(order(EnvVars$impVal, decreasing = TRUE)[1:length(EnvVars$impVal)])
   xmin.i <- min(EnvVars$impVal)
   #create importance dot chart
   dotchart(EnvVars$impVal[ord], xlab = expression("lower" %->% "greater"),
@@ -307,7 +335,7 @@ if(nrow(sdm.customComments.subset) > 0){
 myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
 #levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
 
-levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
+levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.4,col='gray50'), data=list(referenceBoundaries=referenceBoundaries)) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'), data = list(studyAreaExtent=studyAreaExtent))
 @
 \includegraphics{figure/mapFig-1.pdf}    
 Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in gray. The study area is outlined in red. 

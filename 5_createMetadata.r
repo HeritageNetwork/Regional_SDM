@@ -24,27 +24,29 @@ library(xtable)
 ## about line 35 where you choose which Rdata file to use,
 ## and about line 46 where you choose which record to use
 
-loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
+# loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+# source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 
 # get a list of what's in the directory
-d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
-d
-# which one do we want to run?
-n <- 1
-fileName <- d[[n]]
-load(paste(loc_RDataOut,fileName, sep="/"))
+# d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
+# d
+# # which one do we want to run?
+# n <- 1
+# fileName <- d[[n]]
+# load(paste(loc_RDataOut,fileName, sep="/"))
+setwd(loc_RDataOut)
+load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
 
 # get background poly data for the map
 referenceBoundaries <- readOGR(loc_otherSpatial, nm_refBoundaries, stringsAsFactors=FALSE) # name of state boundaries file
 studyAreaExtent <- readOGR(loc_otherSpatial, nm_studyAreaExtent, stringsAsFactors=FALSE) 
 
 r <- dir(path = loc_outRas, pattern = ".tif$",full.names=FALSE)
-r
-# which one do we want to run?
-n <- 1
-fileName <- r[[n]]
+# r
+# # which one do we want to run?
+# n <- 1
+fileName <- r[gsub(".tif", "", r) == model_run_name]
 ras <- raster(paste(loc_outRas, fileName, sep = "/"))
 
 ## Get Program and Data Sources info ----
@@ -58,18 +60,19 @@ SQLquery <- paste("Select lkpModelers.ProgramName, lkpModelers.FullOrganizationN
   "INNER JOIN lkpSpecies ON lkpModelers.ModelerID=lkpSpecies.ModelerID ", 
   "WHERE lkpSpecies.CODE='", ElementNames$Code, "'; ", sep="")
 sdm.modeler <- dbGetQuery(db, statement = SQLquery)
-
-SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
+# NOTE: use column should be populated with 1/0 for sources of data used
+SQLquery <- paste("SELECT DISTINCT sp.CODE, sr.ProgramName, sr.State ",
   "FROM lkpSpecies as sp ",
   "INNER JOIN mapDataSourcesToSpp as mp ON mp.EstID=sp.EST_ID ",
   "INNER JOIN lkpDataSources as sr ON mp.DataSourcesID=sr.DataSourcesID ",
-  "WHERE sp.CODE='", ElementNames$Code, "'; ", sep="")
+  "WHERE mp.use = 1 ",
+  "AND sp.CODE='", ElementNames$Code, "'; ", sep="")
 sdm.dataSources <- dbGetQuery(db, statement = SQLquery)
 sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
 SQLquery <- paste("SELECT ID, date, speciesCode, comments",
                   " FROM tblCustomModelComments ", 
-                  "WHERE speciesCode='", ElementNames$Code, "'; ", sep="")
+                  "WHERE modelRunName ='", model_run_name, "'; ", sep="")
 sdm.customComments <- dbGetQuery(db, statement = SQLquery)
 # assume you want the most recently entered comments, if there are multiple entries
 if(nrow(sdm.customComments) > 1) {
@@ -82,12 +85,12 @@ if(nrow(sdm.customComments) > 1) {
 ## Get threshold information ----
 SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPolys, capturedPts ", 
                   "FROM tblCutoffs ", 
-                  "WHERE ElemCode='", ElementNames$Code, "'; ", sep="")
+                  "WHERE modelRunName ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
 # filter to only most recent
-uniqueTimes <- unique(sdm.thresholds$dateTime)
-mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
-sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
+#uniqueTimes <- unique(sdm.thresholds$dateTime)
+#mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
+#sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
 
 # get info about thresholds
 SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull, sortOrder ", 
@@ -123,10 +126,13 @@ sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
 
 setwd(loc_outMetadata)
 
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(ElementNames$Code, "_",Sys.Date(), ".tex",sep=""))
+#knit2pdf errors for some reason...just knit then call directly
+# knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep="")) 
+knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex")
+system(call)
+system(call) # 2nd run to apply citation numbers
 
 ## clean up ----
 options(op)
 dbDisconnect(db)
-# remove all objects before moving on to the next script
-rm(list=ls())
