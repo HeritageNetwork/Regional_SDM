@@ -1,6 +1,6 @@
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
-CREATE TABLE `tblPrepStats` (
+CREATE TABLE IF NOT EXISTS "xx_old_tblPrepStats" (
 	`SciName`	TEXT,
 	`CommName`	TEXT,
 	`ElemCode`	TEXT,
@@ -18,30 +18,30 @@ CREATE TABLE IF NOT EXISTS "lkpDataSources" (
 	`DataProvidedDate`	TEXT,
 	PRIMARY KEY(`DataSourcesID`)
 );
-INSERT INTO lkpDataSources VALUES(1,'New York Natural Heritage Program','NY','1/15/2016');
-INSERT INTO lkpDataSources VALUES(2,'Virginia Natural Heritage Program','VA','2/1/2016');
-INSERT INTO lkpDataSources VALUES(3,'Florida Natural Areas Inventory','FL','01/28/2016');
-INSERT INTO lkpDataSources VALUES(4,'Pennsylvania Natural Heritage Program','PA','3/31/2016');
-INSERT INTO lkpDataSources VALUES(5,'Maine Natural Areas Program, Maine Department of Agriculture, Conservation and Forestry','ME','10/01/2015');
-INSERT INTO lkpDataSources VALUES(6,'New Hampshire Natural Heritage Bureau','NH','04/13/2016');
-INSERT INTO lkpDataSources VALUES(7,'Vermont Wildlife Diversity and Natural Heritage Inventory, Vermont Fish and Wildlife Department','VT','01/26/2016');
-INSERT INTO lkpDataSources VALUES(8,'Massachusetts Natural Heritage and Endangered Species Program, Massachusetts Division of Fisheries & Wildlife','MA','12/28/2015');
-INSERT INTO lkpDataSources VALUES(9,'Connecticut Natural Diversity Database, Connecticut Department of Energy & Environmental Protection','CT','11/01/2015');
-INSERT INTO lkpDataSources VALUES(10,'Delaware Species Conservation and Research Program, Delaware Division of Fish and Wildlife','DE','01/05/2016');
-INSERT INTO lkpDataSources VALUES(11,'New Jersey Natural Heritage Program','NJ','02/16/2016');
-INSERT INTO lkpDataSources VALUES(12,'Rhode Island Natural History Survey','RI','02/02/2016');
-INSERT INTO lkpDataSources VALUES(13,'Maryland Natural Heritage Program, Maryland Department of Natural Resources, Wildlife and Heritage Service','MD','01/08/2016');
-INSERT INTO lkpDataSources VALUES(14,'West Virginia Natural Heritage Program','WV','12/07/2015');
-INSERT INTO lkpDataSources VALUES(15,'Alabama Natural Heritage Program','AL','02/08/2016');
-INSERT INTO lkpDataSources VALUES(16,'Georgia Department of Natural Resources, Wildlife Resources Division','GA','12/16/2015');
-INSERT INTO lkpDataSources VALUES(17,'North Carolina Natural Heritage Program','NC','10/14/2016');
-INSERT INTO lkpDataSources VALUES(18,'South Carolina Department of Natural Resources, Heritage Trust Program','SC','12/31/2015');
-INSERT INTO lkpDataSources VALUES(19,'Allen Bridgeman, South Carolina DNR','SC','2016');
-INSERT INTO lkpDataSources VALUES(20,'Jeff Glitzstein, Tall Timbers Research Station','FL','2016');
-INSERT INTO lkpDataSources VALUES(21,'Tracey Tuberville, Savannah River Ecology Laboratory','SC','2016');
-INSERT INTO lkpDataSources VALUES(22,'David Caldwell, US Fish and Wildlife Service','GA','2016');
-INSERT INTO lkpDataSources VALUES(23,'Robyn Mackie and Geoff Holden, US Forest Service','SC','2016');
-INSERT INTO lkpDataSources VALUES(24,'New Jersey Division of Fish and Wildlife - Endangered and Nongame Species Program','NJ','02/03/2016');
+INSERT INTO lkpDataSources VALUES(1,'New York Natural Heritage Program','NY','');
+INSERT INTO lkpDataSources VALUES(2,'Virginia Natural Heritage Program','VA','');
+INSERT INTO lkpDataSources VALUES(3,'Florida Natural Areas Inventory','FL','');
+INSERT INTO lkpDataSources VALUES(4,'Pennsylvania Natural Heritage Program','PA','');
+INSERT INTO lkpDataSources VALUES(5,'Maine Natural Areas Program, Maine Department of Agriculture, Conservation and Forestry','ME','');
+INSERT INTO lkpDataSources VALUES(6,'New Hampshire Natural Heritage Bureau','NH','');
+INSERT INTO lkpDataSources VALUES(7,'Vermont Wildlife Diversity and Natural Heritage Inventory, Vermont Fish and Wildlife Department','VT','');
+INSERT INTO lkpDataSources VALUES(8,'Massachusetts Natural Heritage and Endangered Species Program, Massachusetts Division of Fisheries & Wildlife','MA','');
+INSERT INTO lkpDataSources VALUES(9,'Connecticut Natural Diversity Database, Connecticut Department of Energy & Environmental Protection','CT','');
+INSERT INTO lkpDataSources VALUES(10,'Delaware Species Conservation and Research Program, Delaware Division of Fish and Wildlife','DE','');
+INSERT INTO lkpDataSources VALUES(11,'New Jersey Natural Heritage Program','NJ','');
+INSERT INTO lkpDataSources VALUES(12,'Rhode Island Natural History Survey','RI','');
+INSERT INTO lkpDataSources VALUES(13,'Maryland Natural Heritage Program, Maryland Department of Natural Resources, Wildlife and Heritage Service','MD','');
+INSERT INTO lkpDataSources VALUES(14,'West Virginia Natural Heritage Program','WV','');
+INSERT INTO lkpDataSources VALUES(15,'Alabama Natural Heritage Program','AL','');
+INSERT INTO lkpDataSources VALUES(16,'Georgia Department of Natural Resources, Wildlife Resources Division','GA','');
+INSERT INTO lkpDataSources VALUES(17,'North Carolina Natural Heritage Program','NC','');
+INSERT INTO lkpDataSources VALUES(18,'South Carolina Department of Natural Resources, Heritage Trust Program','SC','');
+INSERT INTO lkpDataSources VALUES(19,'Allen Bridgeman, South Carolina DNR','SC','');
+INSERT INTO lkpDataSources VALUES(20,'Jeff Glitzstein, Tall Timbers Research Station','FL','');
+INSERT INTO lkpDataSources VALUES(21,'Tracey Tuberville, Savannah River Ecology Laboratory','SC','');
+INSERT INTO lkpDataSources VALUES(22,'David Caldwell, US Fish and Wildlife Service','GA','');
+INSERT INTO lkpDataSources VALUES(23,'Robyn Mackie and Geoff Holden, US Forest Service','SC','');
+INSERT INTO lkpDataSources VALUES(24,'New Jersey Division of Fish and Wildlife - Endangered and Nongame Species Program','NJ','');
 CREATE TABLE IF NOT EXISTS "lkpModelers" (
 	`ModelerID`	INTEGER NOT NULL,
 	`ProgramName`	TEXT,
@@ -50,165 +50,7 @@ CREATE TABLE IF NOT EXISTS "lkpModelers" (
 	`State`	TEXT,
 	PRIMARY KEY(`ModelerID`)
 );
-INSERT INTO lkpModelers VALUES(1,'Virginia Natural Heritage Program','Virginia Department of Conservation and Recreation - Division of Natural Heritage','Richmond','VA');
-INSERT INTO lkpModelers VALUES(2,'Florida Natural Areas Inventory','Florida Natural Areas Inventory','Tallahassee','FL');
-INSERT INTO lkpModelers VALUES(3,'Pennsylvania Natural Heritage Program','Western Pennsylvania Conservancy','Pittsburgh','PA');
-INSERT INTO lkpModelers VALUES(4,'New York Natural Heritage Program','New York Natural Heritage Program - State University of New York College of Environmental Science and Forestry','Albany','NY');
-CREATE TABLE IF NOT EXISTS "mapDataSourcesToSpp" (
-	`DataSourcesToSpeciesID`	INTEGER NOT NULL,
-	`DataSourcesID`	INTEGER,
-	`EstID`	INTEGER,
-	PRIMARY KEY(`DataSourcesToSpeciesID`)
-);
-INSERT INTO mapDataSourcesToSpp VALUES(1,1,101495);
-INSERT INTO mapDataSourcesToSpp VALUES(2,2,101495);
-INSERT INTO mapDataSourcesToSpp VALUES(3,4,101495);
-INSERT INTO mapDataSourcesToSpp VALUES(4,8,101495);
-INSERT INTO mapDataSourcesToSpp VALUES(5,9,101495);
-INSERT INTO mapDataSourcesToSpp VALUES(7,15,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(8,15,105330);
-INSERT INTO mapDataSourcesToSpp VALUES(9,15,105963);
-INSERT INTO mapDataSourcesToSpp VALUES(10,15,129236);
-INSERT INTO mapDataSourcesToSpp VALUES(12,2,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(13,2,105330);
-INSERT INTO mapDataSourcesToSpp VALUES(14,2,101322);
-INSERT INTO mapDataSourcesToSpp VALUES(15,2,105963);
-INSERT INTO mapDataSourcesToSpp VALUES(16,2,802301);
-INSERT INTO mapDataSourcesToSpp VALUES(17,2,129236);
-INSERT INTO mapDataSourcesToSpp VALUES(18,2,140454);
-INSERT INTO mapDataSourcesToSpp VALUES(19,16,147692);
-INSERT INTO mapDataSourcesToSpp VALUES(20,16,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(21,16,148771);
-INSERT INTO mapDataSourcesToSpp VALUES(22,16,105330);
-INSERT INTO mapDataSourcesToSpp VALUES(23,16,101322);
-INSERT INTO mapDataSourcesToSpp VALUES(24,16,105963);
-INSERT INTO mapDataSourcesToSpp VALUES(25,16,802301);
-INSERT INTO mapDataSourcesToSpp VALUES(26,16,129236);
-INSERT INTO mapDataSourcesToSpp VALUES(27,16,140454);
-INSERT INTO mapDataSourcesToSpp VALUES(28,17,147692);
-INSERT INTO mapDataSourcesToSpp VALUES(29,17,817643);
-INSERT INTO mapDataSourcesToSpp VALUES(30,17,148771);
-INSERT INTO mapDataSourcesToSpp VALUES(31,17,105330);
-INSERT INTO mapDataSourcesToSpp VALUES(32,17,105963);
-INSERT INTO mapDataSourcesToSpp VALUES(33,17,129236);
-INSERT INTO mapDataSourcesToSpp VALUES(34,18,147692);
-INSERT INTO mapDataSourcesToSpp VALUES(35,18,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(36,18,148771);
-INSERT INTO mapDataSourcesToSpp VALUES(37,18,105330);
-INSERT INTO mapDataSourcesToSpp VALUES(38,18,105963);
-INSERT INTO mapDataSourcesToSpp VALUES(39,18,802301);
-INSERT INTO mapDataSourcesToSpp VALUES(40,18,129236);
-INSERT INTO mapDataSourcesToSpp VALUES(41,2,147692);
-INSERT INTO mapDataSourcesToSpp VALUES(42,2,817643);
-INSERT INTO mapDataSourcesToSpp VALUES(43,2,148771);
-INSERT INTO mapDataSourcesToSpp VALUES(44,2,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(45,19,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(46,20,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(47,21,105330);
-INSERT INTO mapDataSourcesToSpp VALUES(48,22,105330);
-INSERT INTO mapDataSourcesToSpp VALUES(49,22,105963);
-INSERT INTO mapDataSourcesToSpp VALUES(50,23,147692);
-INSERT INTO mapDataSourcesToSpp VALUES(51,23,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(52,23,105963);
-INSERT INTO mapDataSourcesToSpp VALUES(53,23,129236);
-INSERT INTO mapDataSourcesToSpp VALUES(54,23,802301);
-INSERT INTO mapDataSourcesToSpp VALUES(55,9,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(56,9,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(57,10,159058);
-INSERT INTO mapDataSourcesToSpp VALUES(58,10,151923);
-INSERT INTO mapDataSourcesToSpp VALUES(59,10,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(60,10,101495);
-INSERT INTO mapDataSourcesToSpp VALUES(61,10,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(62,5,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(63,5,134537);
-INSERT INTO mapDataSourcesToSpp VALUES(64,13,159058);
-INSERT INTO mapDataSourcesToSpp VALUES(65,13,151923);
-INSERT INTO mapDataSourcesToSpp VALUES(66,13,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(67,13,150401);
-INSERT INTO mapDataSourcesToSpp VALUES(68,13,101495);
-INSERT INTO mapDataSourcesToSpp VALUES(69,13,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(70,8,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(71,8,150401);
-INSERT INTO mapDataSourcesToSpp VALUES(72,8,144235);
-INSERT INTO mapDataSourcesToSpp VALUES(73,6,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(74,6,150401);
-INSERT INTO mapDataSourcesToSpp VALUES(75,11,159058);
-INSERT INTO mapDataSourcesToSpp VALUES(76,11,151923);
-INSERT INTO mapDataSourcesToSpp VALUES(77,11,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(78,11,150401);
-INSERT INTO mapDataSourcesToSpp VALUES(79,24,101495);
-INSERT INTO mapDataSourcesToSpp VALUES(80,1,151923);
-INSERT INTO mapDataSourcesToSpp VALUES(81,1,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(82,1,134537);
-INSERT INTO mapDataSourcesToSpp VALUES(83,4,159058);
-INSERT INTO mapDataSourcesToSpp VALUES(84,4,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(85,4,134537);
-INSERT INTO mapDataSourcesToSpp VALUES(86,4,150401);
-INSERT INTO mapDataSourcesToSpp VALUES(87,12,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(88,7,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(89,7,150401);
-INSERT INTO mapDataSourcesToSpp VALUES(90,2,159058);
-INSERT INTO mapDataSourcesToSpp VALUES(91,2,151923);
-INSERT INTO mapDataSourcesToSpp VALUES(92,2,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(93,2,134537);
-INSERT INTO mapDataSourcesToSpp VALUES(94,2,150401);
-INSERT INTO mapDataSourcesToSpp VALUES(95,14,137976);
-INSERT INTO mapDataSourcesToSpp VALUES(96,14,150401);
-INSERT INTO mapDataSourcesToSpp VALUES(97,11,134727);
-INSERT INTO mapDataSourcesToSpp VALUES(98,1,150401);
-CREATE TABLE IF NOT EXISTS "lkpSpecies" (
-	`EST_ID`	INTEGER NOT NULL,
-	`CODE`	TEXT,
-	`SCIEN_NAME`	TEXT,
-	`COMMONNAME`	TEXT,
-	`ELCODE_BCD`	TEXT,
-	`ELEMTYPE`	TEXT,
-	`FEDSTATUS`	TEXT,
-	`ModelerID`	INTEGER,
-	PRIMARY KEY(`EST_ID`)
-);
-INSERT INTO lkpSpecies VALUES(101322,'notopers','Notophthalmus perstriatus','Striped Newt','AAAAF01020','A','C',2);
-INSERT INTO lkpSpecies VALUES(101495,'glypmuhl','Glyptemys muhlenbergii','Bog Turtle','ARAAD02040','A','LT',4);
-INSERT INTO lkpSpecies VALUES(105330,'hetesimu','Heterodon simus','Southern Hognose Snake','ARADB17030','A',NULL,1);
-INSERT INTO lkpSpecies VALUES(105963,'lithcapi','Lithobates capito','Gopher Frog','AAABH01270','A',NULL,2);
-INSERT INTO lkpSpecies VALUES(129236,'lindmeli','Lindera melissifolia','Pondberry','PDLAU07020','P','LE',2);
-INSERT INTO lkpSpecies VALUES(134537,'platleuc','Platanthera leucophaea','Eastern Prairie Fringed Orchid','PMORC1Y0F0','P','LT',1);
-INSERT INTO lkpSpecies VALUES(134727,'ryncknie','Rhynchospora knieskernii','Knieskern''s beaked-rush','PMCYP0N190 ','P','LT',NULL);
-INSERT INTO lkpSpecies VALUES(137976,'isotmede','Isotria medeoloides','Small Whorled Pogonia','PMORC1F010','P','LT',1);
-INSERT INTO lkpSpecies VALUES(140454,'lythcurt','Lythrum curtissii','Curtiss'' Loosestrife','PDLYT09030','P',NULL,2);
-INSERT INTO lkpSpecies VALUES(144235,'schwamer','Schwalbea americana','Chaffseed','PDSCR1Q010','P','LE',2);
-INSERT INTO lkpSpecies VALUES(147692,'echilaev','Echinacea laevigata','Smooth Coneflower','PDAST38030','P','LE',1);
-INSERT INTO lkpSpecies VALUES(148771,'rhusmich','Rhus michauxii','Michaux''s Sumac','PDANA08070','P','LE',1);
-INSERT INTO lkpSpecies VALUES(150401,'sciranci','Scirpus ancistrochaetus','Northeastern Bulrush','PMCYP0Q030','P','LE',3);
-INSERT INTO lkpSpecies VALUES(151923,'helobull','Helonias bullata','Swamp Pink','PMLIL10010','P','LT',1);
-INSERT INTO lkpSpecies VALUES(159058,'aescvirg','Aeschynomene virginica','Sensitive Joint-vetch','PDFAB04080 ','P','LT',1);
-INSERT INTO lkpSpecies VALUES(802301,'ambycing','Ambystoma cingulatum','Frosted Flatwoods Salamander','AAAAA01030','A','LT',2);
-INSERT INTO lkpSpecies VALUES(817643,'phempied','Phemeranthus piedmontanus','Piedmont Fameflower','PDPOR0A010','P',NULL,1);
-CREATE TABLE `tblCustomModelComments` (
-	`ID`	INTEGER,
-	`date`	TEXT,
-	`speciesCode`	TEXT,
-	`comments`	TEXT,
-	`model_name`	TEXT,
-	`model_comp_name`	TEXT,
-	`modeller`	TEXT,
-	`model_start_time`	TEXT,
-	`model_end_time`	TEXT,
-	`r_version`	TEXT,
-	`model_run_name`	TEXT,
-	PRIMARY KEY(`ID`,`model_run_name`)
-);
-CREATE TABLE IF NOT EXISTS "tblCutoffs" (
-	`ID`	INTEGER,
-	`ElemCode`	TEXT,
-	`dateTime`	TEXT,
-	`cutCode`	TEXT,
-	`cutValue`	REAL,
-	`capturedEOs`	INTEGER,
-	`capturedPolys`	INTEGER,
-	`capturedPts`	INTEGER,
-	PRIMARY KEY(`ID`)
-);
+INSERT INTO lkpModelers VALUES(0,'Virginia Natural Heritage Program','Virginia Department of Conservation and Recreation - Division of Natural Heritage','Richmond','VA');
 CREATE TABLE IF NOT EXISTS "lkpEnvVars" (
 	`fullName`	TEXT,
 	`gridName`	TEXT,
@@ -338,4 +180,86 @@ INSERT INTO lkpThresholdTypes VALUES(5,'FMeasPt01','F-measure with alpha set to 
 INSERT INTO lkpThresholdTypes VALUES(6,'ROC','ROC plot upper left corner','The point on the ROC curve with the shortest distance to the top-left corner of the ROC plot.','LiuEtAl2005','Liu, C., P. M. Berry, T. P. Dawson, and R. G. Pearson. 2005. Selecting thresholds of occurrence in the prediction of species distributions. Ecography 28:385–393.',8);
 INSERT INTO lkpThresholdTypes VALUES(7,'MTPP','Minimum Training Presence by Polygon','The highest probability value at which 100% of input polygons have at least one presence point classified as suitable habitat.',NULL,'Pearson, R. G., C. J. Raxworthy, M. Nakamura, and A. Townsend Peterson. 2007. Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34:102–117. ',4);
 INSERT INTO lkpThresholdTypes VALUES(8,'MTPEO','Minimum Training Presence by Element Occurrence','The highest probability value at which 100% of input EOs have at least one presence point classified as suitable habitat.',NULL,'Pearson, R. G., C. J. Raxworthy, M. Nakamura, and A. Townsend Peterson. 2007. Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34:102–117. ',5);
+CREATE TABLE IF NOT EXISTS "tblModelResultsMetaDComments" (
+	`ID`	INTEGER,
+	`EG_ID`	INTEGER,
+	`date`	TEXT,
+	`speciesCode`	TEXT,
+	`comments`	TEXT,
+	`model_name`	TEXT,
+	`model_comp_name`	TEXT,
+	`modeller`	TEXT,
+	`model_start_time`	TEXT,
+	`model_end_time`	TEXT,
+	`r_version`	TEXT,
+	`model_run_name`	TEXT,
+	PRIMARY KEY(`ID`,`model_run_name`)
+);
+CREATE TABLE IF NOT EXISTS "mapDataSourcesToSpp" (
+	`DataSourcesToSpeciesID`	INTEGER NOT NULL,
+	`DataSourcesID`	INTEGER,
+	`EG_ID`	INTEGER,
+	PRIMARY KEY(`DataSourcesToSpeciesID`)
+);
+INSERT INTO mapDataSourcesToSpp VALUES(14,2,101322);
+INSERT INTO mapDataSourcesToSpp VALUES(23,16,101322);
+CREATE TABLE IF NOT EXISTS "tblModelResultsCutoffs" (
+	`ID`	INTEGER NOT NULL,
+	`EG_ID`	INTEGER,
+	`ElemCode`	TEXT,
+	`dateTime`	TEXT,
+	`cutCode`	TEXT,
+	`cutValue`	REAL,
+	`capturedEOs`	INTEGER,
+	`capturedPolys`	INTEGER,
+	`capturedPts`	INTEGER,
+	PRIMARY KEY(`ID`)
+);
+CREATE TABLE `tblModelResults` (
+	`ID`	INTEGER NOT NULL,
+	`EG_ID`	INTEGER,
+	`datetime`	TEXT,
+	`final_envars_count`	INTEGER,
+	`r_proj_filename`	TEXT,
+	PRIMARY KEY(`ID`)
+);
+CREATE TABLE IF NOT EXISTS "tblModelInputs" (
+	`ID`	INTEGER NOT NULL,
+	`EG_ID`	INTEGER,
+	`datetime`	TEXT,
+	`filename_input_points`	TEXT,
+	`filename_background_points`	TEXT,
+	`polys_count`	INTEGER,
+	`eos_count`	INTEGER,
+	`observations_count`	INTEGER,
+	`background_count`	INTEGER,
+	`range_clip_definitionXXX`	TEXT,
+	`range_area_sqkm`	REAL,
+	`range_area_huc_count`	INTEGER,
+	PRIMARY KEY(`ID`)
+);
+CREATE TABLE IF NOT EXISTS "tblModelInputsHucs" (
+	`ID`	INTEGER NOT NULL,
+	`model_inputs_ID`	INTEGER,
+	`huc_06`	INTEGER,
+	`huc_08`	INTEGER,
+	`huc_10`	INTEGER,
+	PRIMARY KEY(`ID`)
+);
+CREATE TABLE IF NOT EXISTS "lkpSpecies" (
+	`EG_ID`	INTEGER NOT NULL,
+	`CODE`	TEXT,
+	`broad_group`	INTEGER,
+	`tax_group`	INTEGER,
+	`scientific_name`	TEXT,
+	`common_name`	TEXT,
+	`ELCODE_BCD`	TEXT,
+	`ELEMTYPE`	TEXT,
+	`g_rank`	INTEGER,
+	`rounded_g_rank`	INTEGER,
+	`esa_status`	TEXT,
+	`ModelerID`	INTEGER,
+	`Comment`	TEXT,
+	PRIMARY KEY(`EG_ID`)
+);
 COMMIT;
