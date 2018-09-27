@@ -533,9 +533,9 @@ save(list = ls.save, file = paste0("rdata/", model_run_name,".Rdata"), envir = e
 
 # write model metadata to db
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
-insert_values <- paste(model_run_name, model_species, baseName, model_start_time, modeller, model_comp_name, r_version, model_comments, sep = "','")
+insert_values <- paste(dbQuoteString(db, c(model_run_name, model_species, baseName, model_start_time, modeller, model_comp_name, r_version, model_comments)), collapse = ",")
 SQLquery <- paste0("INSERT INTO tblModelRuns (modelRunName, CODE, tableCode, modelBeginTime, modeller, modelCompName, rVersion, internalComments)
-  VALUES ('",insert_values,"');")
+  VALUES (",insert_values,");")
 dbExecute(db, SQLquery)
 # write variable info to db
 varImpDB <- data.frame(modelRunName = model_run_name, gridName = envvar_list, inFinalModel = 0)

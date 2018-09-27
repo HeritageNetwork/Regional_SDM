@@ -9,12 +9,12 @@
 # set project folder, db, species code, and species reaches filename for this run
 rm(list=ls())
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
-loc_model <- "D:/testing_SDM/dev/species"
-# Modeling database
-project_db <- "D:/testing_SDM/dev/databases/sdm_tracking_dev.sqlite"
-# species code (from lkpSpecies in modelling database. This will be the new folder name in loc_model.)
+loc_model <- "D:/testing_SDM/aqua_dev/species"
+# Modeling database - provide full path
+project_db <- "D:/testing_SDM/aqua_dev/databases/sdm_tracking_aqua_dev.sqlite"
+# species code - from lkpSpecies in modelling database. This will be the new folder name in loc_model.
 model_species <- "chrocumb"
-# locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
+# locations file (presence reaches). Provide full path; The file is copied to modeling folder and timestamped.
 nm_presFile <- "D:/SDM/Tobacco/inputs/species/chrocumb/reach_data/chrocumb.csv"
 
 ## this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
@@ -26,7 +26,7 @@ source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
 
 ## loc_scripts should now be set; if it failed, 
 ## manually set loc_scripts path below if get_scripts fails
-# loc_scripts <- "E:/git/aquatic/Regional_SDM/"
+loc_scripts <- "E:/git/aquatic/Regional_SDM/"
 
 # remove everything but necessary variables
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_db","model_species","loc_scripts", "loc_model", "nm_presFile")])
@@ -69,7 +69,7 @@ run_SDM(
   nm_refBoundaries = "D:/SDM/Tobacco/other_spatial/shp/aqua/StatesEast.shp", # background grey refernce lines in map
   nm_studyAreaExtent = "D:/SDM/Tobacco/other_spatial/shp/aqua/VA_HUC_predarea.shp", # outline black boundary line for study area in map
   nm_aquaArea = "D:/SDM/Tobacco/other_spatial/shp/aqua/VA_nhdarea_wb.shp", ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
-  model_comments = "testing dev",
+  model_comments = "david's model test",
   metaData_comments = "bla bla",
   modeller = "David Bucklin",
   begin_step = "1",
@@ -100,24 +100,38 @@ run_SDM(
 # The scripts will automatically be accessed from 'loc_scripts' (if provided) 
 # or (if not provided) the location that was specified for the original model run.
 
-# set project folder and species code for this run
-project_db <- "D:/testing_SDM/dev/databases/sdm_tracking_dev.sqlite"
-loc_model <- "D:/testing_SDM/dev/species"
+# set project folder, species code, scripts for this run
+project_db <- "D:/testing_SDM/aqua_dev/databases/sdm_tracking_aqua_dev.sqlite"
+loc_model <- "D:/testing_SDM/aqua_dev/species"
+model_species <- "chrocumb"
+branch <- "aqua_dev"
+source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
+## NOTE any messages, and download/place scripts manually if necessary
 
 # load function
 setwd(loc_scripts)
 source("helper/run_SDM.R")
 
 # example pick-up a model run at step 2 (same presence/bkgd data, new model with different variables)
-  # if starting at step 2/3, provide an input tableCode to nm_presFile 
+  # need to provide an input tableCode to nm_presFile 
   # to add/remove variables, begin at step 2
-  # to just run new model, begin at step 3
+  # to just run new model, begin at step 3 (see next example)
 run_SDM(
   begin_step = "2",
-  model_species = "ammoclar",
+  model_species = "chrocumb",
   loc_model = loc_model,
-  nm_presFile = "ammoclar2",
+  nm_presFile = "chrocumb_20180919_160305",
+  model_comments = "Testing out model with removed variables.",
   remove_vars = "cbnfws"
+)
+
+# example pick-up a model run at step 3 (same presence/bkgd data, new model)
+run_SDM(
+  begin_step = "3",
+  model_species = "chrocumb",
+  loc_model = loc_model,
+  nm_presFile = "chrocumb_20180919_160305",
+  model_comments = "New model run using most recent settings."
 )
 
 # example pick-up a model run at step 4c (metadata/comment update)
@@ -127,5 +141,5 @@ run_SDM(
   model_species = "alashete",
   loc_model = loc_model,
   model_rdata = "alashete_20180919_093614",
-  metaData_comments = "UPDATED METADATA COMMENT."
+  metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
