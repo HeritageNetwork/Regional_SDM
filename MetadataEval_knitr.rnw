@@ -353,7 +353,7 @@ if (!is.null(nm_aquaArea)) {
                                              by = list(results_shape$wacomid),
                                              FUN = function(x) c(mn = mean(x, na.rm = TRUE), n = length(x))))
   colnames(aqua.pred) <- c("comid","pred","count")
-  area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
+  area.wb.pred <- sp::merge(aquaPolys, aqua.pred, by = "comid")
   area.wb.pred$colcode <- plotclr[findInterval(area.wb.pred$pred, class$brks)]
 
   plot(area.wb.pred, col = area.wb.pred$colcode, border = NA, add = TRUE)

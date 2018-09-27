@@ -9,24 +9,20 @@ library(stringr)
 
 # load data, QC ----
 ###
-## two lines need your attention. The one directly below (loc_scripts)
-## and about line 43 where you choose which random points file to use
-setwd(loc_envVars)
-EnvVars <- read.csv("EnvVars.csv", colClasses=c("huc12"="character")) 
+EnvVars <- read.csv(nm_envVars, colClasses=c("huc12"="character")) 
 names(EnvVars) <- tolower(names(EnvVars))
 
 # join ev to reaches
 # Set working directory to the prepped reaches location
-setwd(loc_modelIn)
+setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
-fileName <- paste0(spReaches, "_prepped.csv")
-sppCode <- strsplit(fileName, "_")[[1]][1] # assume species code is everything before first underscore
+fileName <- paste0("model_input/", baseName, "_prepped.csv")
 reaches <- read.csv(fileName)
 
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get MODTYPE
-SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE CODE = '", sppCode, "';")
+SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE CODE = '", model_species, "';")
 modType <- dbGetQuery(db, SQLQuery)$m
 
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua WHERE use_",modType," = 1;")
@@ -44,7 +40,7 @@ if (!is.null(add_vars)) {
   dbDisconnect(db)
   
   if (!all(add_vars %in% gridlistAll)) {
-    stop("Some environmental variables listed in `add_vars` were not found in `loc_EnvVars` dataset: ",
+    stop("Some environmental variables listed in `add_vars` were not found in `nm_EnvVars` dataset: ",
          paste(add_vars1[!add_vars %in% gridlistSub], collapse = ", "), ".")
   }
   gridlistSub <- c(gridlistSub, add_vars)
@@ -53,7 +49,7 @@ if (!is.null(remove_vars)) {
   remove_vars1 <- remove_vars
   remove_vars <- tolower(remove_vars)
   if (!all(remove_vars %in% gridlistSub)) {
-    message("Some environmental variables listed in `remove_vars` were not found in the `loc_EnvVars` dataset: ",
+    message("Some environmental variables listed in `remove_vars` were not found in the `nm_EnvVars` dataset: ",
             paste(remove_vars1[!remove_vars %in% gridlistSub], collapse = ", "), ".")
   } 
   gridlistSub <- gridlistSub[!gridlistSub %in% remove_vars]
@@ -66,4 +62,4 @@ rm(gridlistSub, modType)
 reaches_attributed <- merge(reaches,EnvVars,by="comid")
 
 # write it out ----
-write.csv(reaches_attributed, paste(sppCode,"_att.csv",sep=""), row.names = FALSE)
+write.csv(reaches_attributed, paste0("model_input/",baseName,"_att.csv"), row.names = FALSE)

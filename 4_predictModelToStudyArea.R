@@ -12,12 +12,15 @@ library(data.table)
 
 # load data ----
 # get the rdata file
-setwd(loc_modelOut)
+setwd(loc_model)
+dir.create(paste0(model_species,"/outputs/model_predictions"), recursive = T, showWarnings = F)
+setwd(paste0(model_species,"/outputs"))
+
+# load rdata
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
-setwd(loc_envVars)
-EnvVars <- read.csv("EnvVars.csv", colClasses=c("huc12"="character"))
+EnvVars <- read.csv(nm_envVars, colClasses=c("huc12"="character"))
 names(EnvVars) <- tolower(names(EnvVars))
 
 if (!is.null(huc_level)) {
@@ -41,13 +44,13 @@ result <- result[,"1"]
 results_join_table <- data.frame(comid=df.all.pred$comid, prbblty=result)
 
 # load the reach shapefile for the study area
-setwd(loc_otherSpatial)
-StudyAreaReaches <- nm_allflowlines # the name of the study area flowlines
-layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
-shapef <- readOGR(loc_otherSpatial, layer = layer)
+# setwd(loc_otherSpatial)
+layerdir <- dirname(nm_allflowlines) # the name of the study area flowlines
+layer <- strsplit(basename(nm_allflowlines),"\\.")[[1]][[1]]
+shapef <- readOGR(layerdir, layer = layer)
 
 # join probability to shapefile
-shapef <- merge(shapef, results_join_table, by = "comid", all.x = F)
+shapef <- sp::merge(shapef, results_join_table, by = "comid", all.x = F)
 
 # write the shapefile
-writeOGR(obj=shapef, dsn= paste0(loc_modelOut, "/model_predictions"), layer= paste0(modelrun_meta_data$model_run_name, "_results"), driver="ESRI Shapefile", overwrite_layer = TRUE)
+writeOGR(obj=shapef, dsn= "model_predictions", layer= paste0(modelrun_meta_data$model_run_name, "_results"), driver="ESRI Shapefile", overwrite_layer = TRUE)

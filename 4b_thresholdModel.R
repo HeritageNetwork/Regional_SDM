@@ -10,7 +10,8 @@ library(DBI)
 ### find and load model data ----
 ## two lines need your attention. The one directly below (loc_scripts)
 ## and about line 23 where you choose which Rdata file to use
-setwd(loc_modelOut)
+setwd(loc_model)
+setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 ## Calculate different thresholds ----
@@ -117,6 +118,17 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 
 # collate and write to DB ----
 
+# load the prediction vector, for calculating MRV
+results_shape <- readOGR("model_predictions", paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
+
+# MRV (on full model predictions)
+pres.comid <- df.full$comid[df.full$pres==1]
+mrv <- min(results_shape$prbblty[results_shape$comid %in% pres.comid], na.rm = T)
+cutList$MRV <- list("value" = mrv, "code" = "MRV",
+                    "capturedPts" = length(pres.comid))
+
+
+
 # number of thresholds to write to the db
 numThresh <- length(cutList)
 
@@ -133,38 +145,39 @@ allThresh <- data.frame("modelRunName" = rep(modelrun_meta_data$model_run_name, 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
+dbcheck <- dbGetQuery(db, paste0("SELECT cutCode c FROM tblCutoffs WHERE modelRunName = '",
+                                 modelrun_meta_data$model_run_name,"';"))$c
 
 for(i in 1:numThresh){
-  SQLquery <- paste("INSERT INTO tblCutoffs (", 
-                    toString(names(allThresh)),
-                    ") VALUES (",
-                    toString(sQuote(allThresh[i,])),
-                    ");", sep = "")
-  dbExecute(db, SQLquery)
+  if (!allThresh[i,]$cutCode %in% dbcheck) {
+    SQLquery <- paste("INSERT INTO tblCutoffs (", 
+                      toString(names(allThresh)),
+                      ") VALUES (",
+                      toString(sQuote(allThresh[i,])),
+                      ");", sep = "")
+    dbExecute(db, SQLquery)
+  }
 }
 
 # clean up
 options(op)
 dbDisconnect(db)
 
-## choose threshold, create binary grid ----
 # THE next lines are for creating threshold column(s) in the shapefile
-# you could do it in Arc instead. 
-
-#lets set the threshold to MTP
-threshold <- as.numeric(MTP)
-# load the prediction vector
-results_shape <- readOGR(paste0(loc_modelOut, "/model_predictions"), paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
-
-# reclassify the vector based on the threshold into binary 0/1
-test2 <- results_shape
-test2@data$MTP <- NA
-test2@data$MTP[test2@data$prbblty<threshold] <- 0
-test2@data$MTP[test2@data$prbblty>=threshold] <- 1
+# add columns for all thresholds
+for (t in allThresh$cutCode) {
+  threshold <- as.numeric(allThresh$cutValue[allThresh$cutCode == t])
+  if (!is.na(threshold)) {
+    # reclassify the vector based on the threshold into binary 0/1
+    results_shape@data[,t] <- NA
+    results_shape@data[,t][results_shape@data$prbblty<threshold] <- 0
+    results_shape@data[,t][results_shape@data$prbblty>=threshold] <- 1
+  }
+}
 
 #write outshapefile
-writeOGR(test2,dsn=paste0(loc_modelOut, "/model_predictions"),layer=paste0(modelrun_meta_data$model_run_name, "_results")
+writeOGR(results_shape,dsn="model_predictions",layer=paste0(modelrun_meta_data$model_run_name, "_results")
          , driver="ESRI Shapefile", overwrite_layer = TRUE)
 
 #clean up
-rm(test2)
+rm(results_shape)

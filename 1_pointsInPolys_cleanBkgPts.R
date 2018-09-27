@@ -23,13 +23,15 @@ library(stringr)
 
 
 # set the working directory to the location of the csv of species by reaches
-setwd(loc_spReaches)
+setwd(loc_model)
+dir.create(paste0(model_species,"/inputs/presence"), recursive = T, showWarnings = F)
+dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
+setwd(paste0(loc_model,"/",model_species,"/inputs/presence"))
+# changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
-fileName <- paste0(nm_spReaches, ".csv")
-shpName <- strsplit(fileName,"\\.")[[1]][[1]]
-sppCode <- shpName
-presReaches <- read.csv(fileName, colClasses = c("huc12"="character"))
+fileName <- basename(nm_presFile)
+presReaches <- read.csv(nm_presFile, colClasses = c("huc12"="character"))
 
 shpColNms <- names(presReaches)
 desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","group_id","huc12") 
@@ -44,10 +46,16 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id","huc12")]))) {
   stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID','huc12', and 'group_id' cannot have NA values.")
 }
-# check if file already exists (only check first written file)
-if (file.exists(paste(sppCode,"_prepped.csv",sep=""))) stop("File '", paste(sppCode,"_prepped.csv",sep=""), "' already exists.\n",
-                                                            "Delete it to begin a new modeling run. All other previous input\n",
-                                                            "datasets will be overwritten.")
+
+# check if file already exists; if it does, stop and print error
+if (!file.copy(nm_presFile, paste0(baseName, ".csv"))) {
+  stop("A file already exists with that name: '", 
+       paste0(getwd(), "/", baseName, ".csv"), "'. Rename or delete it to continue.")
+}
+# set wd to inputs again
+setwd(paste0(loc_model,"/",model_species,"/inputs"))
+# file in place, read it
+presReaches <- read.csv(paste0("presence/", baseName, ".csv"), colClasses = c("huc12"="character"))
 
 # arrange, pare down columns
 presReaches <- presReaches[,desiredCols]
@@ -118,10 +126,11 @@ names(att.reaches) <- tolower(names(att.reaches))
 
 # Write out various stats and data to the database ------
 # prep the data
-OutPut <- data.frame(SciName = paste(att.reaches[1,"sname"]),
+OutPut <- data.frame(tableCode = baseName,
+  SciName = paste(att.reaches[1,"sname"]),
 	CommName=paste(att.reaches[1,"scomname"]),
-	ElemCode=sppCode,
-	RandomPtFile= "NA/Aquatic", # do we need this?
+	ElemCode=model_species,
+	RandomPtFile= paste0(getwd(), "/presence/", fileName), # do we need this?
 	date = paste(Sys.Date()),
 	time = format(Sys.time(), "%X"),
 	Loc_Use=""
@@ -136,11 +145,11 @@ dbDisconnect(db)
 # remove reaches from background dataset that have presence of the target species in the reach
 list_presReaches <- att.reaches$comid
 
-setwd(loc_otherSpatial)
-StudyAreaReaches <- nm_allflowlines # the name of the study area flowlines
+# setwd(loc_otherSpatial)
 # read in the shapefile, get the attribute data
-layer <- strsplit(StudyAreaReaches,"\\.")[[1]][[1]]
-shapef <- readOGR(loc_otherSpatial, layer = layer)
+layer <- strsplit(basename(nm_allflowlines),"\\.")[[1]][[1]]
+layerdir <- dirname(nm_allflowlines)
+shapef <- readOGR(layerdir, layer = layer)
 testcatchments <- shapef@data
 names(testcatchments) <- tolower(names(testcatchments))
 testcatchments$huc12 <- str_pad(testcatchments$huc12, 12, pad=0)
@@ -165,8 +174,7 @@ bkgd.int <- names(bkgd.int)[as.vector(bkgd.int)]
 bkgd.int <- shapef[row.names(shapef) %in% bkgd.int,]
 list_removeBkgd <- bkgd.int$comid
 
-setwd(loc_envVars)
-bgpoints <- read.csv("EnvVars.csv", colClasses=c("huc12"="character"))
+bgpoints <- read.csv(nm_envVars, colClasses=c("huc12"="character"))
 names(bgpoints) <- tolower(names(bgpoints))
 bgpoints$huc12 <- str_pad(bgpoints$huc12, 12, pad=0)
 
@@ -174,8 +182,6 @@ selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in%
 bgpoints_cleaned <- bgpoints[selectedRows,] # selects rows by comid in list of project reaches, and also not bordering presence reaches
 
 # write species reach data
-setwd(loc_modelIn)
-write.csv(att.reaches,paste(sppCode,"_prepped.csv",sep=""), row.names = FALSE) 
-
+write.csv(att.reaches,paste("model_input/", baseName,"_prepped.csv",sep=""), row.names = FALSE) 
 # wtite background reach data
-write.csv(bgpoints_cleaned,"bgpoints_clean.csv", row.names = FALSE)
+write.csv(bgpoints_cleaned, paste("model_input/", baseName,"_bgpoints_clean.csv",sep=""), row.names = FALSE)
