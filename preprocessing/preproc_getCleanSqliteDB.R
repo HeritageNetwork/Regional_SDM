@@ -20,17 +20,18 @@
 # for more info, see
 # https://sqlite.org/cli.html#converting_an_entire_database_to_an_ascii_text_file
 
-# paths ----
-# Lines that require editing
+library(here)
+
+# this assumes a databases folder in the _data folder within the project. 
+# it doesn't require any unique paths to be set
 
 # database location and name
-dbLoc <- "G:/RegionalSDM/databases"
+dbLoc <- here("_data","databases")
 dbName <- "SDM_lookupAndTracking.sqlite"
 
 # path to git folder
-gitLoc <- "G:/RegionalSDM/scripts/Regional_SDM"
+gitLoc <- here("sqlite")
 
-# End, lines that require editing
 
 # create database ----
 ## use these three commands to create the SQLite db

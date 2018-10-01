@@ -8,3 +8,6 @@
 # Session Data files
 .RData
 .Rproj.user
+
+# all inputs and output in the _data folder
+_data/
