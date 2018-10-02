@@ -29,7 +29,7 @@ library(here)
 dbLoc <- here("_data","databases")
 dbName <- "SDM_lookupAndTracking.sqlite"
 
-# path to git folder
+# path to sqlite dump folder
 gitLoc <- here("sqlite")
 
 
