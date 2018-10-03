@@ -9,7 +9,7 @@
 # set project folder, db, species code, and species reaches filename for this run
 rm(list=ls())
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
-loc_model <- "D:/testing_SDM/aqua_dev/species"
+loc_model <- "D:/testing_SDM/Aquatic/species"
 # Modeling database - provide full path
 project_db <- "D:/testing_SDM/aqua_dev/databases/sdm_tracking_aqua_dev.sqlite"
 # species code - from lkpSpecies in modelling database. This will be the new folder name in loc_model.
@@ -20,13 +20,13 @@ nm_presFile <- "D:/SDM/Tobacco/inputs/species/chrocumb/reach_data/chrocumb.csv"
 ## this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 ## file anywhere on your computer, so you don't have to change the path)
 ## github branch to download
-branch <- "aqua_dev"
+branch <- "Aquatic"
 source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
 ## NOTE any messages, and download/place scripts manually if necessary
 
 ## loc_scripts should now be set; if it failed, 
 ## manually set loc_scripts path below if get_scripts fails
-loc_scripts <- "E:/git/aquatic/Regional_SDM/"
+# loc_scripts <- "E:/git/aquatic/Regional_SDM/"
 
 # remove everything but necessary variables
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_db","model_species","loc_scripts", "loc_model", "nm_presFile")])
@@ -83,7 +83,7 @@ run_SDM(
 #############################################################################
 #############################################################################
 
-# Step 2-alt: run additional model, or pick up from previous model run
+# Step 2-alternate: run additional model, or pick up from previous model run
 
 # if using add_vars or remove_vars for a new model run, start at step 2.
 

@@ -23,12 +23,18 @@
 # paths ----
 # Lines that require editing
 
+# do you want to populate the DB with example data? If not change to FALSE (schema only)
+example_data <- TRUE 
+# path to git sqlite sub-folder
+gitLoc <- "E:/git/aquatic/Regional_SDM/sqlite"
+
 # database location and name
-dbLoc <- "E:\\SDM\\Aquatic\\databasess"
+dbLoc <- "D:/testing_SDM/aqua3/databases"
 dbName <- "SDM_lookupAndTracking.sqlite"
 
-# path to git folder
-gitLoc <- "E:\\SDM\\Aquatic\\scripts\\Regional_SDM"
+# create the directory
+if (!dir.exists(dbLoc)) dir.create(dbLoc, recursive = T)
+# NOW COPY sqlite.exe to the new directory (See details in header)
 
 # End, lines that require editing
 
@@ -39,19 +45,21 @@ gitLoc <- "E:\\SDM\\Aquatic\\scripts\\Regional_SDM"
 ## want to replace 'type' with 'cat' but otherwise it should work.
 # This also assumes you have sqlite3.exe in the dbLoc folder. 
 
-setwd(gitLoc)
-toSQLitecmd <- paste('type sqliteDBDump.txt | "',
-                     dbLoc, '\\sqlite3" "',
-                     dbLoc, '\\', dbName, '"', sep = "")
-shell(toSQLitecmd)
-
-# database dump ----
-## these three commands will create a new text representation 
-## of the sqlite DB. We might want to do this periodically with
-## new schema changes. 
-
-# setwd(gitLoc)
-# toTextcmd <- paste(dbLoc, '/sqlite3.exe \"',
-#                    dbLoc, '/', dbName, '\" .dump > ',
-#                    'sqliteDBDump.txt', sep = "")
-# shell(toTextcmd)
+if (file.exists(paste0(dbLoc, "/sqlite3.exe"))) {
+  setwd(gitLoc)
+  # just schema
+  toSQLitecmd <- paste('type sqlite_template_db_nodata.sql | "',
+                       dbLoc, '/sqlite3.exe" "',
+                       dbLoc, '/', dbName, '"', sep = "")
+  shell(toSQLitecmd)
+  # example data
+  if (example_data) {
+    toSQLitecmd <- paste('type example_data.sql | "',
+                         dbLoc, '/sqlite3.exe" "',
+                         dbLoc, '/', dbName, '"', sep = "")
+    shell(toSQLitecmd)
+  }
+  message("New database '", dbLoc, '/', dbName, "' created.")
+} else {
+  stop("You need to copy the sqlite3.exe executable to '",dbLoc,"' to continue. See file header for details.")
+}
