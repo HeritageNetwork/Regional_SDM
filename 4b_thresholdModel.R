@@ -192,22 +192,18 @@ options(op)
 dbDisconnect(db)
 
 
-## choose threshold, create binary grid ----
-# THE next lines are for creating thresholded grids. You don't need to do this here, 
-# you could do it in Arc instead. 
+## create all thresholds grid
 
-#lets set the threshold to MTP
-threshold <- allThresh$cutValue[allThresh$cutCode == "MTP"]
+t2 <- sort(unique(allThresh$cutValue))
+t2 <- t2[!is.na(t2)]
+# get unique thresholds
+t3 <- data.frame(cutCodes = unlist(lapply(t2, FUN = function(x) {paste(allThresh$cutCode[allThresh$cutValue == x], collapse = ";")})),
+                 cutValue = t2,
+                 order = 1:length(t2))
 
 # get a list of rasters in the directory for this species
 r <- dir(path = loc_outRas, 
          pattern = paste(ElementNames$Code, ".*tif$",sep=""),full.names=FALSE)
-# r
-# # which one do we want to run? (default to last, assuming sorted by date stamp)
-# n <- length(r)
-# n
-# prefer loading a different tiff? change the next line and uncomment.
-#n <- 1
 rasName <- r[gsub(".tif", "", r) == model_run_name]  # uses model_run_name to specify raster
 
 # load the prediction grid
@@ -215,9 +211,9 @@ ras <- raster(paste(loc_outRas, rasName, sep = "/"))
 
 # reclassify the raster based on the threshold into binary 0/1
 m <- cbind(
-  from = c(-Inf, threshold),
-  to = c(threshold, Inf),
-  becomes = c(0, 1)
+  from = c(-Inf, t3$cutValue),
+  to = c(t3$cutValue, Inf),
+  becomes = c(0, t3$order)
 )
 # reclassify (multi-core try)
 if (all(c("snow","parallel") %in% installed.packages())) {
@@ -234,19 +230,20 @@ if (all(c("snow","parallel") %in% installed.packages())) {
 } else {
   rasrc <- reclassify(ras, m)
 }
+rasrc <- as.factor(rasrc)
+levels(rasrc) <- merge(levels(rasrc), t3, by.x = "ID", by.y = "order", all.x = T)
 
-#plot(rasrc)
-outfile <- paste(loc_outRas,"/",ElementNames$Code,"_threshold.tif", sep = "")
+outfile <- paste(loc_outRas,"/",model_run_name,"_all_thresholds.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE, datatype = "INT2U")
 
 #clean up
 rm(m, rasrc)
 
-## continuous grid that drops cells below thresh ----
+## continuous grid that drops cells below lowest calculated thresh ----
 # reclassify the raster based on the threshold into Na below thresh
 m <- cbind(
   from = c(-Inf),
-  to = c(threshold),
+  to = min(t3$cutValue),
   becomes = c(NA)
 )
 
@@ -267,5 +264,5 @@ if (all(c("snow","parallel") %in% installed.packages())) {
 }
 
 #plot(rasrc)
-outfile <- paste(loc_outRas,"/",model_run_name,"_thresh2.tif", sep = "")
+outfile <- paste(loc_outRas,"/",model_run_name,"_min_thresh_continuous.tif", sep = "")
 writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)

@@ -8,7 +8,7 @@
 
 # set project folder and species code for this run
 project_folder <- "D:/SDM/Tobacco"
-model_species <- "ammohens"
+model_species <- "bombaffi"
 
 # path where you want to save model run scripts
 loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
@@ -22,6 +22,7 @@ source("E:/git/Regional_SDM/helper/get_scripts.R", local = TRUE)
 
 # manually set loc_scripts path here if get_scripts fails
 loc_scripts <- script_store
+loc_scripts <- "E:/git/Regional_SDM"
 
 # remove everything but necessary variables
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
@@ -54,6 +55,7 @@ run_SDM(
   begin_step = "1",
   loc_scripts = loc_scripts, 
   loc_spPoly = paste0(project_folder, "/inputs/species/", model_species ,"/polygon_data"),
+  nm_spPoly = "bombaffi_after2005",
   nm_db_file = paste0(project_folder, "/databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite"),
   loc_bkgPts = paste0(project_folder, "/inputs/background/tobacco"), 
   nm_bkgPts = "tobacco_att",
@@ -65,8 +67,8 @@ run_SDM(
   loc_RDataOut = paste0(project_folder, "/outputs/", model_species ,"/rdata"),
   loc_outRas = paste0(project_folder, "/outputs/", model_species ,"/grids"),
   loc_outMetadata = paste0(project_folder, "/outputs/", model_species ,"/metadata"),
-  model_comments = "Updated sp. occurrences.",
-  metaData_comments = "",
+  model_comments = "Updated sp. occurrences, using only post-2005 records.",
+  metaData_comments = "Only includes records from 2006 or later.",
   modeller = "David Bucklin",
   add_vars = NULL,
   remove_vars = NULL,
