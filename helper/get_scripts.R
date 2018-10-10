@@ -20,7 +20,7 @@ if (!dir.exists(script_store)) {
     git_chk <- git2r::checkout(git_repo, branch = branch, force = FALSE)
     git_pull <- git2r::pull(git_repo)
   })
-  if (exists("git_pull") && any(git_pull@up_to_date, git_pull@fast_forward)) {
+  if (exists("git_pull") && any(git_pull$up_to_date, git_pull$fast_forward)) {
     message("Scripts up-to-date. Ready to run.")
     message(paste0("Set 'loc_scripts' to '", script_store ,"'."))
   } else {
