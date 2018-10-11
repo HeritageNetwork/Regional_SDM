@@ -6,6 +6,8 @@
 library(here)
 library(sf)
 
+library(nhSDM)
+
 ## set paths ----
 # set this path to the folder where point data reside
 pathTodata <- here("_data","inputs")
@@ -14,6 +16,9 @@ pts <- read_sf(paste(pathTodata,"bombus_test.shp", sep = "/"))
 
 pts$key <- as.character(pts$key)
 pts$year <- as.character(pts$year)
+
+# convert to albers equal area
+pts.aea <- st_transform(pts, 102003)
 
 # ### version one. using clustering ----
 # # point to point distances for all points
@@ -29,26 +34,29 @@ pts$year <- as.character(pts$year)
 
 
 ### version two. use buffering ----
-
-# convert to albers equal area (need meters as distance unit)
-pts.aea <- st_transform(pts, 102003)
-
 #define the buffer distance
 # since this is radius, the separation distance is double this value
-d = 10000
-# buffer the points
-pt.buff <- st_buffer(pts.aea, dist = d)
-#plot(pt.buff["clust"])  
-# merge up the polys, then explode to single-part
-pt.un <- st_union(pt.buff, by_feature = FALSE)
-pt.un.sing <- st_cast(pt.un, "POLYGON")
-
-# assign an integer ID to the original points layer
-pts.aea$group <- as.integer(st_intersects(pts.aea, pt.un.sing, sparse = TRUE))
+# d = 20000
+# # buffer the points
+# pt.buff <- st_buffer(pts.aea, dist = d)
+# #plot(pt.buff["clust"])  
+# # merge up the polys, then explode to single-part
+# pt.un <- st_union(pt.buff, by_feature = FALSE)
+# pt.un.sing <- st_cast(pt.un, "POLYGON")
+# 
+# # assign an integer ID to the original points layer
+# pts.aea$group <- as.integer(st_intersects(pts.aea, pt.un.sing, sparse = TRUE))
 
 #plot(pts.aea["group"])
 
-st_write(pts.aea, paste(pathTodata,"bombus_test_grouped.shp", sep = "/"))
+### version three. use nhSDM ----
+#define the distance
+d = 2000
+
+ptout <- nh_group(pts.aea, sep.dist = d, union = FALSE )
+
+
+st_write(ptout, paste(pathTodata,"bombus_test_grouped.shp", sep = "/"))
 
 
 ## clean up ----
