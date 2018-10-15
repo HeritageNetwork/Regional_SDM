@@ -11,7 +11,7 @@ rm(list=ls())
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
 loc_model <- "E:/git/dnbucklin/Regional_SDM/_data/species"
 # Modeling database
-project_db <- "E:/git/dnbucklin/Regional_SDM/_data/databases/sdm_tracking_dev_all.sqlite"
+nm_db_file <- "E:/git/dnbucklin/Regional_SDM/_data/databases/sdm_tracking_dev_all.sqlite"
 # species code (from lkpSpecies in modelling database. This will be the new folder name in loc_model.)
 model_species <- "micrmont"
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
@@ -33,7 +33,7 @@ nm_presFile <- "D:/SDM/Tobacco/inputs/species/micrmont/polygon_data/micrmont.shp
 loc_scripts <- "E:/git/dnbucklin/Regional_SDM/"
 
 # remove everything but necessary variables
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_db","model_species","loc_scripts", "loc_model", "nm_presFile")])
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("nm_db_file","model_species","loc_scripts", "loc_model", "nm_presFile")])
 
 # set wd and load function
 setwd(loc_scripts)
@@ -64,7 +64,7 @@ run_SDM(
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
   nm_presFile = nm_presFile,
-  nm_db_file = project_db, 
+  nm_db_file = nm_db_file, 
   loc_model = loc_model,
   loc_envVars = "D:/SDM/Tobacco/env_vars/Tobacco",
   nm_bkgPts = "D:/SDM/Tobacco/inputs/background/tobacco/tobacco_att.shp",
@@ -100,8 +100,8 @@ run_SDM(
 # or the location that was specified for the original model run. 
 
 # set project folder and species code for this run
-loc_model <- "D:/testing_SDM/dev_all/species"
-project_db <- "D:/testing_SDM/dev_all/databases/sdm_tracking_dev_all.sqlite"
+loc_model <- "E:/git/dnbucklin/Regional_SDM/_data/species"
+nm_db_file <- "E:/git/dnbucklin/Regional_SDM/_data/databases/sdm_tracking_dev_all.sqlite"
 
 # set wd and load function
 loc_scripts <- "E:/git/dnbucklin/Regional_SDM/"
