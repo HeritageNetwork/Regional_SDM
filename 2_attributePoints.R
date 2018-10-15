@@ -8,13 +8,6 @@ library(RSQLite)
 library(maptools)
 
 # load data, QC ----
-
-###
-## two lines need your attention. The one directly below (loc_scripts)
-## and about line 43 where you choose which random points file to use
-#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
-
-#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
 setwd(loc_envVars)
 
 # create a stack
@@ -37,26 +30,18 @@ nmLen <- unlist(lapply(nm, nchar))
 max(nmLen) # if this result is greater than 10, you've got a renegade
 
 # Set working directory to the random points location
-setwd(loc_spPts)
+setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
-# load data, QC ----
-shpName <- strsplit(nm_spPoly,"\\.")[[1]][[1]]
-sppCode <- shpName
-
-ranPtsFilesNoExt <- paste0(sppCode, "_RanPts")
-shpf <- readOGR(".", layer = ranPtsFilesNoExt)
+ranPtsFilesNoExt <- paste0(baseName, "_RanPts")
+shpf <- readOGR("model_input", layer = ranPtsFilesNoExt)
 
 #get projection info for later
 projInfo <- shpf@proj4string
 
-# Get the species code for the ranPtsFile chosen
-# assume you want first part of text string, before first underscore
-code_name <- strsplit(ranPtsFilesNoExt, "_")[[1]][1]
-
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get MODTYPE
-SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE CODE = '", code_name, "';")
+SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE CODE = '", model_species, "';")
 modType <- dbGetQuery(db, SQLQuery)$m
 
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;")
@@ -67,16 +52,26 @@ justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN 
 
 ## account for add/remove vars
 if (!is.null(add_vars)) {
-  if (!all(tolower(add_vars) %in% tolower(justTheNames))) {
-    stop("Some environmental variables listed in `add_vars` were not found in `loc_EnvVars` folder: ",
-         paste(add_vars[!tolower(add_vars) %in% tolower(justTheNames)], collapse = ", "), ".")
+  add_vars1 <- add_vars
+  add_vars <- tolower(add_vars)
+
+  db <- dbConnect(SQLite(),dbname=nm_db_file)
+  SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua;")
+  gridlistAll <- tolower(dbGetQuery(db, SQLQuery)$g)
+  dbDisconnect(db)
+  
+  if (!all(add_vars %in% gridlistAll)) {
+    stop("Some environmental variables listed in `add_vars` were not found in `nm_EnvVars` dataset: ",
+         paste(add_vars1[!add_vars %in% gridlistSub], collapse = ", "), ".")
   }
   gridlistSub <- c(gridlistSub, add_vars)
 }
 if (!is.null(remove_vars)) {
-  if (!all(tolower(remove_vars) %in% tolower(justTheNames))) {
-    warning("Some environmental variables listed in `remove_vars` were not found in the `loc_EnvVars` folder: ",
-         paste(remove_vars[!tolower(remove_vars) %in% tolower(justTheNames)], collapse = ", "), ".")
+  remove_vars1 <- remove_vars
+  remove_vars <- tolower(remove_vars)
+  if (!all(remove_vars %in% gridlistSub)) {
+    message("Some environmental variables listed in `remove_vars` were not found in the `nm_EnvVars` dataset: ",
+            paste(remove_vars1[!remove_vars %in% gridlistSub], collapse = ", "), ".")
   } 
   gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
 }
@@ -125,8 +120,6 @@ if (length(tv) > 0) {
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
 
 # write it out ----
-# apply projection info
 points_attributed@proj4string <- projInfo
-filename <- paste(code_name, "_att", sep="")
-writeOGR(points_attributed, ".", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
-
+filename <- paste(baseName, "_att", sep="")
+writeOGR(points_attributed, "model_input", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)

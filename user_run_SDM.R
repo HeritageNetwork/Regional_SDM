@@ -6,26 +6,34 @@
 # Usage: to put the latest modeling scripts in a new folder created in 'loc_scripts' (set below),
 # which are used for new modeling runs
 
-# set project folder and species code for this run
-project_folder <- "D:/SDM/Tobacco"
-model_species <- "bombaffi"
+# set project folder, db, species code, and species reaches filename for this run
+rm(list=ls())
+# The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
+loc_model <- "E:/git/dnbucklin/Regional_SDM/_data/species"
+# Modeling database
+nm_db_file <- "E:/git/dnbucklin/Regional_SDM/_data/databases/sdm_tracking_dev_all.sqlite"
+# species code (from lkpSpecies in modelling database. This will be the new folder name in loc_model.)
+model_species <- "micrmont"
+# locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
+nm_presFile <- "D:/SDM/Tobacco/inputs/species/micrmont/polygon_data/micrmont.shp"
 
-# path where you want to save model run scripts
-loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
-# github branch to download
-branch <- "master"
+### USE THIS SECTION IS IF YOU WANT A NEW SCRIPT REPO FOR THIS RUN
+## this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
+## file anywhere on your computer, so you don't have to change the path)
+## github branch to download
 
-# this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
-# file anywhere on your computer, so you don't have to change the path)
-source("E:/git/Regional_SDM/helper/get_scripts.R", local = TRUE)
-# NOTE any messages, and download/place scripts manually if necessary
+# branch <- "master"
+# source("E:/git/dnbucklin/Regional_SDM/helper/get_scripts.R", local = TRUE)
 
-# manually set loc_scripts path here if get_scripts fails
-loc_scripts <- script_store
-loc_scripts <- "E:/git/Regional_SDM"
+### NOTE any messages, and download/place scripts manually if necessary
+######
+######
+
+### OTHERWISE, for testing, or if get_scripts failed, just set loc_scripts below
+loc_scripts <- "E:/git/dnbucklin/Regional_SDM/"
 
 # remove everything but necessary variables
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("nm_db_file","model_species","loc_scripts", "loc_model", "nm_presFile")])
 
 # set wd and load function
 setwd(loc_scripts)
@@ -53,26 +61,21 @@ source("helper/run_SDM.R")
 # update the function arguments below as necessary, and run the function
 run_SDM(
   begin_step = "1",
+  model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
-  loc_spPoly = paste0(project_folder, "/inputs/species/", model_species ,"/polygon_data"),
-  nm_spPoly = "bombaffi_after2005",
-  nm_db_file = paste0(project_folder, "/databases/VA_Spp/SDM_VA_Tracking_Modeling.sqlite"),
-  loc_bkgPts = paste0(project_folder, "/inputs/background/tobacco"), 
-  nm_bkgPts = "tobacco_att",
-  loc_envVars = paste0(project_folder, "/env_vars/Tobacco"),
-  loc_otherSpatial = paste0(project_folder, "/other_spatial/shp"),
-  nm_refBoundaries = "StatesVA",
-  nm_studyAreaExtent = "sdmVA_pred_20170131",
-  loc_spPts = paste0(project_folder, "/inputs/species/", model_species ,"/point_data"),
-  loc_RDataOut = paste0(project_folder, "/outputs/", model_species ,"/rdata"),
-  loc_outRas = paste0(project_folder, "/outputs/", model_species ,"/grids"),
-  loc_outMetadata = paste0(project_folder, "/outputs/", model_species ,"/metadata"),
-  model_comments = "Updated sp. occurrences, using only post-2005 records.",
-  metaData_comments = "Only includes records from 2006 or later.",
+  nm_presFile = nm_presFile,
+  nm_db_file = nm_db_file, 
+  loc_model = loc_model,
+  loc_envVars = "D:/SDM/Tobacco/env_vars/Tobacco",
+  nm_bkgPts = "D:/SDM/Tobacco/inputs/background/tobacco/tobacco_att.shp",
+  nm_refBoundaries = "D:/SDM/Tobacco/other_spatial/shp/StatesEast.shp", # background grey refernce lines in map
+  nm_studyAreaExtent = "D:/SDM/Tobacco/other_spatial/shp/sdmVA_pred_20170131.shp", # outline black boundary line for study area in map
+  model_comments = "testing master (terrestrial)",
+  metaData_comments = "bla bla",
   modeller = "David Bucklin",
   add_vars = NULL,
   remove_vars = NULL,
-  prompt = FALSE
+  prompt = TRUE
 )
 
 #############################################################################
@@ -83,52 +86,46 @@ run_SDM(
 
 # if using add_vars or remove_vars for a new model run, start at step 2.
 
-# if you want to run a new model with the same input data as the previous run, start at step 3.
+# if you want to run a new model with the same input data as a previous run, start at step 3.
 
-# If picking up from a previously started run,
-# provide the begin_step and path to loc_RDataOut. 
-# When starting at script #4 or later, also provide the model rdata file 
-# (stored in 'loc_RDataOut') to 'model_rdata', and any other 
-# arguments that you wish to change from 
-# the previous run (e.g., model_comments).
+# If picking up from a previously started run, always
+# provide the begin_step, model_species, and loc_model.
+# When starting at script #4 or later, also provide the name of the 
+# model rdata file to 'model_rdata'. 
+# You can also include any other arguments that you wish to change from 
+# the previous run (e.g., model_comments or metaData_comments).
 # 
-# Note that you can manually update the scripts, if desired. The scripts
-# will automatically be accessed from 'loc_scripts' location 
-# that was specified for the original model run. 
+# Note that you can manually update the scripts, if desired. 
+# The scripts will automatically be accessed from 'loc_scripts' (if provided) 
+# or the location that was specified for the original model run. 
 
 # set project folder and species code for this run
-project_folder <- "D:/SDM/Tobacco"
-model_species <- "glypmuhl"
-# set model rdata, if starting at step 4 or later
-model_rdata <- "speciescode_20170101_123456"
-
-# path where you want to save model run scripts
-loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
-# github branch to download/update
-branch <- "master"
-
-# this downloads latest scripts from GitHub (you can save the 'get_scripts.R' 
-# file anywhere on your computer, so you don't have to change the path)
-source("E:/git/Regional_SDM/helper/get_scripts.R", local = TRUE)
-# NOTE any messages, and download/place scripts manually if necessary
-
-# manually set loc_scripts here if running step 1 seperately from step 2 (on different computers)
-loc_scripts <- script_store
-
-# remove everything but necessary variables
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts","model_rdata")])
+loc_model <- "E:/git/dnbucklin/Regional_SDM/_data/species"
+nm_db_file <- "E:/git/dnbucklin/Regional_SDM/_data/databases/sdm_tracking_dev_all.sqlite"
 
 # set wd and load function
+loc_scripts <- "E:/git/dnbucklin/Regional_SDM/"
 setwd(loc_scripts)
 source("helper/run_SDM.R")
 
-# UNCOMMENT BELOW
+# example pick-up a model run at step 3 (new model, same presence/bkgd data)
+  # if starting at step 2/3, provide an input tableCode to nm_presFile 
+  # to add/remove vars, begin at step 2
+  # to just run new model, begin at step 3
 run_SDM(
-  # loc_scripts = loc_scripts, # if script location is changed, make sure this is set
-  begin_step = "5",
-  loc_RDataOut = paste0(project_folder, "/outputs/", model_species ,"/rdata"),
-  model_rdata = model_rdata, # need to provide this if picking up after step 3, otherwise leave it out
-  # model_comments = "Updated model comment.",
-  # metaData_comments = "Updated metadata comment.",
-  prompt = FALSE
+  begin_step = "2",
+  model_species = "micrmont",
+  loc_model = loc_model,
+  nm_presFile = "micrmont_20181015_123515",
+  remove_vars = "elevx10"
+)
+
+# example pick-up a model run at step 4c (metadata/comment update)
+  # if starting at step 4 or later, must provide model run name to model_rdata
+run_SDM(
+  begin_step = "4",
+  model_species = "micrmont",
+  loc_model = loc_model,
+  model_rdata = "micrmont_20181015_124415",
+  metaData_comments = "UPDATED METADATA COMMENT"
 )

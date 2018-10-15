@@ -15,17 +15,10 @@ library(RSQLite)
 ## and about line 45 where you choose which record to use
 #loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
-
-# get a list of what's in the directory
-# d <- dir(path = loc_RDataOut, pattern = ".Rdata",full.names=FALSE)
-# d
-# # which one do we want to load?
-# n <- 1
-# fileName <- d[[n]]
-# load(paste(loc_RDataOut,fileName, sep="/"))
-setwd(loc_RDataOut)
-load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
+# load Rdata
+setwd(loc_model)
+setwd(paste0(model_species,"/outputs"))
+load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
 for(i in 1:length(modelrun_meta_data))
   assign(names(modelrun_meta_data)[i], modelrun_meta_data[[i]])
