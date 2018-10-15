@@ -10,3 +10,6 @@
 .Rproj.user
 
 *.gitignore
+
+# user_run_SDM user-files
+user_run_SDM_*
