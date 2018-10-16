@@ -17,7 +17,7 @@ loc_model <- here("_data", "species")
 # Modeling database
 nm_db_file <- here("_data", "databases", "sdm_tracking_dev_all.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
-nm_presFile <- here("_data", "occurrence", model_species)
+nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv"))
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey refernce lines in map
 # map project boundary
@@ -30,11 +30,11 @@ metaData_comments = "bla bla"
 modeller = "David Bucklin"
 
 # Name of full environmental variables table [Aquatic-only variable]
-nm_envVars <- here("_data","env_vars","tabular", file_name)
+nm_envVars <- here("_data","env_vars","tabular", "EnvVars.csv")
 # flowlines shapefile [Aquatic-only variable]
-nm_allflowlines <- here("_data","env_vars","background", file_name)
+nm_allflowlines <- here("_data","env_vars","background", "VA_all_flowlines.shp")
 # name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
-nm_aquaArea <- here("_data","other_spatial", file_name)
+nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
 # numeric HUC level to sub-set project area [Aquatic-only variable]
 huc_level <- 2
 
@@ -64,14 +64,12 @@ run_SDM(
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
   nm_presFile = nm_presFile,
-  nm_db_file = project_db, 
+  nm_db_file = nm_db_file, 
   loc_model = loc_model,
   nm_envVars = nm_envVars, # csv with comids, huc_12s, all variables
   nm_allflowlines = nm_allflowlines, ### shapefile of all flowlines w/ comid, huc12 columns
   nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   huc_level = huc_level,
-  loc_envVars = loc_envVars,
-  nm_bkgPts = nm_bkgPts,
   nm_refBoundaries = nm_refBoundaries, # background grey refernce lines in map
   nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
   model_comments = model_comments,
