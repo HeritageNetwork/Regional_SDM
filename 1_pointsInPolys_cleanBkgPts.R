@@ -31,7 +31,6 @@ if(exists("loc_spPoly")) {
   source(here("0_pathsAndSettings.R"))
 }
 
-<<<<<<< HEAD
 # set up folder system for inputs
 dir.create(here("_data/species",model_species,"/inputs/presence"), recursive = TRUE, showWarnings = FALSE)
 dir.create(here("_data/species",model_species,"/inputs/model_input"), showWarnings = FALSE)
@@ -52,6 +51,7 @@ if(is.na(polysFile)){
 }
 
 # load data, QC ----
+fileName <- basename(nm_presFile)
 presPolys <- st_read(here("_data/inputs",polysFile))
 
 #check for proper column names. If no error from next code block, then good to go
@@ -122,7 +122,8 @@ shp_expl <- cbind(shp_expl,
 
 
 #write out the exploded polygon set
-nm.PyFile <- here("_data/species",model_species,"inputs/presence",paste(model_species, "_expl.shp", sep = ""))
+
+nm.PyFile <- here("_data/species",model_species,"inputs/presence",paste(baseName, "_expl.shp", sep = ""))
 st_write(shp_expl, nm.PyFile, driver="ESRI Shapefile", delete_layer = TRUE)
 
 ####
@@ -203,8 +204,8 @@ st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TR
 # Write out various stats and data to the database ------
 # prep the data
 OutPut <- data.frame(tableCode = baseName,
-  SciName = paste(att.pt[1,"sname"]),
-	CommName=paste(att.pt[1,"scomname"]),
+  SciName = paste(ranPts.joined[,"sname"][[1]][1]),
+	CommName=paste(ranPts.joined[,"scomname"][[1]][1]),
 	ElemCode=model_species,
 	RandomPtFile=nm.RanPtFile,
 	date = paste(Sys.Date()),
@@ -222,7 +223,6 @@ dbDisconnect(db)
 ###
 
 # get the background shapefile
-
 backgShapef <- st_read(here("_data/inputs",nm_bkgPts))
 
 # find coincident points ----
@@ -235,6 +235,6 @@ coincidentPts <- unlist(st_contains(polybuff, backgShapef, sparse = TRUE))
 backgSubset <- backgShapef[-coincidentPts,]
 
 # strip .shp from name
-nm_bkgPts_noshp <- sub("\\.shp","",nm_bkgPts)
-outFileName <- here("_data/inputs",paste0(nm_bkgPts_noshp, "_clean.shp"))
+outFileName <- here("_data/inputs",paste0(baseName, "_clean.shp"))
 st_write(backgSubset, outFileName, driver="ESRI Shapefile", delete_layer = TRUE)
+
