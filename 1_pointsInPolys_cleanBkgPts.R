@@ -31,12 +31,10 @@ if(exists("loc_spPoly")) {
   source(here("0_pathsAndSettings.R"))
 }
 
+<<<<<<< HEAD
 # set up folder system for inputs
 dir.create(here("_data/species",model_species,"/inputs/presence"), recursive = TRUE, showWarnings = FALSE)
 dir.create(here("_data/species",model_species,"/inputs/model_input"), showWarnings = FALSE)
-
-# changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
-
 
 #get a list of what's in the directory
 fileList <- dir(here("_data/inputs"), pattern = ".shp$")
@@ -65,6 +63,7 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
   } else {
     print("Required columns are present")
   }
+
 if(any(is.na(presPolys[,c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")]))) {
   stop("The columns 'EO_ID_ST','SNAME','SCOMNAME', and 'RA' (SFRACalc) cannot have NA values.")
 }
@@ -149,6 +148,7 @@ if("FALSE" %in% c(shp_expl$ra %in% raLevels)) {
   print("RA levels attributed correctly")
 }
 
+
 #EObyRA <- unique(shp_expl[,c("expl_id", "eo_id_st","ra")])
 shp_expl$minSamps[shp_expl$ra == "very high"] <- 5
 shp_expl$minSamps[shp_expl$ra == "high"] <- 4
@@ -181,6 +181,7 @@ if(nrow(polysWithNoPoints) > 0){
 
 #check for cases where sample smaller than requested
 # how many points actually generated?
+
 ptCount <- table(ranPts.joined$expl_id)
 overUnderSampled <- ptCount - shp_expl$PolySampNum
 
@@ -201,10 +202,10 @@ st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TR
 
 # Write out various stats and data to the database ------
 # prep the data
-
-OutPut <- data.frame(SciName = paste(att.pt[1,"sname"]),
+OutPut <- data.frame(tableCode = baseName,
+  SciName = paste(att.pt[1,"sname"]),
 	CommName=paste(att.pt[1,"scomname"]),
-	ElemCode=sppCode,
+	ElemCode=model_species,
 	RandomPtFile=nm.RanPtFile,
 	date = paste(Sys.Date()),
 	time = format(Sys.time(), "%X"),
@@ -221,6 +222,7 @@ dbDisconnect(db)
 ###
 
 # get the background shapefile
+
 backgShapef <- st_read(here("_data/inputs",nm_bkgPts))
 
 # find coincident points ----
@@ -236,5 +238,3 @@ backgSubset <- backgShapef[-coincidentPts,]
 nm_bkgPts_noshp <- sub("\\.shp","",nm_bkgPts)
 outFileName <- here("_data/inputs",paste0(nm_bkgPts_noshp, "_clean.shp"))
 st_write(backgSubset, outFileName, driver="ESRI Shapefile", delete_layer = TRUE)
-
-
