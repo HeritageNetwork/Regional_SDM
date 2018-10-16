@@ -6,7 +6,6 @@ library(here)
 
 rm(list=ls())
 
-
 # Step 1: Setting for the model run
 # set project folder, db, species code, and species reaches filename for this run
 
