@@ -1,15 +1,18 @@
 # File: 1_pointsInPolys_cleanBkgPts.r
 # Purpose: 
-# 1. Sampling of EDM polygons to create random points within the polygons
+# 1. Sampling of EDM polygons to create random points within the polygons.
 #  these are the random presence points being created here, from polygon presence data.
 # 2. Removing any points from the background points dataset that overlap or are near
 #  the input presence polygon dataset.
-
+library(here)
 library(RSQLite)
-library(rgdal)
-library(sp)
-library(rgeos)
+#library(rgdal)
+#library(sp)
+#library(rgeos)
 library(raster)
+library(sf)
+library(dplyr)
+
 
 ####
 # Assumptions
@@ -19,45 +22,63 @@ library(raster)
 # - the polygon shapefile has at least these fields EO_ID_ST, SNAME, SCOMNAME, RA
 
 ####
-#### load input poly ----
+#### load input polys ----
 
 ###
-## two lines need your attention. The one directly below (loc_scripts)
-## and about line 38 where you choose which polygon file to use
+# if using user_run_SDM.R, then loc_spPoly will be present and this should run cleanly,
+# otherwise, get settings from the 0 script.
 
-#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
-#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
+if(exists("loc_spPoly")) {
+  setwd(loc_spPoly)
+} else {
+  source(here("0_pathsAndSettings.R"))
+}
 
-setwd(loc_spPoly)
+# set up folder system for inputs
+dir.create(here("_data/species",model_species,"/inputs/presence"), recursive = TRUE, showWarnings = FALSE)
+dir.create(here("_data/species",model_species,"/inputs/model_input"), showWarnings = FALSE)
+#setwd(here("_data/species",model_species,"inputs/presence"))
+# changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
+
 
 #get a list of what's in the directory
-fileList <- dir( pattern = ".shp$")
-fileList
+fileList <- dir(here("_data/inputs"), pattern = ".shp$")
 
-#look at the output and choose which shapefile you want to run
-#enter its location in the list (first = 1, second = 2, etc)
-n <- 1
+#find a match for the target species (from 0_pathsAndSettings.R)
+polysFile <- fileList[match(nm_presPolys, fileList)]
+ptsFile <- fileList[match(nm_presPts, fileList)]
+
+if(is.na(ptsFile)){
+  print("no match for the points file")
+}
+
+if(is.na(polysFile)){
+  print("no match for the polygon file")
+}
 
 # load data, QC ----
-fileName <- fileList[[n]]
-shpName <- strsplit(fileName,"\\.")[[1]][[1]]
-sppCode <- shpName
+#fileName <- fileList[[n]]
+#shpName <- strsplit(fileName,"\\.")[[1]][[1]]
+#sppCode <- shpName
 
-presPolys <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
+presPolys <- st_read(here("_data/inputs",polysFile))
+
+#presPolys <- readOGR(fileName, layer = shpName) #Z-dimension discarded msg is OK
 #check for proper column names. If no error from next code block, then good to go
-presPolys$RA <- presPolys$SFRACalc
-shpColNms <- names(presPolys@data)
+#presPolys$RA <- presPolys$SFRACalc
+shpColNms <- names(presPolys)
 desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA", "OBSDATE")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop(paste0("Column(s) are missing or incorrectly named: ", paste(desiredCols[!desiredCols %in% shpColNms], collapse = ", ")))
   } else {
     print("Required columns are present")
   }
-if(any(!complete.cases(presPolys@data[c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")]))) {
+if(any(is.na(presPolys[,c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")]))) {
   stop("The columns 'EO_ID_ST','SNAME','SCOMNAME', and 'RA' (SFRACalc) cannot have NA values.")
 }
+
 #pare down columns
-presPolys@data <- presPolys@data[,desiredCols]
+presPolys <- presPolys[,desiredCols]
 
 # set date/year column to [nearest] year, rounding when day is given
 presPolys$OBSDATE <- as.character(presPolys$OBSDATE)
@@ -100,140 +121,195 @@ for (d in 1:length(presPolys$OBSDATE)) {
 }
 desiredCols <- c(desiredCols, "date")
 
-#get projection info for later
-projInfo <- presPolys@proj4string
-
 # explode multi-part polys ----
-shp_expl <- disaggregate(presPolys)
+suppressWarnings(shp_expl <- st_cast(presPolys, "POLYGON"))
 
 #add some columns (explode id and area)
-shp_expl@data <- cbind(shp_expl@data, 
-	EXPL_ID = rownames(shp_expl@data), 
-	AREAM2 = raster::area(shp_expl))
+shp_expl <- cbind(shp_expl, 
+                       EXPL_ID = rownames(shp_expl), 
+                       AREAM2 = st_area(shp_expl))
 
-# projection info doesn't stick, apply from what we grabbed earlier
-shp_expl@proj4string <- projInfo
+
 #write out the exploded polygon set
-nm.PyFile <- paste(sppCode, "_expl", sep = "")
-writeOGR(shp_expl, dsn = ".", layer = nm.PyFile, driver="ESRI Shapefile", overwrite_layer=FALSE)
-  
-#name of random points output shapefile; add path to (now input) polygon file
-nm.RanPtFile <- paste(loc_spPts,"/", sppCode, "_RanPts", sep = "")
-nm.PyFile <- paste(loc_spPoly,"/", sppCode, "_expl", sep = "")
+nm.PyFile <- here("_data/species",model_species,"inputs/presence",paste(model_species, "_expl.shp", sep = ""))
+st_write(shp_expl, nm.PyFile, driver="ESRI Shapefile", delete_layer = TRUE)
 
 ####
 ####  Placing random points within each sample unit (polygon/EO) ----
 ####
 
-#get the attribute table from above 
-att.pt <- shp_expl@data
-
 # just in case convert to lower
-names(att.pt) <- tolower(names(att.pt))
+names(shp_expl) <- tolower(names(shp_expl))
 
 #calculate Number of points for each poly, stick into new field
-att.pt$PolySampNum <- round(400*((2/(1+exp(-(att.pt[,"aream2"]/900+1)*0.004)))-1))
+shp_expl$PolySampNum <- round(400*((2/(1+exp(-(as.numeric(shp_expl$aream2)/900+1)*0.004)))-1))
 #make a new field for the design, providing a stratum name
-att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$expl_id, sep=""))
+shp_expl <- cbind(shp_expl, "stratum" = paste("poly_",shp_expl$expl_id, sep=""))
 
 # sample must be equal or larger than the RA sample size in the random forest model
-att.pt$ra <- factor(tolower(as.character(att.pt$ra)))
+shp_expl$ra <- factor(tolower(as.character(shp_expl$ra)))
 
 # QC step: are any records attributed with values other than these?
 raLevels <- c("very high", "high", "medium", "low", "very low")
-if("FALSE" %in% c(att.pt$ra %in% raLevels)) {
+if("FALSE" %in% c(shp_expl$ra %in% raLevels)) {
   stop("at least one record is not attributed with RA appropriately")
 } else {
   print("RA levels attributed correctly")
 }
 
-EObyRA <- unique(att.pt[,c("expl_id", "eo_id_st","ra")])
-EObyRA$minSamps[EObyRA$ra == "very high"] <- 5
-EObyRA$minSamps[EObyRA$ra == "high"] <- 4
-EObyRA$minSamps[EObyRA$ra == "medium"] <- 3
-EObyRA$minSamps[EObyRA$ra == "low"] <- 2
-EObyRA$minSamps[EObyRA$ra == "very low"] <- 1
+#EObyRA <- unique(shp_expl[,c("expl_id", "eo_id_st","ra")])
+shp_expl$minSamps[shp_expl$ra == "very high"] <- 5
+shp_expl$minSamps[shp_expl$ra == "high"] <- 4
+shp_expl$minSamps[shp_expl$ra == "medium"] <- 3
+shp_expl$minSamps[shp_expl$ra == "low"] <- 2
+shp_expl$minSamps[shp_expl$ra == "very low"] <- 1
 
-att.pt.2 <- merge(x = att.pt, y = EObyRA[,c("expl_id","minSamps")], 
-                  all.x = TRUE, by.x = "expl_id", by.y = "expl_id")
+# att.pt.2 <- merge(x = shp_expl, y = EObyRA[,c("expl_id","minSamps")], 
+#                   all.x = TRUE, by.x = "expl_id", by.y = "expl_id")
 
-att.pt.2$finalSampNum <- ifelse(att.pt.2$PolySampNum < att.pt.2$minSamps, 
-                                att.pt.2$minSamps, 
-                                att.pt.2$PolySampNum)
+shp_expl$finalSampNum <- ifelse(shp_expl$PolySampNum < shp_expl$minSamps, 
+                                shp_expl$minSamps, 
+                                shp_expl$PolySampNum)
 
 # add two more cols for later (backwards compatibility with old GRTS routine)
-att.pt.2$stratum <- att.pt.2$panelNum
-att.pt.2$siteID <- paste(sppCode, att.pt.2$expl_id, sep = "-")
+#att.pt.2$stratum <- att.pt.2$panelNum
+#att.pt.2$siteID <- paste(model_species, att.pt.2$expl_id, sep = "-")
 # get these data into the spatial poly df
-shp_expl_dat <- merge(shp_expl, att.pt.2[,c("expl_id","finalSampNum","siteID","stratum")],
-                      by.x = "EXPL_ID", by.y = "expl_id")
+# shp_expl_dat <- merge(shp_expl, att.pt.2[,c("expl_id","finalSampNum","siteID","stratum")],
+#                       by.x = "EXPL_ID", by.y = "expl_id")
 
-#initialize a list for saving the random points data
-v.ranSPDF <- vector("list", nrow(shp_expl_dat))
-names(v.ranSPDF) <- shp_expl_dat@data$EXPL_ID
 
-# generate random points for each polygon by looping through all polys
-for(i in 1:nrow(shp_expl_dat)){
-  numSamps <- shp_expl_dat@data$finalSampNum[[i]]
-  pts <- spsample(shp_expl_dat[i,], n= numSamps, 
-                  type = "random", iter = 500)
-  #rare edge cases where points can't get placed will result in null
-  #seems to be due to holes in the poly most often
-  # this might be fixed! Keeping in for safety for now. 
-  if(!is.null(pts)){
-    v.ranSPDF[[i]] <- SpatialPointsDataFrame(pts, data = shp_expl_dat@data[rep(i, nrow(pts@coords)),])
-  }
+
+ranPts <- st_sample(shp_expl, size = shp_expl$finalSampNum)
+ranPts.sf <- st_sf(ranPts)
+names(ranPts.sf) <- "geometry"
+st_geometry(ranPts.sf) <- "geometry"
+
+ranPts.joined <- st_join(ranPts.sf, shp_expl)
+
+# check for polys that didn't get any points
+polysWithNoPoints <- shp_expl[!shp_expl$EXPL_ID %in% ranPts.joined$EXPL_ID,]
+if(nrow(polysWithNoPoints) > 0){
+  stop("One or more polygons didn't get any points placed in them.")
 }
 
-#check for screw-ups
-ptsCouldntBePlaced <- v.ranSPDF[sapply(v.ranSPDF, is.null)]
-if(length(ptsCouldntBePlaced) > 0){
-  if(length(ptsCouldntBePlaced) > 1){
-    print(paste("You've got ", length(ptsCouldntBePlaced), " polys that didn't get any points placed in them.", sep = ""))
-    print("These are:")         
-    shp_expl_dat@data[as.numeric(names(ptsCouldntBePlaced)),]
-  } else {
-    print(paste("You've got one poly that didn't get any points placed in them.", sep = ""))
-    print("This is:")         
-    shp_expl_dat@data[as.numeric(names(ptsCouldntBePlaced)),]
-  }
-} else {
-  print("All's well")
-}
 ## if you got polys with no points, read the numbers reported and 
 ## view the poly with this command
-# plot(shp_expl_dat[[putNumberReportedHere]])
-# e.g. plot(shp_expl_dat[698,])
+# plot(polysWithNoPoints[,])
+# e.g. plot(polysWithNoPoints[], max.plot = 1)
 
-# you can choose to move on or fix in gis (remove holes?)
-
-v.ranSPDF.clean <- v.ranSPDF[!sapply(v.ranSPDF, is.null)]
-ranPts <- do.call('rbind',v.ranSPDF.clean)
 
 #check for cases where sample smaller than requested
 # how many points actually generated?
-npts <- sapply(v.ranSPDF.clean, function(i) nrow(i@coords))
-if(length(ptsCouldntBePlaced) > 0){
-  tpts <- shp_expl_dat@data$finalSampNum[-as.numeric(names(ptsCouldntBePlaced))]
-} else {
-  tpts <- shp_expl_dat@data$finalSampNum
-}
-dif <- data.frame(targPts = tpts, resTps = npts)
-dif$diff <- dif$targPts - dif$resTps
-table(dif$diff)
-# if you get all zeros in the above "table" command you are golden!
-# TODO: handle cases that are off
+ptCount <- table(ranPts.joined$expl_id)
 
-# projection info doesn't stick, apply from what we grabbed earlier
-ranPts@proj4string <- projInfo
-names(ranPts@data) <- tolower(names(ranPts@data))
-# remove extranneous fields, write it out
-fullName <- paste(nm.RanPtFile,".shp",sep="")
+overUnderSampled <- ptCount - shp_expl$PolySampNum
 
-colsToKeep <- c("siteid", "stratum", tolower(desiredCols))
-ranPts <- ranPts[,colsToKeep]
-writeOGR(ranPts, dsn = fullName, layer = nm.RanPtFile, 
-			driver="ESRI Shapefile", overwrite_layer=TRUE)
+#positive vals are oversamples, negative vals are undersamples
+table(overUnderSampled)
+# If you get large negative values then there are many undersamples and 
+# exploration might be worthwhile
+
+names(ranPts.joined) <- tolower(names(ranPts.joined))
+
+colsToKeep <- c("stratum", tolower(desiredCols))
+ranPts.joined <- ranPts.joined[,colsToKeep]
+
+#name of random points output shapefile
+nm.RanPtFile <- here("_data/species",model_species,"inputs/presence", paste(model_species, "_RanPts.shp", sep = ""))
+
+st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TRUE)
+
+
+
+
+# #get the attribute table from above 
+# att.pt <- shp_expl %>% st_set_geometry(NULL)
+# 
+# # just in case convert to lower
+# names(att.pt) <- tolower(names(att.pt))
+# 
+# #calculate Number of points for each poly, stick into new field
+# att.pt$PolySampNum <- round(400*((2/(1+exp(-(as.numeric(att.pt[,"aream2"])/900+1)*0.004)))-1))
+# #make a new field for the design, providing a stratum name
+# att.pt <- cbind(att.pt, "panelNum" = paste("poly_",att.pt$expl_id, sep=""))
+# 
+# # sample must be equal or larger than the RA sample size in the random forest model
+# att.pt$ra <- factor(tolower(as.character(att.pt$ra)))
+
+
+# 
+# 
+# # QC step: are any records attributed with values other than these?
+# raLevels <- c("very high", "high", "medium", "low", "very low")
+# if("FALSE" %in% c(att.pt$ra %in% raLevels)) {
+#   stop("at least one record is not attributed with RA appropriately")
+# } else {
+#   print("RA levels attributed correctly")
+# }
+# 
+# EObyRA <- unique(att.pt[,c("expl_id", "eo_id_st","ra")])
+# EObyRA$minSamps[EObyRA$ra == "very high"] <- 5
+# EObyRA$minSamps[EObyRA$ra == "high"] <- 4
+# EObyRA$minSamps[EObyRA$ra == "medium"] <- 3
+# EObyRA$minSamps[EObyRA$ra == "low"] <- 2
+# EObyRA$minSamps[EObyRA$ra == "very low"] <- 1
+# 
+# att.pt.2 <- merge(x = att.pt, y = EObyRA[,c("expl_id","minSamps")], 
+#                   all.x = TRUE, by.x = "expl_id", by.y = "expl_id")
+# 
+# att.pt.2$finalSampNum <- ifelse(att.pt.2$PolySampNum < att.pt.2$minSamps, 
+#                                 att.pt.2$minSamps, 
+#                                 att.pt.2$PolySampNum)
+# 
+# # add two more cols for later (backwards compatibility with old GRTS routine)
+# att.pt.2$stratum <- att.pt.2$panelNum
+# att.pt.2$siteID <- paste(model_species, att.pt.2$expl_id, sep = "-")
+# # get these data into the spatial poly df
+# shp_expl_dat <- merge(shp_expl, att.pt.2[,c("expl_id","finalSampNum","siteID","stratum")],
+#                       by.x = "EXPL_ID", by.y = "expl_id")
+# 
+# 
+# 
+# ranPts <- st_sample(shp_expl_dat, size = shp_expl_dat$finalSampNum)
+# ranPts.sf <- st_sf(ranPts)
+# names(ranPts.sf) <- "geometry"
+# st_geometry(ranPts.sf) <- "geometry"
+# 
+# ranPts.joined <- st_join(test.sf, shp_expl_dat)
+# 
+# # check for polys that didn't get any points
+# polysWithNoPoints <- shp_expl_dat[!shp_expl_dat$EXPL_ID %in% ranPts.joined$EXPL_ID,]
+# if(nrow(polysWithNoPoints) > 0){
+#   stop("One or more polygons didn't get any points placed in them.")
+# }
+# 
+# ## if you got polys with no points, read the numbers reported and 
+# ## view the poly with this command
+# # plot(polysWithNoPoints[,])
+# # e.g. plot(polysWithNoPoints[], max.plot = 1)
+# 
+# 
+# #check for cases where sample smaller than requested
+# # how many points actually generated?
+# ptCount <- table(ranPts.joined$EXPL_ID)
+# 
+# overUnderSampled <- ptCount - att.pt.2$PolySampNum
+# 
+# #positive vals are oversamples, negative vals are undersamples
+# table(overUnderSampled)
+# # If you get large negative values then there are many undersamples and 
+# # exploration might be worthwhile
+# 
+# names(ranPts.joined) <- tolower(names(ranPts.joined))
+# 
+# colsToKeep <- c("siteid", "stratum", tolower(desiredCols))
+# ranPts.joined <- ranPts.joined[,colsToKeep]
+# 
+# #name of random points output shapefile
+# nm.RanPtFile <- here("_data/species",model_species,"inputs/presence", paste(model_species, "_RanPts.shp", sep = ""))
+# 
+# st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile")
 
 # Write out various stats and data to the database ------
 # prep the data
@@ -257,26 +333,44 @@ dbDisconnect(db)
 ###
 
 # get the background shapefile
-backgShapef <- readOGR(dsn=loc_bkgPts, layer=nm_bkgPts)
+backgShapef <- st_read(here("_data/inputs",nm_bkgPts))
+
+#backgShapef <- readOGR(dsn=loc_bkgPts, layer=nm_bkgPts)
 
 #get projection info for later
-projInfo <- backgShapef@proj4string
+#projInfo <- backgShapef@proj4string
 
 # find coincident points ----
 #buffer the poly shapefile 30 m
-polybuff <- spTransform(presPolys, projInfo) # transform just to be sure
-polybuff <- gBuffer(polybuff, width = 30)
+# polybuff <- spTransform(presPolys, projInfo) # transform just to be sure
+# polybuff <- gBuffer(polybuff, width = 30)
 
-# find points that fall within the buffered polygons, subset the sp object
-coincidentPts <- gContains(polybuff, backgShapef, byid = TRUE)
-colnames(coincidentPts) <- "insideBuff"
-backgShapef@data <- cbind(backgShapef@data, coincidentPts)
-backgSubset <- backgShapef[backgShapef@data$insideBuff == FALSE,]
+polybuff <- st_transform(shp_expl, st_crs(backgShapef))
+polybuff <- st_buffer(polybuff, dist = 30)
 
-# projection info doesn't stick, apply from what we grabbed earlier
-backgSubset@proj4string <- projInfo
+coincidentPts <- unlist(st_contains(polybuff, backgShapef, sparse = TRUE))
+
+# remove them
+backgSubset <- backgShapef[-coincidentPts,]
+
+
+# # find points that fall within the buffered polygons, subset the sp object
+# coincidentPts <- gContains(polybuff, backgShapef, byid = TRUE)
+# colnames(coincidentPts) <- "insideBuff"
+# backgShapef@data <- cbind(backgShapef@data, coincidentPts)
+# backgSubset <- backgShapef[backgShapef@data$insideBuff == FALSE,]
+
+# # projection info doesn't stick, apply from what we grabbed earlier
+# backgSubset@proj4string <- projInfo
 
 # write it out (note that `background` folder must exist in base species folder)---
-outFileName <- paste(nm_bkgPts, "_clean", sep="")
-writeOGR(backgSubset, dsn = "../background", layer = outFileName, 
-         driver="ESRI Shapefile", overwrite_layer=TRUE)
+# outFileName <- paste(nm_bkgPts, "_clean", sep="")
+# writeOGR(backgSubset, dsn = "../background", layer = outFileName, 
+#          driver="ESRI Shapefile", overwrite_layer=TRUE)
+
+# strip .shp from name
+nm_bkgPts_noshp <- sub("\\.shp","",nm_bkgPts)
+outFileName <- here("_data/inputs",paste0(nm_bkgPts_noshp, "_clean.shp"))
+st_write(backgSubset, outFileName, driver="ESRI Shapefile", delete_layer = TRUE)
+
+
