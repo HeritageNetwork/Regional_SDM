@@ -12,3 +12,5 @@
 *.Rproj
 .Rproj.user
 *.Rdata
+
+user_run_SDM_*
