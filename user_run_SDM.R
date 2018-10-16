@@ -2,26 +2,30 @@
 # Purpose: Run a full SDM model, or pickup an existing run executed using run_SDM.
 # After running a full model, save this file in the species' 'loc_scripts' folder
 
+library(here)
+
 # Step 1: Download updated scripts from GitHub repository
 # Usage: to put the latest modeling scripts in a new folder created in 'loc_scripts' (set below),
 # which are used for new modeling runs
 
 # set project folder and species code for this run
-project_folder <- "D:/SDM/Tobacco"
-model_species <- "ammohens"
+#project_folder <- "D:/SDM/Tobacco"
+model_species <- "bombustest"
+
+project_folder <- here("_data/species",model_species)
 
 # path where you want to save model run scripts
-loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
+#loc_scripts <- paste0(project_folder, "/inputs/species/", model_species ,"/scripts")
 # github branch to download
-branch <- "master"
+#branch <- "master"
 
 # this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
 # file anywhere on your computer, so you don't have to change the path)
-source("E:/git/Regional_SDM/helper/get_scripts.R", local = TRUE)
+#source("E:/git/Regional_SDM/helper/get_scripts.R", local = TRUE)
 # NOTE any messages, and download/place scripts manually if necessary
 
 # manually set loc_scripts path here if get_scripts fails
-loc_scripts <- script_store
+loc_scripts <- here()
 
 # remove everything but necessary variables
 rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_folder","model_species","loc_scripts")])
@@ -70,7 +74,7 @@ run_SDM(
   modeller = "David Bucklin",
   add_vars = NULL,
   remove_vars = NULL,
-  prompt = FALSE
+  prompt = TRUE
 )
 
 #############################################################################
