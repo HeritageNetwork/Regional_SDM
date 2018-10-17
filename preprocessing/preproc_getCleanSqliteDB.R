@@ -41,7 +41,7 @@ gitLoc <- here("sqlite")
 # This also assumes you have sqlite3.exe in the dbLoc folder. 
 
 setwd(gitLoc)
-toSQLitecmd <- paste('type sqliteDBDump.txt | "',
+toSQLitecmd <- paste('type sqliteDBDump.sql | "',
                      dbLoc, '/sqlite3" "',
                      dbLoc, '/', dbName, '"', sep = "")
 shell(toSQLitecmd)

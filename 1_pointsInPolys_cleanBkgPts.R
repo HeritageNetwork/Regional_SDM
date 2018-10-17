@@ -25,11 +25,11 @@ setwd(loc_model)
 dir.create(paste0(model_species,"/inputs/presence"), recursive = T, showWarnings = F)
 dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
 
-setwd(paste0(loc_model,"/",model_species,"/inputs/presence"))
+# setwd(paste0(loc_model,"/",model_species,"/inputs/presence"))
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
-fileName <- basename(nm_presFile)
+fileName <- paste0(basename(nm_presFile), ".shp")
 presPolys <- st_read(paste(dirname(nm_presFile),fileName, sep = "/"))
 
 #check for proper column names. If no error from next code block, then good to go
@@ -91,7 +91,7 @@ for (d in 1:length(presPolys$OBSDATE)) {
 desiredCols <- c(desiredCols, "date")
 
 # explode multi-part polys ----
-suppressWarnings(shp_expl <- st_cast(presPolys, "POLYGON"))
+suppressWarnings(shp_expl <- st_zm(st_cast(presPolys, "POLYGON")))
 
 #add some columns (explode id and area)
 shp_expl <- cbind(shp_expl, 
@@ -101,7 +101,7 @@ shp_expl <- cbind(shp_expl,
 
 #write out the exploded polygon set
 
-nm.PyFile <- here("_data/species",model_species,"inputs/presence",paste(baseName, "_expl.shp", sep = ""))
+nm.PyFile <- paste(loc_model, model_species,"inputs/presence",paste0(baseName, "_expl.shp"), sep = "/")
 st_write(shp_expl, nm.PyFile, driver="ESRI Shapefile", delete_layer = TRUE)
 
 ####
@@ -175,26 +175,9 @@ colsToKeep <- c("stratum", tolower(desiredCols))
 ranPts.joined <- ranPts.joined[,colsToKeep]
 
 # name of random points output shapefile
-nm.RanPtFile <- here("_data/species",model_species,"inputs/presence", paste(model_species, "_RanPts.shp", sep = ""))
+nm.RanPtFile <- paste(loc_model, model_species,"inputs/presence",paste(baseName, "_RanPts.shp", sep = ""), sep = "/")
 # write it out
 st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TRUE)
-
-# Write out various stats and data to the database ------
-# prep the data
-OutPut <- data.frame(tableCode = baseName,
-  SciName = paste(ranPts.joined[,"sname"][[1]][1]),
-	CommName=paste(ranPts.joined[,"scomname"][[1]][1]),
-	ElemCode=model_species,
-	RandomPtFile=nm.RanPtFile,
-	date = paste(Sys.Date()),
-	time = format(Sys.time(), "%X"),
-	Loc_Use=""
-	)
-
-#Write the data to the SQLite database
-db <- dbConnect(SQLite(),dbname=nm_db_file)
-dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
-dbDisconnect(db)
 
 ###
 ### remove Coincident Background points ----
@@ -209,14 +192,9 @@ polybuff <- st_buffer(polybuff, dist = 30)
 
 coincidentPts <- unlist(st_contains(polybuff, backgShapef, sparse = TRUE))
 
-# remove them
-backgSubset <- backgShapef[-coincidentPts,]
+# remove them (if any)
+if (length(coincidentPts) > 0) backgSubset <- backgShapef[-coincidentPts,] else backgSubset <- backgShapef
 
-setwd(paste0(loc_model,"/",model_species,"/inputs/model_input"))
-
-# strip .shp from name
-
-outFileName <- paste0(baseName, "_bkg_clean.shp")
-
+# write background points
+outFileName <- paste0(loc_model,"/",model_species,"/inputs/model_input/", paste0(baseName, "_bkg_clean.shp"))
 st_write(backgSubset, outFileName, driver="ESRI Shapefile", delete_layer = TRUE)
-

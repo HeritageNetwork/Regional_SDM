@@ -50,24 +50,24 @@ options(useFancyQuotes = FALSE)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
 SQLquery <- paste("Select lkpModelers.ProgramName, lkpModelers.FullOrganizationName, ",
-                  "lkpModelers.City, lkpModelers.State, lkpSpecies.CODE ",
+                  "lkpModelers.City, lkpModelers.State, lkpSpecies.sp_code ",
                   "FROM lkpModelers ", 
                   "INNER JOIN lkpSpecies ON lkpModelers.ModelerID=lkpSpecies.ModelerID ", 
-                  "WHERE lkpSpecies.CODE='", model_species, "'; ", sep="")
+                  "WHERE lkpSpecies.sp_code='", model_species, "'; ", sep="")
 sdm.modeler <- dbGetQuery(db, statement = SQLquery)
 # NOTE: use column should be populated with 1/0 for sources of data used
-SQLquery <- paste("SELECT sp.CODE, sr.ProgramName, sr.State ",
+SQLquery <- paste("SELECT sp.sp_code, sr.ProgramName, sr.State ",
                   "FROM lkpSpecies as sp ",
-                  "INNER JOIN mapDataSourcesToSpp as mp ON mp.EstID=sp.EST_ID ",
+                  "INNER JOIN mapDataSourcesToSpp as mp ON mp.EGT_ID=sp.EGT_ID ",
                   "INNER JOIN lkpDataSources as sr ON mp.DataSourcesID=sr.DataSourcesID ",
-                  "WHERE mp.use = 1 ",
-                  "AND sp.CODE='", model_species, "'; ", sep="")
+                  # "WHERE mp.use = 1 ",
+                  "AND sp.sp_code ='", model_species, "'; ", sep="")
 sdm.dataSources <- dbGetQuery(db, statement = SQLquery)
 sdm.dataSources <- sdm.dataSources[order(sdm.dataSources$ProgramName),]
 
-SQLquery <- paste("SELECT ID, date, speciesCode, comments",
-                  " FROM tblCustomModelComments ", 
-                  "WHERE modelRunName ='", model_run_name, "'; ", sep="")
+SQLquery <- paste("SELECT model_end_time date, egt_id, metadata_comments comments",
+                  " FROM tblModelResults ", 
+                  "WHERE model_run_name ='", model_run_name, "'; ", sep="")
 sdm.customComments <- dbGetQuery(db, statement = SQLquery)
 # assume you want the most recently entered comments, if there are multiple entries
 if(nrow(sdm.customComments) > 1) {
@@ -79,8 +79,8 @@ if(nrow(sdm.customComments) > 1) {
 
 ## Get threshold information ----
 SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPolys, capturedPts ", 
-                  "FROM tblCutoffs ", 
-                  "WHERE modelRunName ='", model_run_name, "'; ", sep="")
+                  "FROM tblModelResultsCutoffs ", 
+                  "WHERE model_run_name ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
 # filter to only most recent
 #uniqueTimes <- unique(sdm.thresholds$dateTime)
