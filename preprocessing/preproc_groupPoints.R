@@ -41,7 +41,6 @@ pts.aea$group <- as.integer(st_intersects(pts.aea, pt.un.sing, sparse = TRUE))
 
 st_write(pts.aea, paste(pathTodata,"/", fileNameShort, "_grouped.shp", sep = ""))
 
-
 ## clean up ----
 # remove all objects before using another script
 rm(list=ls())
