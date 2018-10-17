@@ -3,6 +3,7 @@
 # After running a full model, save this file in the species' 'loc_scripts' folder
 
 library(here)
+
 rm(list=ls())
 
 # Step 1: Setting for the model run
