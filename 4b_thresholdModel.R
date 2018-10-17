@@ -132,7 +132,7 @@ cutList$MRV <- list("value" = mrv, "code" = "MRV",
 # number of thresholds to write to the db
 numThresh <- length(cutList)
 
-allThresh <- data.frame("modelRunName" = rep(modelrun_meta_data$model_run_name, numThresh),
+allThresh <- data.frame("model_run_name" = rep(modelrun_meta_data$model_run_name, numThresh),
                         "ElemCode" = rep(ElementNames$Code, numThresh),
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
                 "cutCode" = unlist(lapply(cutList, function(x) x[2])),
@@ -145,20 +145,10 @@ allThresh <- data.frame("modelRunName" = rep(modelrun_meta_data$model_run_name, 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
-dbcheck <- dbGetQuery(db, paste0("SELECT cutCode c FROM tblCutoffs WHERE modelRunName = '",
+dbcheck <- dbGetQuery(db, paste0("SELECT cutCode c FROM tblModelResultsCutoffs WHERE model_run_name = '",
                                  modelrun_meta_data$model_run_name,"';"))$c
 
-for(i in 1:numThresh){
-  if (!allThresh[i,]$cutCode %in% dbcheck) {
-    SQLquery <- paste("INSERT INTO tblCutoffs (", 
-                      toString(names(allThresh)),
-                      ") VALUES (",
-                      toString(sQuote(allThresh[i,])),
-                      ");", sep = "")
-    dbExecute(db, SQLquery)
-  }
-}
-
+dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = T)
 # clean up
 options(op)
 dbDisconnect(db)
