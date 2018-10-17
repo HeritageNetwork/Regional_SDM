@@ -15,13 +15,13 @@ loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
 loc_model <- here("_data", "species")
 # Modeling database
-nm_db_file <- here("_data", "databases", "sdm_tracking_dev_all.sqlite")
+nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", model_species)
 # env vars location [Terrestrial-only variable]
 loc_envVars = here("_data","env_vars","raster")
 # bkg points [Terrestrial-only variable]
-nm_bkgPts = here("_data","env_vars","background","tobacco_att.shp")
+nm_bkgPts = here("_data","env_vars","background","va_att.shp")
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey refernce lines in map
 # map project boundary
@@ -123,7 +123,7 @@ run_SDM(
   begin_step = "4c",
   model_species = "micrmont",
   loc_model = loc_model,
-  model_rdata = "micrmont_20181015_150849",
+  model_rdata = "micrmont_20181017_124730",
   metaData_comments = "UPDATED METADATA COMMENT"
 )
 
