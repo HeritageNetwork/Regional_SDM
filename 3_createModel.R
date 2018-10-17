@@ -29,8 +29,32 @@ df.in <-read.dbf(fileName)
 # absence points
 fileName <- paste0("model_input/", baseName, "_clean.dbf")
 df.abs <- read.dbf(fileName)
-# get a list of env-vars for later checking of ev presence in the database
-envvar_list <- names(df.abs)[!names(df.abs) %in% c("huc12","comid")] # gets a list of environmental variables
+
+# write model input data to database before any other changes made
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+
+# get species info
+SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id FROM lkpSpecies WHERE sp_code = '", 
+                  model_species,"';", sep="")
+ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
+
+tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.character(Sys.time()),
+                             feat_count = length(unique(df.in$stratum)), 
+                             feat_grp_count = length(unique(df.in$eo_id_st)), 
+                             obs_count = length(df.in[,1]), bkgd_count = length(df.abs[,1]),
+                             range_area_sqkm = NA)
+dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
+envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVars;")$g
+
+#also get correlated env var information
+SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
+corrdEVs <- dbGetQuery(db, statement = SQLquery)
+
+dbDisconnect(db)
+rm(db)
+
+# get an original list of env-vars for later writing to tblVarsUsed
+envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
@@ -111,23 +135,6 @@ indVarCols <- c(6:length(colList))
 df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
 
-#Fire up SQLite
-db <- dbConnect(SQLite(),dbname=nm_db_file)  
-  
-ElementNames <- as.list(c(SciName=as.character(df.in[1,"sname"]), CommName="", Code=model_species, Type=""))
-
-# populate the common name, elemtype field
-SQLquery <- paste("SELECT COMMONNAME, ELEMTYPE FROM lkpSpecies WHERE CODE = '", 
-                  model_species,"';", sep="")
-ElementNames[c(2,4)] <- dbGetQuery(db, statement = SQLquery)[1,]
-
-#also get correlated env var information
-SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
-corrdEVs <- dbGetQuery(db, statement = SQLquery)
-
-dbDisconnect(db)
-rm(db)
-
 # row bind the pseudo-absences with the presence points
 df.abs$eo_id_st <- factor(df.abs$eo_id_st)
 df.full <- rbind(df.in, df.abs)
@@ -159,7 +166,10 @@ EObySS$sampSize[EObySS$eo_id_st == "pseu-a"] <- sum(EObySS[!EObySS$eo_id_st == "
 
 sampSizeVec <- EObySS$sampSize
 names(sampSizeVec) <- as.character(EObySS$eo_id_st)
-
+# reset sample sizes to number of points, when it is smaller than desired sample size
+# This is only relevant when complete.cases may have removed some points from an already-small set of points
+totPts <- table(df.full$eo_id_st)
+for (i in names(sampSizeVec)) if (sampSizeVec[i] > totPts[i]) sampSizeVec[i] <- totPts[i]
 
 ##
 # tune mtry ----
@@ -529,9 +539,9 @@ EnvVars <- data.frame(gridName = names(f.imp), impVal = f.imp, fullName="", stri
 SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName COLLATE NOCASE in ('", paste(EnvVars$gridName,sep=", "),
 					"'); ", sep="")
 #cycle through all select statements, put the results in the df
-for(i in 1:length(EnvVars$gridName)){
-  EnvVars$fullName[i] <- as.character(dbGetQuery(db, statement = SQLquery[i])[,2])
-  }
+for(i in 1:length(EnvVars$gridName)) {
+  try(EnvVars$fullName[i] <- as.character(dbGetQuery(db, statement = SQLquery[i])[,2]))
+}
 ##clean up
 dbDisconnect(db)
 
@@ -569,16 +579,20 @@ ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata
 save(list = ls.save, file = paste0("rdata/", model_run_name,".Rdata"), envir = environment())
 
 # write model metadata to db
+# tblModelResults
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
-insert_values <- paste(dbQuoteString(db, c(model_run_name, model_species, baseName, model_start_time, modeller, model_comp_name, r_version, model_comments)), collapse = ",")
-SQLquery <- paste0("INSERT INTO tblModelRuns (modelRunName, CODE, tableCode, modelBeginTime, modeller, modelCompName, rVersion, internalComments)
-  VALUES (",insert_values,");")
-dbExecute(db, SQLquery)
-# write variable info to db
-varImpDB <- data.frame(modelRunName = model_run_name, gridName = envvar_list, inFinalModel = 0)
+tblModelResults <- data.frame(model_run_name = model_run_name, EGT_ID = ElementNames$EGT_ID, table_code = baseName,
+                              internal_comments = model_comments, metadata_comments = metaData_comments,
+                              model_comp_name = model_comp_name, modeller = modeller,
+                              model_start_time = model_start_time, model_end_time = as.character(Sys.time()),
+                              r_version = r_version)
+dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
+
+# tblModelResultsVarsUsed
+varImpDB <- data.frame(model_run_name = model_run_name, gridName = envvar_list, inFinalModel = 0)
 varImpDB <- merge(varImpDB, EnvVars[c("gridName","impVal")], by = "gridName", all.x = T)
 varImpDB$inFinalModel[!is.na(varImpDB$impVal)] <- 1
-dbWriteTable(db, "tblVarsUsed", varImpDB, append = T)
+dbWriteTable(db, "tblModelResultsVarsUsed", varImpDB, append = T)
 dbDisconnect(db)
 
 message(paste0("Saved rdata file: '", model_run_name , "'."))

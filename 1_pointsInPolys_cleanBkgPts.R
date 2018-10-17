@@ -238,21 +238,21 @@ writeOGR(ranPts, dsn = "./model_input", layer = nm.RanPtFile,
 			driver="ESRI Shapefile", overwrite_layer=TRUE)
 
 # Write out various stats and data to the database ------
-# prep the data
-OutPut <- data.frame(tableCode = baseName,
-  SciName = paste(att.pt[1,"sname"]),
-	CommName=paste(att.pt[1,"scomname"]),
-	ElemCode=model_species,
-	RandomPtFile=nm.RanPtFile,
-	date = paste(Sys.Date()),
-	time = format(Sys.time(), "%X"),
-	Loc_Use=""
-	)
-
-#Write the data to the SQLite database
-db <- dbConnect(SQLite(),dbname=nm_db_file)
-dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
-dbDisconnect(db)
+# prep the data. This is in the beginning of script 3 now.
+# OutPut <- data.frame(tableCode = baseName,
+#   SciName = paste(att.pt[1,"sname"]),
+# 	CommName=paste(att.pt[1,"scomname"]),
+# 	ElemCode=model_species,
+# 	RandomPtFile=nm.RanPtFile,
+# 	date = paste(Sys.Date()),
+# 	time = format(Sys.time(), "%X"),
+# 	Loc_Use=""
+# 	)
+# 
+# #Write the data to the SQLite database
+# db <- dbConnect(SQLite(),dbname=nm_db_file)
+# dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
+# dbDisconnect(db)
 
 ###
 ### remove Coincident Background points ----

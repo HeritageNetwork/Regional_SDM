@@ -41,7 +41,7 @@ projInfo <- shpf@proj4string
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get MODTYPE
-SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE CODE = '", model_species, "';")
+SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE sp_code = '", model_species, "';")
 modType <- dbGetQuery(db, SQLQuery)$m
 
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;")
@@ -56,7 +56,7 @@ if (!is.null(add_vars)) {
   add_vars <- tolower(add_vars)
 
   db <- dbConnect(SQLite(),dbname=nm_db_file)
-  SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua;")
+  SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars;")
   gridlistAll <- tolower(dbGetQuery(db, SQLQuery)$g)
   dbDisconnect(db)
   
