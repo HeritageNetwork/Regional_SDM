@@ -19,15 +19,7 @@ library(dplyr)
 ####
 #### load input polys ----
 
-###
-# if using user_run_SDM.R, then loc_spPoly will be present and this should run cleanly,
-# otherwise, get settings from the 0 script.
-
-if(exists("loc_model")) {
-  setwd(loc_model)
-} else {
-  source(here("0_pathsAndSettings.R"))
-}
+setwd(loc_model)
 
 # set up folder system for inputs
 dir.create(paste0(model_species,"/inputs/presence"), recursive = T, showWarnings = F)
