@@ -6,10 +6,8 @@
 #  the input presence polygon dataset.
 library(here)
 library(RSQLite)
-library(raster)
 library(sf)
 library(dplyr)
-
 
 ####
 # Assumptions
@@ -25,34 +23,22 @@ library(dplyr)
 # if using user_run_SDM.R, then loc_spPoly will be present and this should run cleanly,
 # otherwise, get settings from the 0 script.
 
-if(exists("loc_spPoly")) {
-  setwd(loc_spPoly)
+if(exists("loc_model")) {
+  setwd(loc_model)
 } else {
   source(here("0_pathsAndSettings.R"))
 }
 
 # set up folder system for inputs
-dir.create(here("_data/species",model_species,"/inputs/presence"), recursive = TRUE, showWarnings = FALSE)
-dir.create(here("_data/species",model_species,"/inputs/model_input"), showWarnings = FALSE)
+dir.create(paste0(model_species,"/inputs/presence"), recursive = T, showWarnings = F)
+dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
 
-#get a list of what's in the directory
-fileList <- dir(here("_data/inputs"), pattern = ".shp$")
-
-#find a match for the target species (from 0_pathsAndSettings.R)
-polysFile <- fileList[match(nm_presPolys, fileList)]
-ptsFile <- fileList[match(nm_presPts, fileList)]
-
-if(is.na(ptsFile)){
-  print("no match for the points file")
-}
-
-if(is.na(polysFile)){
-  print("no match for the polygon file")
-}
+setwd(paste0(loc_model,"/",model_species,"/inputs/presence"))
+# changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
 fileName <- basename(nm_presFile)
-presPolys <- st_read(here("_data/inputs",polysFile))
+presPolys <- st_read(paste(dirname(nm_presFile),fileName, sep = "/"))
 
 #check for proper column names. If no error from next code block, then good to go
 #presPolys$RA <- presPolys$SFRACalc
@@ -223,7 +209,7 @@ dbDisconnect(db)
 ###
 
 # get the background shapefile
-backgShapef <- st_read(here("_data/inputs",nm_bkgPts))
+backgShapef <- st_read(nm_bkgPts)
 
 # find coincident points ----
 polybuff <- st_transform(shp_expl, st_crs(backgShapef))
@@ -234,7 +220,11 @@ coincidentPts <- unlist(st_contains(polybuff, backgShapef, sparse = TRUE))
 # remove them
 backgSubset <- backgShapef[-coincidentPts,]
 
+setwd(paste0(loc_model,"/",model_species,"/inputs/model_input"))
+
 # strip .shp from name
-outFileName <- here("_data/inputs",paste0(baseName, "_clean.shp"))
+
+outFileName <- paste0(baseName, "_bkg_clean.shp")
+
 st_write(backgSubset, outFileName, driver="ESRI Shapefile", delete_layer = TRUE)
 
