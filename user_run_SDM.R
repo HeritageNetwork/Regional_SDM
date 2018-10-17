@@ -123,7 +123,7 @@ run_SDM(
   begin_step = "4c",
   model_species = "micrmont",
   loc_model = loc_model,
-  model_rdata = "micrmont_20181015_150849",
+  model_rdata = "micrmont_20181017_124730",
   metaData_comments = "UPDATED METADATA COMMENT"
 )
 

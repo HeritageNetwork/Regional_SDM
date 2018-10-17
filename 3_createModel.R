@@ -27,7 +27,7 @@ fileName <- paste0("model_input/", baseName, "_att.dbf")
 df.in <-read.dbf(fileName)
 
 # absence points
-fileName <- paste0("model_input/", baseName, "_clean.dbf")
+fileName <- paste0("model_input/", baseName, "_bkg_clean.dbf")
 df.abs <- read.dbf(fileName)
 
 # write model input data to database before any other changes made

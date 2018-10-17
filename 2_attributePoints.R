@@ -33,7 +33,7 @@ max(nmLen) # if this result is greater than 10, you've got a renegade
 setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
 ranPtsFilesNoExt <- paste0(baseName, "_RanPts")
-shpf <- readOGR("model_input", layer = ranPtsFilesNoExt)
+shpf <- readOGR("presence", layer = ranPtsFilesNoExt)
 
 #get projection info for later
 projInfo <- shpf@proj4string

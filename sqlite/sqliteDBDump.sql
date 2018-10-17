@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS `tblModelResultsVarsUsed` (
 	`gridName`	TEXT,
 	`inFinalModel`	INTEGER,
 	`impVal`	REAL,
-	PRIMARY KEY(`model_run_name`,`gridName`),
-	FOREIGN KEY(`model_run_name`) REFERENCES `tblModelResults`(`model_run_name`)
+	FOREIGN KEY(`model_run_name`) REFERENCES `tblModelResults`(`model_run_name`),
+	PRIMARY KEY(`model_run_name`,`gridName`)
 );
 CREATE TABLE IF NOT EXISTS `tblModelResultsCutoffs` (
 	`model_run_name`	TEXT,
@@ -30,16 +30,16 @@ CREATE TABLE IF NOT EXISTS `tblModelResults` (
 	`model_start_time`	TEXT,
 	`model_end_time`	TEXT,
 	`r_version`	TEXT,
-	FOREIGN KEY(`model_run_name`) REFERENCES `tblModelResults`(`model_run_name`),
-	PRIMARY KEY(`model_run_name`)
+	PRIMARY KEY(`model_run_name`),
+	FOREIGN KEY(`model_run_name`) REFERENCES `tblModelResults`(`model_run_name`)
 );
 CREATE TABLE IF NOT EXISTS `tblModelInputsHucs` (
 	`table_code`	TEXT,
 	`huc_06`	INTEGER,
 	`huc_08`	INTEGER,
 	`huc_10`	INTEGER,
-	FOREIGN KEY(`table_code`) REFERENCES `tblModelInputs`(`table_code`),
-	PRIMARY KEY(`table_code`)
+	PRIMARY KEY(`table_code`),
+	FOREIGN KEY(`table_code`) REFERENCES `tblModelInputs`(`table_code`)
 );
 CREATE TABLE IF NOT EXISTS `tblModelInputs` (
 	`table_code`	TEXT,
@@ -2818,6 +2818,9 @@ CREATE TABLE IF NOT EXISTS `lkpModtype` (
 	`MODTYPE_desc`	text,
 	PRIMARY KEY(`MODTYPE`)
 );
+INSERT INTO `lkpModtype` (MODTYPE,MODTYPE_desc) VALUES ('T','Terrestrial');
+INSERT INTO `lkpModtype` (MODTYPE,MODTYPE_desc) VALUES ('R','Aqautic - lotic');
+INSERT INTO `lkpModtype` (MODTYPE,MODTYPE_desc) VALUES ('L','Aquatic - lentic');
 CREATE TABLE IF NOT EXISTS `lkpModelers` (
 	`ModelerID`	INTEGER NOT NULL,
 	`ProgramName`	TEXT,
