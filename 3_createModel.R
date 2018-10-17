@@ -18,31 +18,19 @@ library(randomForest)
 ## and about line 40 where you choose which record to use
 #loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
-#source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
-setwd(loc_spPts)
+setwd(loc_model)
+dir.create(paste0(model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
+setwd(paste0("./",model_species,"/inputs"))
 
-#get a list of what's in the directory
-p_fileList <- dir( pattern = "_att.dbf$")
-p_fileList
-#look at the output and choose which shapefile you want to run
-#enter its location in the list (first = 1, second = 2, etc)
-n <- 1
+fileName <- paste0("model_input/", baseName, "_att.dbf")
 
-presFile <- p_fileList[[n]]
-fileElemCode <- gsub("_att.dbf$", "", presFile)
-# get the presence points
-df.in <-read.dbf(presFile)
-
-setwd("../background")
-bk_fileList <- dir( pattern = "_clean.dbf$")
-bk_fileList
-#look at the output and choose which shapefile you want to run
-#enter its location in the list (first = 1, second = 2, etc)
-n <- 1
-bkgFile <- bk_fileList[[n]]
+df.in <-read.dbf(fileName)
 
 # absence points
-df.abs <- foreign:::read.dbf(bkgFile)
+fileName <- paste0("model_input/", baseName, "_clean.dbf")
+df.abs <- read.dbf(fileName)
+# get a list of env-vars for later checking of ev presence in the database
+envvar_list <- names(df.abs)[!names(df.abs) %in% c("huc12","comid")] # gets a list of environmental variables
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
@@ -126,11 +114,11 @@ df.abs <- df.abs[,colList]
 #Fire up SQLite
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
   
-ElementNames <- as.list(c(SciName=as.character(df.in[1,"sname"]), CommName="", Code=fileElemCode, Type=""))
+ElementNames <- as.list(c(SciName=as.character(df.in[1,"sname"]), CommName="", Code=model_species, Type=""))
 
 # populate the common name, elemtype field
 SQLquery <- paste("SELECT COMMONNAME, ELEMTYPE FROM lkpSpecies WHERE CODE = '", 
-                  ElementNames["Code"],"';", sep="")
+                  model_species,"';", sep="")
 ElementNames[c(2,4)] <- dbGetQuery(db, statement = SQLquery)[1,]
 
 #also get correlated env var information
@@ -568,23 +556,29 @@ for(i in 1:9){
 }
 rm(curvar)
 
-#save the project, return to the original working directory
-setwd(loc_RDataOut)
-model_run_name <- paste0(ElementNames$Code, "_",
+# save the project, return to the original working directory
+dir.create(paste0(loc_model, "/", model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
+setwd(paste0(loc_model, "/", model_species,"/outputs"))
+# set model_run_name
+model_run_name <- paste0(model_species, "_",
                          gsub(" ","_",gsub(c("-|:"),"",as.character(model_start_time))))
 modelrun_meta_data$model_run_name <- model_run_name
 # don't save fn args/vars
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
                                                              "run_steps","prompt","fn_args", names(fn_args))]
-save(list = ls.save, file = paste0(model_run_name,".Rdata"), envir = environment())
+save(list = ls.save, file = paste0("rdata/", model_run_name,".Rdata"), envir = environment())
 
 # write model metadata to db
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
-insert_values <- paste(model_run_name, ElementNames$Code, model_start_time, modeller, model_comp_name, r_version, model_comments, sep = "','")
-SQLquery <- paste0("INSERT INTO tblModelRuns (modelRunName, CODE, modelBeginTime, modeller,
-modelCompName, rVersion, internalComments)
-VALUES
-('",insert_values,"');")
-dbSendQuery(db, SQLquery) #dbExecute
+insert_values <- paste(dbQuoteString(db, c(model_run_name, model_species, baseName, model_start_time, modeller, model_comp_name, r_version, model_comments)), collapse = ",")
+SQLquery <- paste0("INSERT INTO tblModelRuns (modelRunName, CODE, tableCode, modelBeginTime, modeller, modelCompName, rVersion, internalComments)
+  VALUES (",insert_values,");")
+dbExecute(db, SQLquery)
+# write variable info to db
+varImpDB <- data.frame(modelRunName = model_run_name, gridName = envvar_list, inFinalModel = 0)
+varImpDB <- merge(varImpDB, EnvVars[c("gridName","impVal")], by = "gridName", all.x = T)
+varImpDB$inFinalModel[!is.na(varImpDB$impVal)] <- 1
+dbWriteTable(db, "tblVarsUsed", varImpDB, append = T)
+dbDisconnect(db)
 
 message(paste0("Saved rdata file: '", model_run_name , "'."))

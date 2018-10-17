@@ -17,8 +17,12 @@ removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
 # load data ----
 # get the rdata file
-setwd(loc_RDataOut)
-load(paste(modelrun_meta_data$model_run_name,".Rdata", sep=""))
+setwd(loc_model)
+dir.create(paste0(model_species,"/outputs/model_predictions"), recursive = T, showWarnings = F)
+setwd(paste0(model_species,"/outputs"))
+
+# load rdata
+load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 ##Make the raster stack
 stackOrder <- names(df.full)[indVarCols]
@@ -44,12 +48,17 @@ names(fullL) <- stackOrder
 rm(rs,rs1)
 
 envStack <- stack(fullL)
+# for testing only, crop to presPolys
+fileName <- basename(nm_presFile)
+message("Clipping stack for faster processing. Make sure to remove this later...")
+presPolys <- readOGR(dsn=dirname(nm_presFile), layer = gsub(".shp$", "", fileName)) #Z-dimension discarded msg is OK
+envStack <- crop(envStack, presPolys)
+# end testing
 
 # run prediction ----
-fileNm <- paste(loc_outRas, "/", ElementNames$Code, "_",Sys.Date(),".tif", sep = "")
+setwd(paste0(loc_model, "/", model_species,"/outputs"))
+fileNm <- paste0("model_predictions/", model_run_name,".tif")
 
-
-# outRas <- predictRF(envStack, rf.full, progress="text", index=2, na.rm=TRUE, type="prob", filename=fileNm, format = "GTiff", overwrite=TRUE)
 # use parallel processing if packages installed
 if (all(c("snow","parallel") %in% installed.packages())) {
   try({
@@ -70,7 +79,3 @@ if (all(c("snow","parallel") %in% installed.packages())) {
                     filename=fileNm, format = "GTiff", overwrite=TRUE)
 
 }
-
-## clean up ----
-# remove all objects before moving on to the next script
-rm(list=ls())
