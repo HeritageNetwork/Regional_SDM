@@ -2,38 +2,52 @@
 # Purpose: Run a full SDM model, or pickup an existing run executed using run_SDM.
 # After running a full model, save this file in the species' 'loc_scripts' folder
 
-# Step 1: Download updated scripts from GitHub repository
-# Usage: to put the latest modeling scripts in a new folder created in 'loc_scripts' (set below),
-# which are used for new modeling runs
-
-# set project folder, db, species code, and species reaches filename for this run
+library(here)
 rm(list=ls())
-# The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
-loc_model <- "D:/testing_SDM/Aquatic/species"
-# Modeling database - provide full path
-project_db <- "D:/testing_SDM/aqua_dev/databases/sdm_tracking_aqua_dev.sqlite"
-# species code - from lkpSpecies in modelling database. This will be the new folder name in loc_model.
+
+# Step 1: Setting for the model run
+# set project folder, db, species code, and species reaches filename for this run
+
+# species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
 model_species <- "chrocumb"
-# locations file (presence reaches). Provide full path; The file is copied to modeling folder and timestamped.
-nm_presFile <- "D:/SDM/Tobacco/inputs/species/chrocumb/reach_data/chrocumb.csv"
+# loc_scripts is your repository. Make sure your git repository is set to correct branch
+loc_scripts <- here()
+# The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
+loc_model <- here("_data", "species")
+# Modeling database
+nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
+# locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
+nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv"))
+# map reference boundaries
+nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey refernce lines in map
+# map project boundary
+nm_studyAreaExtent = here("_data","other_spatial","feature","sdmVA_pred_20170131.shp") # outline black boundary line for study area in map
+# model comment in database
+model_comments = "testing aquatic"
+# comment printed in PDF metadata
+metaData_comments = "bla bla"
+# your name
+modeller = "David Bucklin"
 
-## this downloads latest scripts from GitHub (you can save this 'get_scripts.R' 
-## file anywhere on your computer, so you don't have to change the path)
-## github branch to download
-branch <- "Aquatic"
-source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
-## NOTE any messages, and download/place scripts manually if necessary
+# Name of full environmental variables table [Aquatic-only variable]
+nm_envVars <- here("_data","env_vars","tabular", "EnvVars.csv")
+# flowlines shapefile [Aquatic-only variable]
+nm_allflowlines <- here("_data","env_vars","background", "VA_all_flowlines.shp")
+# name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
+nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
+# numeric HUC level to sub-set project area [Aquatic-only variable]
+huc_level <- 2
 
-## loc_scripts should now be set; if it failed, 
-## manually set loc_scripts path below if get_scripts fails
-# loc_scripts <- "E:/git/aquatic/Regional_SDM/"
-
-# remove everything but necessary variables
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("project_db","model_species","loc_scripts", "loc_model", "nm_presFile")])
+# list non-standard variables to "add" to model run
+add_vars = NULL
+# list standard variables to remove from model run
+remove_vars = NULL
+# do you want to stop execution after each modeling step (script)?
+prompt = TRUE
 
 # set wd and load function
 setwd(loc_scripts)
-source("helper/run_SDM.R")
+source(here("helper", "run_SDM.R"))
 
 ##############
 # End step 1 #
@@ -42,41 +56,28 @@ source("helper/run_SDM.R")
 # Step 2: execute a new model
 # Usage: For a full, new model run, provide all paths/file names to arguments 'loc_scripts' THROUGH 'modeller'.
 
-# Optional arguments for all runs include:
-# 1. begin_step: specify as the prefix of the step to begin with: one of ("1","2","3","4","4b","4c","5").
-#     Defaults to "1", so not necessary to specify for new runs.
-# 2. prompt: if TRUE, the function will stop after each script, and ask if you want to continue. 
-#     Defaults to FALSE.
-# 3. add_vars: variables that are not part of the standard set for this species, which you wish to 
-#     include in the model run.
-# 4. remove_vars: variables that are part of the standard set for this species, which you wish to
-#     remove from the model run.
-# 5. huc_level: a numeric, 2-12. if used, will subset the background/prediction are of the model to 
-#     the given HUC-level watershed(s) that presence reaches are within. Requires the 'huc12' column
-#     to be present and populated in the presence reaches csv, env. vars csv, and all flowlines shapefile.
-
 # RUN A NEW MODEL (ALL STEPS 1-5)
 # If picking up from a previous run (after step 1), use Step 2-alt below
 # update the function arguments below as necessary, and run the function
+
 run_SDM(
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
   nm_presFile = nm_presFile,
-  nm_db_file = project_db, 
+  nm_db_file = nm_db_file, 
   loc_model = loc_model,
-  nm_envVars = "D:/SDM/Tobacco/env_vars/Tobacco_aqua/EnvVars.csv", # csv with comids, huc_12s, all variables
-  nm_allflowlines = "D:/SDM/Tobacco/other_spatial/shp/aqua/VA_all_flowlines.shp", ### shapefile of all flowlines w/ comid, huc12 columns
-  nm_refBoundaries = "D:/SDM/Tobacco/other_spatial/shp/aqua/StatesEast.shp", # background grey refernce lines in map
-  nm_studyAreaExtent = "D:/SDM/Tobacco/other_spatial/shp/aqua/VA_HUC_predarea.shp", # outline black boundary line for study area in map
-  nm_aquaArea = "D:/SDM/Tobacco/other_spatial/shp/aqua/VA_nhdarea_wb.shp", ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
-  model_comments = "david's model test",
-  metaData_comments = "bla bla",
-  modeller = "David Bucklin",
-  begin_step = "1",
-  add_vars = NULL,
-  remove_vars = NULL,
-  huc_level = 2,
-  prompt = FALSE
+  nm_envVars = nm_envVars, # csv with comids, huc_12s, all variables
+  nm_allflowlines = nm_allflowlines, ### shapefile of all flowlines w/ comid, huc12 columns
+  nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
+  huc_level = huc_level,
+  nm_refBoundaries = nm_refBoundaries, # background grey refernce lines in map
+  nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
+  model_comments = model_comments,
+  metaData_comments = metaData_comments,
+  modeller = modeller,
+  add_vars = add_vars,
+  remove_vars = remove_vars,
+  prompt = prompt
 )
 
 #############################################################################
@@ -98,19 +99,19 @@ run_SDM(
 # 
 # Note that you can manually update the scripts, if desired. 
 # The scripts will automatically be accessed from 'loc_scripts' (if provided) 
-# or (if not provided) the location that was specified for the original model run.
 
-# set project folder, species code, scripts for this run
-project_db <- "D:/testing_SDM/aqua_dev/databases/sdm_tracking_aqua_dev.sqlite"
-loc_model <- "D:/testing_SDM/aqua_dev/species"
+# or the location that was specified for the original model run. 
+library(here)
+rm(list=ls())
+
+# set project folder and species code for this run
 model_species <- "chrocumb"
-branch <- "aqua_dev"
-source("E:/git/aquatic/Regional_SDM/helper/get_scripts.R", local = TRUE)
-## NOTE any messages, and download/place scripts manually if necessary
+loc_model <- here("_data", "species")
 
-# load function
+# set wd and load function
+loc_scripts <- here()
 setwd(loc_scripts)
-source("helper/run_SDM.R")
+source(here("helper", "run_SDM.R"))
 
 # example pick-up a model run at step 2 (same presence/bkgd data, new model with different variables)
   # need to provide an input tableCode to nm_presFile 
@@ -125,15 +126,6 @@ run_SDM(
   remove_vars = "cbnfws"
 )
 
-# example pick-up a model run at step 3 (same presence/bkgd data, new model)
-run_SDM(
-  begin_step = "3",
-  model_species = "chrocumb",
-  loc_model = loc_model,
-  nm_presFile = "chrocumb_20180919_160305",
-  model_comments = "New model run using most recent settings."
-)
-
 # example pick-up a model run at step 4c (metadata/comment update)
   # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
@@ -143,3 +135,25 @@ run_SDM(
   model_rdata = "alashete_20180919_093614",
   metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
+
+
+########## 
+##########
+##########
+
+# TESTING / DEBUGGING ONLY
+library(here)
+rm(list=ls())
+# Use the lines below for debugging (running line by line) for a certain script
+# This loads the variables used in previous model run for the species, 
+# so you need to have executed run_SDM in step 2 first.
+
+# for scripts 1-3, run just the following 3 lines
+model_species <- "chrocumb"
+load(here("_data","species",model_species,"runSDM_paths.Rdata"))
+for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
+
+# if debugging script 4 or later, also load the specific model output rdata file
+model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata")))
+load(here("_data","species",model_species,"outputs","rdata",paste0(model_rdata)))
+

@@ -16,13 +16,13 @@ names(EnvVars) <- tolower(names(EnvVars))
 # Set working directory to the prepped reaches location
 setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
-fileName <- paste0("model_input/", baseName, "_prepped.csv")
+fileName <- paste0("presence/", baseName, "_prepped.csv")
 reaches <- read.csv(fileName)
 
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get MODTYPE
-SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE CODE = '", model_species, "';")
+SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE sp_code = '", model_species, "';")
 modType <- dbGetQuery(db, SQLQuery)$m
 
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua WHERE use_",modType," = 1;")

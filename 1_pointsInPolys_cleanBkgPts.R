@@ -124,23 +124,6 @@ att.reaches <- presReaches
 # just in case convert column names to lowercase
 names(att.reaches) <- tolower(names(att.reaches))
 
-# Write out various stats and data to the database ------
-# prep the data
-OutPut <- data.frame(tableCode = baseName,
-  SciName = paste(att.reaches[1,"sname"]),
-	CommName=paste(att.reaches[1,"scomname"]),
-	ElemCode=model_species,
-	RandomPtFile= paste0(getwd(), "/presence/", fileName), # do we need this?
-	date = paste(Sys.Date()),
-	time = format(Sys.time(), "%X"),
-	Loc_Use=""
-	)
-
-#Write the data to the SQLite database
-db <- dbConnect(SQLite(),dbname=nm_db_file)
-dbWriteTable(db,"tblPrepStats",OutPut,append=TRUE)
-dbDisconnect(db)
-
 ###
 # remove reaches from background dataset that have presence of the target species in the reach
 list_presReaches <- att.reaches$comid
@@ -182,6 +165,6 @@ selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in%
 bgpoints_cleaned <- bgpoints[selectedRows,] # selects rows by comid in list of project reaches, and also not bordering presence reaches
 
 # write species reach data
-write.csv(att.reaches,paste("model_input/", baseName,"_prepped.csv",sep=""), row.names = FALSE) 
+write.csv(att.reaches,paste("presence/", baseName,"_prepped.csv",sep=""), row.names = FALSE) 
 # wtite background reach data
 write.csv(bgpoints_cleaned, paste("model_input/", baseName,"_bgpoints_clean.csv",sep=""), row.names = FALSE)
