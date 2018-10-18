@@ -17,7 +17,7 @@ loc_model <- here("_data", "species")
 # Modeling database
 nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
-nm_presFile <- here("_data", "occurrence", model_species)
+nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
 loc_envVars = here("_data","env_vars","raster")
 # bkg points [Terrestrial-only variable]
