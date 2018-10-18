@@ -29,8 +29,7 @@ dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
-fileName <- paste0(basename(nm_presFile), ".shp")
-presPolys <- st_read(paste(dirname(nm_presFile),fileName, sep = "/"))
+presPolys <- st_read(nm_presFile)
 
 #check for proper column names. If no error from next code block, then good to go
 #presPolys$RA <- presPolys$SFRACalc
