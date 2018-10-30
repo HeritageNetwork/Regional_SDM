@@ -4,7 +4,6 @@
 #  these are the random presence points being created here, from polygon presence data.
 # 2. Removing any points from the background points dataset that overlap or are near
 #  the input presence polygon dataset.
-library(here)
 library(RSQLite)
 library(sf)
 library(dplyr)
@@ -29,7 +28,7 @@ dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
-presPolys <- st_read(nm_presFile)
+presPolys <- st_zm(st_read(nm_presFile))
 
 #check for proper column names. If no error from next code block, then good to go
 #presPolys$RA <- presPolys$SFRACalc
@@ -90,13 +89,13 @@ for (d in 1:length(presPolys$OBSDATE)) {
 desiredCols <- c(desiredCols, "date")
 
 # explode multi-part polys ----
-suppressWarnings(shp_expl <- st_zm(st_cast(presPolys, "POLYGON")))
+suppressWarnings(shp_expl <- st_cast(presPolys, "POLYGON"))
 
 #add some columns (explode id and area)
 shp_expl <- cbind(shp_expl, 
-                       EXPL_ID = rownames(shp_expl), 
+                       EXPL_ID = 1:length(shp_expl$geometry), 
                        AREAM2 = st_area(shp_expl))
-
+names(shp_expl$geometry) <- NULL # temp fix until sf patches error
 
 #write out the exploded polygon set
 
