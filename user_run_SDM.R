@@ -15,23 +15,23 @@ loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
 loc_model <- here("_data", "species")
 # Modeling database
-nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
+nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking_test.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
-loc_envVars = here("_data","env_vars","raster")
+loc_envVars = here("_data","env_vars","raster","elev")
 # bkg points [Terrestrial-only variable]
-nm_bkgPts = here("_data","env_vars","background","va_att.shp")
+nm_bkgPts = here("_data","env_vars","background","ma_test_background.shp")
 # map reference boundaries
-nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey refernce lines in map
+nm_refBoundaries = here("_data","other_spatial","feature","ma_test.shp") # background grey refernce lines in map
 # map project boundary
-nm_studyAreaExtent = here("_data","other_spatial","feature","sdmVA_pred_20170131.shp") # outline black boundary line for study area in map
+nm_studyAreaExtent = here("_data","other_spatial","feature","ma_test.shp") # outline black boundary line for study area in map
 # model comment in database
-model_comments = "testing master"
+model_comments = "custom model comments"
 # comment printed in PDF metadata
-metaData_comments = "bla bla"
+metaData_comments = "custom metadata comments"
 # your name
-modeller = "David Bucklin"
+modeller = "Tim Howard"
 
 # list non-standard variables to "add" to model run
 add_vars = NULL
