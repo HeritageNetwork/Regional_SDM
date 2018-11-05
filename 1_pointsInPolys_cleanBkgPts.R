@@ -6,7 +6,6 @@
 
 library(RSQLite)
 library(sf)
-library(rgeos)
 library(stringr)
 
 ####

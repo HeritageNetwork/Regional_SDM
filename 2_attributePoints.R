@@ -4,7 +4,6 @@
 ## start with a fresh workspace with no objects loaded
 library(sf)
 library(RSQLite)
-library(maptools)
 library(stringr)
 
 # load data, QC ----
