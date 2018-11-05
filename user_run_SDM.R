@@ -36,7 +36,7 @@ nm_allflowlines <- here("_data","env_vars","background", "VA_all_flowlines.shp")
 # name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
 nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
 # numeric HUC level to sub-set project area [Aquatic-only variable]
-huc_level <- 2
+# huc_level <- NULL
 
 # list non-standard variables to "add" to model run
 add_vars = NULL
@@ -69,7 +69,6 @@ run_SDM(
   nm_envVars = nm_envVars, # csv with comids, huc_12s, all variables
   nm_allflowlines = nm_allflowlines, ### shapefile of all flowlines w/ comid, huc12 columns
   nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
-  huc_level = huc_level,
   nm_refBoundaries = nm_refBoundaries, # background grey refernce lines in map
   nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
   model_comments = model_comments,
@@ -130,9 +129,9 @@ run_SDM(
   # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
   begin_step = "4c",
-  model_species = "alashete",
+  model_species = "chrocumb",
   loc_model = loc_model,
-  model_rdata = "alashete_20180919_093614",
+  model_rdata = "chrocumb_20181105_152204",
   metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
 

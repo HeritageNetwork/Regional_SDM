@@ -1,7 +1,7 @@
 # This script installs/updates packages used in the modelling process of this repository.
 # Run it occasionally (especially after updating R itself) to keep packages up-to-date.
 
-pkg_list <- c("RSQLite","rgdal","sp","rgeos","raster","maptools",
+pkg_list <- c("RSQLite","rgdal","sp","sf","rgeos","raster","maptools",
               "ROCR","vcd","abind","foreign","randomForest",
               "snow", "DBI", "knitr","RColorBrewer","rasterVis","xtable",
               "git2r","spsurvey","classInt","tinytex", "stringi")

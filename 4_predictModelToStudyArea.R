@@ -2,7 +2,7 @@
 # Purpose: create the shapefile with model predictions
 
 ## start with a fresh workspace with no objects loaded
-library(rgdal)
+library(sf)
 library(randomForest)
 library(data.table)
 
@@ -45,12 +45,13 @@ results_join_table <- data.frame(comid=df.all.pred$comid, prbblty=result)
 
 # load the reach shapefile for the study area
 # setwd(loc_otherSpatial)
-layerdir <- dirname(nm_allflowlines) # the name of the study area flowlines
-layer <- strsplit(basename(nm_allflowlines),"\\.")[[1]][[1]]
-shapef <- readOGR(layerdir, layer = layer)
+#layerdir <- dirname(nm_allflowlines) # the name of the study area flowlines
+#layer <- strsplit(basename(nm_allflowlines),"\\.")[[1]][[1]]
+#shapef <- readOGR(layerdir, layer = layer)
+shapef <- st_read(nm_allflowlines, quiet = T)
 
 # join probability to shapefile
-shapef <- sp::merge(shapef, results_join_table, by = "comid", all.x = F)
+shapef <- merge(shapef[c("comid","huc12","wacomid","strord")], results_join_table, by = "comid", all.x = F)
 
 # write the shapefile
-writeOGR(obj=shapef, dsn= "model_predictions", layer= paste0(modelrun_meta_data$model_run_name, "_results"), driver="ESRI Shapefile", overwrite_layer = TRUE)
+st_write(shapef, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), delete_layer = T)

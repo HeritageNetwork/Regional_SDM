@@ -5,7 +5,7 @@
 #  the input presence reach dataset.
 
 library(RSQLite)
-library(rgdal)
+library(sf)
 library(rgeos)
 library(stringr)
 
@@ -26,15 +26,14 @@ library(stringr)
 setwd(loc_model)
 dir.create(paste0(model_species,"/inputs/presence"), recursive = T, showWarnings = F)
 dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
-setwd(paste0(loc_model,"/",model_species,"/inputs/presence"))
+setwd(paste0(loc_model,"/",model_species,"/inputs"))
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
-fileName <- basename(nm_presFile)
-presReaches <- read.csv(nm_presFile, colClasses = c("huc12"="character"))
+presReaches <- read.csv(nm_presFile)
 
 shpColNms <- names(presReaches)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","group_id","huc12") 
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","group_id") 
 
 # check if all required names are in file
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
@@ -43,39 +42,22 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
   print("Required columns are present")
 }
 # check if all columns have complete data
-if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id","huc12")]))) {
-  stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID','huc12', and 'group_id' cannot have NA values.")
+if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id")]))) {
+  stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID', and 'group_id' cannot have NA values.")
 }
 
 # check if file already exists; if it does, stop and print error
-if (!file.copy(nm_presFile, paste0(baseName, ".csv"))) {
-  stop("A file already exists with that name: '", 
-       paste0(getwd(), "/", baseName, ".csv"), "'. Rename or delete it to continue.")
-}
+#if (!file.copy(nm_presFile, paste0(baseName, ".csv"))) {
+#  stop("A file already exists with that name: '", 
+#       paste0(getwd(), "/", baseName, ".csv"), "'. Rename or delete it to continue.")
+#}
 # set wd to inputs again
-setwd(paste0(loc_model,"/",model_species,"/inputs"))
+# setwd(paste0(loc_model,"/",model_species,"/inputs"))
 # file in place, read it
-presReaches <- read.csv(paste0("presence/", baseName, ".csv"), colClasses = c("huc12"="character"))
+#presReaches <- read.csv(paste0("presence/", baseName, ".csv"))
 
 # arrange, pare down columns
 presReaches <- presReaches[,desiredCols]
-# subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
-presReaches$huc12 <- str_pad(presReaches$huc12, 12, pad=0) # make sure huc12 values have leading zeros
-
-# test at what level HUCS are the same, and choose that level to run the predictions at.  For example, if all know occurences are within the same HUC6, then the study area will be clipped to that HUC6.  If they are not same at any level, then the model will be run at the full extant of the predictor layer.  THis is used to define the project background below.
-#if (is.null(huc_level)) {
-  if(length(unique(substr(presReaches$huc12,1,8)))==1){
-    huc_level <- 8
-  } else if(length(unique(substr(presReaches$huc12,1,6)))==1){
-    huc_level <- 6  
-  } else if(length(unique(substr(presReaches$huc12,1,4)))==1){
-    huc_level <- 4  
-  } else if(length(unique(substr(presReaches$huc12,1,2)))==1){
-    huc_level <- 2
-  } else {
-    huc_level <- NULL
-  }
-#}
 
 # set date/year column to [nearest] year, rounding when day is given
 presReaches$OBSDATE <- as.character(presReaches$OBSDATE)
@@ -118,53 +100,71 @@ for (d in 1:length(presReaches$OBSDATE)) {
 }
 desiredCols <- c(desiredCols, "date")
 
-#get the attribute table from above 
-att.reaches <- presReaches
-
 # just in case convert column names to lowercase
-names(att.reaches) <- tolower(names(att.reaches))
+names(presReaches) <- tolower(names(presReaches))
 
 ###
 # remove reaches from background dataset that have presence of the target species in the reach
-list_presReaches <- att.reaches$comid
 
-# setwd(loc_otherSpatial)
 # read in the shapefile, get the attribute data
-layer <- strsplit(basename(nm_allflowlines),"\\.")[[1]][[1]]
-layerdir <- dirname(nm_allflowlines)
-shapef <- readOGR(layerdir, layer = layer)
-testcatchments <- shapef@data
-names(testcatchments) <- tolower(names(testcatchments))
-testcatchments$huc12 <- str_pad(testcatchments$huc12, 12, pad=0)
+#layer <- strsplit(basename(nm_allflowlines),"\\.")[[1]][[1]]
+#layerdir <- dirname(nm_allflowlines)
+#shapef <- readOGR(layerdir, layer = layer)
+shapef <- st_read(nm_allflowlines)
+names(shapef) <- tolower(names(shapef))
+shapef <- shapef[c("comid", "huc12")]
+# testcatchments <- shapef@data
+shapef$huc12 <- str_pad(shapef$huc12, 12, pad=0)
 
+# get huc12s, geom
+pres.geom <- merge(shapef, presReaches, by = "comid")
 
- 
 # define project background
-if (!is.null(huc_level)) {
+# subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
+presHUCs <- pres.geom$huc12
+
+# test at what level HUCS are the same, and choose that level to run the predictions at.  
+# For example, if all know occurences are within the same HUC6, then the study area will be clipped to that HUC6. 
+# If they are not same at any level, then the model will be run at the full extant of the predictor layer.  
+# THis is used to define the project background below.
+if (is.null(huc_level)) {
+  if(length(unique(substr(presHUCs,1,8)))==1){
+    huc_level <- 8
+  } else if(length(unique(substr(presHUCs,1,6)))==1){
+    huc_level <- 6  
+  } else if(length(unique(substr(presHUCs,1,4)))==1){
+    huc_level <- 4  
+  } else if(length(unique(substr(presHUCs,1,2)))==1){
+    huc_level <- 2
+  } else {
+    huc_level <- 0
+  }
+  fn_args$huc_level <- huc_level
+}
+message("Using huc_level of ", huc_level , "...")
+
+if (huc_level != 0) {
   # subset to huc if requested
-  HUCsubset <- unique(substr(presReaches$huc12, 1, huc_level)) # subset to number of huc digits
-  list_projCatchments <- testcatchments$comid[substr(testcatchments$huc12,1,huc_level) %in% HUCsubset]
+  HUCsubset <- unique(substr(presHUCs, 1, huc_level)) # subset to number of huc digits
+  list_projCatchments <- shapef$comid[substr(shapef$huc12,1,huc_level) %in% HUCsubset]
 } else {
   # otherwise take all reaches
-  list_projCatchments <- testcatchments$comid
+  list_projCatchments <- shapef$comid
 }
 
 # find presence and presence-adjacent reaches by intersection
-pres.geom <- shapef[shapef$comid %in% list_presReaches,]
-bkgd.int <- gIntersects(pres.geom, shapef, byid = TRUE, returnDense = TRUE)
-bkgd.int <- apply(bkgd.int, 1, FUN = any)
-bkgd.int <- names(bkgd.int)[as.vector(bkgd.int)]
-bkgd.int <- shapef[row.names(shapef) %in% bkgd.int,]
-list_removeBkgd <- bkgd.int$comid
+bkgd.int <- st_intersects(shapef, pres.geom , sparse = F)
+bkgd.geom <- shapef[!apply(bkgd.int, 1, FUN = any),]
+# list_removeBkgd <- bkgd.int$comid
 
-bgpoints <- read.csv(nm_envVars, colClasses=c("huc12"="character"))
-names(bgpoints) <- tolower(names(bgpoints))
-bgpoints$huc12 <- str_pad(bgpoints$huc12, 12, pad=0)
+# bgpoints <- read.csv(nm_envVars, colClasses=c("huc12"="character"))
+# names(bgpoints) <- tolower(names(bgpoints))
+# bgpoints$huc12 <- str_pad(bgpoints$huc12, 12, pad=0)
 
-selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd)) 
-bgpoints_cleaned <- bgpoints[selectedRows,] # selects rows by comid in list of project reaches, and also not bordering presence reaches
+# selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd)) 
+# bgpoints_cleaned <- bgpoints[selectedRows,] # selects rows by comid in list of project reaches, and also not bordering presence reaches
 
 # write species reach data
-write.csv(att.reaches,paste("presence/", baseName,"_prepped.csv",sep=""), row.names = FALSE) 
+st_write(pres.geom,paste("presence/", baseName,"_prepped.shp",sep=""))
 # wtite background reach data
-write.csv(bgpoints_cleaned, paste("model_input/", baseName,"_bgpoints_clean.csv",sep=""), row.names = FALSE)
+st_write(bkgd.geom, paste("model_input/", baseName,"_bkgd_clean.shp",sep=""))

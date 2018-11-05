@@ -2,7 +2,7 @@
 # Purpose: threshold the probabilities in the results shapefile
 
 ## start with a fresh workspace with no objects loaded
-library(rgdal)
+library(sf)
 library(ROCR)
 library(RSQLite)
 library(DBI)
@@ -119,7 +119,7 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 # collate and write to DB ----
 
 # load the prediction vector, for calculating MRV
-results_shape <- readOGR("model_predictions", paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
+results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T)
 
 # MRV (on full model predictions)
 pres.comid <- df.full$comid[df.full$pres==1]
@@ -159,15 +159,13 @@ for (t in allThresh$cutCode) {
   threshold <- as.numeric(allThresh$cutValue[allThresh$cutCode == t])
   if (!is.na(threshold)) {
     # reclassify the vector based on the threshold into binary 0/1
-    results_shape@data[,t] <- NA
-    results_shape@data[,t][results_shape@data$prbblty<threshold] <- 0
-    results_shape@data[,t][results_shape@data$prbblty>=threshold] <- 1
+    results_shape[,t] <- NA
+    results_shape[,t] <- ifelse(results_shape$prbblty < threshold, 0, 1)
   }
 }
 
 #write outshapefile
-writeOGR(results_shape,dsn="model_predictions",layer=paste0(modelrun_meta_data$model_run_name, "_results")
-         , driver="ESRI Shapefile", overwrite_layer = TRUE)
+st_write(results_shape, paste0("model_predictions/",modelrun_meta_data$model_run_name, "_results.shp"), delete_layer = T)
 
 #clean up
 rm(results_shape)

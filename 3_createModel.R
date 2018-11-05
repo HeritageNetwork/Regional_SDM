@@ -20,7 +20,7 @@ fileName <- paste0("model_input/", baseName, "_att.csv")
 df.in <-read.csv(fileName, colClasses=c("huc12"="character"))
 
 # absence points
-fileName <- paste0("model_input/", baseName, "_bgpoints_clean.csv")
+fileName <- paste0("model_input/", baseName, "_bkgd_att.csv")
 df.abs <- read.csv(fileName, colClasses=c("huc12"="character"))
 # get a list of env-vars for later checking of ev presence in the database
 envvar_list <- names(df.abs)[!names(df.abs) %in% c("huc12","comid")] # gets a list of environmental variables
@@ -92,11 +92,7 @@ dbDisconnect(db)
 rm(db)
 
 # clean up, merge data sets -----
-df.in$x.1 <- NULL # can probably eliminate with better csv data prep from GIS
-df.in$x <- NULL # can probably eliminate with better csv data prep from GIS
 df.in$scomname <- NULL  # not in df.abs --> causing issues on the rearrange below
-df.abs$x <- NULL # can probably eliminate with better csv data prep from GIS
-df.abs$x.1 <- NULL # can probably eliminate with better csv data prep from GIS
 
 # add a 'stratum' column to df.in for jackknife procedure [MAKE SURE TO ASSIGN DESIRED COLUMN HERE]
 df.in$stratum <- as.character(df.in$group_id) # group_id used for model stratification

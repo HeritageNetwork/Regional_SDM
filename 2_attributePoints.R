@@ -2,7 +2,7 @@
 # Purpose: attribute environmental data to presence points
 
 ## start with a fresh workspace with no objects loaded
-library(rgdal)
+library(sf)
 library(RSQLite)
 library(maptools)
 library(stringr)
@@ -16,8 +16,12 @@ names(EnvVars) <- tolower(names(EnvVars))
 # Set working directory to the prepped reaches location
 setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
-fileName <- paste0("presence/", baseName, "_prepped.csv")
-reaches <- read.csv(fileName)
+# load files
+fileName <- paste0("presence/", baseName, "_prepped.shp")
+reaches <- st_read(fileName, quiet = T)
+
+fileName <- paste0("model_input/", baseName, "_bkgd_clean.shp")
+bkgd.reaches <- st_read(fileName, quiet = T)
 
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -60,6 +64,9 @@ rm(gridlistSub, modType)
 
 # merge two data frames by COMID
 reaches_attributed <- merge(reaches,EnvVars,by="comid")
-
-# write it out ----
+reaches_attributed$geometry <- NULL
 write.csv(reaches_attributed, paste0("model_input/",baseName,"_att.csv"), row.names = FALSE)
+
+bkgd.reaches_attributed <- merge(bkgd.reaches,EnvVars,by="comid")
+bkgd.reaches_attributed$geometry <- NULL
+write.csv(bkgd.reaches_attributed, paste0("model_input/",baseName,"_bkgd_att.csv"), row.names = FALSE)
