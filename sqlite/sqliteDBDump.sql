@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS `tblModelResults` (
 	`model_start_time`	TEXT,
 	`model_end_time`	TEXT,
 	`r_version`	TEXT,
+	`repo_head`	TEXT,
 	PRIMARY KEY(`model_run_name`),
 	FOREIGN KEY(`model_run_name`) REFERENCES `tblModelResults`(`model_run_name`)
 );
