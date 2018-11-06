@@ -13,7 +13,7 @@ StudyAreaPoly <- "C:/David/scratch/jurisbnd_lam_clipbound.shp"
 # huc12s. These polygons are used to attribute points. Must have "HUC_12" column.
 huc12 <- "C:/David/scratch/huc12s_VA.shp"
 # number of points to generate
-numpts <- 5000
+numpts <- 10000
 # new/existing db table name (overwritten)
 table <- "background_pts_VA"
 
@@ -38,7 +38,9 @@ sampsDF <- data.frame(fid = samps$fid, huc12 = samps$huc12, wkt = st_as_text(sam
 
 # send to database
 db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background.sqlite"))
-dbWriteTable(db, table, sampsDF, overwrite = T)
+tp <- as.vector("INTEGER")
+names(tp) <- "fid"
+dbWriteTable(db, table, sampsDF, overwrite = T, field.types = tp)
 
 # write CRS
 tcrs <- data.frame(table_name = table, proj4string = as.character(crs$proj4string))

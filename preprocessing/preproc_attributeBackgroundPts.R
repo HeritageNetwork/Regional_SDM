@@ -53,11 +53,14 @@ bkgd <- dbReadTable(db, table)
 tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", table, "';"))$p
 samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 
-# extract values, write it ----
+# extract values
 x <- extract(envStack, samps, method="simple")
-sampsAtt <- as.data.frame(cbind(fid = as.character(samps$fid), x))
-# dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = T)
-dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = T)
+sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), x))
+
+# write to DB
+tp <- as.vector("INTEGER")
+names(tp) <- "fid"
+dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = T, field.types = tp)
 # not writing shapefile, since base shapefile already exists
 
 ## clean up ----
