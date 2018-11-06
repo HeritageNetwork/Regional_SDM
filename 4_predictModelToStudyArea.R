@@ -48,12 +48,6 @@ names(fullL) <- stackOrder
 rm(rs,rs1)
 
 envStack <- stack(fullL)
-# for testing only, crop to presPolys
-fileName <- basename(nm_presFile)
-message("Clipping stack for faster processing. Make sure to remove this later...")
-presPolys <- readOGR(dsn=dirname(nm_presFile), layer = gsub(".shp$", "", fileName)) #Z-dimension discarded msg is OK
-envStack <- crop(envStack, presPolys)
-# end testing
 
 # run prediction ----
 setwd(paste0(loc_model, "/", model_species,"/outputs"))
