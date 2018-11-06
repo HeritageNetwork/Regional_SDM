@@ -2834,6 +2834,7 @@ INSERT INTO `lkpModelers` (ModelerID,ProgramName,FullOrganizationName,City,State
 CREATE TABLE IF NOT EXISTS `lkpEnvVarsAqua` (
 	`fullName`	TEXT,
 	`gridName`	TEXT,
+   `fileName`  TEXT,
 	`description`	TEXT,
 	`dataType`	TEXT,
 	`multiplier`	TEXT,
@@ -2989,6 +2990,7 @@ INSERT INTO `lkpEnvVarsAqua` (fullName,gridName,description,dataType,multiplier,
 CREATE TABLE IF NOT EXISTS `lkpEnvVars` (
 	`fullName`	TEXT,
 	`gridName`	TEXT,
+   `fileName`  TEXT,
 	`description`	TEXT,
 	`dataType`	TEXT,
 	`min`	TEXT,
