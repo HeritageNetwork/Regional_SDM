@@ -137,8 +137,6 @@ testcatchments <- shapef@data
 names(testcatchments) <- tolower(names(testcatchments))
 testcatchments$huc12 <- str_pad(testcatchments$huc12, 12, pad=0)
 
-
- 
 # define project background
 if (!is.null(huc_level)) {
   # subset to huc if requested
@@ -157,9 +155,14 @@ bkgd.int <- names(bkgd.int)[as.vector(bkgd.int)]
 bkgd.int <- shapef[row.names(shapef) %in% bkgd.int,]
 list_removeBkgd <- bkgd.int$comid
 
-bgpoints <- read.csv(nm_envVars, colClasses=c("huc12"="character"))
+# SQLite database integration for Env Vars
+dbEV <- dbConnect(SQLite(),dbname=nm_EV_db_file)
+SQLQuery <- paste0("SELECT * FROM envvar_lotic ","WHERE ","substr(HUC_12,1,",huc_level,") = '",HUCsubset,"'") # note that the 'substr' is the SQLite version, not R
+bgpoints <- dbGetQuery(dbEV, SQLQuery) 
+dbDisconnect(dbEV)
+
 names(bgpoints) <- tolower(names(bgpoints))
-bgpoints$huc12 <- str_pad(bgpoints$huc12, 12, pad=0)
+bgpoints$huc12 <- str_pad(bgpoints$huc_12, 12, pad=0)
 
 selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd)) 
 bgpoints_cleaned <- bgpoints[selectedRows,] # selects rows by comid in list of project reaches, and also not bordering presence reaches
