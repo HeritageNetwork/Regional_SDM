@@ -7,16 +7,6 @@ library(RSQLite)
 library(stringr)
 
 # load data, QC ----
-###
-
-# SQLite database integration for Env Vars
-dbEV <- dbConnect(SQLite(),dbname=nm_EV_db_file)
-SQLQuery <- paste0("SELECT * FROM envvar_lotic WHERE COMID IN (", paste(toString(list_presReaches), collapse = ", "),")"    ) 
-EnvVars <- dbGetQuery(dbEV, SQLQuery)
-dbDisconnect(dbEV)
-names(EnvVars) <- tolower(names(EnvVars))
-
-# join ev to reaches
 # Set working directory to the prepped reaches location
 setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
@@ -63,15 +53,33 @@ if (!is.null(remove_vars)) {
   } 
   gridlistSub <- gridlistSub[!gridlistSub %in% remove_vars]
 }
-# get desired env. var. columns + comid
+
+# get desired env. var. columns + comid for presence
+# SQLite database integration for Env Vars
+dbEV <- dbConnect(SQLite(),dbname=nm_envVars[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_envVars[2],"_att WHERE COMID IN ('", paste(reaches$comid, collapse = "','"),"')") 
+EnvVars <- dbGetQuery(dbEV, SQLQuery)
+names(EnvVars) <- tolower(names(EnvVars))
 EnvVars <- EnvVars[c("comid",gridlistSub)]
-rm(gridlistSub, modType)
+dbDisconnect(dbEV)
 
 # merge two data frames by COMID
 reaches_attributed <- merge(reaches,EnvVars,by="comid")
 reaches_attributed$geometry <- NULL
 write.csv(reaches_attributed, paste0("model_input/",baseName,"_att.csv"), row.names = FALSE)
 
+# get desired env. var. columns + comid for bkgd
+# SQLite database integration for Env Vars
+dbEV <- dbConnect(SQLite(),dbname=nm_envVars[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_envVars[2],"_att WHERE COMID IN ('", paste(bkgd.reaches$comid, collapse = "','"),"')") 
+EnvVars <- dbGetQuery(dbEV, SQLQuery)
+names(EnvVars) <- tolower(names(EnvVars))
+EnvVars <- EnvVars[c("comid",gridlistSub)]
+dbDisconnect(dbEV)
+
 bkgd.reaches_attributed <- merge(bkgd.reaches,EnvVars,by="comid")
 bkgd.reaches_attributed$geometry <- NULL
 write.csv(bkgd.reaches_attributed, paste0("model_input/",baseName,"_bkgd_att.csv"), row.names = FALSE)
+
+# clean up
+rm(gridlistSub, modType)

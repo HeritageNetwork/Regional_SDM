@@ -20,20 +20,19 @@ setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
-presHUC <- str_pad(as.character(df.full$huc12[df.full$pres==1]), 12, pad = 0 )
+presHUC <- str_pad(as.character(df.full$huc12[df.full$pres==1]), 12, pad = 0)
 HUCsubset <- unique(substr(presHUC, 1, huc_level)) # subset to number of huc digits
 ###EnvVars <- read.csv(nm_envVars, colClasses=c("huc12"="character"))
 # SQLite database integration for Env Vars
-dbEV <- dbConnect(SQLite(),dbname=nm_EV_db_file)
-SQLQuery <- paste0("SELECT * FROM envvar_lotic ","WHERE ","substr(HUC_12,1,",huc_level,") = '",HUCsubset,"'") # note that the 'substr' is the SQLite version, not R
+dbEV <- dbConnect(SQLite(),dbname=nm_envVars[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_envVars[2],"_att WHERE ","substr(huc12,1,",huc_level,") = '",HUCsubset,"'") # note that the 'substr' is the SQLite version, not R
 EnvVars <- dbGetQuery(dbEV, SQLQuery) 
 dbDisconnect(dbEV)
 
 names(EnvVars) <- tolower(names(EnvVars))
 
-
-EnvVars$huc12 <- str_pad(EnvVars$huc_12, 12, pad=0)
-EnvVars$huc_12 <- NULL
+# EnvVars$huc12 <- str_pad(EnvVars$huc_12, 12, pad=0) # shouldn't be needed anymore
+EnvVars$huc12 <- NULL
 
 # run prediction, using all rows in EnvVars with complete cases----
 df.all <- df.full
@@ -46,11 +45,7 @@ result <- as.data.frame(predict(rf.full, df.all.pred[names(df.all)[indVarCols]],
 result <- result[,"1"]
 results_join_table <- data.frame(comid=df.all.pred$comid, prbblty=result)
 
-# load the reach shapefile for the study area
-# setwd(loc_otherSpatial)
-#layerdir <- dirname(nm_allflowlines) # the name of the study area flowlines
-#layer <- strsplit(basename(nm_allflowlines),"\\.")[[1]][[1]]
-#shapef <- readOGR(layerdir, layer = layer)
+# load the reach shapefile for the study area (TODO: use reaches from DB)
 shapef <- st_read(nm_allflowlines, quiet = T)
 
 # join probability to shapefile
