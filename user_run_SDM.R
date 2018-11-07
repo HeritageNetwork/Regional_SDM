@@ -16,10 +16,12 @@ loc_scripts <- here()
 loc_model <- here("_data", "species")
 # Modeling database
 nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
+# Lotic Environmental Variable database
+nm_EV_db_file <- here("_data", "databases", "MoBI_Aquatic_EnvVars.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv"))
 # map reference boundaries
-nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey refernce lines in map
+nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey reference lines in map
 # map project boundary
 nm_studyAreaExtent = here("_data","other_spatial","feature","sdmVA_pred_20170131.shp") # outline black boundary line for study area in map
 # model comment in database
@@ -27,7 +29,7 @@ model_comments = "testing aquatic"
 # comment printed in PDF metadata
 metaData_comments = "bla bla"
 # your name
-modeller = "David Bucklin"
+modeller = "Christopher Tracey"
 
 # Name of full environmental variables table [Aquatic-only variable]
 nm_envVars <- here("_data","env_vars","tabular", "EnvVars.csv")
@@ -43,7 +45,7 @@ add_vars = NULL
 # list standard variables to remove from model run
 remove_vars = NULL
 # do you want to stop execution after each modeling step (script)?
-prompt = TRUE
+prompt = FALSE
 
 # set wd and load function
 setwd(loc_scripts)
@@ -69,7 +71,12 @@ run_SDM(
   nm_envVars = nm_envVars, # csv with comids, huc_12s, all variables
   nm_allflowlines = nm_allflowlines, ### shapefile of all flowlines w/ comid, huc12 columns
   nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
+<<<<<<< HEAD
   nm_refBoundaries = nm_refBoundaries, # background grey refernce lines in map
+=======
+  huc_level = huc_level,
+  nm_refBoundaries = nm_refBoundaries, # background grey reference lines in map
+>>>>>>> 8ca206bab44cc1108d9094650ee80088afb785f1
   nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
   model_comments = model_comments,
   metaData_comments = metaData_comments,

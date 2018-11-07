@@ -27,7 +27,6 @@ envvar_list <- names(df.abs)[!names(df.abs) %in% c("huc12","comid")] # gets a li
 
 # write model input data to database before any other changes made
 db <- dbConnect(SQLite(),dbname=nm_db_file)
-
 # get species info
 SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id FROM lkpSpecies WHERE sp_code = '", 
                   model_species,"';", sep="")
@@ -49,7 +48,7 @@ dbDisconnect(db)
 rm(db)
 
 # get an original list of env-vars for later writing to tblVarsUsed
-envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
+##envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables  ## This is failing for some reason...
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records

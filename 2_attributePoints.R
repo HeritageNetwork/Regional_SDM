@@ -8,7 +8,12 @@ library(stringr)
 
 # load data, QC ----
 ###
-EnvVars <- read.csv(nm_envVars, colClasses=c("huc12"="character")) 
+
+# SQLite database integration for Env Vars
+dbEV <- dbConnect(SQLite(),dbname=nm_EV_db_file)
+SQLQuery <- paste0("SELECT * FROM envvar_lotic WHERE COMID IN (", paste(toString(list_presReaches), collapse = ", "),")"    ) 
+EnvVars <- dbGetQuery(dbEV, SQLQuery)
+dbDisconnect(dbEV)
 names(EnvVars) <- tolower(names(EnvVars))
 
 # join ev to reaches
@@ -30,6 +35,7 @@ modType <- dbGetQuery(db, SQLQuery)$m
 
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua WHERE use_",modType," = 1;")
 gridlistSub <- tolower(dbGetQuery(db, SQLQuery)$g)
+gridlistSub <- gridlistSub[-c(1:2)]
 dbDisconnect(db)
 
 ## account for add/remove vars

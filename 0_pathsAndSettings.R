@@ -22,7 +22,6 @@ loc_envVars <- "E:/SDM/Aquatic2/env_vars"
 # the path where the next two shapefiles are stored
 loc_otherSpatial <- "E:/SDM/Aquatic2/other_spatial"
 
-
 # A shapefile containing all flowlines in the study area (used for background)
 nm_allflowlines <- "PA_all_flowlines"
 

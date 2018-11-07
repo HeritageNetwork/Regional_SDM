@@ -20,17 +20,20 @@ setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
-EnvVars <- read.csv(nm_envVars, colClasses=c("huc12"="character"))
+presHUC <- str_pad(as.character(df.full$huc12[df.full$pres==1]), 12, pad = 0 )
+HUCsubset <- unique(substr(presHUC, 1, huc_level)) # subset to number of huc digits
+###EnvVars <- read.csv(nm_envVars, colClasses=c("huc12"="character"))
+# SQLite database integration for Env Vars
+dbEV <- dbConnect(SQLite(),dbname=nm_EV_db_file)
+SQLQuery <- paste0("SELECT * FROM envvar_lotic ","WHERE ","substr(HUC_12,1,",huc_level,") = '",HUCsubset,"'") # note that the 'substr' is the SQLite version, not R
+EnvVars <- dbGetQuery(dbEV, SQLQuery) 
+dbDisconnect(dbEV)
+
 names(EnvVars) <- tolower(names(EnvVars))
 
-if (!is.null(huc_level)) {
-  # subset to huc if requested
-  EnvVars$huc12 <- str_pad(EnvVars$huc12, 12, pad=0)
-  presHUC <- str_pad(as.character(df.full$huc12[df.full$pres==1]), 12, pad = 0 )
-  HUCsubset <- unique(substr(presHUC, 1, huc_level)) # subset to number of huc digits
-  EnvVars <- EnvVars[substr(EnvVars$huc12,1, huc_level) %in% HUCsubset,]
-}
-EnvVars$huc12 <- NULL
+
+EnvVars$huc12 <- str_pad(EnvVars$huc_12, 12, pad=0)
+EnvVars$huc_12 <- NULL
 
 # run prediction, using all rows in EnvVars with complete cases----
 df.all <- df.full
