@@ -106,9 +106,14 @@ names(presReaches) <- tolower(names(presReaches))
 # remove reaches from background dataset that have presence of the target species in the reach
 
 # read in the shapefile, get the attribute data
-shapef <- st_read(nm_allflowlines)
-names(shapef) <- tolower(names(shapef))
-shapef <- shapef[c("comid", "huc12")]
+dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE COMID IN ('", paste(presReaches$comid, collapse = "','"),"')") 
+shapef <- dbGetQuery(dbEV, SQLQuery)
+SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
+proj4 <- dbGetQuery(dbEV, SQLQuery)$p
+# shapef <- st_read(nm_allflowlines)
+# names(shapef) <- tolower(names(shapef))
+shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
 # testcatchments <- shapef@data
 shapef$huc12 <- str_pad(shapef$huc12, 12, pad=0)
 
@@ -148,23 +153,17 @@ if (huc_level != 0) {
   list_projCatchments <- shapef$comid
 }
 
+# create background geom based on HUCsubset
+dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE substr(huc12, 1, ", huc_level, ") = '", HUCsubset,"';") 
+shapef <- dbGetQuery(dbEV, SQLQuery)
+SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
+proj4 <- dbGetQuery(dbEV, SQLQuery)$p
+shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
+
 # find presence and presence-adjacent reaches by intersection
 bkgd.int <- st_intersects(shapef, pres.geom , sparse = F)
 bkgd.geom <- shapef[!apply(bkgd.int, 1, FUN = any),]
-# list_removeBkgd <- bkgd.int$comid
-bkgd.geom <- bkgd.geom[substring(bkgd.geom$huc12,1,huc_level) == HUCsubset,]
-
-# SQLite database integration for Env Vars
-# dbEV <- dbConnect(SQLite(),dbname=nm_EV_db_file)
-# SQLQuery <- paste0("SELECT * FROM envvar_lotic ","WHERE ","substr(HUC_12,1,",huc_level,") = '",HUCsubset,"'") # note that the 'substr' is the SQLite version, not R
-# bgpoints <- dbGetQuery(dbEV, SQLQuery) 
-# dbDisconnect(dbEV)
-
-# names(bgpoints) <- tolower(names(bgpoints))
-# bgpoints$huc12 <- str_pad(bgpoints$huc_12, 12, pad=0)
-
-# selectedRows <- (bgpoints$comid %in% list_projCatchments & !(bgpoints$comid %in% list_removeBkgd)) 
-# bgpoints_cleaned <- bgpoints[selectedRows,] # selects rows by comid in list of project reaches, and also not bordering presence reaches
 
 # write species reach data
 st_write(pres.geom,paste("presence/", baseName,"_prepped.shp",sep=""))

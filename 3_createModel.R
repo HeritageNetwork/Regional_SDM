@@ -22,8 +22,6 @@ df.in <-read.csv(fileName, colClasses=c("huc12"="character"))
 # absence points
 fileName <- paste0("model_input/", baseName, "_bkgd_att.csv")
 df.abs <- read.csv(fileName, colClasses=c("huc12"="character"))
-# get a list of env-vars for later checking of ev presence in the database
-envvar_list <- names(df.abs)[!names(df.abs) %in% c("huc12","comid")] # gets a list of environmental variables
 
 # write model input data to database before any other changes made
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -31,13 +29,13 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id FROM lkpSpecies WHERE sp_code = '", 
                   model_species,"';", sep="")
 ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
-
 tblModelInputs <- data.frame(table_code = baseName, EGT_ID = ElementNames$EGT_ID, datetime = as.character(Sys.time()),
                              feat_count = length(df.in$group_id), 
                              feat_grp_count = length(unique(df.in$group_id)), 
                              obs_count = length(df.in[,1]), bkgd_count = length(df.abs[,1]),
                              range_area_sqkm = NA)
 dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
+# get the full list of envvars from the database
 envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVarsAqua;")$g
 
 #also get correlated env var information
@@ -47,8 +45,8 @@ corrdEVs <- dbGetQuery(db, statement = SQLquery)
 dbDisconnect(db)
 rm(db)
 
-# get an original list of env-vars for later writing to tblVarsUsed
-##envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables  ## This is failing for some reason...
+# get an original list of env-vars that are included in bkgd dataset
+envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables  ## This is failing for some reason...
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
@@ -82,7 +80,7 @@ envvar_list[!envvar_list %in% namesInDB$gridName]
 ## if blank you are good to go
 envvar_list[!envvar_list %in% names(df.in)]
 
-# trust that the desired env vars are in df.in
+# the final envvar list is what is in the presence dataset
 envvar_list <- envvar_list[envvar_list %in% names(df.in)]
 
 #clean up

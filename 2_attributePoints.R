@@ -39,7 +39,7 @@ if (!is.null(add_vars)) {
   dbDisconnect(db)
   
   if (!all(add_vars %in% gridlistAll)) {
-    stop("Some environmental variables listed in `add_vars` were not found in `nm_EnvVars` dataset: ",
+    stop("Some environmental variables listed in `add_vars` were not found in `nm_bkg` dataset: ",
          paste(add_vars1[!add_vars %in% gridlistSub], collapse = ", "), ".")
   }
   gridlistSub <- c(gridlistSub, add_vars)
@@ -48,7 +48,7 @@ if (!is.null(remove_vars)) {
   remove_vars1 <- remove_vars
   remove_vars <- tolower(remove_vars)
   if (!all(remove_vars %in% gridlistSub)) {
-    message("Some environmental variables listed in `remove_vars` were not found in the `nm_EnvVars` dataset: ",
+    message("Some environmental variables listed in `remove_vars` were not found in the `nm_bkg` dataset: ",
             paste(remove_vars1[!remove_vars %in% gridlistSub], collapse = ", "), ".")
   } 
   gridlistSub <- gridlistSub[!gridlistSub %in% remove_vars]
@@ -56,8 +56,8 @@ if (!is.null(remove_vars)) {
 
 # get desired env. var. columns + comid for presence
 # SQLite database integration for Env Vars
-dbEV <- dbConnect(SQLite(),dbname=nm_envVars[1])
-SQLQuery <- paste0("SELECT * FROM ",nm_envVars[2],"_att WHERE COMID IN ('", paste(reaches$comid, collapse = "','"),"')") 
+dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2],"_att WHERE COMID IN ('", paste(reaches$comid, collapse = "','"),"')") 
 EnvVars <- dbGetQuery(dbEV, SQLQuery)
 names(EnvVars) <- tolower(names(EnvVars))
 EnvVars <- EnvVars[c("comid",gridlistSub)]
@@ -70,8 +70,8 @@ write.csv(reaches_attributed, paste0("model_input/",baseName,"_att.csv"), row.na
 
 # get desired env. var. columns + comid for bkgd
 # SQLite database integration for Env Vars
-dbEV <- dbConnect(SQLite(),dbname=nm_envVars[1])
-SQLQuery <- paste0("SELECT * FROM ",nm_envVars[2],"_att WHERE COMID IN ('", paste(bkgd.reaches$comid, collapse = "','"),"')") 
+dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2],"_att WHERE COMID IN ('", paste(bkgd.reaches$comid, collapse = "','"),"')") 
 EnvVars <- dbGetQuery(dbEV, SQLQuery)
 names(EnvVars) <- tolower(names(EnvVars))
 EnvVars <- EnvVars[c("comid",gridlistSub)]

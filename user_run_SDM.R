@@ -16,8 +16,6 @@ loc_scripts <- here()
 loc_model <- here("_data", "species")
 # Modeling database
 nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
-# Lotic Environmental Variable database
-# nm_EV_db_file <- here("_data", "databases", "MoBI_Aquatic_EnvVars.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv"))
 # map reference boundaries
@@ -29,12 +27,10 @@ model_comments = "testing aquatic"
 # comment printed in PDF metadata
 metaData_comments = "bla bla"
 # your name
-modeller = "Christopher Tracey"
+modeller = "DNB"
 
-# Name of full environmental variables table [Aquatic-only variable]
-nm_envVars <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches_VA")
-# flowlines shapefile [Aquatic-only variable]
-nm_allflowlines <- here("_data","env_vars","background", "VA_all_flowlines.shp")
+# Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
+nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches_VA")
 # name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
 nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
 # numeric HUC level to sub-set project area [Aquatic-only variable]
@@ -61,16 +57,15 @@ source(here("helper", "run_SDM.R"))
 # RUN A NEW MODEL (ALL STEPS 1-5)
 # If picking up from a previous run (after step 1), use Step 2-alt below
 # update the function arguments below as necessary, and run the function
-
+system.time(
 run_SDM(
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
   nm_presFile = nm_presFile,
   nm_db_file = nm_db_file, 
   loc_model = loc_model,
-  nm_envVars = nm_envVars, # csv with comids, huc_12s, all variables
-  nm_allflowlines = nm_allflowlines, ### shapefile of all flowlines w/ comid, huc12 columns
-  nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
+  nm_bkg = nm_bkg,
+  nm_aquaArea = NULL, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   # huc_level = huc_level,
   nm_refBoundaries = nm_refBoundaries, # background grey reference lines in map
   nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
@@ -81,7 +76,7 @@ run_SDM(
   remove_vars = remove_vars,
   prompt = prompt
 )
-
+)
 #############################################################################
 #############################################################################
 #############################################################################
