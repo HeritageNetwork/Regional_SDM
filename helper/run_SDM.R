@@ -20,8 +20,7 @@ run_SDM <- function(
   nm_presFile,
   nm_db_file,
   loc_model,
-  nm_envVars,
-  nm_allflowlines,
+  nm_bkg,
   nm_refBoundaries,
   nm_studyAreaExtent,
   nm_aquaArea = NULL,
@@ -70,8 +69,7 @@ run_SDM <- function(
       nm_presFile = nm_presFile,
       nm_db_file = nm_db_file,
       loc_model = loc_model,
-      nm_envVars = nm_envVars,
-      nm_allflowlines = nm_allflowlines,
+      nm_bkg = nm_bkg,
       nm_refBoundaries = nm_refBoundaries,
       nm_studyAreaExtent = nm_studyAreaExtent,
       nm_aquaArea = nm_aquaArea,
@@ -138,6 +136,9 @@ run_SDM <- function(
     
     # modelrun_meta_data
     if (scrpt == "3_createModel.R") {
+      repo <- git2r::repository()
+      repo_head <- git2r::last_commit(repo)$sha
+      rm(repo)
       model_start_time <- as.character(Sys.time())
       sdat <- Sys.info()
       model_comp_name <- sdat[['nodename']]
@@ -149,7 +150,8 @@ run_SDM <- function(
                                  modeller = modeller,
                                  model_comp_name=model_comp_name,
                                  r_version = r_version,
-                                 model_comments = model_comments)
+                                 model_comments = model_comments,
+                                 repo_head = repo_head)
     }
     
     # run script

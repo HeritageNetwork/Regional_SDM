@@ -334,7 +334,7 @@ if(nrow(sdm.customComments.subset) > 0){
 <<mapFig, include = FALSE, echo = FALSE, dev='png',fig.height=5, fig.width=7, dpi = 300>>=
 
 #equal-width class intervals
-plotvar <- results_shape@data$prbblty
+plotvar <- results_shape$prbblty
 nclr <- 5
 plotclr <- brewer.pal(nclr,"BuPu")
 class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2)
@@ -343,9 +343,11 @@ results_shape$colcode <- colcode
 par(mar=c(2,2,2,2.5), #bottom, left, top, right
     cex=0.9)    #text size
 
-# set up plot based on study area extent (unless huc region defined)
-if (!is.null(huc_level)) plot(results_shape, col = NA, axes = TRUE) else
-  plot(spTransform(studyAreaExtent, CRSobj = results_shape@proj4string), col = NA, border = NA, axes = TRUE)
+# set up plot based on model results
+#if (!is.null(huc_level)) 
+  plot(results_shape$geometry, col = NA, axes = TRUE) 
+#else
+#  plot(st_transform(studyAreaExtent$geometry, st_crs(results_shape)), col = NA, border = NA, axes = TRUE)
 
 if (!is.null(nm_aquaArea)) {
   # plot aqua area polygons by mean value of reaches in area
@@ -353,23 +355,23 @@ if (!is.null(nm_aquaArea)) {
                                              by = list(results_shape$wacomid),
                                              FUN = function(x) c(mn = mean(x, na.rm = TRUE), n = length(x))))
   colnames(aqua.pred) <- c("comid","pred","count")
-  area.wb.pred <- sp::merge(aquaPolys, aqua.pred, by = "comid")
+  area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
   area.wb.pred$colcode <- plotclr[findInterval(area.wb.pred$pred, class$brks)]
 
-  plot(area.wb.pred, col = area.wb.pred$colcode, border = NA, add = TRUE)
+  plot(area.wb.pred$geometry, col = area.wb.pred$colcode, border = NA, add = TRUE)
 }
 
 # plot(results_shape, col=results_shape$colcode, lwd = 0.15*results_shape$strord, add=T) # original plotting
 # orderer plotting (plotting order based on color)
 for (i in 1:nclr) {
   sub <- results_shape[results_shape$colcode == plotclr[i],]
-  plot(sub, col=sub$colcode, lwd = 0.14*sub$strord, add=T)
+  plot(sub$geometry, col=sub$colcode, lwd = 0.14*sub$strord, add=T)
 }
 
-plot(spTransform( referenceBoundaries[!referenceBoundaries$STATE_NAME %in% studyAreaExtent$STATE_NAME,]
-                  , CRSobj = results_shape@proj4string), add=T, border="gray50", lwd=0.3)
-plot(spTransform( studyAreaExtent
-                  , CRSobj = results_shape@proj4string), add=T, border="black", lwd=0.7)
+plot(st_transform(referenceBoundaries[!referenceBoundaries$STATE_NAME %in% studyAreaExtent$STATE_NAME,]
+                  , st_crs(results_shape))$geometry, add=T, border="gray50", lwd=0.3)
+plot(st_transform( studyAreaExtent
+                  , st_crs(results_shape))$geometry, add=T, border="black", lwd=0.7)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
 legend("topleft", legend=names(attr(colcode, "table")),
     col=attr(colcode, "palette"), cex=0.8, bty="o", lwd = 4, bg = "white")
