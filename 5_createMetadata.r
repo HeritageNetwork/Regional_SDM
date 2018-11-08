@@ -9,12 +9,9 @@
 library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp10/2009-February/189936.html
 library(randomForest)
 library(knitr)
-library(maptools)
-library(sp)
-library(rgdal)
+library(sf)
 library(RColorBrewer)
 library(classInt)
-library(rgdal)
 library(RSQLite)
 library(xtable)
 library(tinytex)
@@ -31,21 +28,15 @@ setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
 # get reach data for the map
-results_shape <- readOGR("model_predictions", paste0(modelrun_meta_data$model_run_name, "_results")) # shapefile results for mapping
+results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T) # shapefile results for mapping
 
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
-layerdir <- dirname(nm_studyAreaExtent)
-layer <- strsplit(basename(nm_studyAreaExtent),"\\.")[[1]][[1]]
-studyAreaExtent <- readOGR(layerdir,  layer = layer) # study area
-# get background poly data for the map (study area, reference boundaries, and aquatic areas)
-layerdir <- dirname(nm_refBoundaries)
-layer <- strsplit(basename(nm_refBoundaries),"\\.")[[1]][[1]]
-referenceBoundaries <- readOGR(layerdir,  layer = layer) # name of state boundaries file
+studyAreaExtent <- st_read(nm_studyAreaExtent, quiet = T)
+referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
 if (!is.null(nm_aquaArea)) {
-  layerdir <- dirname(nm_aquaArea)
-  layer <- strsplit(basename(nm_aquaArea),"\\.")[[1]][[1]]
-  aquaPolys <- readOGR(layerdir,  layer = layer) # aquatic area features (lakes, large rivers, etc.)
+  aquaPolys <- st_read(nm_aquaArea, quiet = T)
 }
+
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
