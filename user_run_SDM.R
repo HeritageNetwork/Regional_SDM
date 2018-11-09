@@ -57,7 +57,6 @@ source(here("helper", "run_SDM.R"))
 # RUN A NEW MODEL (ALL STEPS 1-5)
 # If picking up from a previous run (after step 1), use Step 2-alt below
 # update the function arguments below as necessary, and run the function
-system.time(
 run_SDM(
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
@@ -65,7 +64,7 @@ run_SDM(
   nm_db_file = nm_db_file, 
   loc_model = loc_model,
   nm_bkg = nm_bkg,
-  nm_aquaArea = NULL, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
+  nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   # huc_level = huc_level,
   nm_refBoundaries = nm_refBoundaries, # background grey reference lines in map
   nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
@@ -75,7 +74,6 @@ run_SDM(
   add_vars = add_vars,
   remove_vars = remove_vars,
   prompt = prompt
-)
 )
 #############################################################################
 #############################################################################
