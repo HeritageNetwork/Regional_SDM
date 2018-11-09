@@ -23,14 +23,14 @@ nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # ba
 # map project boundary
 nm_studyAreaExtent = here("_data","other_spatial","feature","sdmVA_pred_20170131.shp") # outline black boundary line for study area in map
 # model comment in database
-model_comments = "testing aquatic"
+model_comments = "testing aquatic sqlite database"
 # comment printed in PDF metadata
 metaData_comments = "bla bla"
 # your name
-modeller = "DNB"
+modeller = "Christopher Tracey"
 
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
-nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches_VA")
+nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches")
 # name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
 nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
 # numeric HUC level to sub-set project area [Aquatic-only variable]

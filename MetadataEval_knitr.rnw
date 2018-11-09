@@ -371,7 +371,7 @@ for (i in 1:nclr) {
 plot(st_transform(referenceBoundaries[!referenceBoundaries$STATE_NAME %in% studyAreaExtent$STATE_NAME,]
                   , st_crs(results_shape))$geometry, add=T, border="gray50", lwd=0.3)
 plot(st_transform( studyAreaExtent
-                  , st_crs(results_shape))$geometry, add=T, border="black", lwd=0.7)
+                  ,st_crs(results_shape))$geometry, add=T, border="black", lwd=0.7)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
 legend("topleft", legend=names(attr(colcode, "table")),
     col=attr(colcode, "palette"), cex=0.8, bty="o", lwd = 4, bg = "white")

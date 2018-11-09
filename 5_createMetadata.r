@@ -33,6 +33,7 @@ results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_r
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
 studyAreaExtent <- st_read(nm_studyAreaExtent, quiet = T)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
+
 if (!is.null(nm_aquaArea)) {
   aquaPolys <- st_read(nm_aquaArea, quiet = T)
 }

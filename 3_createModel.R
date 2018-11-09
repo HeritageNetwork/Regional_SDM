@@ -46,7 +46,7 @@ dbDisconnect(db)
 rm(db)
 
 # get an original list of env-vars that are included in bkgd dataset
-envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables  ## This is failing for some reason...
+####envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables  ## This is failing for some reason...
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
@@ -539,7 +539,7 @@ tblModelResults <- data.frame(model_run_name = model_run_name, EGT_ID = ElementN
                               internal_comments = model_comments, metadata_comments = metaData_comments,
                               model_comp_name = model_comp_name, modeller = modeller,
                               model_start_time = model_start_time, model_end_time = as.character(Sys.time()),
-                              r_version = r_version, repo_head = repo_head)
+                              r_version = r_version) # , repo_head = repo_head
 dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
 
 # tblModelResultsVarsUsed
