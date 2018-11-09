@@ -33,8 +33,18 @@ results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_r
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
 studyAreaExtent <- st_read(nm_studyAreaExtent, quiet = T)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
+
 if (!is.null(nm_aquaArea)) {
-  aquaPolys <- st_read(nm_aquaArea, quiet = T)
+  wacomid <- unique(results_shape$wacomid)
+  wacomid <- wacomid[!is.na(wacomid)]
+  if (length(wacomid) > 0) {
+    # pull a subset of wa comids
+    wacomid <- paste(wacomid, collapse = "','")
+    tabaa <- gsub(".shp","",basename(nm_aquaArea))
+    aquaPolys <- st_read(nm_aquaArea, quiet = T, query = paste0("SELECT * FROM \"", tabaa, "\" WHERE comid IN ('",wacomid,"')"))
+  } else {
+    nm_aquaArea <- NULL
+  }
 }
 
 ## Get Program and Data Sources info ----

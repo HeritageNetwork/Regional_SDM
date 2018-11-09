@@ -26,18 +26,17 @@ df.abs <- read.csv(fileName, colClasses=c("huc12"="character"))
 # write model input data to database before any other changes made
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get species info
-SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id FROM lkpSpecies WHERE sp_code = '", 
-                  model_species,"';", sep="")
+SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id FROM lkpSpecies WHERE sp_code = '", model_species,"';", sep="")
 ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
 tblModelInputs <- data.frame(table_code = baseName, EGT_ID = ElementNames$EGT_ID, datetime = as.character(Sys.time()),
                              feat_count = length(df.in$group_id), 
                              feat_grp_count = length(unique(df.in$group_id)), 
                              obs_count = length(df.in[,1]), bkgd_count = length(df.abs[,1]),
                              range_area_sqkm = NA)
-dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
+dbWriteTable(db, "tblModelInputs", tblModelInputs, append=TRUE)
 # get the full list of envvars from the database
 envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVarsAqua;")$g
-
+envvar_list <- tolower(envvar_list)
 #also get correlated env var information
 SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVarsAqua WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
 corrdEVs <- dbGetQuery(db, statement = SQLquery)
@@ -65,7 +64,7 @@ names(df.abs) <- tolower(names(df.abs))
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
 op <- options("useFancyQuotes") 
 options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
-SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVarsAqua WHERE gridName in (", 
+SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVarsAqua WHERE LOWER(gridName) in (", 
                   toString(sQuote(envvar_list)), "); ", sep = "")
 namesInDB <- dbGetQuery(db, statement = SQLquery)
 namesInDB$gridName <- tolower(namesInDB$gridName)
@@ -95,7 +94,7 @@ df.in$scomname <- NULL  # not in df.abs --> causing issues on the rearrange belo
 df.in$stratum <- as.character(df.in$group_id) # group_id used for model stratification
 
 # this is the full list of fields, arranged appropriately
-colList <- c("sname","eo_id_st","pres","stratum","comid", "huc12", envvar_list)
+colList <- c("sname","eo_id_st","pres","stratum","comid", "huc12", envvar_list[2:length(envvar_list)])
 #colList <- names(df.in)
 
 # if colList gets modified, 
@@ -167,7 +166,7 @@ OriginalNumberOfEnvars <- length(impvals)
 for(grp in unique(corrdEVs$correlatedVarGroupings)){
  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
- varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
+ suppressWarnings(varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE])
  impvals <- impvals[!rownames(impvals) %in% rownames(varsToDrop),,drop = FALSE]
 }
 rm(vars, imp.sub, varsToDrop)
@@ -523,11 +522,8 @@ rm(curvar, n.plots, pplotSamp)
 # save the project, return to the original working directory
 dir.create(paste0(loc_model, "/", model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
 setwd(paste0(loc_model, "/", model_species,"/outputs"))
-# set model_run_name
-model_run_name <- paste0(model_species, "_",
-                         gsub(" ","_",gsub(c("-|:"),"",as.character(model_start_time))))
-modelrun_meta_data$model_run_name <- model_run_name
-# remove fn args/vars from the save object
+
+for(i in 1:length(modelrun_meta_data)) assign(names(modelrun_meta_data)[i], modelrun_meta_data[[i]])
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
                                                              "run_steps","prompt","fn_args", names(fn_args))]
 save(list = ls.save, file = paste0("rdata/", model_run_name,".Rdata"), envir = environment())
@@ -539,7 +535,7 @@ tblModelResults <- data.frame(model_run_name = model_run_name, EGT_ID = ElementN
                               internal_comments = model_comments, metadata_comments = metaData_comments,
                               model_comp_name = model_comp_name, modeller = modeller,
                               model_start_time = model_start_time, model_end_time = as.character(Sys.time()),
-                              r_version = r_version, repo_head = repo_head)
+                              r_version = r_version) # , repo_head = repo_head
 dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
 
 # tblModelResultsVarsUsed

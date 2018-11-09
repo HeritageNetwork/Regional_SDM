@@ -23,14 +23,14 @@ nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # ba
 # map project boundary
 nm_studyAreaExtent = here("_data","other_spatial","feature","sdmVA_pred_20170131.shp") # outline black boundary line for study area in map
 # model comment in database
-model_comments = "testing aquatic"
+model_comments = "testing aquatic sqlite database"
 # comment printed in PDF metadata
 metaData_comments = "bla bla"
 # your name
-modeller = "DNB"
+modeller = "Christopher Tracey"
 
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
-nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches_VA")
+nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches")
 # name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
 nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
 # numeric HUC level to sub-set project area [Aquatic-only variable]
@@ -57,7 +57,6 @@ source(here("helper", "run_SDM.R"))
 # RUN A NEW MODEL (ALL STEPS 1-5)
 # If picking up from a previous run (after step 1), use Step 2-alt below
 # update the function arguments below as necessary, and run the function
-system.time(
 run_SDM(
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
@@ -65,7 +64,7 @@ run_SDM(
   nm_db_file = nm_db_file, 
   loc_model = loc_model,
   nm_bkg = nm_bkg,
-  nm_aquaArea = NULL, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
+  nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   # huc_level = huc_level,
   nm_refBoundaries = nm_refBoundaries, # background grey reference lines in map
   nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
@@ -75,7 +74,6 @@ run_SDM(
   add_vars = add_vars,
   remove_vars = remove_vars,
   prompt = prompt
-)
 )
 #############################################################################
 #############################################################################
