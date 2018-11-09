@@ -18,7 +18,7 @@ setwd(paste0(model_species,"/outputs"))
 
 # load rdata
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
-#load("rdata/chrocumb_20181108_150600.Rdata")
+#load("rdata/chrocumb_20181108_223046.Rdata")
 
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
 presHUC <- stringr::str_pad(as.character(df.full$huc12[df.full$pres==1]), 12, pad = 0)
@@ -49,7 +49,7 @@ results_join_table <- data.frame(comid=df.all.pred$comid, prbblty=result)
 db <- dbConnect(SQLite(),dbname=nm_bkg[1])
 SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE COMID IN ('", paste(results_join_table$comid, collapse = "','"),"')") 
 shapef1 <- dbGetQuery(db, SQLQuery)
-names(shapef) <- tolower(names(shapef))
+names(shapef1) <- tolower(names(shapef1))
 
 SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
 proj4 <- dbGetQuery(db, SQLQuery)$p

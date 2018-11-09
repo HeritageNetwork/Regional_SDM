@@ -26,18 +26,17 @@ df.abs <- read.csv(fileName, colClasses=c("huc12"="character"))
 # write model input data to database before any other changes made
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get species info
-SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id FROM lkpSpecies WHERE sp_code = '", 
-                  model_species,"';", sep="")
+SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id FROM lkpSpecies WHERE sp_code = '", model_species,"';", sep="")
 ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
 tblModelInputs <- data.frame(table_code = baseName, EGT_ID = ElementNames$EGT_ID, datetime = as.character(Sys.time()),
                              feat_count = length(df.in$group_id), 
                              feat_grp_count = length(unique(df.in$group_id)), 
                              obs_count = length(df.in[,1]), bkgd_count = length(df.abs[,1]),
                              range_area_sqkm = NA)
-dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
+dbWriteTable(db, "tblModelInputs", tblModelInputs, append=TRUE)
 # get the full list of envvars from the database
 envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVarsAqua;")$g
-
+envvar_list <- tolower(envvar_list)
 #also get correlated env var information
 SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVarsAqua WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
 corrdEVs <- dbGetQuery(db, statement = SQLquery)
@@ -46,7 +45,7 @@ dbDisconnect(db)
 rm(db)
 
 # get an original list of env-vars that are included in bkgd dataset
-####envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables  ## This is failing for some reason...
+envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables  ## This is failing for some reason...
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
@@ -65,7 +64,7 @@ names(df.abs) <- tolower(names(df.abs))
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
 op <- options("useFancyQuotes") 
 options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
-SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVarsAqua WHERE gridName in (", 
+SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVarsAqua WHERE LOWER(gridName) in (", 
                   toString(sQuote(envvar_list)), "); ", sep = "")
 namesInDB <- dbGetQuery(db, statement = SQLquery)
 namesInDB$gridName <- tolower(namesInDB$gridName)
@@ -95,7 +94,7 @@ df.in$scomname <- NULL  # not in df.abs --> causing issues on the rearrange belo
 df.in$stratum <- as.character(df.in$group_id) # group_id used for model stratification
 
 # this is the full list of fields, arranged appropriately
-colList <- c("sname","eo_id_st","pres","stratum","comid", "huc12", envvar_list)
+colList <- c("sname","eo_id_st","pres","stratum","comid", "huc12", envvar_list[2:length(envvar_list)])
 #colList <- names(df.in)
 
 # if colList gets modified, 
