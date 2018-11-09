@@ -48,7 +48,6 @@ results_join_table <- data.frame(comid=df.all.pred$comid, prbblty=result)
 # load the reaches from the DB
 db <- dbConnect(SQLite(),dbname=nm_bkg[1])
 SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE COMID IN ('", paste(results_join_table$comid, collapse = "','"),"')") 
-
 shapef1 <- dbGetQuery(db, SQLQuery)
 names(shapef) <- tolower(names(shapef))
 
@@ -59,7 +58,6 @@ try(shapef <- st_sf(shapef1[c("comid", "huc12", "wacomid","strord")], geometry =
 
 # join probability to shapefile
 shapef <- merge(shapef, results_join_table, by = "comid", all.x = F)
-
 shapef$geometry <- st_zm(shapef$geometry) # remove 3d points
 
 # write the shapefile
