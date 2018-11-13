@@ -18,11 +18,8 @@ run_SDM <- function(
   loc_model,
   loc_envVars,
   nm_bkgPts,
-  # nm_envVars, aquatic/placeholder
-  # nm_allflowlines,   aquatic/placeholder
   nm_refBoundaries,
   nm_studyAreaExtent,
-  # nm_aquaArea = NULL, aquatic/placeholder
   model_comments = "",
   metaData_comments = "",
   modeller = NULL,
@@ -67,17 +64,13 @@ run_SDM <- function(
       loc_model = loc_model,
       loc_envVars = loc_envVars,
       nm_bkgPts = nm_bkgPts,
-      # nm_envVars = nm_envVars,
-      # nm_allflowlines = nm_allflowlines,
       nm_refBoundaries = nm_refBoundaries,
       nm_studyAreaExtent = nm_studyAreaExtent,
-      # nm_aquaArea = nm_aquaArea,
       model_comments = model_comments,
       metaData_comments = metaData_comments,
       modeller = modeller,
       add_vars = add_vars,
       remove_vars = remove_vars,
-      # huc_level = huc_level,
       baseName = baseName)
   }
   
@@ -85,12 +78,14 @@ run_SDM <- function(
   if (!hasArg(model_comments)) model_comments <- fn_args$model_comments
   if (!hasArg(metaData_comments)) metaData_comments <- fn_args$metaData_comments
   if (!is.null(add_vars)) {
+    fn_args$add_vars <- add_vars
     model_comments <- paste0("Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model. ", model_comments)
     fn_args$model_comments <- model_comments
     metaData_comments <- paste0("Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model. ", metaData_comments)
     fn_args$metaData_comments <- metaData_comments
   }
   if (!is.null(remove_vars)) {
+    fn_args$remove_vars <- remove_vars
     model_comments <- paste0("The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model. ", model_comments)
     fn_args$model_comments <- model_comments
     metaData_comments <- paste0("The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.", metaData_comments)
