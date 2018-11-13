@@ -141,6 +141,7 @@ if (is.null(huc_level)) {
     huc_level <- 0
   }
   fn_args$huc_level <- huc_level
+  save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
 }
 message("Using huc_level of ", huc_level , "...")
 
@@ -155,7 +156,7 @@ if (huc_level != 0) {
 
 # create background geom based on HUCsubset
 dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
-SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE substr(huc12, 1, ", huc_level, ") = '", HUCsubset,"';") 
+SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE substr(huc12, 1, ", huc_level, ") IN ('", paste(HUCsubset, collapse = "','"),"');") 
 shapef <- dbGetQuery(dbEV, SQLQuery)
 names(shapef) <- tolower(names(shapef))
 SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
@@ -165,6 +166,9 @@ shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), c
 # find presence and presence-adjacent reaches by intersection
 bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = F)
 bkgd.geom <- shapef[!apply(bkgd.int, 1, FUN = any),]
+if (length(bkgd.geom$geometry) > 10000) {
+  bkgd.geom <- bkgd.geom[sort(sample(as.numeric(row.names(bkgd.geom)), size = 10000, replace = F)),]
+}
 
 # write species reach data
 st_write(pres.geom,paste("presence/", baseName,"_prepped.shp",sep=""))

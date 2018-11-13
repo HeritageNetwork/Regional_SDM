@@ -33,7 +33,8 @@ modeller = "Christopher Tracey"
 nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches")
 # name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
 nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
-# numeric HUC level to sub-set project area [Aquatic-only variable]
+# numeric HUC level to sub-set project area [Aquatic-only variable].
+  # NULL will auto-calculate the level where all presences are in a unique watershed at that level
 huc_level <- NULL
 
 # list non-standard variables to "add" to model run
@@ -65,7 +66,7 @@ run_SDM(
   loc_model = loc_model,
   nm_bkg = nm_bkg,
   nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
-  # huc_level = huc_level,
+  huc_level = huc_level,
   nm_refBoundaries = nm_refBoundaries, # background grey reference lines in map
   nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
   model_comments = model_comments,

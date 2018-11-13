@@ -26,9 +26,9 @@ HUCsubset <- unique(substr(presHUC, 1, huc_level)) # subset to number of huc dig
 
 # SQLite database integration for Env Vars
 dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
-SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE ","substr(HUC12,1,",huc_level,") = '",HUCsubset,"'") # note that the 'substr' is the SQLite version, not R
-EnvVars_huc <- dbGetQuery(dbEV, SQLQuery) 
-SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2],"_att WHERE COMID IN ('", paste(EnvVars_huc$COMID, collapse = "','"),"')")
+SQLQuery <- paste0("SELECT COMID id FROM ",nm_bkg[2]," WHERE ","substr(HUC12,1,",huc_level,") IN ('", paste(HUCsubset, collapse = "','"),"');") # note that the 'substr' is the SQLite version, not R
+EnvVars_huc <- dbGetQuery(dbEV, SQLQuery)$id 
+SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2],"_att WHERE COMID IN ('", paste(EnvVars_huc, collapse = "','"),"')")
 EnvVars <- dbGetQuery(dbEV, SQLQuery) 
 dbDisconnect(dbEV)
 
@@ -57,8 +57,7 @@ shapef <- st_sf(shapef1[c("comid", "huc12")], geometry = st_as_sfc(shapef1$wkt),
 try(shapef <- st_sf(shapef1[c("comid", "huc12", "wacomid","strord")], geometry = st_as_sfc(shapef1$wkt), crs = proj4), silent = T)
 
 # join probability to shapefile
-shapef <- merge(shapef, results_join_table, by = "comid", all.x = F)
-shapef$geometry <- st_zm(shapef$geometry) # remove 3d points
+shapef <- st_zm(merge(shapef, results_join_table, by = "comid", all.x = F))
 
 # write the shapefile
 st_write(shapef, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), delete_layer = T)

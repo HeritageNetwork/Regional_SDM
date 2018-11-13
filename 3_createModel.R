@@ -94,7 +94,7 @@ df.in$scomname <- NULL  # not in df.abs --> causing issues on the rearrange belo
 df.in$stratum <- as.character(df.in$group_id) # group_id used for model stratification
 
 # this is the full list of fields, arranged appropriately
-colList <- c("sname","eo_id_st","pres","stratum","comid", "huc12", envvar_list[2:length(envvar_list)])
+colList <- c("sname","eo_id_st","pres","stratum","comid", "huc12", envvar_list)
 #colList <- names(df.in)
 
 # if colList gets modified, 

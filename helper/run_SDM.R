@@ -38,8 +38,8 @@ run_SDM <- function(
     stop("Need to begin on step 1 or 2 if adding or removing variables.")
   if (hasArg(huc_level) & begin_step != "1") 
     stop("Need to begin on step 1 if using HUC subset.")
-  if (hasArg(huc_level) && !huc_level %in% c(2,4,6,8,10,12))
-    stop("Valid 'huc_level' values are 2, 4, 6, 8, 10, or 12.")
+  if ((hasArg(huc_level) & !is.null(huc_level)) && !huc_level %in% c(0,2,4,6,8,10,12))
+    stop("Valid 'huc_level' values are 0, 2, 4, 6, 8, 10, or 12.")
   
   if (begin_step != "1") {
     if (begin_step %in% c("2","3")) {
@@ -77,19 +77,23 @@ run_SDM <- function(
       metaData_comments = metaData_comments,
       modeller = modeller,
       huc_level = huc_level,
-      baseName = baseName)
+      baseName = baseName,
+      add_vars = add_vars,
+      remove_vars = remove_vars)
   }
   
   # add comments for added/excluded vars
   if (!hasArg(model_comments)) model_comments <- fn_args$model_comments
   if (!hasArg(metaData_comments)) metaData_comments <- fn_args$metaData_comments
   if (!is.null(add_vars)) {
+    fn_args$add_vars <- add_vars
     model_comments <- paste0(model_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
     fn_args$model_comments <- model_comments
     metaData_comments <- paste0(metaData_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
     fn_args$metaData_comments <- metaData_comments
   }
   if (!is.null(remove_vars)) {
+    fn_args$remove_vars <- remove_vars
     model_comments <- paste0(model_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
     fn_args$model_comments <- model_comments
     metaData_comments <- paste0(metaData_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
@@ -161,7 +165,7 @@ run_SDM <- function(
     source(paste(loc_scripts, scrpt, sep = "/"), local = TRUE)
     
     # clean up everything but loop objects
-    rm(list=ls()[!ls() %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args","add_vars","remove_vars","list_presReaches","huc_level","HUCsubset")])
+    rm(list=ls()[!ls() %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args")])#,"add_vars","remove_vars","list_presReaches","huc_level","HUCsubset")])
     
     message(paste0("Completed script ", scrpt , "..."))
     
