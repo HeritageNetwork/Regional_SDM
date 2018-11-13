@@ -88,7 +88,7 @@ run_SDM <- function(
     fn_args$remove_vars <- remove_vars
     model_comments <- paste0("The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model. ", model_comments)
     fn_args$model_comments <- model_comments
-    metaData_comments <- paste0("The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.", metaData_comments)
+    metaData_comments <- paste0("The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model. ", metaData_comments)
     fn_args$metaData_comments <- metaData_comments
   }
   # save fn_args

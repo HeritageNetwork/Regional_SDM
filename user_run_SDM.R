@@ -113,7 +113,7 @@ run_SDM(
   begin_step = "2",
   model_species = "micrmont",
   loc_model = loc_model,
-  nm_presFile = "micrmont_20181015_123515",
+  nm_presFile = "micrmont_20181113_151538",
   remove_vars = "elevx10"
 )
 
