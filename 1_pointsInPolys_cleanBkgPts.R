@@ -112,7 +112,7 @@ shapef <- dbGetQuery(dbEV, SQLQuery)
 SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
 proj4 <- dbGetQuery(dbEV, SQLQuery)$p
 # shapef <- st_read(nm_allflowlines)
-# names(shapef) <- tolower(names(shapef))
+names(shapef) <- tolower(names(shapef))
 shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
 # testcatchments <- shapef@data
 shapef$huc12 <- str_pad(shapef$huc12, 12, pad=0)
@@ -157,12 +157,13 @@ if (huc_level != 0) {
 dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
 SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE substr(huc12, 1, ", huc_level, ") = '", HUCsubset,"';") 
 shapef <- dbGetQuery(dbEV, SQLQuery)
+names(shapef) <- tolower(names(shapef))
 SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
 proj4 <- dbGetQuery(dbEV, SQLQuery)$p
 shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
 
 # find presence and presence-adjacent reaches by intersection
-bkgd.int <- st_intersects(shapef, pres.geom , sparse = F)
+bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = F)
 bkgd.geom <- shapef[!apply(bkgd.int, 1, FUN = any),]
 
 # write species reach data
