@@ -43,6 +43,7 @@ tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.c
                              feat_grp_count = length(unique(df.in$eo_id_st)), 
                              obs_count = length(df.in[,1]), bkgd_count = length(df.abs[,1]),
                              range_area_sqkm = NA)
+dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, "';")) # remove any previously prepped dataset entry
 dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
 envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVars;")$g
 
