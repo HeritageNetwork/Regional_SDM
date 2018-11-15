@@ -15,13 +15,15 @@ loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
 loc_model <- here("_data", "species")
 # Modeling database
-nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking_test.sqlite")
+nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
-loc_envVars = here("_data","env_vars","raster","elev")
+loc_envVars = here("_data","env_vars","raster")
 # bkg points [Terrestrial-only variable]
-nm_bkgPts = here("_data","env_vars","background","ma_test_background.shp")
+nm_bkgPts = here("_data","env_vars","background","ma_test_background_att.shp")
+# HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
+nm_HUC_file <- here("_data","other_spatial","HUC10.shp")
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature","ma_test.shp") # background grey refernce lines in map
 # map project boundary
