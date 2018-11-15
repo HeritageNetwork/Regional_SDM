@@ -76,8 +76,11 @@ if (!is.null(remove_vars)) {
   gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
 }
 
+# UPDATE HERE TO CLIP RASTS
+source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
 # make grid stack with subset
-envStack <- stack(gridlist[tolower(justTheNames) %in% tolower(gridlistSub)])
+#envStack <- stack(gridlist[tolower(justTheNames) %in% tolower(gridlistSub)])
+envStack <- stack(newL)
 rm(justTheNames, gridlistSub, modType)
 
 # extract raster data to points ----

@@ -26,7 +26,9 @@ load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 ##Make the raster stack
 stackOrder <- names(df.full)[indVarCols]
-setwd(loc_envVars)
+# set wd
+temprast <- paste0(loc_model, "/", model_species, "/inputs/temp_rasts")
+if (dir.exists(temprast)) setwd(temprast) else setwd(loc_envVars)
 
 # find matching var rasters (with folder for temporal vars)
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
