@@ -4,18 +4,40 @@ library(raster)
 # need raster list, range sf object [nm_studyAreaExtent], loc_envVars, model_species
 fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub)]
 
+#browser()
+################################
+## Get Range info
+library(RSQLite)
+# get range info from the DB (as a list of HUCs)
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+SQLquery <- paste0("SELECT huc10_id from lkpRange
+                   inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
+                   where lkpSpecies.sp_code = '", model_species, "';")
+hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+dbDisconnect(db)
+rm(db)
+# now get that info spatially
+nm_range <- "E:/Range/HUC10.shp"
+qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
+hucRange <- st_read(nm_range, query = qry)
+########################################
+# hucRange <- st_zm(st_read(nm_studyAreaExtent,quiet = T)) DNB TESTING
+
+# crop rasters 
 temp <- paste0(loc_model, "/", model_species, "/inputs/temp_rasts")
 dir.create(temp, showWarnings = F)
-file.remove(list.files(temp, all.files = T, full.names = T, recursive = T, include.dirs = T))
+unlink(list.files(temp, all.files = T, full.names = T, recursive = T, include.dirs = T), recursive = T)
 
+# get proj info from 1 raster
 rtemp <- raster(fullL[[1]])
 
-# clip box
-rng1 <- st_zm(st_read(nm_studyAreaExtent,quiet = T))
-rng <- st_transform(rng1, crs = as.character(rtemp@crs)) # just take one for now
+# clipping/masking boundary
+rng <- st_transform(hucRange, crs = as.character(rtemp@crs)) # just take one for now
+rm(rtemp)
 rng <- st_sf(geometry = st_cast(st_union(rng), "POLYGON"))
 rng$id <- 1:length(rng$geometry)
 
+# write shapes
 clipshp <- paste0(temp, "/", "clipshp.shp")
 st_write(rng, dsn = temp, layer = "clipshp.shp", driver="ESRI Shapefile", delete_layer = T)
 
@@ -23,7 +45,7 @@ ext <- st_bbox(rng)
 newL <- list()
 
 # loop over rasters
-message("Creating raster subsets for species...")
+message("Creating raster subsets for species for ", length(fullL) , " environmental variables...")
 for (p in 1:length(fullL)) {
   path <- fullL[[p]]
   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
@@ -32,11 +54,12 @@ for (p in 1:length(fullL)) {
     dir.create(paste0(temp, "/", subdir), showWarnings = F)
   }
   nnm <- paste0(temp, "/", subnm)
-  # print(nnm)
-  
+
   # crop w/clip
   call <- paste0("gdalwarp -te ", paste(ext, collapse = " "), " -cutline ", clipshp, " ", path, " ", nnm, " -overwrite -q")
+  # call <- paste0("gdalwarp -te ", paste(ext, collapse = " "), " ", path, " ", nnm, " -overwrite -q")
   system(call)
+  cat(paste0(p, " done ..."))
   
   newL[[p]] <- nnm
   names(newL)[p] <- names(fullL)[p]
