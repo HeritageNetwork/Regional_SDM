@@ -5,6 +5,8 @@
 library(raster)
 library(rgdal)
 library(randomForest)
+library(RSQLite)
+library(sf)
 removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
 ####
@@ -48,6 +50,20 @@ names(fullL) <- stackOrder
 rm(rs,rs1)
 
 envStack <- stack(fullL)
+
+# get range info from the DB (as a list of HUCs)
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+SQLquery <- paste0("SELECT huc10_id from lkpRange 
+                   inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
+                   where lkpSpecies.sp_code = '", model_species, "';")
+hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+dbDisconnect(db)
+rm(db)
+
+# now get that info spatially
+nm_range <- nm_HUC_file
+qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
+hucRange <- st_read(nm_range, query = qry)
 
 # run prediction ----
 setwd(paste0(loc_model, "/", model_species,"/outputs"))
