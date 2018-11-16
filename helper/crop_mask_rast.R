@@ -1,13 +1,11 @@
 library(sf)
 library(raster)
+library(snow)
 
 # need raster list, range sf object [nm_studyAreaExtent], loc_envVars, model_species
 fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub)]
 
-#browser()
 ################################
-## Get Range info
-library(RSQLite)
 # get range info from the DB (as a list of HUCs)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLquery <- paste0("SELECT huc10_id from lkpRange
@@ -16,12 +14,13 @@ SQLquery <- paste0("SELECT huc10_id from lkpRange
 hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
 dbDisconnect(db)
 rm(db)
+
 # now get that info spatially
-nm_range <- "E:/Range/HUC10.shp"
+nm_range <- nm_HUC_file
 qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
 hucRange <- st_read(nm_range, query = qry)
 ########################################
-# hucRange <- st_zm(st_read(nm_studyAreaExtent,quiet = T)) DNB TESTING
+# hucRange <- st_zm(st_read(nm_studyAreaExtent,quiet = T)) #DNB TESTING ONLY
 
 # crop rasters 
 temp <- paste0(loc_model, "/", model_species, "/inputs/temp_rasts")
@@ -42,25 +41,25 @@ clipshp <- paste0(temp, "/", "clipshp.shp")
 st_write(rng, dsn = temp, layer = "clipshp.shp", driver="ESRI Shapefile", delete_layer = T)
 
 ext <- st_bbox(rng)
-newL <- list()
 
-# loop over rasters
+# cluster process rasters
+cl <- makeCluster(11, type = "SOCK") 
+clusterExport(cl, list("temp", "ext", "clipshp"), envir = environment()) 
+clusterExport(cl, list("loc_envVars")) 
+
 message("Creating raster subsets for species for ", length(fullL) , " environmental variables...")
-for (p in 1:length(fullL)) {
-  path <- fullL[[p]]
+newL <- parLapply(cl, x = fullL, fun = function(x) {
+  path <- x
   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
   if (grepl("/",subnm)) {
     subdir <- strsplit(subnm, "/", fixed = T)[[1]][1]
     dir.create(paste0(temp, "/", subdir), showWarnings = F)
   }
   nnm <- paste0(temp, "/", subnm)
-
+  
   # crop w/clip
   call <- paste0("gdalwarp -te ", paste(ext, collapse = " "), " -cutline ", clipshp, " ", path, " ", nnm, " -overwrite -q")
-  # call <- paste0("gdalwarp -te ", paste(ext, collapse = " "), " ", path, " ", nnm, " -overwrite -q")
   system(call)
-  cat(paste0(p, " done ..."))
-  
-  newL[[p]] <- nnm
-  names(newL)[p] <- names(fullL)[p]
-}
+  return(nnm)
+})
+stopCluster(cl)
