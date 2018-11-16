@@ -550,11 +550,16 @@ dbDisconnect(db)
 ###
 #get the order for the importance charts
 ord <- order(EnvVars$impVal, decreasing = TRUE)[1:length(indVarCols)]
+if(length(ord) > 9){
+  pPlotListLen <- 9
+} else {
+  pPlotListLen <- length(ord)
+}
 #set up a list to hold the plot data
-pPlots <- vector("list",9)
-		names(pPlots) <- c(1:9)
+pPlots <- vector("list",pPlotListLen)
+names(pPlots) <- c(1:pPlotListLen)
 #get the top eight partial plots
-for(i in 1:9){
+for(i in 1:pPlotListLen){
   curvar <- names(f.imp[ord[i]])
   pPlots[[i]] <- do.call("partialPlot", list(x = rf.full, pred.data = df.full[,indVarCols],
                                              x.var = curvar,
@@ -562,7 +567,7 @@ for(i in 1:9){
                                              plot = FALSE))
   pPlots[[i]]$gridName <- curvar
   pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
-  cat("finished partial plot ", i, " of 9", "\n")
+  cat("finished partial plot ", i, " of ", pPlotListLen, "\n")
 }
 rm(curvar)
 
