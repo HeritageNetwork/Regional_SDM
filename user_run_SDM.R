@@ -22,6 +22,8 @@ nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 loc_envVars = here("_data","env_vars","raster")
 # bkg points [Terrestrial-only variable]
 nm_bkgPts = here("_data","env_vars","background","va_att.shp")
+# HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
+nm_HUC_file <- here("_data","other_spatial","HUC10.shp")
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey refernce lines in map
 # map project boundary
