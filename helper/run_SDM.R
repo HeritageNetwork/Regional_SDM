@@ -18,6 +18,7 @@ run_SDM <- function(
   loc_model,
   loc_envVars,
   nm_bkgPts,
+  nm_HUC_file,
   # nm_envVars, aquatic/placeholder
   # nm_allflowlines,   aquatic/placeholder
   nm_refBoundaries,
@@ -67,6 +68,7 @@ run_SDM <- function(
       loc_model = loc_model,
       loc_envVars = loc_envVars,
       nm_bkgPts = nm_bkgPts,
+      nm_HUC_file = nm_HUC_file,
       # nm_envVars = nm_envVars,
       # nm_allflowlines = nm_allflowlines,
       nm_refBoundaries = nm_refBoundaries,
