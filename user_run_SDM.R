@@ -20,6 +20,7 @@ nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
 loc_envVars = here("_data","env_vars","raster")
+# loc_envVars <- "D:/SDM/Tobacco/env_vars/Tobacco" DNB TESTING
 # bkg points [Terrestrial-only variable]
 nm_bkgPts = here("_data","env_vars","background","va_att.shp")
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
@@ -56,7 +57,8 @@ source(here("helper", "run_SDM.R"))
 # If picking up from a previous run (after step 1), use Step 2-alt below
 # update the function arguments below as necessary, and run the function
 
-run_SDM(
+system.time(
+  run_SDM(
   begin_step = "1",
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
@@ -74,6 +76,7 @@ run_SDM(
   add_vars = add_vars,
   remove_vars = remove_vars,
   prompt = prompt
+)
 )
 
 #############################################################################

@@ -2,10 +2,9 @@ library(sf)
 library(raster)
 library(snow)
 
-# need raster list, range sf object [nm_studyAreaExtent], loc_envVars, model_species
-fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub)]
+# needs raster list (fullL), loc_envVars, model_species
 
-################################
+########################################
 # get range info from the DB (as a list of HUCs)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLquery <- paste0("SELECT huc10_id from lkpRange
@@ -18,14 +17,18 @@ rm(db)
 # now get that info spatially
 nm_range <- nm_HUC_file
 qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
-hucRange <- st_read(nm_range, query = qry)
+hucRange <- st_zm(st_read(nm_range, query = qry))
 ########################################
 # hucRange <- st_zm(st_read(nm_studyAreaExtent,quiet = T)) #DNB TESTING ONLY
 
-# crop rasters 
+# crop/mask rasters to a temp directory 
+
+# delete temp rasts folder, create new
 temp <- paste0(loc_model, "/", model_species, "/inputs/temp_rasts")
+if (dir.exists(temp)) {
+  unlink(x = temp, recursive = T, force = T)
+}
 dir.create(temp, showWarnings = F)
-unlink(list.files(temp, all.files = T, full.names = T, recursive = T, include.dirs = T), recursive = T)
 
 # get proj info from 1 raster
 rtemp <- raster(fullL[[1]])
