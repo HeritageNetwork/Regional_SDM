@@ -57,7 +57,6 @@ source(here("helper", "run_SDM.R"))
 # If picking up from a previous run (after step 1), use Step 2-alt below
 # update the function arguments below as necessary, and run the function
 
-system.time(
   run_SDM(
   begin_step = "1",
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
@@ -76,7 +75,6 @@ system.time(
   add_vars = add_vars,
   remove_vars = remove_vars,
   prompt = prompt
-)
 )
 
 #############################################################################
