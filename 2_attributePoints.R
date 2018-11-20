@@ -76,9 +76,15 @@ if (!is.null(remove_vars)) {
   gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
 }
 
+fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub)]
+
+# Could use this script here crop/mask rasters
+#source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
+#envStack <- stack(newL)
+
 # make grid stack with subset
-envStack <- stack(gridlist[tolower(justTheNames) %in% tolower(gridlistSub)])
-rm(justTheNames, gridlistSub, modType)
+envStack <- stack(fullL)
+rm(fullL, justTheNames, gridlistSub, modType)
 
 # extract raster data to points ----
 ##  Bilinear interpolation is a *huge* memory hog. 
