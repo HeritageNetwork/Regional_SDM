@@ -43,6 +43,7 @@ tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.c
                              feat_grp_count = length(unique(df.in$eo_id_st)), 
                              obs_count = length(df.in[,1]), bkgd_count = length(df.abs[,1]),
                              range_area_sqkm = NA)
+dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, "';")) # remove any previously prepped dataset entry
 dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
 envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVars;")$g
 
@@ -209,7 +210,7 @@ corrdEVs <- corrdEVs[tolower(corrdEVs$gridName) %in% row.names(impvals),]
 for(grp in unique(corrdEVs$correlatedVarGroupings)){
   vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
   imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
-  varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE]
+  suppressWarnings(varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE])
   impvals <- impvals[!rownames(impvals) %in% rownames(varsToDrop),,drop = FALSE]
 }
 rm(vars, imp.sub, varsToDrop)
@@ -569,11 +570,9 @@ rm(curvar)
 # save the project, return to the original working directory
 dir.create(paste0(loc_model, "/", model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
 setwd(paste0(loc_model, "/", model_species,"/outputs"))
-# set model_run_name
-model_run_name <- paste0(model_species, "_",
-                         gsub(" ","_",gsub(c("-|:"),"",as.character(model_start_time))))
-modelrun_meta_data$model_run_name <- model_run_name
+
 # don't save fn args/vars
+for(i in 1:length(modelrun_meta_data)) assign(names(modelrun_meta_data)[i], modelrun_meta_data[[i]])
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
                                                              "run_steps","prompt","fn_args", names(fn_args))]
 save(list = ls.save, file = paste0("rdata/", model_run_name,".Rdata"), envir = environment())
