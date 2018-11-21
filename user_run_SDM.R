@@ -25,7 +25,7 @@ nm_studyAreaExtent = here("_data","other_spatial","feature","sdmVA_pred_20170131
 # model comment in database
 model_comments = "testing aquatic sqlite database"
 # comment printed in PDF metadata
-metaData_comments = "bla bla"
+metaData_comments = ""
 # your name
 modeller = "Christopher Tracey"
 
