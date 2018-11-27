@@ -152,7 +152,21 @@ call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
 system(call)
 system(call) # 2nd run to apply citation numbers
 
+# delete .txt, .log etc if pdf is created successfully.
+fn_ext <- c(".tex",".log",".aux",".out")
+if (file.exists(paste(model_run_name, ".pdf",sep=""))){
+  #setInternet2(TRUE)
+  #download.file(fileURL ,destfile,method="auto")
+  for(i in 1:NROW(fn_ext)){
+    fn <- paste(model_run_name, fn_ext[i],sep="")
+    if (file.exists(fn)){ 
+      file.remove(fn)
+    }
+  }
+}
+
+
 
 ## clean up ----
-options(op)
 dbDisconnect(db)
+options(op)
