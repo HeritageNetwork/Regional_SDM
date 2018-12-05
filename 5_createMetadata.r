@@ -153,10 +153,8 @@ system(call)
 system(call) # 2nd run to apply citation numbers
 
 # delete .txt, .log etc if pdf is created successfully.
-fn_ext <- c(".tex",".log",".aux",".out")
+fn_ext <- c(".log",".aux",".out") # ".tex" was removed from the list as dbucklin indicted its useful for regenerating files
 if (file.exists(paste(model_run_name, ".pdf",sep=""))){
-  #setInternet2(TRUE)
-  #download.file(fileURL ,destfile,method="auto")
   for(i in 1:NROW(fn_ext)){
     fn <- paste(model_run_name, fn_ext[i],sep="")
     if (file.exists(fn)){ 
