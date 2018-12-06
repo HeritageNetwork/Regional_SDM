@@ -34,7 +34,7 @@ dir.create(temp, showWarnings = F)
 rtemp <- raster(fullL[[1]])
 
 # clipping/masking boundary
-rng <- st_transform(hucRange, crs = as.character(rtemp@crs)) # just take one for now
+rng <- st_transform(hucRange, crs = as.character(rtemp@crs))
 rm(rtemp)
 rng <- st_sf(geometry = st_cast(st_union(rng), "POLYGON"))
 rng$id <- 1:length(rng$geometry)
@@ -46,7 +46,7 @@ st_write(rng, dsn = temp, layer = "clipshp.shp", driver="ESRI Shapefile", delete
 ext <- st_bbox(rng)
 
 # cluster process rasters
-cl <- makeCluster(11, type = "SOCK") 
+cl <- makeCluster(parallel::detectCores() - 1, type = "SOCK") 
 clusterExport(cl, list("temp", "ext", "clipshp"), envir = environment()) 
 clusterExport(cl, list("loc_envVars")) 
 
