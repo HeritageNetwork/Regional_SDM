@@ -109,7 +109,9 @@ sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),
                               sep="")
 
 # Get env. var lookup table
-var_names <- names(df.full)[7:length(names(df.full))] # uses index; make sure to change if fixed # of columns changes
+SQLquery <- paste0("SELECT gridName g from tblModelResultsVarsUsed where model_run_name = '",
+                   model_run_name, "' and inFinalModel = 1;")
+var_names <- dbGetQuery(db, SQLquery)$g
 SQLquery <- paste("SELECT fullName, description ",
                   "FROM lkpEnvVarsAqua ",
                   "WHERE gridName COLLATE NOCASE IN (",

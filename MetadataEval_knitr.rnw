@@ -379,7 +379,7 @@ box()
 @
 
 \includegraphics{figure/mapFig-1.png}    
-Figure 4. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey. The state(s) included in the model study area (\Sexpr{paste(studyAreaExtent$STATE_NAME, collapse = ", ")}) are outlined in black. 
+Figure 4. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey.
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
