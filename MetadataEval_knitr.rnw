@@ -368,7 +368,7 @@ for (i in 1:nclr) {
   plot(sub$geometry, col=sub$colcode, lwd = 0.14*sub$strord, add=T)
 }
 
-plot(st_transform(referenceBoundaries[!referenceBoundaries$NAME %in% studyAreaExtent$NAME,]
+plot(st_transform(referenceBoundaries
                   , st_crs(results_shape))$geometry, add=T, border="gray50", lwd=0.3)
 plot(st_transform( studyAreaExtent
                   ,st_crs(results_shape))$geometry, add=T, border="black", lwd=0.7)
