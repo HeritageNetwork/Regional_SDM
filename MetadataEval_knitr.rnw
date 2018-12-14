@@ -215,7 +215,7 @@ averaged along cutoffs.
 
 \smallskip  %dummy first line to align with previous minipage
 
-<<importanceFig, fig.width=3.0, fig.height=6.72, include=FALSE, echo=FALSE>>=
+<<importanceFig, fig.width=3.0, fig.height=6.6, include=FALSE, echo=FALSE>>=
 par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
     mgp=c(1.3,0.4,0) #placement of axis title, labels, line
@@ -234,7 +234,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
-model using all background and presence points as input. Abbreviations used: calc = calcareous, CP = coastal plain, dist = distance, fresh = freshwater, precip = precipitation, temp = temperature, max = maximum, min = minimum.
+model using all background and presence points as input. Abbreviations used: calc = calcareous, CP = coastal plain, dist = distance, fresh = freshwater, precip = precipitation, temp = temperature, max = maximum, min = minimum. See Table 4 for variable descriptions.
 
 \end{minipage} 
 
@@ -408,6 +408,23 @@ References
     Evolution 6:337–348. 
 
 \end{thebibliography}
+
+\pagebreak
+\noindent
+Table 4. Descriptions for environmental variables included in the model.
+\begin{center}
+<<tableFour, results="asis", echo = FALSE>>=
+  # For variable descriptions, get variable name, source, description (3 columns)
+addtorow <- list()
+addtorow$pos <- list()
+addtorow$pos[[1]] <- c(0)
+addtorow$command <- c(paste("\\hline \n","\\hline \n",sep=""))
+print(xtable(sdm.var.info, label = NULL), # caption = "Table 4. Descriptions for environmental variables included in model."),
+      include.rownames=FALSE, scalebox = 0.7, #floating = TRUE, #floating.environment = "sidewaystable",
+      #caption.placement = "top", 
+      sanitize.text = force, add.to.row = addtorow)
+@
+\end{center}
 
 \end{document}
 

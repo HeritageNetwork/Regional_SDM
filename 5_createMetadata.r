@@ -35,6 +35,7 @@ load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 layerdir <- dirname(nm_studyAreaExtent)
 layer <- strsplit(basename(nm_studyAreaExtent),"\\.")[[1]][[1]]
 studyAreaExtent <- readOGR(layerdir,  layer = layer) # study area
+
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
 layerdir <- dirname(nm_refBoundaries)
 layer <- strsplit(basename(nm_refBoundaries),"\\.")[[1]][[1]]
@@ -43,6 +44,10 @@ referenceBoundaries <- readOGR(layerdir,  layer = layer) # name of state boundar
 r <- dir(path = "model_predictions", pattern = ".tif$",full.names=FALSE)
 fileName <- r[gsub(".tif", "", r) == model_run_name]
 ras <- raster(paste0("model_predictions/", fileName))
+
+# project to match raster, just in case
+studyAreaExtent <- spTransform(studyAreaExtent, ras@crs)
+referenceBoundaries <- spTransform(referenceBoundaries, ras@crs)
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
@@ -108,6 +113,33 @@ sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
                               sep="")
+
+# Get env. var lookup table
+SQLquery <- paste0("SELECT gridName g from tblModelResultsVarsUsed where model_run_name = '",
+                   model_run_name, "' and inFinalModel = 1;")
+var_names <- dbGetQuery(db, SQLquery)$g
+SQLquery <- paste("SELECT fullName, description ",
+                  "FROM lkpEnvVars ",
+                  "WHERE gridName COLLATE NOCASE IN (",
+                  toString(sQuote(var_names)),
+                  ") ORDER BY fullName;", sep = "")
+sdm.var.info <- dbGetQuery(db, statement = SQLquery)
+names(sdm.var.info) <- c("Variable Name","Variable Description")
+
+# escape symbols for latex
+ls <- c("&","%","$","#","_","{","}")
+for (l in ls) {
+  sdm.var.info$`Variable Name` <- gsub(l, paste0("\\",l), sdm.var.info$`Variable Name`, fixed = T)
+  sdm.var.info$`Variable Description` <- gsub(l, paste0("\\",l), sdm.var.info$`Variable Description`, fixed = T)
+}
+# replace degree symbols
+for (l in 1:length(sdm.var.info$`Variable Description`)) {
+  new.desc <- stri_escape_unicode(sdm.var.info$`Variable Description`[l])
+  if (grepl("\\u00b0",new.desc, fixed = T)) 
+    sdm.var.info$`Variable Description`[l] <- gsub("\\u00b0", "$^\\circ$", new.desc, fixed = T)
+}
+# put descriptions in parboxes for multiple lines
+sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Variable Description`,"}")
 
 ## Run knitr and create metadata ----
 
