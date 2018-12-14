@@ -18,6 +18,7 @@ library(rgdal)
 library(rasterVis)
 library(RSQLite)
 library(xtable)
+library(stringi)
 
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
