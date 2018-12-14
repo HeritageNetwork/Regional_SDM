@@ -145,18 +145,16 @@ if (is.null(huc_level)) {
 }
 message("Using huc_level of ", huc_level , "...")
 
+# create background geom based on HUCsubset
+dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
 if (huc_level != 0) {
   # subset to huc if requested
   HUCsubset <- unique(substr(presHUCs, 1, huc_level)) # subset to number of huc digits
-  list_projCatchments <- shapef$comid[substr(shapef$huc12,1,huc_level) %in% HUCsubset]
+  SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE substr(huc12, 1, ", huc_level, ") IN ('", paste(HUCsubset, collapse = "','"),"');") 
 } else {
   # otherwise take all reaches
-  list_projCatchments <- shapef$comid
+  SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2],";") 
 }
-
-# create background geom based on HUCsubset
-dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
-SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE substr(huc12, 1, ", huc_level, ") IN ('", paste(HUCsubset, collapse = "','"),"');") 
 shapef <- dbGetQuery(dbEV, SQLQuery)
 names(shapef) <- tolower(names(shapef))
 SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
