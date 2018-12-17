@@ -331,9 +331,10 @@ if(nrow(sdm.customComments.subset) > 0){
 @
 
 \pagebreak
-\medskip
+% \medskip
+\begin{center}
 <<mapFig, include = FALSE, echo = FALSE, dev='png',fig.height=7, fig.width=7, dpi = 300>>=
-
+par(mar=c(0,0,0,0))
 #equal-width class intervals
 plotvar <- results_shape$prbblty
 nclr <- 5
@@ -374,13 +375,13 @@ plot(st_transform(referenceBoundaries
 plot(st_transform( studyAreaExtent
                   ,st_crs(results_shape))$geometry, add=T, border="red", lwd=2)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
-legend("topleft", legend = c("Low", rep("  |  ", nclr-2), "High"), col=clrs, lwd = 4, cex=0.8, bty="o", bg = "white")
+legend("topleft", legend = rev(c("Low", rep("  |  ", nclr-2), "High")), col=rev(clrs), lwd = 4, cex=0.8, bty="o", bg = "white")
 # to use numbers: legend = names(attr(colcode, "table")
 box()
 @
-
 \includegraphics{figure/mapFig-1.png}    
-Figure 4. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey.
+\end{center}
+Figure 4. A generalized view of the model predictions throughout the study area. State boundaries are shown in grey. The study area is outlined in red.
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
