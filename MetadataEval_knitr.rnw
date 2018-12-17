@@ -23,7 +23,8 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 \begin{minipage}[b]{4.75in}   %everything in this minipage will be adjacent, left of the thermometer
   \LARGE \textit{\Sexpr{as.character(ElementNames[[1]])}} \\ 
   \normalsize Species Distribution Model (SDM) assessment metrics and metadata \\
-  Common name: \Sexpr{as.character(ElementNames[[2]])} \\ 
+  Common name: \Sexpr{as.character(ElementNames[[2]])} \\
+  Grank: \Sexpr{ paste(as.character(ElementNames[[6]])," - ",as.character(grank_desc[[2]]), sep="")}\\
   Date: \Sexpr{format(Sys.Date(), "%d %b %Y")} \\  
   Code: \Sexpr{as.character(ElementNames[[3]])} 
 \end{minipage}  \hfill   
@@ -331,7 +332,6 @@ if(nrow(sdm.customComments.subset) > 0){
 \pagebreak
 \medskip
 \begin{center}
-% <<<<<<< HEAD
 <<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE>>=
 par(mar=c(0,0,4.5,0), xpd = F, cex=0.9, adj = 0.05)
 nclr <- 5
