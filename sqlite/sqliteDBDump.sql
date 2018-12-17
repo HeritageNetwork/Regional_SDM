@@ -1,4 +1,19 @@
 BEGIN TRANSACTION;
+CREATE TABLE IF NOT EXISTS `lkpRankDefinitions` (
+	`rank`	TEXT,
+	`rankname`	TEXT,
+	`definition`	TEXT
+);
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('GX','Presumed Extinct','Not located despite intensive searches and virtually no likelihood of rediscovery.');
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('GH','Possibly Extinct ','Missing; known from only historical occurrences but still some hope of rediscovery.');
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('G1','Critically Imperiled','At very high risk of extinction due to extreme rarity (often 5 or fewer populations), very steep declines, or other factors.');
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('G2','Imperiled','At high risk of extinction due to very restricted range, very few populations (often 20 or fewer), steep declines, or other factors.');
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('G3','Vulnerable','At moderate risk of extinction due to a restricted range, relatively few populations (often 80 or fewer), recent and widespread declines, or other factors.');
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('G4','Apparently Secure','Uncommon but not rare; some cause for long-term concern due to declines or other factors.');
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('G5','Secure','Common; widespread and abundant.');
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('GU','Unrankable','Currently unrankable due to lack of information or due to substantially conflicting information about status or trends. ');
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('GNR','Unranked','Global rank not yet assessed.');
+INSERT INTO `lkpRankDefinitions` (rank,rankname,definition) VALUES ('GNA','Not Applicable','A conservation status rank is not applicable because the species is not a suitable target for conservation activities.');
 CREATE TABLE IF NOT EXISTS `tblModelResultsVarsUsed` (
 	`model_run_name`	TEXT,
 	`gridName`	TEXT,
