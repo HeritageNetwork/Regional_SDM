@@ -334,7 +334,7 @@ if(nrow(sdm.customComments.subset) > 0){
 % \medskip
 \begin{center}
 <<mapFig, include = FALSE, echo = FALSE, dev='png',fig.height=7, fig.width=7, dpi = 300>>=
-par(mar=c(0,0,0,0))
+par(mar=c(0,0,4.5,0), xpd = F, cex=0.9, adj = 0.05)
 #equal-width class intervals
 plotvar <- results_shape$prbblty
 nclr <- 5
@@ -342,8 +342,6 @@ clrs <- brewer.pal('Blues',n=nclr)
 class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2)
 colcode <- findColours(class, clrs)
 results_shape$colcode <- colcode
-par(mar=c(2,2,2,2.5), #bottom, left, top, right
-    cex=0.9)    #text size
 
 # set up plot based on model results
 plot(results_shape$geometry, col = NA, axes = F) 
@@ -375,9 +373,13 @@ plot(st_transform(referenceBoundaries
 plot(st_transform( studyAreaExtent
                   ,st_crs(results_shape))$geometry, add=T, border="red", lwd=2)
 #title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
-legend("topleft", legend = rev(c("Low", rep("  |  ", nclr-2), "High")), col=rev(clrs), lwd = 4, cex=0.8, bty="o", bg = "white")
+legend(par('usr')[2], par('usr')[4], legend = rev(c("Low Habitat Suitability", 
+                                 rep("               |               ", nclr-2), "High Habitat Suitability")),
+       col=rev(clrs), lwd = 4, cex=0.8, bty="o", bg = "white", xpd = NA, xjust = 1, yjust = 0)
+title(main = paste0(as.character(ElementNames[[2]]),": \n    SDM Habitat Suitability Predictions"))
 # to use numbers: legend = names(attr(colcode, "table")
 box()
+box(which = "outer")
 @
 \includegraphics{figure/mapFig-1.png}    
 \end{center}
