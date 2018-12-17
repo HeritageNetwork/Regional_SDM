@@ -333,7 +333,7 @@ if(nrow(sdm.customComments.subset) > 0){
 \pagebreak
 % \medskip
 \begin{center}
-<<mapFig, include = FALSE, echo = FALSE, dev='png',fig.height=7, fig.width=7, dpi = 300>>=
+<<mapFig, include = FALSE, echo = FALSE, dev='png',fig.height=8, fig.width=7, dpi = 300>>=
 par(mar=c(0,0,4.5,0), xpd = F, cex=0.9, adj = 0.05)
 #equal-width class intervals
 plotvar <- results_shape$prbblty
