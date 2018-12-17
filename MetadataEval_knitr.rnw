@@ -348,7 +348,7 @@ plot(referenceBoundaries, add = T, border = "grey80")
 legend(par('usr')[2], par('usr')[4], legend = rev(c("Low Habitat Suitability", 
                                  rep("               |               ", nclr-2), "High Habitat Suitability")),
        fill = rev(clrs), border = rev(clrs), cex=0.8, bg = "white", xpd = NA, xjust = 1, yjust = 0)
-title(main = paste0(as.character(ElementNames[[2]]), "(", as.character(ElementNames[[1]]), "): \n    SDM Habitat Suitability Predictions"))
+title(main = paste0(as.character(ElementNames[[2]]), " (", as.character(ElementNames[[1]]), "): \n    SDM Habitat Suitability Predictions"))
 box()
 box(which = "outer")
 # need to plot raster after legend, title, box, otherwise it messes up margins
