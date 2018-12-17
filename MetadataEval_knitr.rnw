@@ -330,14 +330,33 @@ if(nrow(sdm.customComments.subset) > 0){
 
 \pagebreak
 \medskip
-<<<<<<< HEAD
+\begin{center}
+% <<<<<<< HEAD
 <<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE>>=
-myTheme=rasterTheme(region=brewer.pal('Blues', n=9))
-#levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
+par(mar=c(0,0,4.5,0), xpd = F, cex=0.9, adj = 0.05)
+nclr <- 5
+clrs <- brewer.pal('Blues',n=nclr)
+# myTheme=rasterTheme(region=brewer.pal('Blues', n=nclr))
+# levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
 
-levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.4,col='gray50'), data=list(referenceBoundaries=referenceBoundaries)) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'), data = list(studyAreaExtent=studyAreaExtent))
+# levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=myTheme, scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.4,col='gray50'), data=list(referenceBoundaries=referenceBoundaries)) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'), data = list(studyAreaExtent=studyAreaExtent))
+
+# set up plot
+# need to union studyAreaExtent...
+plot(studyAreaExtent, axes = F, col = NA, border = NA)
+plot(referenceBoundaries, add = T, border = "grey80")
+legend(par('usr')[2], par('usr')[4], legend = rev(c("Low Habitat Suitability", 
+                                 rep("               |               ", nclr-2), "High Habitat Suitability")),
+       fill = rev(clrs), border = rev(clrs), cex=0.8, bg = "white", xpd = NA, xjust = 1, yjust = 0)
+title(main = paste0(as.character(ElementNames[[2]]),": \n    SDM Habitat Suitability Predictions"))
+box()
+box(which = "outer")
+# need to plot raster after legend, title, box, otherwise it messes up margins
+plot(ras, maxpixels = 500000, col = clrs, axes = F, add = T, legend = F)
+plot(studyAreaExtent, border = "red", lwd = 2, add = T)
 @
 \includegraphics{figure/mapFig-1.pdf}    
+\end{center}
 Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in gray. The study area is outlined in red. 
 
 \pagebreak
