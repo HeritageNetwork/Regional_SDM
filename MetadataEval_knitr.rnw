@@ -330,8 +330,10 @@ if(nrow(sdm.customComments.subset) > 0){
 
 \pagebreak
 \medskip
+\begin{center}
 % <<<<<<< HEAD
 <<mapFig, fig.width=7, fig.height=7, include=FALSE, echo=FALSE>>=
+par(mar=c(0,0,0,0))
 nclr <- 5
 clrs <- brewer.pal('Blues',n=nclr)
 # myTheme=rasterTheme(region=brewer.pal('Blues', n=nclr))
@@ -345,10 +347,11 @@ plot(studyAreaExtent, axes = F, col = NA, border = NA)
 plot(referenceBoundaries, add = T, border = "grey80")
 plot(ras, maxpixels = 500000, col = clrs, axes = F, add = T, legend = F)
 plot(studyAreaExtent, border = "red", lwd = 2, add = T)
-legend("topleft", legend = c("Low", rep("  |  ", nclr-2), "High"), fill = clrs, border = clrs, bg = "white")
+legend("topleft", legend = rev(c("Low", rep("  |  ", nclr-2), "High")), fill = rev(clrs), border = rev(clrs), cex=0.8, bg = "white")
 box()
 @
 \includegraphics{figure/mapFig-1.pdf}    
+\end{center}
 Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in gray. The study area is outlined in red. 
 
 \pagebreak
