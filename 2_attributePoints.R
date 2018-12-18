@@ -1,7 +1,6 @@
 # File: 2_attributePoints.r
 # Purpose: attribute environmental data to presence points
 
-## start with a fresh workspace with no objects loaded
 library(raster)
 library(rgdal)
 library(RSQLite)
@@ -13,20 +12,29 @@ setwd(loc_envVars)
 # create a stack
 # if using TIFFs, use this line
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
-# if using native R rasters, use this line
-#raslist <- list.files(pattern = ".grd$")
 
 # find temporal vars (placed in subfolders)
 raslist.t <- raslist[grep("/",raslist,fixed = TRUE)]
 # exclude temporal vars, for the moment
 # raslist <- raslist[-grep("/",raslist,fixed = TRUE)]
 
-gridlist <- as.list(paste(loc_envVars,raslist,sep = "/"))
-nm <- substr(raslist,1,nchar(raslist) - 4)
-names(gridlist) <- nm
+# get short names from the DB
+# first shorten names in subfolders (temporal vars). NOT FULLY TESTED, borrowed from script 3
+raslist.short <- unique(unlist(
+  lapply(strsplit(raslist, "/"), function(x) {x[length(x)]})
+))
+
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+SQLQuery <- "select gridName, fileName from lkpEnvVars;"
+evs <- dbGetQuery(db, SQLQuery)
+shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist), evs)
+dbDisconnect(db)
+
+gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
+names(gridlist) <- shrtNms$gridName
 
 # check to make sure there are no names greater than 10 chars
-nmLen <- unlist(lapply(nm, nchar))
+nmLen <- unlist(lapply(shrtNms$gridName, nchar))
 max(nmLen) # if this result is greater than 10, you've got a renegade
 
 # Set working directory to the random points location
@@ -46,6 +54,7 @@ modType <- dbGetQuery(db, SQLQuery)$m
 
 SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;")
 gridlistSub <- dbGetQuery(db, SQLQuery)$g
+dbDisconnect(db)
 
 # get just names of grids (removes folder for temporal vars)
 justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
