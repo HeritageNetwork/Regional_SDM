@@ -74,39 +74,62 @@ names(df.abs) <- tolower(names(df.abs))
 
 # get a list of env vars from the folder used to create the raster stack
 raslist <- list.files(path = loc_envVars, pattern = ".tif$", recursive = TRUE)
-rasnames <- unique(unlist(
-  lapply(strsplit(gsub(".tif", "", raslist), "/"), function(x) {x[length(x)]})
-  ))
+#raslist <- list.files(path = loc_envVars, pattern = ".tif$", recursive = FALSE)
+# rasnames <- unique(unlist(
+#   lapply(strsplit(gsub(".tif", "", raslist), "/"), function(x) {x[length(x)]})
+#   ))
 
-# are these all in the lookup database? Checking here.
-db <- dbConnect(SQLite(),dbname=nm_db_file)  
-op <- options("useFancyQuotes") 
-options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
-SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (", 
-                  toString(sQuote(rasnames)),
-                  "); ", sep = "")
-namesInDB <- dbGetQuery(db, statement = SQLquery)
-namesInDB$gridName <- tolower(namesInDB$gridName)
-rasnames <- tolower(rasnames)
+# get short names from the DB
+# first shorten names in subfolders (temporal vars). NOT FULLY TESTED, borrowed from script 3
+raslist.short <- unique(unlist(
+  lapply(strsplit(raslist, "/"), function(x) {x[length(x)]})
+))
+
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+SQLQuery <- "select gridName, fileName from lkpEnvVars;"
+evs <- dbGetQuery(db, SQLQuery)
+shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist), evs)
+
+
+# get the env vars used by df.in
+shrtNms <- shrtNms[tolower(shrtNms$gridName) %in% names(df.in),]
+
+#gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
+#names(gridlist) <- shrtNms$gridName
+
+# 
+# 
+# # are these all in the lookup database? Checking here.
+# db <- dbConnect(SQLite(),dbname=nm_db_file)  
+# op <- options("useFancyQuotes") 
+# options(useFancyQuotes = FALSE) #sQuote call unhappy with fancy quote, turn off
+# SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName in (", 
+#                   toString(sQuote(rasnames)),
+#                   "); ", sep = "")
+# namesInDB <- dbGetQuery(db, statement = SQLquery)
+# namesInDB$gridName <- tolower(namesInDB$gridName)
+#rasnames <- tolower(rasnames)
+
+
 
 ## this prints rasters not in the lookup database
 ## if blank you are good to go, otherwise figure out what's up
-rasnames[!rasnames %in% namesInDB$gridName]
+#rasnames[!rasnames %in% namesInDB$gridName]
 
 ## this prints out the rasters that don't appear as a column name
 ## in df.in (meaning it wasn't used to attribute or the name is funky)
 ## if blank you are good to go
-rasnames[!rasnames %in% names(df.in)]
+shrtNms$gridName[!shrtNms$gridName %in% names(df.in)]
 
 # trust that the desired env vars are in df.in
-rasnames <- rasnames[rasnames %in% names(df.in)]
+rasnames <- shrtNms$gridName
 
 # get a list of all distance-to env vars
 SQLquery <- "SELECT gridName FROM lkpEnvVars WHERE distToGrid = 1;"
 dtGrids <- dbGetQuery(db, statement = SQLquery)
 
 # clean up
-options(op)
+#options(op)
 dbDisconnect(db)
 rm(db)
 

@@ -33,6 +33,16 @@ stackOrder <- names(df.full)[indVarCols]
 #if (dir.exists(temprast)) setwd(temprast) else 
 setwd(loc_envVars)
 
+# get raster full names
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+SQLQuery <- "select gridName, fileName from lkpEnvVars;"
+evs <- dbGetQuery(db, SQLQuery)
+rasFiles <- merge(data.frame(gridName = stackOrder), evs)
+#sort it back to stackOrder's order
+rasFiles <- rasFiles[match(stackOrder, rasFiles$gridName),]
+dbDisconnect(db)
+rm(db)
+
 # find matching var rasters (with folder for temporal vars)
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
@@ -40,7 +50,7 @@ fullL <- list()
 
 # attach file names to env var names
 for (i in 1:length(stackOrder)) {
-  rs <- raslist[grep(paste0(stackOrder[i],".tif"), raslist, ignore.case = TRUE)]
+  rs <- raslist[grep(rasFiles$fileName[i], raslist, ignore.case = TRUE)]
   if (length(rs) > 1) {
     # always take most recent temporal raster
     rs1 <- do.call(rbind.data.frame, strsplit(rs, "_|/"))
