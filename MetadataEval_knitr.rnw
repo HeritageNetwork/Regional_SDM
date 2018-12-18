@@ -377,7 +377,7 @@ plot(st_transform( studyAreaExtent
 legend(par('usr')[2], par('usr')[4], legend = rev(c("Low Habitat Suitability", 
                                  rep("               |               ", nclr-2), "High Habitat Suitability")),
        col=rev(clrs), lwd = 4, cex=0.8, bty="o", bg = "white", xpd = NA, xjust = 1, yjust = 0)
-title(main = paste0(as.character(ElementNames[[2]]), " (", as.character(ElementNames[[1]]), "): \n    SDM Habitat Suitability Predictions"))
+title(main = paste0(as.character(ElementNames[[2]]), " (", as.character(ElementNames[[1]]), "): \n    SDM Habitat Suitability Predictions"), cex.main = 1.1)
 # to use numbers: legend = names(attr(colcode, "table")
 box()
 box(which = "outer")
