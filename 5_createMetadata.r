@@ -115,6 +115,9 @@ numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
                               sep="")
 
+# get grank definition
+SQLquery <- paste0("SELECT rank, rankname FROM lkpRankDefinitions where rank = '",ElementNames$rounded_g_rank,"';", sep="")
+grank_desc <- dbGetQuery(db, SQLquery)
 # Get env. var lookup table
 SQLquery <- paste0("SELECT gridName g from tblModelResultsVarsUsed where model_run_name = '",
                    model_run_name, "' and inFinalModel = 1;")

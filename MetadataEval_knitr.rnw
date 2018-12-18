@@ -4,6 +4,9 @@
 \usepackage{geometry}
 \usepackage{fancyhdr}     %for headers,footers
 \usepackage{underscore}  %needed if any text has underscores
+\usepackage{rotating}
+\usepackage{caption} %for managing table captions
+\usepackage[super,comma]{natbib}
 
 \geometry{letterpaper, top=0.45in, bottom=0.75in, left=0.75in, right=0.75in}
 \pagestyle{fancy} \fancyhf{} \renewcommand\headrulewidth{0pt} %strip default header/footer stuff
@@ -23,7 +26,8 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 \begin{minipage}[b]{4.75in}   %everything in this minipage will be adjacent, left of the thermometer
   \LARGE \textit{\Sexpr{as.character(ElementNames[[1]])}} \\ 
   \normalsize Species Distribution Model (SDM) assessment metrics and metadata \\
-  Common name: \Sexpr{as.character(ElementNames[[2]])} \\ 
+  Common name: \Sexpr{as.character(ElementNames[[2]])} \\
+  Grank: \Sexpr{ paste(as.character(ElementNames[[6]])," - ",as.character(grank_desc[[2]]), sep="")}\\
   Date: \Sexpr{format(Sys.Date(), "%d %b %Y")} \\  
   Code: \Sexpr{as.character(ElementNames[[3]])} 
 \end{minipage}  \hfill   
@@ -95,7 +99,8 @@ Table 1. Input statistics. Polys = input polygons; EOs = element occurrences (kn
 
 Table 2. Validation statistics for jackknife trials. Overall Accuracy = 
 Correct Classification Rate, TSS = True Skill Statistic, AUC = 
-area under the ROC curve; see \cite{fielding2002, allouche2006, vaughan2005}.
+area under the ROC curve \cite{allouche2006, vaughan2005,
+fielding2002}.
 \smallskip
 
 \begin{center}
@@ -307,8 +312,7 @@ additional GIS tools to further direct search efforts. A lower threshold depicti
 \medskip
 \noindent
 \begin{minipage}{\linewidth} %keep table header with table
-Table 3. Thresholds calculated from the final model. For discussions of these different thresholds
-see \cite{LiuEtAl2005, LiuEtAl2015}. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of EOs, polygons, and PR points used in the final model are reported in Table 1.
+Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final model. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of EOs, polygons, and PR points used in the final model are reported in Table 1.
 
 \medskip
 \noindent
@@ -331,7 +335,6 @@ if(nrow(sdm.customComments.subset) > 0){
 \pagebreak
 \medskip
 \begin{center}
-% <<<<<<< HEAD
 <<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE>>=
 par(mar=c(0,0,4.5,0), xpd = F, cex=0.9, adj = 0.05)
 nclr <- 5
@@ -380,8 +383,15 @@ This model was built using a methodology developed through collaboration among t
 
 \medskip
 \noindent
+
+\setlength{\fboxsep}{5pt}
+\fbox{
+\begin{minipage}[t]{0.90\linewidth}%
 Please cite this document and its associated SDM as: \\
 \Sexpr{sdm.modeler$ProgramName}. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}. \Sexpr{sdm.modeler$FullOrganizationName}, \Sexpr{sdm.modeler$City}, \Sexpr{sdm.modeler$State}.
+\end{minipage}
+}
+
 
 \medskip
 \noindent

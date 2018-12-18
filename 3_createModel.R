@@ -34,8 +34,7 @@ df.abs <- read.dbf(fileName)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 
 # get species info
-SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id FROM lkpSpecies WHERE sp_code = '", 
-                  model_species,"';", sep="")
+SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id, g_rank, rounded_g_rank FROM lkpSpecies WHERE sp_code = '", model_species,"';", sep="")
 ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
 
 tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.character(Sys.time()),
