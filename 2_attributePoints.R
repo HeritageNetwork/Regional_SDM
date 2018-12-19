@@ -13,16 +13,11 @@ setwd(loc_envVars)
 # if using TIFFs, use this line
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
-# find temporal vars (placed in subfolders)
-raslist.t <- raslist[grep("/",raslist,fixed = TRUE)]
-# exclude temporal vars, for the moment
-# raslist <- raslist[-grep("/",raslist,fixed = TRUE)]
-
 # get short names from the DB
 # first shorten names in subfolders (temporal vars). NOT FULLY TESTED, borrowed from script 3
-raslist.short <- unique(unlist(
+raslist.short <- unlist(
   lapply(strsplit(raslist, "/"), function(x) {x[length(x)]})
-))
+)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- "select gridName, fileName from lkpEnvVars;"
@@ -31,7 +26,8 @@ shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist), evs)
 dbDisconnect(db)
 
 gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
-names(gridlist) <- shrtNms$gridName
+nm <- substr(shrtNms$fullname,1,nchar(shrtNms$fullname) - 4) # remove .tif extension
+names(gridlist) <- nm
 
 # check to make sure there are no names greater than 10 chars
 nmLen <- unlist(lapply(shrtNms$gridName, nchar))
@@ -136,5 +132,12 @@ suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
 
 # write it out ----
 points_attributed@proj4string <- projInfo
+# re-name table columns from filename to shrtNms$gridName
+shrtNms$fileName <- gsub(".tif$", "", shrtNms$fileName)
+for (n in 1:length(names(points_attributed))) {
+  if (names(points_attributed)[n] %in% shrtNms$fileName) {
+    names(points_attributed)[n] <- shrtNms$gridName[shrtNms$fileName == names(points_attributed)[n]][1]
+  }
+}
 filename <- paste(baseName, "_att", sep="")
 writeOGR(points_attributed, "model_input", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)

@@ -37,6 +37,7 @@ setwd(loc_envVars)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- "select gridName, fileName from lkpEnvVars;"
 evs <- dbGetQuery(db, SQLQuery)
+evs$gridName <- tolower(evs$gridName)
 rasFiles <- merge(data.frame(gridName = stackOrder), evs)
 #sort it back to stackOrder's order
 rasFiles <- rasFiles[match(stackOrder, rasFiles$gridName),]
