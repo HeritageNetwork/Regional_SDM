@@ -17,11 +17,9 @@ nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv"))
 # map reference boundaries
-nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey reference lines in map
-# map project boundary
-nm_studyAreaExtent = here("_data","other_spatial","feature","sdmVA_pred_20170131.shp") # outline black boundary line for study area in map
+nm_refBoundaries = here("_data","other_spatial","feature","US_States.shp") # background grey reference lines in map
 # model comment in database
-model_comments = "testing aquatic sqlite database"
+model_comments = ""
 # comment printed in PDF metadata
 metaData_comments = ""
 # your name
@@ -29,6 +27,8 @@ modeller = "Christopher Tracey"
 
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
 nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches")
+# Name of background/envvars sqlite geodatabase, and huc12 table name (2 length vector)
+nm_huc12 <- c(here("_data","env_vars","tabular", "background.sqlite"), "range_huc12")
 # name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
 nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
 # numeric HUC level to sub-set project area [Aquatic-only variable].
@@ -61,10 +61,10 @@ run_SDM(
   nm_db_file = nm_db_file, 
   loc_model = loc_model,
   nm_bkg = nm_bkg,
+  nm_huc12 = nm_huc12,
   nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   huc_level = huc_level,
   nm_refBoundaries = nm_refBoundaries, # background grey reference lines in map
-  nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
   model_comments = model_comments,
   metaData_comments = metaData_comments,
   modeller = modeller,
