@@ -1,4 +1,26 @@
 BEGIN TRANSACTION;
+CREATE TABLE `tblRubric` (
+	`model_run_name`	TEXT,
+	`spdata_dataqual`	TEXT,
+	`spdata_abs`	TEXT,
+	`spdata_eval`	TEXT,
+	`envvar_relevance`	TEXT,
+	`envvar_align`	TEXT,
+	`process_algo`	TEXT,
+	`process_sens`	TEXT,
+	`process_rigor`	TEXT,
+	`process_perform`	TEXT,
+	`process_review`	TEXT,
+	`products_mapped`	TEXT,
+	`products_support`	TEXT,
+	`products_repo`	TEXT,
+	`interative`	TEXT,
+	`notes_spdata`	TEXT,
+	`notes_envvar`	TEXT,
+	`notes_process`	TEXT,
+	`notes_products`	TEXT,
+	`notes_iterative`	TEXT
+);
 CREATE TABLE IF NOT EXISTS `lkpRankDefinitions` (
 	`rank`	TEXT,
 	`rankname`	TEXT,

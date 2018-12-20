@@ -39,5 +39,13 @@ if (dat.in.db$metadata_comments != newText) {
   dbSendQuery(db, SQLquery)
 }
 
+# rubric data insertion
+rubric <- c(model_run_name,rubric_default)
+options(useFancyQuotes = FALSE)
+rubric <- sQuote(rubric)
+rubric <- paste(as.character(rubric), collapse=",")
+SQLquery <- paste("INSERT INTO tblRubric (model_run_name, spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, notes_spdata, notes_envvar, notes_process, notes_products, notes_iterative) VALUES (",rubric,");", sep="")
+dbSendQuery(db, SQLquery)
+
 ## clean up ----
 dbDisconnect(db)

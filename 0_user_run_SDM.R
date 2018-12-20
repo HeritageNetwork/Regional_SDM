@@ -38,6 +38,10 @@ remove_vars = NULL
 # do you want to stop execution after each modeling step (script)?
 prompt = FALSE
 
+# default values for Model Use rubric
+# order should be "spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,notes_spdata, notes_envvar,notes_process, notes_products,notes_iterative"
+rubric_default = c("I","A","A","A","A","I","A","A","A","I","A","I","A","A","","","","","")
+
 # set wd and load function
 setwd(loc_scripts)
 source(here("helper", "run_SDM.R"))
@@ -65,6 +69,7 @@ run_SDM(
   modeller = modeller,
   add_vars = add_vars,
   remove_vars = remove_vars,
+  rubric_default = rubric_default,
   prompt = prompt
 )
 

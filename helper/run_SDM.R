@@ -27,6 +27,7 @@ run_SDM <- function(
   model_rdata = NULL,
   add_vars = NULL,
   remove_vars = NULL,
+  rubric_default,
   prompt = FALSE
 ) {
   
@@ -71,6 +72,7 @@ run_SDM <- function(
       modeller = modeller,
       add_vars = add_vars,
       remove_vars = remove_vars,
+      rubric_default = rubric_default,
       baseName = baseName)
   }
   
