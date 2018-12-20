@@ -137,7 +137,7 @@ shp_expl$finalSampNum <- ifelse(shp_expl$PolySampNum < shp_expl$minSamps,
                                 shp_expl$minSamps, 
                                 shp_expl$PolySampNum)
 
-ranPts <- st_sample(shp_expl, size = shp_expl$finalSampNum)
+ranPts <- st_sample(shp_expl, size = shp_expl$finalSampNum * 2)
 ranPts.sf <- st_sf(ranPts)
 names(ranPts.sf) <- "geometry"
 st_geometry(ranPts.sf) <- "geometry"
@@ -145,25 +145,30 @@ st_geometry(ranPts.sf) <- "geometry"
 ranPts.joined <- st_join(ranPts.sf, shp_expl)
 
 # check for polys that didn't get any points
-polysWithNoPoints <- shp_expl[!shp_expl$EXPL_ID %in% ranPts.joined$EXPL_ID,]
+polysWithNoPoints <- shp_expl[!shp_expl$expl_id %in% ranPts.joined$expl_id,]
 if(nrow(polysWithNoPoints) > 0){
   stop("One or more polygons didn't get any points placed in them.")
 }
 
-## if you got polys with no points, read the numbers reported and 
-## view the poly with this command
-# plot(polysWithNoPoints[,])
-# e.g. plot(polysWithNoPoints[], max.plot = 1)
-
+# get actual finalSampNum
+ranPts.joined2 <- ranPts.joined[0,]
+for (ex in 1:length(shp_expl$geometry)) {
+  s1 <- shp_expl[ex,]
+  samps <- row.names(ranPts.joined[ranPts.joined$expl_id==s1$expl_id,])
+  if (length(samps) > s1$finalSampNum) samps <- sample(samps, size = s1$finalSampNum) # samples to remove
+  ranPts.joined2 <- rbind(ranPts.joined2, ranPts.joined[samps,])
+}
+ranPts.joined <- ranPts.joined2
+rm(ex, s1, samps, ranPts.joined2)
 
 #check for cases where sample smaller than requested
 # how many points actually generated?
 
 ptCount <- table(ranPts.joined$expl_id)
-overUnderSampled <- ptCount - shp_expl$PolySampNum
+overUnderSampled <- ptCount - shp_expl$finalSampNum
 
 #positive vals are oversamples, negative vals are undersamples
-table(overUnderSampled)
+print(table(overUnderSampled))
 # If you get large negative values then there are many undersamples and 
 # exploration might be worthwhile
 
