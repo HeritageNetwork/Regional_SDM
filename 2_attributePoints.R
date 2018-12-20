@@ -23,12 +23,15 @@ raslist.short <- unlist(
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- "select gridName, fileName from lkpEnvVars;"
 evs <- dbGetQuery(db, SQLQuery)
-shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist), evs)
+shrtNms <- merge(data.frame(
+  fileName = raslist.short, 
+  fullname = raslist, 
+  fileNameNoTiff = substr(raslist.short,1,nchar(raslist.short) - 4),
+  stringsAsFactors = FALSE), evs)
 dbDisconnect(db)
 
 gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
-nm <- substr(shrtNms$fullname,1,nchar(shrtNms$fullname) - 4) # remove .tif extension
-names(gridlist) <- nm
+names(gridlist) <- shrtNms$fileNameNoTiff
 
 # check to make sure there are no names greater than 10 chars
 nmLen <- unlist(lapply(shrtNms$gridName, nchar))
@@ -78,7 +81,8 @@ if (!is.null(remove_vars)) {
   gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
 }
 
-fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub)]
+justTheNamesShort <- shrtNms[shrtNms$fileNameNoTiff %in% justTheNames, "gridName"]
+fullL <- gridlist[tolower(justTheNamesShort) %in% tolower(gridlistSub)]
 
 # Could use this script here crop/mask rasters
 #source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
