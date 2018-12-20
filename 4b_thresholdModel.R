@@ -3,7 +3,7 @@
 
 ## start with a fresh workspace with no objects loaded
 library(raster)
-library(rgdal)
+library(sf)
 library(ROCR)
 library(RSQLite)
 library(DBI)

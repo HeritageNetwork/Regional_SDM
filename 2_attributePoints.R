@@ -2,9 +2,10 @@
 # Purpose: attribute environmental data to presence points
 
 library(raster)
-library(rgdal)
+library(sf)
+# library(rgdal)
 library(RSQLite)
-library(maptools)
+# library(maptools)
 
 # load data, QC ----
 setwd(loc_envVars)
@@ -13,16 +14,11 @@ setwd(loc_envVars)
 # if using TIFFs, use this line
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
-# find temporal vars (placed in subfolders)
-raslist.t <- raslist[grep("/",raslist,fixed = TRUE)]
-# exclude temporal vars, for the moment
-# raslist <- raslist[-grep("/",raslist,fixed = TRUE)]
-
 # get short names from the DB
 # first shorten names in subfolders (temporal vars). NOT FULLY TESTED, borrowed from script 3
-raslist.short <- unique(unlist(
+raslist.short <- unlist(
   lapply(strsplit(raslist, "/"), function(x) {x[length(x)]})
-))
+)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- "select gridName, fileName from lkpEnvVars;"
@@ -31,7 +27,8 @@ shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist), evs)
 dbDisconnect(db)
 
 gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
-names(gridlist) <- shrtNms$gridName
+nm <- substr(shrtNms$fullname,1,nchar(shrtNms$fullname) - 4) # remove .tif extension
+names(gridlist) <- nm
 
 # check to make sure there are no names greater than 10 chars
 nmLen <- unlist(lapply(shrtNms$gridName, nchar))
@@ -40,11 +37,7 @@ max(nmLen) # if this result is greater than 10, you've got a renegade
 # Set working directory to the random points location
 setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
-ranPtsFilesNoExt <- paste0(baseName, "_RanPts")
-shpf <- readOGR("presence", layer = ranPtsFilesNoExt)
-
-#get projection info for later
-projInfo <- shpf@proj4string
+shpf <- st_read(paste0("presence/", baseName, "_RanPts.shp"),quiet = T)
 
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -135,6 +128,13 @@ if (length(tv) > 0) {
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
 
 # write it out ----
-points_attributed@proj4string <- projInfo
-filename <- paste(baseName, "_att", sep="")
-writeOGR(points_attributed, "model_input", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+# re-name table columns from filename to shrtNms$gridName
+shrtNms$fileName <- gsub(".tif$", "", shrtNms$fileName)
+for (n in 1:length(names(points_attributed))) {
+  if (names(points_attributed)[n] %in% shrtNms$fileName) {
+    names(points_attributed)[n] <- shrtNms$gridName[shrtNms$fileName == names(points_attributed)[n]][1]
+  }
+}
+filename <- paste(baseName, "_att.shp", sep="")
+points_attributed <- st_as_sf(points_attributed)
+st_write(points_attributed, paste0("model_input/", filename), delete_layer = T)
