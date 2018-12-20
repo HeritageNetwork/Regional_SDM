@@ -3,7 +3,6 @@
 
 ## start with a fresh workspace with no objects loaded
 library(raster)
-library(rgdal)
 library(randomForest)
 library(RSQLite)
 library(sf)

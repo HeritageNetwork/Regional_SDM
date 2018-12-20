@@ -28,7 +28,7 @@ dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
-presPolys <- st_zm(st_read(nm_presFile))
+presPolys <- st_zm(st_read(nm_presFile, quiet = T))
 
 #check for proper column names. If no error from next code block, then good to go
 #presPolys$RA <- presPolys$SFRACalc
@@ -182,7 +182,7 @@ st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TR
 ###
 
 # get the background shapefile
-backgShapef <- st_read(nm_bkgPts)
+backgShapef <- st_read(nm_bkgPts, quiet = T)
 
 # find coincident points ----
 polybuff <- st_transform(shp_expl, st_crs(backgShapef))
