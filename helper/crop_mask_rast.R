@@ -24,8 +24,7 @@ hucRange <- st_zm(st_read(nm_range, query = qry))
 # crop/mask rasters to a temp directory 
 
 # delete temp rasts folder, create new
-# temp <- paste0(loc_model, "/", model_species, "/inputs/temp_rasts")
-temp <- paste0(options("rasterTmpDir")[1], "/", model_species)
+temp <- paste0(loc_model, "/", model_species, "/inputs/temp_rasts")
 if (dir.exists(temp)) {
   unlink(x = temp, recursive = T, force = T)
 }
