@@ -21,7 +21,7 @@ nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
 loc_envVars = here("_data","env_vars","raster", "ras")
 # bkg points [Terrestrial-only variable]
-nm_bkgPts = here("_data","env_vars","background","ma_test_background_att.shp")
+nm_bkgPts = here("_data","env_vars","background","background_pts_RanPts_att.shp")
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_sp","HUC10.shp")
 # map reference boundaries
