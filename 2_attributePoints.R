@@ -56,7 +56,7 @@ dbDisconnect(db)
 if (!is.null(add_vars)) {
   add_vars1 <- add_vars
   add_vars <- tolower(add_vars)
-
+  
   db <- dbConnect(SQLite(),dbname=nm_db_file)
   SQLQuery <- paste0("SELECT gridName, fileName FROM lkpEnvVars;")
   gridlistAll <- dbGetQuery(db, SQLQuery)
@@ -125,7 +125,7 @@ if (length(tv) > 0) {
     
     vals <- unlist(lapply(1:length(pa), FUN = function(x) {
       eval(parse(text = paste0("pa$", tvDataYear.s$dataset[1],"_",closestYear[x],".",i, "[", x , "]")
-                 ))
+      ))
     }))
     
     # add to pa
