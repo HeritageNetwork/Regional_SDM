@@ -62,3 +62,13 @@ shapef <- st_zm(merge(shapef, results_join_table, by = "comid", all.x = F))
 # write the shapefile
 st_write(shapef, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), delete_layer = T)
 
+# load the HUC12s from the database to make a project area boundary
+db <- dbConnect(SQLite(),dbname=nm_huc12[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_huc12[2], " WHERE ","substr(HUC12,1,",huc_level,") IN ('", paste(HUCsubset, collapse = "','"),"');")#" WHERE COMID IN ('", paste(results_join_table$comid, collapse = "','"),"')")
+shapef2 <- dbGetQuery(db, SQLQuery)
+names(shapef2) <- tolower(names(shapef2))
+shapeh <- st_sf(shapef2[c("huc12")], geometry = st_as_sfc(shapef2$wkt), crs = proj4)
+try(shapeh <- st_sf(shapef2[c("huc12")], geometry = st_as_sfc(shapef2$wkt), crs = proj4), silent=T)
+shapeh <- st_union(shapeh)
+st_write(shapeh, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc12.shp"), delete_layer=T)
+dbDisconnect(db)
