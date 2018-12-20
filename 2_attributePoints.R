@@ -45,12 +45,12 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE sp_code = '", model_species, "';")
 modType <- dbGetQuery(db, SQLQuery)$m
 
-SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;")
-gridlistSub <- dbGetQuery(db, SQLQuery)$g
+# gridlistSub is a running list of variables to use. Uses fileName from lkpEnvVars
+SQLQuery <- paste0("SELECT gridName, fileName FROM lkpEnvVars WHERE use_",modType," = 1;")
+gridlistSub <- dbGetQuery(db, SQLQuery)
+gridlistSub$fileName <- gsub(".tif$","",gridlistSub$fileName)
+gridlistSub$gridName <- tolower(gridlistSub$gridName)
 dbDisconnect(db)
-
-# get just names of grids (removes folder for temporal vars)
-justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
 
 ## account for add/remove vars
 if (!is.null(add_vars)) {
@@ -58,27 +58,36 @@ if (!is.null(add_vars)) {
   add_vars <- tolower(add_vars)
 
   db <- dbConnect(SQLite(),dbname=nm_db_file)
-  SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars;")
-  gridlistAll <- tolower(dbGetQuery(db, SQLQuery)$g)
+  SQLQuery <- paste0("SELECT gridName, fileName FROM lkpEnvVars;")
+  gridlistAll <- dbGetQuery(db, SQLQuery)
+  gridlistAll$fileName <- gsub(".tif$","",gridlistAll$fileName)
+  gridlistAll$gridName <- tolower(gridlistAll$gridName)
   dbDisconnect(db)
   
-  if (!all(add_vars %in% gridlistAll)) {
+  if (!all(add_vars %in% gridlistAll$gridName)) {
     stop("Some environmental variables listed in `add_vars` were not found in `nm_EnvVars` dataset: ",
-         paste(add_vars1[!add_vars %in% gridlistSub], collapse = ", "), ".")
+         paste(add_vars1[!add_vars %in% gridlistAll$gridName], collapse = ", "), ".")
   }
-  gridlistSub <- c(gridlistSub, add_vars)
+  # add the variables
+  add_vars_df <- gridlistAll[gridlistAll$gridName %in% add_vars,]
+  gridlistSub <- rbind(gridlistSub, add_vars_df)
 }
 if (!is.null(remove_vars)) {
   remove_vars1 <- remove_vars
   remove_vars <- tolower(remove_vars)
-  if (!all(remove_vars %in% gridlistSub)) {
+  if (!all(remove_vars %in% gridlistSub$gridName)) {
     message("Some environmental variables listed in `remove_vars` were not found in the `nm_EnvVars` dataset: ",
-            paste(remove_vars1[!remove_vars %in% gridlistSub], collapse = ", "), ".")
+            paste(remove_vars1[!remove_vars %in% gridlistSub$gridName], collapse = ", "), ".")
   } 
-  gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
+  # remove the variables
+  gridlistSub <- gridlistSub[!tolower(gridlistSub$gridName) %in% tolower(remove_vars),]
 }
+# remove duplicates
+gridlistSub <- gridlistSub[!duplicated(gridlistSub),]
 
-fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub)]
+# get just names of grids (removes folder for temporal vars)
+justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
+fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub$fileName)]
 
 # Could use this script here crop/mask rasters
 #source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
