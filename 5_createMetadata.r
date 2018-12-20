@@ -155,7 +155,7 @@ system(call) # 2nd run to apply citation numbers
 
 
 # delete .txt, .log etc if pdf is created successfully.
-fn_ext <- c(".tex",".log",".aux",".out")
+fn_ext <- c(".log",".aux",".out")
 if (file.exists(paste(model_run_name, ".pdf",sep=""))){
   #setInternet2(TRUE)
   #download.file(fileURL ,destfile,method="auto")
