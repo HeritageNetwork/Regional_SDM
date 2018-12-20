@@ -3,9 +3,10 @@
 
 ## start with a fresh workspace with no objects loaded
 library(raster)
-library(rgdal)
+library(sf)
+# library(rgdal)
 library(RSQLite)
-library(maptools)
+# library(maptools)
 
 # load data, QC ----
 setwd(loc_envVars)
@@ -32,11 +33,7 @@ max(nmLen) # if this result is greater than 10, you've got a renegade
 # Set working directory to the random points location
 setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
-ranPtsFilesNoExt <- paste0(baseName, "_RanPts")
-shpf <- readOGR("presence", layer = ranPtsFilesNoExt)
-
-#get projection info for later
-projInfo <- shpf@proj4string
+shpf <- st_read(paste0("presence/", baseName, "_RanPts.shp"),quiet = T)
 
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -77,7 +74,7 @@ if (!is.null(remove_vars)) {
 }
 
 # make grid stack with subset
-envStack <- stack(gridlist[tolower(justTheNames) %in% tolower(gridlistSub)])
+envStack <- stack(gridlist[tolower(justTheNames) %in% tolower(gridlistSub)]) # points are transformed to raster CRS, if not matching
 rm(justTheNames, gridlistSub, modType)
 
 # extract raster data to points ----
@@ -120,6 +117,6 @@ if (length(tv) > 0) {
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
 
 # write it out ----
-points_attributed@proj4string <- projInfo
-filename <- paste(baseName, "_att", sep="")
-writeOGR(points_attributed, "model_input", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+filename <- paste(baseName, "_att.shp", sep="")
+points_attributed <- st_as_sf(points_attributed)
+st_write(points_attributed, paste0("model_input/", filename), delete_layer = T)

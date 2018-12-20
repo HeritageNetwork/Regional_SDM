@@ -3,7 +3,6 @@
 
 ## start with a fresh workspace with no objects loaded
 library(raster)
-library(rgdal)
 library(randomForest)
 removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
