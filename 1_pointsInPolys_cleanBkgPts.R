@@ -186,18 +186,25 @@ st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TR
 ### remove Coincident Background points ----
 ###
 
-# get the background shapefile
-backgShapef <- st_read(nm_bkgPts, quiet = T)
+# get the background data from the DB
+db <- dbConnect(SQLite(), nm_bkgPts[1])
+bkgd <- dbReadTable(db, nm_bkgPts[2])
+tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", nm_bkgPts[2], "';"))$p
+samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 
 # find coincident points ----
-polybuff <- st_transform(shp_expl, st_crs(backgShapef))
+polybuff <- st_transform(shp_expl, st_crs(samps))
 polybuff <- st_buffer(polybuff, dist = 30)
 
-coincidentPts <- unlist(st_contains(polybuff, backgShapef, sparse = TRUE))
+coincidentPts <- unlist(st_contains(polybuff, samps, sparse = TRUE))
 
 # remove them (if any)
-if (length(coincidentPts) > 0) backgSubset <- backgShapef[-coincidentPts,] else backgSubset <- backgShapef
+if (length(coincidentPts) > 0) backgSubset <- samps[-coincidentPts,] else backgSubset <- samps
+attDat <- dbReadTable(db, paste0(nm_bkgPts[2], "_att"))
+bgSubsAtt <- merge(backgSubset, attDat)
+
+dbDisconnect(db)
 
 # write background points
 outFileName <- paste0(loc_model,"/",model_species,"/inputs/model_input/", paste0(baseName, "_bkg_clean.shp"))
-st_write(backgSubset, outFileName, driver="ESRI Shapefile", delete_layer = TRUE)
+st_write(bgSubsAtt, outFileName, driver="ESRI Shapefile", delete_layer = TRUE)
