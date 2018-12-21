@@ -335,6 +335,8 @@ if(nrow(sdm.customComments.subset) > 0){
 }
 @
 
+
+
 \medskip
 \noindent
 \textbf{Model Evaluation and Intended Use} \\
@@ -363,6 +365,12 @@ Category & Metric & Score & Notes \\ \hline
                               & Iterative & \Sexpr{as.character(sdm.modeluse$interative)} & \Sexpr{as.character(sdm.modeluse$interativeNotes)} \\ \hline                      
 \end{tabular}
 \end{table}
+
+
+
+
+
+
 
 \pagebreak
 % \medskip
@@ -436,7 +444,7 @@ for(i in 1:length(sdm.dataSources$ProgramName)){
 \end{itemize}
 
 \medskip
-This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, New York Natural Heritage Program, Pennsylvania Natural Heritage Program, and Virginia Natural Heritage Program. It is one of a suite of aqautic species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.
+This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. It is one of a suite of aquatic species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.
 
 \medskip
 \noindent
@@ -450,9 +458,11 @@ Please cite this document and its associated SDM as: \\
 }
 
 
+
+
 \medskip
 \noindent
-References
+\textbf{References}
 \small
 \renewcommand{\refname}{\vskip -40 pt} %kill the header on the bibliography
 \begin{thebibliography}{99}\setlength{\itemsep}{-4pt}

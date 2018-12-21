@@ -1,10 +1,12 @@
 # File: user_run_SDM.r
-# Purpose: Run a new, full SDM model (all steps)
+# Purpose: Run a full SDM model, or pickup an existing run executed using run_SDM.
+# After running a full model, save this file in the species' 'loc_scripts' folder
 
 library(here)
 rm(list=ls())
 
 # Step 1: Setting for the model run
+# set project folder, db, species code, and species reaches filename for this run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
 model_species <- "chrocumb"
@@ -27,7 +29,7 @@ modeller = "Christopher Tracey"
 
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
 nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches")
-# Name of background/envvars sqlite geodatabase, and huc12 table name (2 length vector)
+# Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
 nm_huc12 <- c(here("_data","env_vars","tabular", "background.sqlite"), "range_huc12")
 # name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
 nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
@@ -35,9 +37,9 @@ nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
   # NULL will auto-calculate the level where all presences are in a unique watershed at that level
 huc_level <- NULL
 
-# list non-standard variables to add to model run
+# list non-standard variables to "add" to model run
 add_vars = NULL
-# list standard variables to exclude from model run
+# list standard variables to remove from model run
 remove_vars = NULL
 # do you want to stop execution after each modeling step (script)?
 prompt = FALSE
@@ -45,6 +47,7 @@ prompt = FALSE
 # default values for Model Use rubric
 # order should be "spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqualNotes,spdata_absNotes,spdata_evalNotes,envvar_relevanceNotes,envvar_alignNotes,process_algoNotes,process_sensNotes,process_rigorNotes,process_performNotes,process_reviewNotes,products_mappedNotes,products_supportNotes,products_repoNotes,interativeNotes"
 rubric_default = c("I","A","A","A","A","I","A","A","A","I","A","I","A","A","","","","","","","","","","","","","","")
+
 # set wd and load function
 setwd(loc_scripts)
 source(here("helper", "run_SDM.R"))
@@ -57,6 +60,8 @@ source(here("helper", "run_SDM.R"))
 # Usage: For a full, new model run, provide all paths/file names to arguments 'loc_scripts' THROUGH 'modeller'.
 
 # RUN A NEW MODEL (ALL STEPS 1-5)
+# If picking up from a previous run (after step 1), use Step 2-alt below
+# update the function arguments below as necessary, and run the function
 run_SDM(
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
@@ -65,7 +70,7 @@ run_SDM(
   loc_model = loc_model,
   nm_bkg = nm_bkg,
   nm_huc12 = nm_huc12,
-  nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
+  #nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   huc_level = huc_level,
   nm_refBoundaries = nm_refBoundaries, # background grey reference lines in map
   model_comments = model_comments,
@@ -73,8 +78,80 @@ run_SDM(
   modeller = modeller,
   add_vars = add_vars,
   remove_vars = remove_vars,
+  rubric_default = rubric_default,
   prompt = prompt
 )
+#############################################################################
+#############################################################################
+#############################################################################
+
+# Step 2-alternate: run additional model, or pick up from previous model run
+
+# if using add_vars or remove_vars for a new model run, start at step 2.
+
+# if you want to run a new model with the same input data as a previous run, start at step 3.
+
+# If picking up from a previously started run, always
+# provide the begin_step, model_species, and loc_model.
+# When starting at script #4 or later, also provide the name of the 
+# model rdata file to 'model_rdata'. 
+# You can also include any other arguments that you wish to change from 
+# the previous run (e.g., model_comments or metaData_comments).
+# 
+# Note that you can manually update the scripts, if desired. 
+# The scripts will automatically be accessed from 'loc_scripts' (if provided) 
+
+# or the location that was specified for the original model run. 
+library(here)
+rm(list=ls())
+
+# set project folder and species code for this run
+model_species <- "chrocumb"
+loc_model <- here("_data", "species")
+
+# set wd and load function
+loc_scripts <- here()
+setwd(loc_scripts)
+source(here("helper", "run_SDM.R"))
+
+# example pick-up a model run at step 2 (same presence/bkgd data, new model with different variables)
+  # need to provide an input tableCode to nm_presFile 
+  # to add/remove variables, begin at step 2
+  # to just run new model, begin at step 3 (see next example)
+run_SDM(
+  begin_step = "2",
+  model_species = "chrocumb",
+  loc_model = loc_model,
+  nm_presFile = "chrocumb_20181217_131103",
+  model_comments = "Testing out model with removed variables.",
+  remove_vars = "cbnfws"
+)
+
+# example pick-up a model run at step 5 (metadata create)
+  # if starting at step 4 or later, must provide model run name to model_rdata
+run_SDM(
+  begin_step = "5",
+  model_species = "chrocumb",
+  loc_model = loc_model,
+  model_rdata = "chrocumb_20181219_123238"#,
+  #metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+)
+
+# example pick-up a model run at step 4c (metadata/comment update)
+# if starting at step 4 or later, must provide model run name to model_rdata
+run_SDM(
+  begin_step = "4c",
+  model_species = "chrocumb",
+  loc_model = loc_model,
+  rubric_default = rubric_default,
+  model_rdata = "chrocumb_20181218_164119"#,
+  #metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+)
+
+
+
+
+
 
 
 ########## 
@@ -86,7 +163,7 @@ library(here)
 rm(list=ls())
 # Use the lines below for debugging (running line by line) for a certain script
 # This loads the variables used in previous model run for the species, 
-# so you need to have started a run_SDM() run in step 2 first.
+# so you need to have executed run_SDM in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
 model_species <- "chrocumb"
@@ -96,3 +173,4 @@ for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 # if debugging script 4 or later, also load the specific model output rdata file
 model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata")))
 load(here("_data","species",model_species,"outputs","rdata",paste0(model_rdata)))
+
