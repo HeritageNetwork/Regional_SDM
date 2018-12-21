@@ -21,7 +21,7 @@ run_SDM <- function(
   nm_db_file,
   loc_model,
   nm_bkg,
-  nm_huc12,
+  nm_huc12 = nm_huc12,
   nm_refBoundaries,
   nm_aquaArea = NULL,
   model_comments = "",
@@ -32,6 +32,7 @@ run_SDM <- function(
   add_vars = NULL,
   remove_vars = NULL,
   huc_level = NULL,
+  rubric_default = NULL,
   prompt = FALSE
 ) {
   if ((hasArg(add_vars) | hasArg(remove_vars)) & !begin_step %in% c("1","2")) 
@@ -79,7 +80,8 @@ run_SDM <- function(
       huc_level = huc_level,
       baseName = baseName,
       add_vars = add_vars,
-      remove_vars = remove_vars)
+      remove_vars = remove_vars,
+      rubric_default = rubric_default)
   }
   
   # add comments for added/excluded vars
