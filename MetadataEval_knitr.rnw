@@ -350,24 +350,22 @@ As SDMs are sensitive to data inputs and methological choices, the following tab
 \begin{tabular}{llcl}
 \hline
 Category & Metric & Score & Notes \\ \hline
-\multirow{3}{*}{Species Data} & Presence data quality & \Sexpr{as.character(sdm.modeluse$spdata_dataqual)} & \multirow{3}{*}{\Sexpr{as.character(sdm.modeluse$notes_spdata)}} \\ \cline{2-3}
-                              & Absence/Background Data & \Sexpr{as.character(sdm.modeluse$spdata_abs)} & \\ \cline{2-3}
-                              & Evaluation Data & \Sexpr{as.character(sdm.modeluse$spdata_eval)} & \\ \hline
-\multirow{2}{*}{Environmental Predictors} & Ecological and predictive relevance & \Sexpr{as.character(sdm.modeluse$envvar_relevance)} & \multirow{2}{*}{\Sexpr{as.character(sdm.modeluse$notes_envvar)}} \\ \cline{2-3}
-                              & Spatial and temporal alignment & \Sexpr{as.character(sdm.modeluse$envvar_align)} & \\ \hline
-\multirow{5}{*}{Modeling Process} & Algorithm choice & \Sexpr{as.character(sdm.modeluse$process_algo)} & \multirow{5}{*}{\Sexpr{as.character(sdm.modeluse$notes_process)}} \\ \cline{2-3}
-                              & Sensitivity & \Sexpr{as.character(sdm.modeluse$process_sens)} & \\ \cline{2-3}
-                              & Statistical rigor & \Sexpr{as.character(sdm.modeluse$process_rigor)} \\ \cline{2-3}
-                              & Performance & \Sexpr{as.character(sdm.modeluse$process_perform)} & \\ \cline{2-3}
-                              & Model review & \Sexpr{as.character(sdm.modeluse$process_review)} & \\ \hline
-\multirow{3}{*}{Model Products} & Mapped products & \Sexpr{as.character(sdm.modeluse$products_mapped)} & \multirow{3}{*}{\Sexpr{as.character(sdm.modeluse$notes_products)}} \\ \cline{2-3}
-                              & Interpretation support products & \Sexpr{as.character(sdm.modeluse$products_support)} & \\ \cline{2-3}
-                              & Reproducibility & \Sexpr{as.character(sdm.modeluse$products_repo)} & \\ \hline
-                              & Iterative & \Sexpr{as.character(sdm.modeluse$interative)} & \Sexpr{as.character(sdm.modeluse$notes_iterative)} \\ \hline                      
+\multirow{3}{*}{Species Data} & Presence data quality & \Sexpr{as.character(sdm.modeluse$spdata_dataqual)} & \Sexpr{as.character(sdm.modeluse$spdata_dataqualNotes)} \\ \cline{2-4}
+                              & Absence/Background Data & \Sexpr{as.character(sdm.modeluse$spdata_abs)} & \Sexpr{as.character(sdm.modeluse$spdata_absNotes)} \\ \cline{2-4}
+                              & Evaluation Data & \Sexpr{as.character(sdm.modeluse$spdata_eval)} & \Sexpr{as.character(sdm.modeluse$spdata_evalNotes)} \\ \hline
+\multirow{2}{*}{Environmental Predictors} & Ecological and predictive relevance & \Sexpr{as.character(sdm.modeluse$envvar_relevance)} & \Sexpr{as.character(sdm.modeluse$envvar_relevanceNotes)} \\ \cline{2-4}
+                              & Spatial and temporal alignment & \Sexpr{as.character(sdm.modeluse$envvar_align)} & \Sexpr{as.character(sdm.modeluse$envvar_alignNotes)} \\ \hline
+\multirow{5}{*}{Modeling Process} & Algorithm choice & \Sexpr{as.character(sdm.modeluse$process_algo)} & \Sexpr{as.character(sdm.modeluse$process_algoNotes)} \\ \cline{2-4}
+                              & Sensitivity & \Sexpr{as.character(sdm.modeluse$process_sens)} & \Sexpr{as.character(sdm.modeluse$process_sensNotes)} \\ \cline{2-4}
+                              & Statistical rigor & \Sexpr{as.character(sdm.modeluse$process_rigor)} \Sexpr{as.character(sdm.modeluse$process_rigorNotes)} \\ \cline{2-4}
+                              & Performance & \Sexpr{as.character(sdm.modeluse$process_perform)} & \Sexpr{as.character(sdm.modeluse$process_performNotes)} \\ \cline{2-4}
+                              & Model review & \Sexpr{as.character(sdm.modeluse$process_review)} &  \Sexpr{as.character(sdm.modeluse$process_reviewNotes)}\\ \hline
+\multirow{3}{*}{Model Products} & Mapped products & \Sexpr{as.character(sdm.modeluse$products_mapped)} & \\Sexpr{as.character(sdm.modeluse$products_mappedNotes)} \\ \cline{2-4}
+                              & Interpretation support products & \Sexpr{as.character(sdm.modeluse$products_support)} & \Sexpr{as.character(sdm.modeluse$products_supportNotes)} \\ \cline{2-4}
+                              & Reproducibility & \Sexpr{as.character(sdm.modeluse$products_repo)} & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} \\ \hline
+                              & Iterative & \Sexpr{as.character(sdm.modeluse$interative)} & \Sexpr{as.character(sdm.modeluse$interativeNotes)} \\ \hline                      
 \end{tabular}
 \end{table}
-
-
 
 \pagebreak
 \medskip

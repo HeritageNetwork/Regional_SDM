@@ -121,7 +121,7 @@ SQLquery <- paste0("SELECT rank, rankname FROM lkpRankDefinitions where rank = '
 grank_desc <- dbGetQuery(db, SQLquery)
 
 # get Model Evaluation and Use data
-SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, notes_spdata, notes_envvar, notes_process, notes_products, notes_iterative ", 
+SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, notes_spdata, notes_envvar, notes_process, notes_products, notes_iterative, spdata_dataqualNotes, spdata_absNotes, spdata_evalNotes, envvar_relevanceNotes, envvar_alignNotes, process_algoNotes, process_sensNotes, process_rigorNotes, process_performNotes, process_reviewNotes, products_mappedNotes, products_supportNotes, products_repoNotes, interativeNotes ", 
                   "FROM tblRubric ", 
                   "WHERE model_run_name ='", model_run_name, "'; ", sep="")
 sdm.modeluse <- dbGetQuery(db, statement = SQLquery)

@@ -15,11 +15,20 @@ CREATE TABLE `tblRubric` (
 	`products_support`	TEXT,
 	`products_repo`	TEXT,
 	`interative`	TEXT,
-	`notes_spdata`	TEXT,
-	`notes_envvar`	TEXT,
-	`notes_process`	TEXT,
-	`notes_products`	TEXT,
-	`notes_iterative`	TEXT
+	`spdata_dataqualNotes`	TEXT,
+	`spdata_absNotes`	TEXT,
+	`spdata_evalNotes`	TEXT,
+	`envvar_relevanceNotes`	TEXT,
+	`envvar_alignNotes`	TEXT,
+	`process_algoNotes`	TEXT,
+	`process_sensNotes`	TEXT,
+	`process_rigorNotes`	TEXT,
+	`process_performNotes`	TEXT,
+	`process_reviewNotes`	TEXT,
+	`products_mappedNotes`	TEXT,
+	`products_supportNotes`	TEXT,
+	`products_repoNotes`	TEXT,
+	`interativeNotes`	TEXT
 );
 CREATE TABLE IF NOT EXISTS `lkpRankDefinitions` (
 	`rank`	TEXT,
