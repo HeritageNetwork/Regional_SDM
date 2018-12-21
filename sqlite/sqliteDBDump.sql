@@ -1,4 +1,26 @@
 BEGIN TRANSACTION;
+CREATE TABLE `tblRubric` (
+	`model_run_name`	TEXT,
+	`spdata_dataqual`	TEXT,
+	`spdata_abs`	TEXT,
+	`spdata_eval`	TEXT,
+	`envvar_relevance`	TEXT,
+	`envvar_align`	TEXT,
+	`process_algo`	TEXT,
+	`process_sens`	TEXT,
+	`process_rigor`	TEXT,
+	`process_perform`	TEXT,
+	`process_review`	TEXT,
+	`products_mapped`	TEXT,
+	`products_support`	TEXT,
+	`products_repo`	TEXT,
+	`interative`	TEXT,
+	`notes_spdata`	TEXT,
+	`notes_envvar`	TEXT,
+	`notes_process`	TEXT,
+	`notes_products`	TEXT,
+	`notes_iterative`	TEXT
+);
 CREATE TABLE IF NOT EXISTS `lkpRankDefinitions` (
 	`rank`	TEXT,
 	`rankname`	TEXT,
@@ -100,7 +122,7 @@ INSERT INTO `lkpThresholdTypes` (ID,cutCode,cutFullName,cutDescription,cutCitati
 INSERT INTO `lkpThresholdTypes` (ID,cutCode,cutFullName,cutDescription,cutCitationShort,cutCitationFull,sortOrder) VALUES (6,'ROC','ROC plot upper left corner','The point on the ROC curve with the shortest distance to the top-left corner of the ROC plot.','LiuEtAl2005','Liu, C., P. M. Berry, T. P. Dawson, and R. G. Pearson. 2005. Selecting thresholds of occurrence in the prediction of species distributions. Ecography 28:385–393.',8);
 INSERT INTO `lkpThresholdTypes` (ID,cutCode,cutFullName,cutDescription,cutCitationShort,cutCitationFull,sortOrder) VALUES (7,'MTPP','Minimum Training Presence by Polygon','The highest probability value at which 100% of input polygons have at least one presence point classified as suitable habitat.',NULL,'Pearson, R. G., C. J. Raxworthy, M. Nakamura, and A. Townsend Peterson. 2007. Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34:102–117. ',4);
 INSERT INTO `lkpThresholdTypes` (ID,cutCode,cutFullName,cutDescription,cutCitationShort,cutCitationFull,sortOrder) VALUES (8,'MTPEO','Minimum Training Presence by Element Occurrence','The highest probability value at which 100% of input EOs have at least one presence point classified as suitable habitat.',NULL,'Pearson, R. G., C. J. Raxworthy, M. Nakamura, and A. Townsend Peterson. 2007. Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34:102–117. ',5);
-INSERT INTO `lkpThresholdTypes` (ID,cutCode,cutFullName,cutDescription,cutCitationShort,cutCitationFull,sortOrder) VALUES (9,'MTPG','Minimum Training Presence by Reach Group','The highest probability value at which 100% of input reach groups have at least one reach classified as suitable habitat.',NULL,NULL,9);
+INSERT INTO `lkpThresholdTypes` (ID,cutCode,cutFullName,cutDescription,cutCitationShort,cutCitationFull,sortOrder) VALUES (8,'MTPG','Minimum Training Presence by Reach Group','The highest probability value at which 100% of input reach groups have at least one reach classified as suitable habitat.',NULL,NULL,9);
 CREATE TABLE IF NOT EXISTS `lkpSpecies` (
 	`EGT_ID`	INTEGER NOT NULL,
 	`sp_code`	TEXT NOT NULL UNIQUE,
