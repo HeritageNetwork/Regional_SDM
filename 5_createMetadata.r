@@ -11,10 +11,8 @@ library(randomForest)
 library(knitr)
 library(raster)
 library(maptools)
-library(sp)
-library(rgdal)
+library(sf)
 library(RColorBrewer)
-library(rgdal)
 library(rasterVis)
 library(RSQLite)
 library(xtable)
@@ -31,25 +29,17 @@ dir.create(paste0(model_species,"/outputs/metadata"), recursive = T, showWarning
 setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
-# source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
-
-# get background poly data for the map
-layerdir <- dirname(nm_studyAreaExtent)
-layer <- strsplit(basename(nm_studyAreaExtent),"\\.")[[1]][[1]]
-studyAreaExtent <- readOGR(layerdir,  layer = layer) # study area
-
-# get background poly data for the map (study area, reference boundaries, and aquatic areas)
-layerdir <- dirname(nm_refBoundaries)
-layer <- strsplit(basename(nm_refBoundaries),"\\.")[[1]][[1]]
-referenceBoundaries <- readOGR(layerdir,  layer = layer) # name of state boundaries file
+# get background poly data for the map (study area, reference boundaries)
+studyAreaExtent <- st_read(nm_studyAreaExtent, quiet = T) # study area
+referenceBoundaries <- st_read(nm_refBoundaries, quiet = T) # name of state boundaries file
 
 r <- dir(path = "model_predictions", pattern = ".tif$",full.names=FALSE)
 fileName <- r[gsub(".tif", "", r) == model_run_name]
 ras <- raster(paste0("model_predictions/", fileName))
 
 # project to match raster, just in case
-studyAreaExtent <- spTransform(studyAreaExtent, ras@crs)
-referenceBoundaries <- spTransform(referenceBoundaries, ras@crs)
+studyAreaExtent <- st_transform(studyAreaExtent, as.character(ras@crs))
+referenceBoundaries <- st_transform(referenceBoundaries, as.character(ras@crs))
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
@@ -176,7 +166,7 @@ system(call) # 2nd run to apply citation numbers
 
 
 # delete .txt, .log etc if pdf is created successfully.
-fn_ext <- c(".tex",".log",".aux",".out")
+fn_ext <- c(".log",".aux",".out")
 if (file.exists(paste(model_run_name, ".pdf",sep=""))){
   #setInternet2(TRUE)
   #download.file(fileURL ,destfile,method="auto")
