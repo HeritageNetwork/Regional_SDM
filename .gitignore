@@ -7,10 +7,13 @@
 
 # Session Data files
 .RData
+.Rproj.user
+
+
+# user_run_SDM user-files
 
 # RStudio project
 *.Rproj
 .Rproj.user
 *.Rdata
-
 user_run_SDM_*
