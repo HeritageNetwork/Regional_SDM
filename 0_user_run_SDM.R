@@ -18,8 +18,9 @@ nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
 loc_envVars = here("_data","env_vars","raster", "ras")
-# bkg points [Terrestrial-only variable]
-nm_bkgPts = here("_data","env_vars","background","background_pts_RanPts_att.shp")
+# Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
+nm_bkgPts <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_pts")
+
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_sp","HUC10.shp")
 # map reference boundaries
