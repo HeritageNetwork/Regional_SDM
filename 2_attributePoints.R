@@ -23,7 +23,7 @@ raslist.short <- unlist(
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- "select gridName, fileName from lkpEnvVars;"
 evs <- dbGetQuery(db, SQLQuery)
-shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist), evs)
+shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist, stringsAsFactors = FALSE), evs)
 dbDisconnect(db)
 
 gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
