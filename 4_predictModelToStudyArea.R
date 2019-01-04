@@ -94,6 +94,6 @@ if (all(c("snow","parallel") %in% installed.packages())) {
 }
 
 # delete temp rasts folder
-if (dir.exists(paste(loc_model, model_species, "inputs", "temp_rasts", sep = "/"))) {
-  unlink(x = paste(loc_model, model_species, "inputs", "temp_rasts", sep = "/"), recursive = T, force = T)
+if (dir.exists(paste0(options("rasterTmpDir")[1], "/", modelrun_meta_data$model_run_name))) {
+  unlink(x = paste0(options("rasterTmpDir")[1], "/", modelrun_meta_data$model_run_name), recursive = T, force = T)
 }
