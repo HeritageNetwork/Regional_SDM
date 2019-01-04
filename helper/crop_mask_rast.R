@@ -24,7 +24,7 @@ hucRange <- st_zm(st_read(nm_range, query = qry))
 # crop/mask rasters to a temp directory 
 
 # delete temp rasts folder, create new
-temp <- paste0(options("rasterTmpDir")[1], "/", model_species)
+temp <- paste0(options("rasterTmpDir")[1], "/", modelrun_meta_data$model_run_name)
 if (dir.exists(temp)) {
   unlink(x = temp, recursive = T, force = T)
 }
@@ -48,7 +48,7 @@ ext <- st_bbox(rng)
 # cluster process rasters
 cl <- makeCluster(parallel::detectCores() - 1, type = "SOCK") 
 clusterExport(cl, list("temp", "ext", "clipshp"), envir = environment()) 
-clusterExport(cl, list("loc_envVars")) 
+clusterExport(cl, list("loc_envVars"), envir = environment()) 
 
 message("Creating raster subsets for species for ", length(fullL) , " environmental variables...")
 newL <- parLapply(cl, x = fullL, fun = function(x) {
