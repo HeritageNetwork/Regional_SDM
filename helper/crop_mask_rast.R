@@ -24,7 +24,7 @@ hucRange <- st_zm(st_read(nm_range, query = qry))
 # crop/mask rasters to a temp directory 
 
 # delete temp rasts folder, create new
-temp <- paste0(loc_model, "/", model_species, "/inputs/temp_rasts")
+temp <- paste0(options("rasterTmpDir")[1], "/", model_species)
 if (dir.exists(temp)) {
   unlink(x = temp, recursive = T, force = T)
 }
@@ -41,7 +41,7 @@ rng$id <- 1:length(rng$geometry)
 
 # write shapes
 clipshp <- paste0(temp, "/", "clipshp.shp")
-st_write(rng, dsn = temp, layer = "clipshp.shp", driver="ESRI Shapefile", delete_layer = T)
+st_write(rng, dsn = temp, layer = "clipshp.shp", driver="ESRI Shapefile", delete_layer = T, quiet = T)
 
 ext <- st_bbox(rng)
 
