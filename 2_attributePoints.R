@@ -149,4 +149,6 @@ dbName <- paste(baseName, "_att.sqlite", sep="")
 db <- dbConnect(SQLite(), paste0("model_input/",dbName))
 att_dat <- points_attributed@data
 dbWriteTable(db, paste0(baseName, "_att"), att_dat)
+dbDisconnect(db)
+rm(db)
 
