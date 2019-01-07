@@ -16,13 +16,17 @@ setwd(loc_model)
 dir.create(paste0(model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
 setwd(paste0("./",model_species,"/inputs"))
 
-fileName <- paste0("model_input/", baseName, "_att.dbf")
+# read data from the att db
+dbName <- paste(baseName, "_att.sqlite", sep="")
+db <- dbConnect(SQLite(), paste0("model_input/",dbName))
 
-df.in <-read.dbf(fileName)
+tableName <- paste0(baseName, "_att")
+df.in <- dbReadTable(db, tableName)
 
-# absence points
-fileName <- paste0("model_input/", baseName, "_bkg_clean.dbf")
-df.abs <- read.dbf(fileName)
+# get the background data from the DB
+tableName <- paste0(nm_bkgPts[2], "_clean")
+df.abs <- dbReadTable(db, tableName)
+dbDisconnect(db)
 
 # write model input data to database before any other changes made
 db <- dbConnect(SQLite(),dbname=nm_db_file)
