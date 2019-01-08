@@ -340,10 +340,10 @@ if(nrow(sdm.customComments.subset) > 0){
 \medskip
 \noindent
 \textbf{Model Evaluation and Intended Use} \\
-As SDMs are sensitive to data inputs and methological choices, the following table represents the rubric presented in Sofaer et al 2019 that ...  \\
+All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al.  2019 \cite{SofaerEtAl2019}. \Sexpr{as.character(project_blurb)}
 \\
-\noindent
-
+\smallskip
+\noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can range from 'ideal', 'acceptable', and 'problematic'.
 \begin{table}[h]
 \centering
 \begin{tabular}{llcl}
@@ -501,6 +501,7 @@ Please cite this document and its associated SDM as: \\
   \bibitem{LiuEtAl2015} Liu, C., G. Newell, and M. White. 2015. On the selection of 
     thresholds for predicting species occurrence with presence-only data. Ecology and 
     Evolution 6:337–348. 
+  \bibitem{SofaerEtAl2019} Sofaer, H. R., C. S. Jarnevich1, I. S. Pearse, R. Lyons Smyth, S. Auer, G. L. Cook, T. C. Edwards, Jr., G. F. Guala, T. G. Howard, J. T. Morisette, and H. Hamilton. 2019. The development and delivery of species distribution models to inform decision-making. BioScience. In press.
   \bibitem{streamcat} Hill, R. A., M. H. Weber, S. G. Leibowitz, A. R. Olsen, and D. J. Thornbrugh. 
     The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. 
     2016. Journal of the American Water Resources Association (JAWRA) 52:120-128.

@@ -48,6 +48,8 @@ prompt = FALSE
 # order should be "spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqualNotes,spdata_absNotes,spdata_evalNotes,envvar_relevanceNotes,envvar_alignNotes,process_algoNotes,process_sensNotes,process_rigorNotes,process_performNotes,process_reviewNotes,products_mappedNotes,products_supportNotes,products_repoNotes,interativeNotes"
 rubric_default = c("I","A","A","A","A","I","A","A","A","I","A","I","A","A","","","","","","","","","","","","","","")
 
+project_blurb = "Models developed for the MoBI project are intended to inform creation of a national map of biodiversity value, and we recommend additional refinement and review before these data are used for more targeted, species-specific decision making. In particular, many MoBI models would benefit from greater consideration of species data and environmental predictor inputs, a more thorough review by species experts, and iteration to address comments received."
+
 # set wd and load function
 setwd(loc_scripts)
 source(here("helper", "run_SDM.R"))
@@ -79,6 +81,7 @@ run_SDM(
   add_vars = add_vars,
   remove_vars = remove_vars,
   rubric_default = rubric_default,
+  project_blurb = project_blurb,
   prompt = prompt
 )
 #############################################################################
