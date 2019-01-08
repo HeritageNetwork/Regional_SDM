@@ -33,6 +33,7 @@ run_SDM <- function(
   remove_vars = NULL,
   huc_level = NULL,
   rubric_default = NULL,
+  project_blurb = NULL,
   prompt = FALSE
 ) {
   if ((hasArg(add_vars) | hasArg(remove_vars)) & !begin_step %in% c("1","2")) 
@@ -81,7 +82,8 @@ run_SDM <- function(
       baseName = baseName,
       add_vars = add_vars,
       remove_vars = remove_vars,
-      rubric_default = rubric_default)
+      rubric_default = rubric_default,
+      project_blurb = project_blurb)
   }
   
   # add comments for added/excluded vars
