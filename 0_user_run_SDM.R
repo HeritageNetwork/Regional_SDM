@@ -21,9 +21,11 @@ loc_envVars = here("_data","env_vars","raster")
 # bkg points [Terrestrial-only variable]
 nm_bkgPts = here("_data","env_vars","background","va_att.shp")
 # map reference boundaries
-nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey refernce lines in map
+nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  # background grey reference lines in map
+
 # map project boundary
-nm_studyAreaExtent = here("_data","other_spatial","feature","sdmVA_pred_20170131.shp") # outline black boundary line for study area in map
+nm_studyAreaExtent = here("_data","occurrence","anaxexsu_studyArea.shp") # outline black boundary line for study area in map
+
 # model comment in database
 model_comments = "testing master"
 # comment printed in PDF metadata
@@ -41,6 +43,8 @@ prompt = FALSE
 # default values for Model Use rubric
 # order should be "spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqualNotes,spdata_absNotes,spdata_evalNotes,envvar_relevanceNotes,envvar_alignNotes,process_algoNotes,process_sensNotes,process_rigorNotes,process_performNotes,process_reviewNotes,products_mappedNotes,products_supportNotes,products_repoNotes,interativeNotes"
 rubric_default = c("I","A","A","A","A","I","A","A","A","I","A","I","A","A","","","","","","","","","","","","","","")
+
+project_blurb = "Models developed for the MoBI project are intended to inform creation of a national map of biodiversity value, and we recommend additional refinement and review before these data are used for more targeted, species-specific decision making. In particular, many MoBI models would benefit from greater consideration of species data and environmental predictor inputs, a more thorough review by species experts, and iteration to address comments received."
 
 # set wd and load function
 setwd(loc_scripts)
@@ -70,6 +74,7 @@ run_SDM(
   add_vars = add_vars,
   remove_vars = remove_vars,
   rubric_default = rubric_default,
+  project_blurb = project_blurb,
   prompt = prompt
 )
 
@@ -85,7 +90,7 @@ rm(list=ls())
 # so you need to have started a run_SDM() run in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "micrmont"
+model_species <- "anaxexsu"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
