@@ -21,12 +21,8 @@ loc_envVars = here("_data","env_vars","raster")
 # bkg points [Terrestrial-only variable]
 nm_bkgPts = here("_data","env_vars","background","va_att.shp")
 # map reference boundaries
+nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  # background grey reference lines in map
 
-nm_refBoundaries = here("_data","other_spatial","feature","StatesEast.shp") # background grey refernce lines in map
-# map project boundary
-nm_studyAreaExtent = here("_data","other_spatial","feature","sdmVA_pred_20170131.shp") # outline black boundary line for study area in map
-
-nm_refBoundaries = here("_data","occurrence","anaxexsu_studyArea.shp") # background grey refernce lines in map
 # map project boundary
 nm_studyAreaExtent = here("_data","occurrence","anaxexsu_studyArea.shp") # outline black boundary line for study area in map
 
