@@ -9,13 +9,14 @@ library(RSQLite)
 
 # background points shapefile (points are generated within this boundary). 
 # this should be in the project's projection (matching the raster EVs)
-StudyAreaPoly <- "C:/David/scratch/jurisbnd_lam_clipbound.shp"
+StudyAreaPoly <- "E:/mobi_repo_tgh_clean2/Regional_SDM/_data/env_vars/background/anaxexsu_bkg_poly.shp"
+
 # huc12s. These polygons are used to attribute points. Must have "HUC_12" column.
-huc12 <- "C:/David/scratch/huc12s_VA.shp"
+huc12 <- "N:/rangestuff/HUC_ref/huc12_fromChris/huc12.shp"
 # number of points to generate
-numpts <- 10000
+numpts <- 1000
 # new/existing db table name (overwritten)
-table <- "background_pts_VA"
+table <- "background_pts"
 
 # path to background points shapefile
 pathToPts <- here("_data","env_vars","background")

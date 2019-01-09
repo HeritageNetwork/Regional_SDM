@@ -24,9 +24,7 @@ nm_bkgPts <- c(here("_data","env_vars","tabular", "background.sqlite"), "backgro
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_sp","HUC10.shp")
 # map reference boundaries
-nm_refBoundaries = here("_data","occurrence","anaxexsu_studyArea.shp") # background grey refernce lines in map
-# map project boundary
-nm_studyAreaExtent = here("_data","occurrence","anaxexsu_studyArea.shp") # outline black boundary line for study area in map
+nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  # background grey reference lines in map
 
 # model comment in database
 model_comments = "custom model comments"
@@ -70,7 +68,6 @@ run_SDM(
   nm_bkgPts = nm_bkgPts,
   nm_HUC_file = nm_HUC_file,
   nm_refBoundaries = nm_refBoundaries, # background grey refernce lines in map
-  nm_studyAreaExtent = nm_studyAreaExtent, # outline black boundary line for study area in map
   model_comments = model_comments,
   metaData_comments = metaData_comments,
   modeller = modeller,
