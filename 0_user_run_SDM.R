@@ -7,7 +7,7 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "bombferv"
+model_species <- "anaxexsu"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -24,9 +24,10 @@ nm_bkgPts <- c(here("_data","env_vars","tabular", "background.sqlite"), "backgro
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_sp","HUC10.shp")
 # map reference boundaries
-nm_refBoundaries = here("_data","other_sp","feature","ma_test.shp") # background grey refernce lines in map
+nm_refBoundaries = here("_data","occurrence","anaxexsu_studyArea.shp") # background grey refernce lines in map
 # map project boundary
-nm_studyAreaExtent = here("_data","other_sp","feature","ma_test.shp") # outline black boundary line for study area in map
+nm_studyAreaExtent = here("_data","occurrence","anaxexsu_studyArea.shp") # outline black boundary line for study area in map
+
 # model comment in database
 model_comments = "custom model comments"
 # comment printed in PDF metadata
@@ -39,7 +40,13 @@ add_vars = NULL
 # list standard variables to exclude from model run
 remove_vars = NULL
 # do you want to stop execution after each modeling step (script)?
-prompt = TRUE
+prompt = FALSE
+
+# default values for Model Use rubric
+# order should be "spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqualNotes,spdata_absNotes,spdata_evalNotes,envvar_relevanceNotes,envvar_alignNotes,process_algoNotes,process_sensNotes,process_rigorNotes,process_performNotes,process_reviewNotes,products_mappedNotes,products_supportNotes,products_repoNotes,interativeNotes"
+rubric_default = c("I","A","A","A","A","I","A","A","A","I","A","I","A","A","","","","","","","","","","","","","","")
+
+project_blurb = "Models developed for the MoBI project are intended to inform creation of a national map of biodiversity value, and we recommend additional refinement and review before these data are used for more targeted, species-specific decision making. In particular, many MoBI models would benefit from greater consideration of species data and environmental predictor inputs, a more thorough review by species experts, and iteration to address comments received."
 
 # set wd and load function
 setwd(loc_scripts)
@@ -69,6 +76,8 @@ run_SDM(
   modeller = modeller,
   add_vars = add_vars,
   remove_vars = remove_vars,
+  rubric_default = rubric_default,
+  project_blurb = project_blurb,
   prompt = prompt
 )
 
@@ -85,7 +94,7 @@ rm(list=ls())
 # so you need to have started a run_SDM() run in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "bombferv"
+model_species <- "anaxexsu"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
