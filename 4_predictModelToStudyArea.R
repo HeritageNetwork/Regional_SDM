@@ -56,11 +56,12 @@ for (i in 1:length(stackOrder)) {
     rs1 <- do.call(rbind.data.frame, strsplit(rs, "_|/"))
     rs1$nm <- rs
     rs <- rs1$nm[which.max(as.numeric(rs1[,2]))]
+    rm(rs1)
   }
   fullL[[i]] <- rs
 }
 names(fullL) <- stackOrder
-rm(rs,rs1)
+rm(rs)
 
 source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
 envStack <- stack(newL)
