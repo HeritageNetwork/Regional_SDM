@@ -46,7 +46,6 @@ rubric_default = c("I","A","A","A","A","I","A","A","A","I","A","I","A","A","",""
 
 project_blurb = "Models developed for the MoBI project are intended to inform creation of a national map of biodiversity value, and we recommend additional refinement and review before these data are used for more targeted, species-specific decision making. In particular, many MoBI models would benefit from greater consideration of species data and environmental predictor inputs, a more thorough review by species experts, and iteration to address comments received."
 
-
 # set wd and load function
 setwd(loc_scripts)
 source(here("helper", "run_SDM.R"))

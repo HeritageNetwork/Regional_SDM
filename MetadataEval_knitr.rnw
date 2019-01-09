@@ -345,6 +345,7 @@ All SDMs are sensitive to data inputs and methodological choices. Table 4 presen
 \\
 \smallskip
 \noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can range from 'ideal', 'acceptable', and 'problematic'.
+
 \begin{table}[h]
 \centering
 \begin{tabular}{llcl}
@@ -366,6 +367,7 @@ All SDMs are sensitive to data inputs and methodological choices. Table 4 presen
 	                              & Iterative & \Sexpr{as.character(sdm.modeluse$interative)} & \Sexpr{as.character(sdm.modeluse$interativeNotes)} \\ \hline                      
 	\end{tabular}
 	\end{table}
+
 
 \pagebreak
 \medskip
