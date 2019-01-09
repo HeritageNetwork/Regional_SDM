@@ -18,6 +18,10 @@ rm(db)
 nm_range <- nm_HUC_file
 qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
 hucRange <- st_zm(st_read(nm_range, query = qry))
+
+# write out a dissolved version of hucRange for 'study area'
+st_write(st_union(hucRange), here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
+
 ########################################
 # hucRange <- st_zm(st_read(nm_studyAreaExtent,quiet = T)) #DNB TESTING ONLY
 

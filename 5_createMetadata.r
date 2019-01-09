@@ -30,7 +30,7 @@ setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
 # get background poly data for the map (study area, reference boundaries)
-studyAreaExtent <- st_read(nm_studyAreaExtent, quiet = T) # study area
+studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = T) # name of state boundaries file
 
 r <- dir(path = "model_predictions", pattern = ".tif$",full.names=FALSE)
