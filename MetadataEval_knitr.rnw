@@ -86,14 +86,15 @@ The statistics in Table 2 report the mean and variance for these jackknifing run
 
 \smallskip     %dummy first line to align with next minipage
 
-Table 1. Input statistics. Polys = input polygons; EOs = element occurrences (known locations); BG points = background points placed throughout study area excluding known species locations; PR points = presence points placed throughout all polygons.
+Table 1. Input statistics. PR points = presence points. These are points placed in polygon-based location information or point-based observations. Groups = spatial groupings of points based on polygon data or spatial grouping of observations. BG points = background points placed throughout model area excluding known species locations.
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("polys","EOs","BG points","PR points"),
-                         Number=c(numPys,numEOs,
-                         nrow(subset(df.full, pres == 0)),
-                         nrow(subset(df.full, pres == 1))))
+	summ.table <- data.frame(Name=c("PR points","Groups","BG points"),
+                         Number=c(nrow(subset(df.full, pres == 1)),
+                         numEOs,
+                         nrow(subset(df.full, pres == 0))
+                         ))
   print(xtable(summ.table),
              floating = FALSE, include.rownames=FALSE)
 @
@@ -243,7 +244,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
-model using all background and presence points as input. Abbreviations used: calc = calcareous, CP = coastal plain, dist = distance, fresh = freshwater, precip = precipitation, temp = temperature, max = maximum, min = minimum. See Table 4 for variable descriptions.
+model using all background and presence points as input. Importance values (mean decrease in accuracy) are extracted from the randomForest function\cite{liaw2002}. See Table 4 for variable descriptions.
 
 \end{minipage} 
 
@@ -305,7 +306,7 @@ thick blue = PR points) is depicted at the top margin.
 \medskip
 \medskip
 \noindent
-Element distribution models map places of similar environmental
+Distribution models map places of similar environmental
 conditions to the submitted locations (PR points). No model will ever depict sites where
 a targeted element will occur with certainty, it can \textit{only} depict locations it interprets
 as appropriate habitat for the targeted element. SDMs can be used in many ways and the 
@@ -380,7 +381,6 @@ clrs <- brewer.pal('Blues',n=nclr)
 # levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=myTheme, scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.4,col='gray50'), data=list(referenceBoundaries=referenceBoundaries)) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'), data = list(studyAreaExtent=studyAreaExtent))
 
 # set up plot
-# need to union studyAreaExtent...
 plot(st_geometry(studyAreaExtent), axes = F, col = NA, border = NA)
 plot(st_geometry(referenceBoundaries), add = T, border = "grey80")
 legend(par('usr')[2], par('usr')[4], legend = rev(c("Low Habitat Suitability", 
