@@ -33,7 +33,7 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
   Common name: \Sexpr{as.character(ElementNames[[2]])} \\
   Grank: \Sexpr{ paste(as.character(ElementNames[[6]])," - ",as.character(grank_desc[[2]]), sep="")}\\
   Date: \Sexpr{format(Sys.Date(), "%d %b %Y")} \\  
-  Code: \Sexpr{as.character(ElementNames[[3]])} 
+  Code: \Sexpr{as.character(ElementNames$Code)} (EGT_ID: \Sexpr{as.character(ElementNames$EGT_ID)})
 \end{minipage}  \hfill   
 \begin{minipage}[b]{2in}   %minipage for thermometer  
 <<thermometer1, fig.height=1, fig.width=1, include=FALSE, echo=FALSE>>=
@@ -294,25 +294,17 @@ for (plotpi in 1:length(pPlots)){
   mtext("log of fraction of votes", side = 2, line = -1, outer=TRUE, cex = 0.7)
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
-Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the 
-most influence on the model. Each plot shows the effect 
+Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect 
 of the variable on the probability of appropriate habitat with the 
-effects of the other variables removed \cite{liaw2002}. Peaks in the line indicate 
-where this variable had the strongest influence on predicting 
-appropriate habitat. The distribution of each category (thin red = BG points, 
-thick blue = PR points) is depicted at the top margin. 
+effects of the other variables removed \cite{liaw2002}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting 
+appropriate habitat. Decreasing lines from left to right show a negative relationshiop overall; increasing lines, positive. The distribution of each category (thin red = BG points, 
+thick blue = PR points) is depicted at the top margin. See Table 4 for variable descriptions.
 
 \medskip
 \medskip
 \medskip
 \noindent
-Distribution models map places of similar environmental
-conditions to the submitted locations (PR points). No model will ever depict sites where
-a targeted element will occur with certainty, it can \textit{only} depict locations it interprets
-as appropriate habitat for the targeted element. SDMs can be used in many ways and the 
-depiction of appropriate habitat should be varied depending on intended use. For targeting
-field surveys, an SDM may be used to refine the search area; users should always employ
-additional GIS tools to further direct search efforts. A lower threshold depicting more land area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less land area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
+Species distribution model outputs display the probability (0-1) of a location (i.e. stream reach or raster cell) having similar environmental conditions in comparison to known presence locations. No model will ever depict sites where a targeted element will occur with certainty, it can \textit{only} depict locations it interprets as appropriate habitat for the targeted element. The delineation of suitable habitats is made by the selection of a threshold value, where locations with values above the threshold are designated as likely suitable habitat, and those with values below the threshold may be unsuitable. Threshold values are often statistically calculated. SDMs can be used in many ways and the depiction of appropriate habitat should be varied depending on intended use. For targeting field surveys, an SDM may be used to refine the search area; users should always employ additional GIS tools to further direct search efforts. A lower threshold depicting more land area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less land area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
 
 \medskip
 \noindent
@@ -340,31 +332,77 @@ if(nrow(sdm.customComments.subset) > 0){
 \medskip
 \noindent
 \textbf{Model Evaluation and Intended Use} \\
-All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al.  2019 \cite{SofaerEtAl2019}. \Sexpr{as.character(project_blurb)}
+All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 \cite{SofaerEtAl2019}. \Sexpr{as.character(project_blurb)}
 \\
 \\
 \smallskip
-\noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can range from 'ideal', 'acceptable', and 'problematic'.
-
+\noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or problematic.
 \begin{table}[h]
 \centering
 \begin{tabular}{llcl}
 \hline
-	Category & Metric & Score & Notes \\ \hline
-\multirow{3}{*}{Species Data} & Presence data quality & \Sexpr{as.character(sdm.modeluse$spdata_dataqual)} & \Sexpr{as.character(sdm.modeluse$spdata_dataqualNotes)} \\ \cline{2-4}
-	                              & Absence/Background Data & \Sexpr{as.character(sdm.modeluse$spdata_abs)} & \Sexpr{as.character(sdm.modeluse$spdata_absNotes)} \\ \cline{2-4}
-	                              & Evaluation Data & \Sexpr{as.character(sdm.modeluse$spdata_eval)} & \Sexpr{as.character(sdm.modeluse$spdata_evalNotes)} \\ \hline
-	\multirow{2}{*}{Environmental Predictors} & Ecological and predictive relevance & \Sexpr{as.character(sdm.modeluse$envvar_relevance)} & \Sexpr{as.character(sdm.modeluse$envvar_relevanceNotes)} \\ \cline{2-4}
-	                              & Spatial and temporal alignment & \Sexpr{as.character(sdm.modeluse$envvar_align)} & \Sexpr{as.character(sdm.modeluse$envvar_alignNotes)} \\ \hline
-	\multirow{5}{*}{Modeling Process} & Algorithm choice & \Sexpr{as.character(sdm.modeluse$process_algo)} & \Sexpr{as.character(sdm.modeluse$process_algoNotes)} \\ \cline{2-4}
-	                              & Sensitivity & \Sexpr{as.character(sdm.modeluse$process_sens)} & \Sexpr{as.character(sdm.modeluse$process_sensNotes)} \\ \cline{2-4}
-	                              & Statistical rigor & \Sexpr{as.character(sdm.modeluse$process_rigor)} \Sexpr{as.character(sdm.modeluse$process_rigorNotes)} \\ \cline{2-4}
-	                              & Performance & \Sexpr{as.character(sdm.modeluse$process_perform)} & \Sexpr{as.character(sdm.modeluse$process_performNotes)} \\ \cline{2-4}
-	                              & Model review & \Sexpr{as.character(sdm.modeluse$process_review)} &  \Sexpr{as.character(sdm.modeluse$process_reviewNotes)}\\ \hline
-	\multirow{3}{*}{Model Products} & Mapped products & \Sexpr{as.character(sdm.modeluse$products_mapped)} & \\Sexpr{as.character(sdm.modeluse$products_mappedNotes)} \\ \cline{2-4}
-	                              & Interpretation support products & \Sexpr{as.character(sdm.modeluse$products_support)} & \Sexpr{as.character(sdm.modeluse$products_supportNotes)} \\ \cline{2-4}
-	                              & Reproducibility & \Sexpr{as.character(sdm.modeluse$products_repo)} & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} \\ \hline
-	                              & Iterative & \Sexpr{as.character(sdm.modeluse$interative)} & \Sexpr{as.character(sdm.modeluse$interativeNotes)} \\ \hline                      
+Category & Metric & Score & Notes 
+\\ \hline
+\multirow{3}{*}{Species Data} 
+  & Presence data quality 
+  & \Sexpr{as.character(sdm.modeluse$spdata_dataqual)} 
+  & \Sexpr{as.character(sdm.modeluse$spdata_dataqualNotes)} 
+\\ \cline{2-4}
+  & Absence/Background Data 
+  & \Sexpr{as.character(sdm.modeluse$spdata_abs)} 
+  & \Sexpr{as.character(sdm.modeluse$spdata_absNotes)} 
+\\ \cline{2-4}
+  & Evaluation Data 
+  & \Sexpr{as.character(sdm.modeluse$spdata_eval)} 
+  & \Sexpr{as.character(sdm.modeluse$spdata_evalNotes)} 
+\\ \hline
+\multirow{2}{*}{Environmental Predictors} 
+  & Ecological and predictive relevance 
+  & \Sexpr{as.character(sdm.modeluse$envvar_relevance)} 
+  & \Sexpr{as.character(sdm.modeluse$envvar_relevanceNotes)} 
+\\ \cline{2-4}
+  & Spatial and temporal alignment 
+  & \Sexpr{as.character(sdm.modeluse$envvar_align)} 
+  & \Sexpr{as.character(sdm.modeluse$envvar_alignNotes)} 
+\\ \hline
+\multirow{5}{*}{Modeling Process} 
+  & Algorithm choice 
+  & \Sexpr{as.character(sdm.modeluse$process_algo)} 
+  & \Sexpr{as.character(sdm.modeluse$process_algoNotes)} 
+\\ \cline{2-4}
+  & Sensitivity 
+  & \Sexpr{as.character(sdm.modeluse$process_sens)} 
+  & \Sexpr{as.character(sdm.modeluse$process_sensNotes)} 
+\\ \cline{2-4}
+  & Statistical rigor 
+  & \Sexpr{as.character(sdm.modeluse$process_rigor)} 
+  & \Sexpr{as.character(sdm.modeluse$process_rigorNotes)} 
+\\ \cline{2-4}
+  & Performance 
+  & \Sexpr{as.character(sdm.modeluse$process_perform)} 
+  & \Sexpr{as.character(sdm.modeluse$process_performNotes)} 
+\\ \cline{2-4}
+  & Model review 
+  & \Sexpr{as.character(sdm.modeluse$process_review)} 
+  &  \Sexpr{as.character(sdm.modeluse$process_reviewNotes)}
+\\ \hline
+\multirow{3}{*}{Model Products} 
+  & Mapped products 
+  & \Sexpr{as.character(sdm.modeluse$products_mapped)} 
+  & \\Sexpr{as.character(sdm.modeluse$products_mappedNotes)} 
+\\ \cline{2-4}
+  & Interpretation support products 
+  & \Sexpr{as.character(sdm.modeluse$products_support)} 
+  & \Sexpr{as.character(sdm.modeluse$products_supportNotes)} 
+\\ \cline{2-4}
+  & Reproducibility 
+  & \Sexpr{as.character(sdm.modeluse$products_repo)} 
+  & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} 
+\\ \hline
+  & Iterative 
+  & \Sexpr{as.character(sdm.modeluse$interative)} 
+  & \Sexpr{as.character(sdm.modeluse$interativeNotes)} 
+\\ \hline                      
 	\end{tabular}
 	\end{table}
 
@@ -398,7 +436,7 @@ plot(studyAreaExtent$geometry, border = "red", lwd = 2, add = T)
 @
 \includegraphics{figure/mapFig-1.pdf}    
 \end{center}
-Figure 5. A generalized view of the model predictions throughout the study area. State boundaries are shown in gray. The study area is outlined in red. 
+Figure 4. A generalized view of the model predictions throughout the modeled. State boundaries are shown in gray. The modeled area is outlined in red. 
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
