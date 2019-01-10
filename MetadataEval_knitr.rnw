@@ -436,7 +436,7 @@ Please cite this document and its associated SDM as: \\
 \textbf{References}
 \small
 \renewcommand{\refname}{\vskip -40 pt} %kill the header on the bibliography
-\begin{thebibliography}{99}\setlength{\itemsep}{-4pt}
+\begin{thebibliography}{99}\setlength{\itemsep}{-1pt}
   \bibstyle{biblatex}
   \bibitem{breiman2001} Breiman, L. 2001. Random forests. Machine Learning 45:5-32.
   \bibitem{iverson2004} Iverson, L. R., A. M. Prasad, and A. Liaw. 2004. 
