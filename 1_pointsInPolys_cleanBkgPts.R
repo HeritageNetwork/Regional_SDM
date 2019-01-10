@@ -202,9 +202,13 @@ coincidentPts <- unlist(st_contains(polybuff, samps, sparse = TRUE))
 if (length(coincidentPts) > 0) backgSubset <- samps[-coincidentPts,] else backgSubset <- samps
 attDat <- dbReadTable(db, paste0(nm_bkgPts[2], "_att"))
 bgSubsAtt <- merge(backgSubset, attDat)
-
 dbDisconnect(db)
 
-# write background points
-outFileName <- paste0(loc_model,"/",model_species,"/inputs/model_input/", paste0(baseName, "_bkg_clean.shp"))
-st_write(bgSubsAtt, outFileName, driver="ESRI Shapefile", delete_layer = TRUE)
+# write back to the inputs DB as these are species-specific bkg points
+st_geometry(bgSubsAtt) <- NULL
+
+dbName <- paste0(loc_model, "/", model_species, "/inputs/model_input/", baseName, "_att.sqlite")
+db <- dbConnect(SQLite(), dbName)
+dbWriteTable(db, paste0(nm_bkgPts[2], "_clean"), bgSubsAtt, overwrite = TRUE)
+
+dbDisconnect(db)

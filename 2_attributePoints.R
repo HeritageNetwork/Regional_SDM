@@ -136,7 +136,6 @@ if (length(tv) > 0) {
 }
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
 
-# write it out ----
 # re-name table columns from filename to shrtNms$gridName
 shrtNms$fileName <- gsub(".tif$", "", shrtNms$fileName)
 for (n in 1:length(names(points_attributed))) {
@@ -144,6 +143,12 @@ for (n in 1:length(names(points_attributed))) {
     names(points_attributed)[n] <- shrtNms$gridName[shrtNms$fileName == names(points_attributed)[n]][1]
   }
 }
-filename <- paste(baseName, "_att.shp", sep="")
-points_attributed <- st_as_sf(points_attributed)
-st_write(points_attributed, paste0("model_input/", filename), delete_layer = T)
+
+# write it out to the att db
+dbName <- paste(baseName, "_att.sqlite", sep="")
+db <- dbConnect(SQLite(), paste0("model_input/",dbName))
+att_dat <- points_attributed@data
+dbWriteTable(db, paste0(baseName, "_att"), att_dat)
+dbDisconnect(db)
+rm(db)
+
