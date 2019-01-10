@@ -27,6 +27,8 @@ run_SDM <- function(
   model_rdata = NULL,
   add_vars = NULL,
   remove_vars = NULL,
+  rubric_default = NULL,
+  project_blurb = NULL,
   prompt = FALSE
 ) {
   
@@ -71,7 +73,9 @@ run_SDM <- function(
       modeller = modeller,
       add_vars = add_vars,
       remove_vars = remove_vars,
-      baseName = baseName)
+      baseName = baseName,
+      rubric_default = rubric_default,
+      project_blurb = project_blurb)
   }
   
   # add comments for added/excluded vars
