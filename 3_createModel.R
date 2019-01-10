@@ -11,6 +11,8 @@ library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
 library(foreign) #for reading dbf files
 library(randomForest)
+source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = T) # generates modelrun_meta_data
+
 
 setwd(loc_model)
 dir.create(paste0(model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
@@ -583,7 +585,7 @@ tblModelResults <- data.frame(model_run_name = model_run_name, EGT_ID = ElementN
 dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
 
 # tblModelResultsVarsUsed
-varImpDB <- data.frame(model_run_name = model_run_name, gridName = envvar_list, inFinalModel = 0)
+varImpDB <- data.frame(model_run_name = model_run_name, gridName = tolower(envvar_list), inFinalModel = 0)
 varImpDB <- merge(varImpDB, EnvVars[c("gridName","impVal")], by = "gridName", all.x = T)
 varImpDB$inFinalModel[!is.na(varImpDB$impVal)] <- 1
 dbWriteTable(db, "tblModelResultsVarsUsed", varImpDB, append = T)
