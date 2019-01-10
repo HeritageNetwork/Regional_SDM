@@ -11,7 +11,7 @@ library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
 library(foreign) #for reading dbf files
 library(randomForest)
-
+source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = T) # generates modelrun_meta_data
 #####
 ## three lines need your attention. The one directly below (loc_scripts),
 ## about line 29 where you choose which Rdata file to use,
