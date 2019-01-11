@@ -11,11 +11,6 @@ library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
 library(randomForest)
 source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = T) # generates modelrun_meta_data
-#####
-## three lines need your attention. The one directly below (loc_scripts),
-## about line 29 where you choose which Rdata file to use,
-## and about line 40 where you choose which record to use
-#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
 setwd(loc_model)
 dir.create(paste0(model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
