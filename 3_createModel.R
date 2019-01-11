@@ -10,6 +10,12 @@ library(ROCR)    #for ROC plots and stats
 library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
 library(randomForest)
+source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = T) # generates modelrun_meta_data
+#####
+## three lines need your attention. The one directly below (loc_scripts),
+## about line 29 where you choose which Rdata file to use,
+## and about line 40 where you choose which record to use
+#loc_scripts <- "K:/Reg5Modeling_Project/scripts/Regional_SDM"
 
 setwd(loc_model)
 dir.create(paste0(model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
@@ -174,15 +180,12 @@ for(grp in unique(corrdEVs$correlatedVarGroupings)){
 }
 rm(vars, imp.sub, varsToDrop)
 
-# remove variables with negative/0 importance values (replaces percentile variable choosing, commented out below)
-impEnvVars <- impvals[impvals > 0,]
 # set the percentile, here choosing above 25% percentile
-# envarPctile <- 0.5
-# y <- quantile(impvals, probs = envarPctile)
-# impEnvVars <- impvals[impvals > y,]
+envarPctile <- 0.25
+y <- quantile(impvals, probs = envarPctile)
+impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
-# rm(y)
-
+rm(y)
 # which columns are these, then flip the non-envars to TRUE
 impEnvVarCols <- names(df.full) %in% names(impEnvVars)
 impEnvVarCols[1:6] <- TRUE  # first 6 columns are fixed attributes, not env. vars

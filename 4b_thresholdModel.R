@@ -6,7 +6,6 @@ library(sf)
 library(ROCR)
 library(RSQLite)
 library(DBI)
-removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
 ### find and load model data ----
 setwd(loc_model)

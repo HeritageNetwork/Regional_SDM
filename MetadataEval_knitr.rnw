@@ -99,10 +99,9 @@ BG reaches = background reaches; PR reaches = presence reaches
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("Reach groups","BG reaches","PR reaches"), #note how many reach groups (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
-                         Number=c(length(unique(df.in2$stratum)),
-                         nrow(subset(df.full, pres == 0)),
-                         nrow(subset(df.full, pres == 1))))
+	summ.table <- data.frame(Name=c("PR reaches","Reach groups","BG reaches"), #note how many reach groups (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
+                         Number=c(nrow(subset(df.full, pres == 1)),length(unique(df.in2$stratum)),nrow(subset(df.full, pres == 0))
+                         ))
   print(xtable(summ.table),
              floating = FALSE, include.rownames=FALSE)
 @
@@ -421,30 +420,54 @@ Category & Metric & Score & Notes
 \medskip
 \begin{center}
 
-<<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE>>=
+<<mapFig, include = FALSE, echo = FALSE, dev='png',fig.height=8, fig.width=7, dpi = 300>>=
 par(mar=c(0,0,4.5,0), xpd = F, cex=0.9, adj = 0.05)
+#equal-width class intervals
+plotvar <- results_shape$prbblty
 nclr <- 5
 clrs <- brewer.pal('Blues',n=nclr)
-# myTheme=rasterTheme(region=brewer.pal('Blues', n=nclr))
-# levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
+class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2)
+colcode <- findColours(class, clrs)
+results_shape$colcode <- colcode
 
-# levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=myTheme, scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.4,col='gray50'), data=list(referenceBoundaries=referenceBoundaries)) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'), data = list(studyAreaExtent=studyAreaExtent))
+# set up plot based on model results
+plot(results_shape$geometry, col = NA, axes = F) 
+# could use dissolved range here
+# plot(st_transform(studyAreaExtent$geometry, st_crs(results_shape)), col = NA, border = NA, axes = TRUE)
 
-# set up plot
-plot(st_geometry(studyAreaExtent), axes = F, col = NA, border = NA)
-plot(st_geometry(referenceBoundaries), add = T, border = "grey80")
+if (!is.null(nm_aquaArea)) {
+  # plot aqua area polygons by mean value of reaches in area
+  aqua.pred <- do.call(data.frame, aggregate(results_shape$prbblty,
+                                             by = list(results_shape$wacomid),
+                                             FUN = function(x) c(mn = mean(x, na.rm = TRUE), n = length(x))))
+  colnames(aqua.pred) <- c("comid","pred","count")
+  area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
+  area.wb.pred$colcode <- clrs[findInterval(area.wb.pred$pred, class$brks)]
 
+  plot(area.wb.pred$geometry, col = area.wb.pred$colcode, border = NA, add = TRUE)
+}
+
+# orderer plotting (plotting order based on color)
+for (i in 1:nclr) {
+  sub <- results_shape[results_shape$colcode == clrs[i],]
+  plot(sub$geometry, col=sub$colcode, lwd = 0.14*sub$strord, add=T)
+}
+
+plot(st_transform(referenceBoundaries
+                  , st_crs(results_shape))$geometry, add=T, border="gray50", lwd=0.3)
+# could use dissolved range here
+plot(st_transform( studyAreaExtent
+                  ,st_crs(results_shape))$geometry, add=T, border="red", lwd=2)
+#title(main="Creek Heelsplittler" ) # sub=" Equal-Width Class Intervals"
 legend(par('usr')[2], par('usr')[4], legend = rev(c("Low Habitat Suitability", 
                                  rep("               |               ", nclr-2), "High Habitat Suitability")),
-       fill = rev(clrs), border = rev(clrs), cex=0.8, bg = "white", xpd = NA, xjust = 1, yjust = 0)
+       col=rev(clrs), lwd = 4, cex=0.8, bty="o", bg = "white", xpd = NA, xjust = 1, yjust = 0)
 title(main = paste0(as.character(ElementNames[[2]]), " (", as.character(ElementNames[[1]]), "): \n    SDM Habitat Suitability Predictions"), cex.main = 1.1)
+# to use numbers: legend = names(attr(colcode, "table")
 box()
 box(which = "outer")
-# need to plot raster after legend, title, box, otherwise it messes up margins
-plot(ras, maxpixels = 500000, col = clrs, axes = F, add = T, legend = F)
-plot(studyAreaExtent$geometry, border = "red", lwd = 2, add = T)
 @
-\includegraphics{figure/mapFig-1.pdf}    
+\includegraphics{figure/mapFig-1.png}    
 \end{center}
 Figure 4. A generalized view of the model predictions throughout the modeled. State boundaries are shown in gray. The modeled area is outlined in red. 
 
