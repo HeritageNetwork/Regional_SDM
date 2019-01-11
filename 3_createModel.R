@@ -11,7 +11,7 @@ library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
 library(foreign) #for reading dbf files
 library(randomForest)
-
+source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = T) # generates modelrun_meta_data
 #####
 ## three lines need your attention. The one directly below (loc_scripts),
 ## about line 29 where you choose which Rdata file to use,
@@ -587,7 +587,7 @@ tblModelResults <- data.frame(model_run_name = model_run_name, EGT_ID = ElementN
 dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
 
 # tblModelResultsVarsUsed
-varImpDB <- data.frame(model_run_name = model_run_name, gridName = envvar_list, inFinalModel = 0)
+varImpDB <- data.frame(model_run_name = model_run_name, gridName = tolower(envvar_list), inFinalModel = 0)
 varImpDB <- merge(varImpDB, EnvVars[c("gridName","impVal")], by = "gridName", all.x = T)
 varImpDB$inFinalModel[!is.na(varImpDB$impVal)] <- 1
 dbWriteTable(db, "tblModelResultsVarsUsed", varImpDB, append = T)
