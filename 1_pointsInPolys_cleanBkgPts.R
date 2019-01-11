@@ -1,58 +1,70 @@
 # File: 1_pointsInPolys_cleanBkgPts.r
 # Purpose: 
-# 1. Sampling of EDM polygons to create random points within the polygons.
-#  these are the random presence points being created here, from polygon presence data.
-# 2. Removing any points from the background points dataset that overlap or are near
-#  the input presence polygon dataset.
+# 1. Check input presence reach dataset for missing columns or data
+# 2. Removing any reaches from the background dataset that are adjacent to
+#  the input presence reach dataset.
+
 library(RSQLite)
 library(sf)
-library(dplyr)
+library(stringr)
 
 ####
 # Assumptions
-# - the shapefile is named with the species code that is used in the lookup table
-#   e.g. glypmuhl.shp
+# - the csv is named with the species code that is used in the lookup table (e.g. glypmuhl.shp)
 # - There is lookup data in the sqlite database to link to other element information (full name, common name, etc.)
-# - the polygon shapefile has at least these fields EO_ID_ST, SNAME, SCOMNAME, RA
+# - the csv has at least these fields EO_ID_ST, SNAME, SCOMNAME, COMID, OBSDATE, group_id, huc12
 
 ####
-#### load input polys ----
+#### load input reaches ----
+###
+## two lines need your attention. The one directly below (loc_scripts)
+## and about line 38 where you choose which file to use
 
+
+# set the working directory to the location of the csv of species by reaches
 setwd(loc_model)
-
-# set up folder system for inputs
 dir.create(paste0(model_species,"/inputs/presence"), recursive = T, showWarnings = F)
 dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
-
-# setwd(paste0(loc_model,"/",model_species,"/inputs/presence"))
+setwd(paste0(loc_model,"/",model_species,"/inputs"))
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
-presPolys <- st_zm(st_read(nm_presFile, quiet = T))
+presReaches <- read.csv(nm_presFile)
 
-#check for proper column names. If no error from next code block, then good to go
-#presPolys$RA <- presPolys$SFRACalc
-shpColNms <- names(presPolys)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA", "OBSDATE")
+shpColNms <- names(presReaches)
+desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","group_id") # , "SNAME", "SCOMNAME", 
+
+# check if all required names are in file
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
-	  stop(paste0("Column(s) are missing or incorrectly named: ", paste(desiredCols[!desiredCols %in% shpColNms], collapse = ", ")))
-  } else {
-    print("Required columns are present")
-  }
-
-if(any(is.na(presPolys[,c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")]))) {
-  stop("The columns 'EO_ID_ST','SNAME','SCOMNAME', and 'RA' (SFRACalc) cannot have NA values.")
+  stop(paste0("Column(s) are missing or incorrectly named: ", paste(desiredCols[!desiredCols %in% shpColNms], collapse = ", ")))
+} else {
+  print("Required columns are present")
 }
 
-#pare down columns
-presPolys <- presPolys[,desiredCols]
+# check if all columns have complete data
+if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id")]))) {   # "SNAME", "SCOMNAME", 
+  stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID', and 'group_id' cannot have NA values.")
+}
+
+# check if file already exists; if it does, stop and print error
+#if (!file.copy(nm_presFile, paste0(baseName, ".csv"))) {
+#  stop("A file already exists with that name: '", 
+#       paste0(getwd(), "/", baseName, ".csv"), "'. Rename or delete it to continue.")
+#}
+# set wd to inputs again
+# setwd(paste0(loc_model,"/",model_species,"/inputs"))
+# file in place, read it
+#presReaches <- read.csv(paste0("presence/", baseName, ".csv"))
+
+# arrange, pare down columns
+presReaches <- presReaches[,desiredCols]
 
 # set date/year column to [nearest] year, rounding when day is given
-presPolys$OBSDATE <- as.character(presPolys$OBSDATE)
-presPolys$date <- NA
-for (d in 1:length(presPolys$OBSDATE)) {
+presReaches$OBSDATE <- as.character(presReaches$OBSDATE)
+presReaches$date <- NA
+for (d in 1:length(presReaches$OBSDATE)) {
   dt <- NA
-  do <- presPolys$OBSDATE[d]
+  do <- presReaches$OBSDATE[d]
   if (grepl("^[0-9]{4}.{0,3}$", do)) {
     # year only formats
     dt <- as.numeric(substring(do,1,4))
@@ -84,120 +96,80 @@ for (d in 1:length(presPolys$OBSDATE)) {
     }
     dt <- round(as.numeric(format(dt, "%Y")) + (as.numeric(format(dt,"%j"))/365.25))
   }
-  presPolys$date[d] <- dt
+  presReaches$date[d] <- dt
 }
 desiredCols <- c(desiredCols, "date")
 
-# explode multi-part polys ----
-suppressWarnings(shp_expl <- st_cast(presPolys, "POLYGON"))
+# just in case convert column names to lowercase
+names(presReaches) <- tolower(names(presReaches))
 
-#add some columns (explode id and area)
-shp_expl <- cbind(shp_expl, 
-                       EXPL_ID = 1:length(shp_expl$geometry), 
-                       AREAM2 = st_area(shp_expl))
-names(shp_expl$geometry) <- NULL # temp fix until sf patches error
+###
+# remove reaches from background dataset that have presence of the target species in the reach
 
-#write out the exploded polygon set
+# read in the shapefile, get the attribute data
+dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE COMID IN ('", paste(presReaches$comid, collapse = "','"),"')") 
+shapef <- dbGetQuery(dbEV, SQLQuery)
+SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
+proj4 <- dbGetQuery(dbEV, SQLQuery)$p
+# shapef <- st_read(nm_allflowlines)
+names(shapef) <- tolower(names(shapef))
+shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
+# testcatchments <- shapef@data
+shapef$huc12 <- str_pad(shapef$huc12, 12, pad=0)
 
-nm.PyFile <- paste(loc_model, model_species,"inputs/presence",paste0(baseName, "_expl.shp"), sep = "/")
-st_write(shp_expl, nm.PyFile, driver="ESRI Shapefile", delete_layer = TRUE)
+# get huc12s, geom
+pres.geom <- merge(shapef, presReaches, by = "comid")
 
-####
-####  Placing random points within each sample unit (polygon/EO) ----
-####
+# define project background
+# subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
+presHUCs <- pres.geom$huc12
 
-# just in case convert to lower
-names(shp_expl) <- tolower(names(shp_expl))
+# test at what level HUCS are the same, and choose that level to run the predictions at.  
+# For example, if all know occurences are within the same HUC6, then the study area will be clipped to that HUC6. 
+# If they are not same at any level, then the model will be run at the full extant of the predictor layer.  
+# THis is used to define the project background below.
+if (is.null(huc_level)) {
+  if(length(unique(substr(presHUCs,1,8)))==1){
+    huc_level <- 8
+  } else if(length(unique(substr(presHUCs,1,6)))==1){
+    huc_level <- 6  
+  } else if(length(unique(substr(presHUCs,1,4)))==1){
+    huc_level <- 4  
+  } else if(length(unique(substr(presHUCs,1,2)))==1){
+    huc_level <- 2
+  } else {
+    huc_level <- 2
+  }
+  fn_args$huc_level <- huc_level
+  save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
+}
+message("Using huc_level of ", huc_level , "...")
 
-#calculate Number of points for each poly, stick into new field
-shp_expl$PolySampNum <- round(400*((2/(1+exp(-(as.numeric(shp_expl$aream2)/900+1)*0.004)))-1))
-#make a new field for the design, providing a stratum name
-shp_expl <- cbind(shp_expl, "stratum" = paste("poly_",shp_expl$expl_id, sep=""))
-
-# sample must be equal or larger than the RA sample size in the random forest model
-shp_expl$ra <- factor(tolower(as.character(shp_expl$ra)))
-
-# QC step: are any records attributed with values other than these?
-raLevels <- c("very high", "high", "medium", "low", "very low")
-if("FALSE" %in% c(shp_expl$ra %in% raLevels)) {
-  stop("at least one record is not attributed with RA appropriately")
+# create background geom based on HUCsubset
+dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
+if (huc_level != 0) {
+  # subset to huc if requested
+  HUCsubset <- unique(substr(presHUCs, 1, huc_level)) # subset to number of huc digits
+  SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE substr(huc12, 1, ", huc_level, ") IN ('", paste(HUCsubset, collapse = "','"),"');") 
 } else {
-  print("RA levels attributed correctly")
+  # otherwise take all reaches
+  SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2],";") 
+}
+shapef <- dbGetQuery(dbEV, SQLQuery)
+names(shapef) <- tolower(names(shapef))
+SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
+proj4 <- dbGetQuery(dbEV, SQLQuery)$p
+shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
+
+# find presence and presence-adjacent reaches by intersection
+bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = F)
+bkgd.geom <- shapef[!apply(bkgd.int, 1, FUN = any),]
+if (length(bkgd.geom$geometry) > 10000) {
+  bkgd.geom <- bkgd.geom[sort(sample(as.numeric(row.names(bkgd.geom)), size = 10000, replace = F)),]
 }
 
-
-#EObyRA <- unique(shp_expl[,c("expl_id", "eo_id_st","ra")])
-shp_expl$minSamps[shp_expl$ra == "very high"] <- 5
-shp_expl$minSamps[shp_expl$ra == "high"] <- 4
-shp_expl$minSamps[shp_expl$ra == "medium"] <- 3
-shp_expl$minSamps[shp_expl$ra == "low"] <- 2
-shp_expl$minSamps[shp_expl$ra == "very low"] <- 1
-
-shp_expl$finalSampNum <- ifelse(shp_expl$PolySampNum < shp_expl$minSamps, 
-                                shp_expl$minSamps, 
-                                shp_expl$PolySampNum)
-
-ranPts <- st_sample(shp_expl, size = shp_expl$finalSampNum * 2)
-ranPts.sf <- st_sf(ranPts)
-names(ranPts.sf) <- "geometry"
-st_geometry(ranPts.sf) <- "geometry"
-
-ranPts.joined <- st_join(ranPts.sf, shp_expl)
-
-# check for polys that didn't get any points
-polysWithNoPoints <- shp_expl[!shp_expl$expl_id %in% ranPts.joined$expl_id,]
-if(nrow(polysWithNoPoints) > 0){
-  stop("One or more polygons didn't get any points placed in them.")
-}
-
-# get actual finalSampNum
-ranPts.joined2 <- ranPts.joined[0,]
-for (ex in 1:length(shp_expl$geometry)) {
-  s1 <- shp_expl[ex,]
-  samps <- row.names(ranPts.joined[ranPts.joined$expl_id==s1$expl_id,])
-  if (length(samps) > s1$finalSampNum) samps <- sample(samps, size = s1$finalSampNum) # samples to remove
-  ranPts.joined2 <- rbind(ranPts.joined2, ranPts.joined[samps,])
-}
-ranPts.joined <- ranPts.joined2
-rm(ex, s1, samps, ranPts.joined2)
-
-#check for cases where sample smaller than requested
-# how many points actually generated?
-
-ptCount <- table(ranPts.joined$expl_id)
-overUnderSampled <- ptCount - shp_expl$finalSampNum
-
-#positive vals are oversamples, negative vals are undersamples
-print(table(overUnderSampled))
-# If you get large negative values then there are many undersamples and 
-# exploration might be worthwhile
-
-names(ranPts.joined) <- tolower(names(ranPts.joined))
-
-colsToKeep <- c("stratum", tolower(desiredCols))
-ranPts.joined <- ranPts.joined[,colsToKeep]
-
-# name of random points output shapefile
-nm.RanPtFile <- paste(loc_model, model_species,"inputs/presence",paste(baseName, "_RanPts.shp", sep = ""), sep = "/")
-# write it out
-st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TRUE)
-
-###
-### remove Coincident Background points ----
-###
-
-# get the background shapefile
-backgShapef <- st_read(nm_bkgPts, quiet = T)
-
-# find coincident points ----
-polybuff <- st_transform(shp_expl, st_crs(backgShapef))
-polybuff <- st_buffer(polybuff, dist = 30)
-
-coincidentPts <- unlist(st_contains(polybuff, backgShapef, sparse = TRUE))
-
-# remove them (if any)
-if (length(coincidentPts) > 0) backgSubset <- backgShapef[-coincidentPts,] else backgSubset <- backgShapef
-
-# write background points
-outFileName <- paste0(loc_model,"/",model_species,"/inputs/model_input/", paste0(baseName, "_bkg_clean.shp"))
-st_write(backgSubset, outFileName, driver="ESRI Shapefile", delete_layer = TRUE)
+# write species reach data
+st_write(pres.geom,paste("presence/", baseName,"_prepped.shp",sep=""))
+# wtite background reach data
+st_write(bkgd.geom, paste("model_input/", baseName,"_bkgd_clean.shp",sep=""))

@@ -2,38 +2,20 @@
 # Purpose: attribute environmental data to presence points
 
 ## start with a fresh workspace with no objects loaded
-library(raster)
 library(sf)
-# library(rgdal)
 library(RSQLite)
-# library(maptools)
+library(stringr)
 
 # load data, QC ----
-setwd(loc_envVars)
-
-# create a stack
-# if using TIFFs, use this line
-raslist <- list.files(pattern = ".tif$", recursive = TRUE)
-# if using native R rasters, use this line
-#raslist <- list.files(pattern = ".grd$")
-
-# find temporal vars (placed in subfolders)
-raslist.t <- raslist[grep("/",raslist,fixed = TRUE)]
-# exclude temporal vars, for the moment
-# raslist <- raslist[-grep("/",raslist,fixed = TRUE)]
-
-gridlist <- as.list(paste(loc_envVars,raslist,sep = "/"))
-nm <- substr(raslist,1,nchar(raslist) - 4)
-names(gridlist) <- nm
-
-# check to make sure there are no names greater than 10 chars
-nmLen <- unlist(lapply(nm, nchar))
-max(nmLen) # if this result is greater than 10, you've got a renegade
-
-# Set working directory to the random points location
+# Set working directory to the prepped reaches location
 setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
-shpf <- st_read(paste0("presence/", baseName, "_RanPts.shp"),quiet = T)
+# load files
+fileName <- paste0("presence/", baseName, "_prepped.shp")
+reaches <- st_read(fileName, quiet = T)
+
+fileName <- paste0("model_input/", baseName, "_bkgd_clean.shp")
+bkgd.reaches <- st_read(fileName, quiet = T)
 
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -41,24 +23,24 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE sp_code = '", model_species, "';")
 modType <- dbGetQuery(db, SQLQuery)$m
 
-SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;")
-gridlistSub <- dbGetQuery(db, SQLQuery)$g
-
-# get just names of grids (removes folder for temporal vars)
-justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
+SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua WHERE use_",modType," = 1;")
+gridlistSub <- tolower(dbGetQuery(db, SQLQuery)$g)
+gridlistSub <- gridlistSub[-c(1:2)]
+dbDisconnect(db)
 
 ## account for add/remove vars
 if (!is.null(add_vars)) {
   add_vars1 <- add_vars
   add_vars <- tolower(add_vars)
 
+  # get all aquatic vars (including ones marked use_A = 0)
   db <- dbConnect(SQLite(),dbname=nm_db_file)
-  SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars;")
+  SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua;")
   gridlistAll <- tolower(dbGetQuery(db, SQLQuery)$g)
   dbDisconnect(db)
   
   if (!all(add_vars %in% gridlistAll)) {
-    stop("Some environmental variables listed in `add_vars` were not found in `nm_EnvVars` dataset: ",
+    stop("Some environmental variables listed in `add_vars` were not found in `nm_bkg` dataset: ",
          paste(add_vars1[!add_vars %in% gridlistSub], collapse = ", "), ".")
   }
   gridlistSub <- c(gridlistSub, add_vars)
@@ -67,56 +49,39 @@ if (!is.null(remove_vars)) {
   remove_vars1 <- remove_vars
   remove_vars <- tolower(remove_vars)
   if (!all(remove_vars %in% gridlistSub)) {
-    message("Some environmental variables listed in `remove_vars` were not found in the `nm_EnvVars` dataset: ",
+    message("Some environmental variables listed in `remove_vars` were not found in the `nm_bkg` dataset: ",
             paste(remove_vars1[!remove_vars %in% gridlistSub], collapse = ", "), ".")
   } 
-  gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
+  gridlistSub <- gridlistSub[!gridlistSub %in% remove_vars]
 }
 
-# make grid stack with subset
-envStack <- stack(gridlist[tolower(justTheNames) %in% tolower(gridlistSub)]) # points are transformed to raster CRS, if not matching
-rm(justTheNames, gridlistSub, modType)
+# get desired env. var. columns + comid for presence
+# SQLite database integration for Env Vars
+dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2],"_att WHERE COMID IN ('", paste(reaches$comid, collapse = "','"),"')") 
+EnvVars <- dbGetQuery(dbEV, SQLQuery)
+names(EnvVars) <- tolower(names(EnvVars))
+EnvVars <- EnvVars[c("comid",gridlistSub)]
+dbDisconnect(dbEV)
 
-# extract raster data to points ----
-##  Bilinear interpolation is a *huge* memory hog. 
-##  Do it all as 'simple' 
+# merge two data frames by COMID
+reaches_attributed <- merge(reaches,EnvVars,by="comid")
+reaches_attributed$geometry <- NULL
+write.csv(reaches_attributed, paste0("model_input/",baseName,"_att.csv"), row.names = FALSE)
 
-points_attributed <- extract(envStack, shpf, method="simple", sp=TRUE)
+# get desired env. var. columns + comid for bkgd
+# SQLite database integration for Env Vars
+dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
+SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2],"_att WHERE COMID IN ('", paste(bkgd.reaches$comid, collapse = "','"),"')") 
+EnvVars <- dbGetQuery(dbEV, SQLQuery)
+names(EnvVars) <- tolower(names(EnvVars))
+EnvVars <- EnvVars[c("comid",gridlistSub)]
+dbDisconnect(dbEV)
 
-# temporal variables data handling
-pa <- points_attributed
-tv <- names(pa)[grep(".",names(pa), fixed = TRUE)]
-if (length(tv) > 0) {
-  tvDataYear <- do.call(rbind.data.frame, strsplit(tv, "_|\\."))
-  names(tvDataYear) <- c("dataset", "date", "envvar")
-  tvDataYear$date <- as.numeric(as.character(tvDataYear$date))
-  
-  # loop over temporal variables
-  for (i in unique(tvDataYear$envvar)) {
-    tvDataYear.s <- subset(tvDataYear, tvDataYear$envvar == i)
-    yrs <- sort(unique(tvDataYear.s$date))
-    
-    # add 0.1 to occurrence date/year, avoiding cases where date is exactly between two years
-    closestYear <- unlist(lapply(as.numeric(pa$date) + 0.1, FUN = function(x) {
-      y <- abs(x - yrs)
-      yrs[which.min(y)]}))
-    
-    # DECIDE IF THERE SHOULD BE A CUTOFF FOR WHEN OBSERVATION YEAR IS NOT CLOSE TO ANY OF THE DATES #
-    
-    vals <- unlist(lapply(1:length(pa), FUN = function(x) {
-      eval(parse(text = paste0("pa$", tvDataYear.s$dataset[1],"_",closestYear[x],".",i, "[", x , "]")
-                 ))
-    }))
-    
-    # add to pa
-    eval(parse(text = paste0("pa$", i, " <- vals")))
-  }
-  
-  points_attributed <- pa[-grep(".", names(pa), fixed = TRUE)]
-}
-suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
+bkgd.reaches_attributed <- merge(bkgd.reaches,EnvVars,by="comid")
+bkgd.reaches_attributed$geometry <- NULL
+write.csv(bkgd.reaches_attributed, paste0("model_input/",baseName,"_bkgd_att.csv"), row.names = FALSE)
 
-# write it out ----
-filename <- paste(baseName, "_att.shp", sep="")
-points_attributed <- st_as_sf(points_attributed)
-st_write(points_attributed, paste0("model_input/", filename), delete_layer = T)
+# clean up
+rm(gridlistSub, modType)
+

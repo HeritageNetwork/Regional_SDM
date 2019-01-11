@@ -1,9 +1,10 @@
 %This knitr document is called by the knit2pdf call in 5_createMetadata.r
 \documentclass{article}
-\usepackage[utf8]{inputenc} 
+\usepackage[utf8]{inputenc}
+\DeclareUnicodeCharacter{B0}{$^{\circ}$}
 \usepackage{geometry}
-\usepackage{fancyhdr}     %for headers,footers
-\usepackage{underscore}  %needed if any text has underscores
+\usepackage{fancyhdr} %for headers,footers
+\usepackage{underscore} %needed if any text has underscores
 \usepackage{rotating}
 \usepackage{caption} %for managing table captions
 \usepackage[super,comma]{natbib}
@@ -14,6 +15,8 @@
 
 \geometry{letterpaper, top=0.45in, bottom=0.75in, left=0.75in, right=0.75in}
 \pagestyle{fancy} \fancyhf{} \renewcommand\headrulewidth{0pt} %strip default header/footer stuff
+\captionsetup[table]{labelformat=empty} % stops auto-captioning (numbering)
+
 %add footers
 \cfoot{
 \small   %small font. The double slashes is newline in fancyhdr
@@ -73,11 +76,13 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 This SDM incorporates the number of known and background locations
 indicated in Table 1, modeled with the random forests 
 routine \cite{breiman2001, iverson2004} in the R statistical environment 
-\cite{liaw2002, r}. We validated the model by jackknifing 
-(also called leave-one-out, see
-\cite{fielding1997, fielding2002, pearson2007})
-by \Sexpr{as.character(group$JackknType)} for a total of \Sexpr{length(group$vals)} groups.
-The statistics in Table 2 report the mean and variance for these jackknifing runs.
+\cite{liaw2002, r}. The modeling unit was a stream reach, as defined in 
+the Medium Resolution National Hydrography Dataset \cite{nhd}. Adjacent presence reaches 
+were combined into "reach groups". We validated the model by jackknifing 
+(also called leave-one-out \cite{fielding1997, fielding2002, pearson2007})
+by \Sexpr{tolower(as.character(group$JackknType))} for a total of \Sexpr{length(group$vals)} groups.
+The statistics in Table 2 report the mean and variance of 
+validation statistics for these jackknifing runs.
 
 \smallskip
 
@@ -86,15 +91,18 @@ The statistics in Table 2 report the mean and variance for these jackknifing run
 
 \smallskip     %dummy first line to align with next minipage
 
-Table 1. Input statistics. PR points = presence points. These are points placed in polygon-based location information or point-based observations. Groups = spatial groupings of points based on polygon data or spatial grouping of observations. BG points = background points placed throughout model area excluding known species locations.
+Table 1. Input statistics. 
+<<tableOneLegend, results = "asis", echo=FALSE>>=
+cat("Groups = ", group$JackknType,";", sep = "")
+@
+BG reaches = background reaches; PR reaches = presence reaches 
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("PR points","Groups","BG points"),
-                         Number=c(nrow(subset(df.full, pres == 1)),
-                         numEOs,
-                         nrow(subset(df.full, pres == 0))
-                         ))
+	summ.table <- data.frame(Name=c("Reach groups","BG reaches","PR reaches"), #note how many reach groups (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
+                         Number=c(length(unique(df.in2$stratum)),
+                         nrow(subset(df.full, pres == 0)),
+                         nrow(subset(df.full, pres == 1))))
   print(xtable(summ.table),
              floating = FALSE, include.rownames=FALSE)
 @
@@ -129,6 +137,7 @@ fielding2002}.
   }
     print(xtable(summ.table), 
                 floating=FALSE, include.rownames=FALSE)
+
 @
 \end{center}
 
@@ -149,8 +158,7 @@ if (exists("n.var")) {
 cat(txt)
 @
 The final model was built using \Sexpr{rf.full$ntree} trees, all presence 
-and background points, with an mtry of \Sexpr{rf.full$mtry}, and \Sexpr{length(EnvVars$impVal)} environmental variables.
-
+and background reaches, with an mtry of \Sexpr{rf.full$mtry}, and \Sexpr{length(EnvVars$impVal)} environmental variables.
 
 \begin{center}
 <<ROCplot, fig.width=2.9, fig.height=1.6, include=FALSE, echo=FALSE>>=
@@ -244,8 +252,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
-model using all background and presence points as input. Importance values (mean decrease in accuracy) are extracted from the randomForest function\cite{liaw2002}. See Table 4 for variable descriptions.
-
+model using all sites as input. Importance values (mean decrease in accuracy) are extracted from the randomForest function\cite{liaw2002}. See Table 4 for variable descriptions.
 \end{minipage} 
 
 \normalsize
@@ -306,28 +313,31 @@ thick blue = PR points) is depicted at the top margin. See Table 4 for variable 
 \noindent
 Species distribution model outputs display the probability (0-1) of a location (i.e. stream reach or raster cell) having similar environmental conditions in comparison to known presence locations. No model will ever depict sites where a targeted element will occur with certainty, it can \textit{only} depict locations it interprets as appropriate habitat for the targeted element. The delineation of suitable habitats is made by the selection of a threshold value, where locations with values above the threshold are designated as likely suitable habitat, and those with values below the threshold may be unsuitable. Threshold values are often statistically calculated. SDMs can be used in many ways and the depiction of appropriate habitat should be varied depending on intended use. For targeting field surveys, an SDM may be used to refine the search area; users should always employ additional GIS tools to further direct search efforts. A lower threshold depicting more land area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less land area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
 
-\medskip
+\pagebreak
 \noindent
-\begin{minipage}{\linewidth} %keep table header with table
-Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final model. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of EOs, polygons, and PR points used in the final model are reported in Table 1.
 
-\medskip
-\noindent
+Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final model. The Value column reports the threshold; Pct indicates the percentage of PR reaches predicted having suitable habitat. Total numbers of PR reaches and contiguous PR reach groups used in the final model are reported in Table 1.
+
+\smallskip
+\begin{center}
 <<tableThree, results="asis", echo = FALSE>>=
   tbl <- sdm.thresh.table
   #tbl$Citation <- gsub("(^.*)","\\\\cite{\\1}",sdm.thresh.table$Citation)
-  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","r","p{2.3in}")), 
+  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","p{3.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
+
 \end{minipage}
 
 \medskip
 \noindent
 <<customComments, results="asis", echo = FALSE>>=
 if(nrow(sdm.customComments.subset) > 0){
-  {cat(sdm.customComments.subset$comments)}
+  cat("Model Comments\n")
+  cat(sdm.customComments.subset$comments)
 }
 @
+
 
 \medskip
 \noindent
@@ -468,7 +478,6 @@ Please cite this document and its associated SDM as: \\
 \end{minipage}
 }
 
-
 \medskip
 \noindent
 \textbf{References}
@@ -486,6 +495,8 @@ Please cite this document and its associated SDM as: \\
     regression by randomForest. R News 2:18-22. Version \Sexpr{packageDescription("randomForest")$Version}.
   \bibitem{r} R Core Team. 2016. R: A language and environment for statistical computing. 
     R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/. \Sexpr{R.version.string}.
+  \bibitem{nhd} U.S. Environmental Protection Agency (USEPA) and the U.S. Geological Survey (USGS). 2012. 
+    National Hydrography Dataset Plus - NHDPlus. Version 2. http://www.epa.gov/waters.
   \bibitem{fielding1997} Fielding, A. H. and J. F. Bell. 1997. 
     A review of methods for the assessment of prediction errors in 
     conservation presence/absence models. Environmental Conservation 24:38-49.
@@ -502,22 +513,22 @@ Please cite this document and its associated SDM as: \\
   \bibitem{vaughan2005} Vaughan, I. P. and S. J. Ormerod. 2005. The continuing 
     challenges of testing species distribution models. 
     Journal of Applied Ecology 42:720-730.
-  \bibitem{sing2005} Sing, T., O. Sander, N. Beerenwinkel, T. Lengauer. 2005. 
-    ROCR: visualizing classifier performance in R. Bioinformatics 
-    21(20):3940-3941.
   \bibitem{LiuEtAl2005} Liu, C., P. M. Berry, T. P. Dawson, and R. G. Pearson. 2005. 
     Selecting thresholds of occurrence in the prediction of species distributions. 
     Ecography 28:385–393.
   \bibitem{LiuEtAl2015} Liu, C., G. Newell, and M. White. 2015. On the selection of 
     thresholds for predicting species occurrence with presence-only data. Ecology and 
     Evolution 6:337–348. 
-  \bibitem{SofaerEtAl2019} Sofaer, H. R., C. S. Jarnevich1, I. S. Pearse, R. Lyons Smyth, S. Auer, G. L. Cook, T. C. Edwards, Jr., G. F. Guala, T. G. Howard, J. T. Morisette, and H. Hamilton. 2019. The development and delivery of species distribution models to inform decision-making. BioScience. In press.
-
+  \bibitem{SofaerEtAl2019} Sofaer, H. R., C. S. Jarnevich1, I. S. Pearse, R. L. Smyth, S. Auer, G. L. Cook, T. C. Edwards, Jr., G. F. Guala, T. G. Howard, J. T. Morisette, and H. Hamilton. (In press). The development and delivery of species distribution models to inform decision-making. BioScience. 
+  \bibitem{streamcat} Hill, R. A., M. H. Weber, S. G. Leibowitz, A. R. Olsen, and D. J. Thornbrugh. 
+    The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. 
+    2016. Journal of the American Water Resources Association (JAWRA) 52:120-128.
 \end{thebibliography}
 
 \pagebreak
 \noindent
-Table 4. Descriptions for environmental variables included in the model.
+
+Table 4. Descriptions for environmental variables included in model. Variables were derived from the StreamCat \cite{streamcat} and National Hydrography Dataset, Plus \cite{nhd} datasets.
 \begin{center}
 <<tableFour, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
@@ -533,5 +544,3 @@ print(xtable(sdm.var.info, label = NULL), # caption = "Table 4. Descriptions for
 \end{center}
 
 \end{document}
-
-

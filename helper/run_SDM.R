@@ -7,19 +7,23 @@
 # If picking up from a previous run, provide the full file location to the saved rdata file (no file extension)
 # holding these paths. For new runs, this file is automatically saved as "runSDM_paths" in the 
 # 'loc_model' folder of the original run.
+
 # Optional arguments for all runs include:
 # 1. begin_step: specify as the prefix of the step to begin with: one of ("1","2","3","4","4b","4c","5"). Defaults to "1".
 # 2. model_rdata: when beginning after step 3, you need to specify the Rdata file name (no file extension) for the model previously created. 
+# Will be looked for in the 'loc_model' folder
+# 3. prompt: if TRUE, the function will stop after each script, and ask if you want to continue. Defaults to FALSE.
+
 run_SDM <- function(
   loc_scripts,
   model_species,
   nm_presFile,
   nm_db_file,
   loc_model,
-  loc_envVars,
-  nm_bkgPts,
+  nm_bkg,
+  nm_huc12 = nm_huc12,
   nm_refBoundaries,
-  nm_studyAreaExtent,
+  nm_aquaArea = NULL,
   model_comments = "",
   metaData_comments = "",
   modeller = NULL,
@@ -27,15 +31,19 @@ run_SDM <- function(
   model_rdata = NULL,
   add_vars = NULL,
   remove_vars = NULL,
+  huc_level = NULL,
   rubric_default = NULL,
   project_blurb = NULL,
   prompt = FALSE
 ) {
-  
+
   if ((hasArg(add_vars) | hasArg(remove_vars)) & !begin_step %in% c("1","2")) 
     stop("Need to begin on step 1 or 2 if adding or removing variables.")
-  
-  # check if new or picked-up run
+  if (hasArg(huc_level) & begin_step != "1") 
+    stop("Need to begin on step 1 if using HUC subset.")
+  if ((hasArg(huc_level) & !is.null(huc_level)) && !huc_level %in% c(0,2,4,6,8,10,12))
+    stop("Valid 'huc_level' values are 0, 2, 4, 6, 8, 10, or 12.")
+
   if (begin_step != "1") {
     if (begin_step %in% c("2","3")) {
       message("Loading most recent saved runSDM settings...")
@@ -64,16 +72,17 @@ run_SDM <- function(
       nm_presFile = nm_presFile,
       nm_db_file = nm_db_file,
       loc_model = loc_model,
-      loc_envVars = loc_envVars,
-      nm_bkgPts = nm_bkgPts,
+      nm_bkg = nm_bkg,
+      nm_huc12 = nm_huc12,
       nm_refBoundaries = nm_refBoundaries,
-      nm_studyAreaExtent = nm_studyAreaExtent,
+      nm_aquaArea = nm_aquaArea,
       model_comments = model_comments,
       metaData_comments = metaData_comments,
       modeller = modeller,
+      huc_level = huc_level,
+      baseName = baseName,
       add_vars = add_vars,
       remove_vars = remove_vars,
-      baseName = baseName,
       rubric_default = rubric_default,
       project_blurb = project_blurb)
   }

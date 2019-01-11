@@ -9,13 +9,12 @@
 library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp10/2009-February/189936.html
 library(randomForest)
 library(knitr)
-library(raster)
-library(maptools)
 library(sf)
 library(RColorBrewer)
-library(rasterVis)
+library(classInt)
 library(RSQLite)
 library(xtable)
+library(tinytex)
 library(stringi)
 library(tables)
 
@@ -29,17 +28,25 @@ dir.create(paste0(model_species,"/outputs/metadata"), recursive = T, showWarning
 setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
-# get background poly data for the map (study area, reference boundaries)
-studyAreaExtent <- st_read(nm_studyAreaExtent, quiet = T) # study area
-referenceBoundaries <- st_read(nm_refBoundaries, quiet = T) # name of state boundaries file
+# get reach data for the map
+results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T) # shapefile results for mapping
 
-r <- dir(path = "model_predictions", pattern = ".tif$",full.names=FALSE)
-fileName <- r[gsub(".tif", "", r) == model_run_name]
-ras <- raster(paste0("model_predictions/", fileName))
+# get background poly data for the map (study area, reference boundaries, and aquatic areas)
+studyAreaExtent <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_huc12.shp")), quiet = T)
+referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
 
-# project to match raster, just in case
-studyAreaExtent <- st_transform(studyAreaExtent, as.character(ras@crs))
-referenceBoundaries <- st_transform(referenceBoundaries, as.character(ras@crs))
+if (!is.null(nm_aquaArea)) {
+  wacomid <- unique(results_shape$wacomid)
+  wacomid <- wacomid[!is.na(wacomid)]
+  if (length(wacomid) > 0) {
+    # pull a subset of wa comids
+    wacomid <- paste(wacomid, collapse = "','")
+    tabaa <- gsub(".shp","",basename(nm_aquaArea))
+    aquaPolys <- st_read(nm_aquaArea, quiet = T, query = paste0("SELECT * FROM \"", tabaa, "\" WHERE comid IN ('",wacomid,"')"))
+  } else {
+    nm_aquaArea <- NULL
+  }
+}
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
@@ -79,10 +86,6 @@ SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, ca
                   "FROM tblModelResultsCutoffs ", 
                   "WHERE model_run_name ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
-# filter to only most recent
-#uniqueTimes <- unique(sdm.thresholds$dateTime)
-#mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
-#sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
 
 # get info about thresholds
 SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull, sortOrder ", 
@@ -96,14 +99,15 @@ sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 #sort it
 sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
-  "capturedEOs", "capturedPolys", "capturedPts", "cutDescription")]
-names(sdm.thresh.table) <- c("Threshold", "Value", "EOs","Polys","Pts","Description")
-sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
-                                     "(",sdm.thresh.table$EOs, ")", sep="")
-sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
-                              "(",sdm.thresh.table$Polys, ")", sep="")
+                                        "capturedPts", "cutDescription")]
+names(sdm.thresh.table) <- c("Threshold", "Value", "Pct","Description")
+sdm.thresh.table$Description <- gsub("points", "reaches", sdm.thresh.table$Description, fixed = T) # hack to change points -> reaches
+#sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
+#                                    "(",sdm.thresh.table$EOs, ")", sep="")
+#sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
+#                         "(",sdm.thresh.table$Polys, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
-sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
+sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),
                               sep="")
 
 # get grank definition
@@ -124,21 +128,12 @@ SQLquery <- paste0("SELECT gridName g from tblModelResultsVarsUsed where model_r
                    model_run_name, "' and inFinalModel = 1;")
 var_names <- dbGetQuery(db, SQLquery)$g
 SQLquery <- paste("SELECT fullName, description ",
-                  "FROM lkpEnvVars ",
+                  "FROM lkpEnvVarsAqua ",
                   "WHERE gridName COLLATE NOCASE IN (",
                   toString(sQuote(var_names)),
                   ") ORDER BY fullName;", sep = "")
 sdm.var.info <- dbGetQuery(db, statement = SQLquery)
 names(sdm.var.info) <- c("Variable Name","Variable Description")
-
-# get Model Evaluation and Use data
-SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, spdata_dataqualNotes, spdata_absNotes, spdata_evalNotes, envvar_relevanceNotes, envvar_alignNotes, process_algoNotes, process_sensNotes, process_rigorNotes, process_performNotes, process_reviewNotes, products_mappedNotes, products_supportNotes, products_repoNotes, interativeNotes ", 
-                  "FROM tblRubric ", 
-                  "WHERE model_run_name ='", model_run_name, "'; ", sep="")
-sdm.modeluse <- dbGetQuery(db, statement = SQLquery)
-sdm.modeluse[sdm.modeluse=="I"] <- "\\cellcolor[HTML]{9AFF99} Ideal"
-sdm.modeluse[sdm.modeluse=="A"] <- "\\cellcolor[HTML]{FFFFC7} Acceptable"
-sdm.modeluse[sdm.modeluse=="P"] <- "\\cellcolor[HTML]{FD6864} Problematic"
 
 # escape symbols for latex
 ls <- c("&","%","$","#","_","{","}")
@@ -159,13 +154,14 @@ sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Va
 
 # writing to the same folder as a grid might cause problems.
 # if errors check that first
-#   more explanation: tex looks for and uses aux files, which are also used
-#   by esri. If there's a non-tex aux file, knitr bails. 
+# more explanation: tex looks for and uses aux files, which are also used
+# by esri. If there's a non-tex aux file, knitr bails. 
 
 # Also, might need to run this twice. First time through tex builds the reference
 # list, second time through it can then number the refs in the doc.
 
 setwd("metadata")
+
 # knit2pdf errors for some reason...just knit then call directly
 knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
 call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
@@ -173,8 +169,7 @@ call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
 system(call)
 system(call) # 2nd run to apply citation numbers
 
-
-# delete .txt, .log etc if pdf is created successfully.
+ delete .txt, .log etc if pdf is created successfully.
 fn_ext <- c(".log",".aux",".out")
 if (file.exists(paste(model_run_name, ".pdf",sep=""))){
   #setInternet2(TRUE)

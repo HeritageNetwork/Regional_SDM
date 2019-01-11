@@ -1,8 +1,7 @@
 # File: 4b_thresholdModel.r
-# Purpose: threshold the distribution model prediction raster
+# Purpose: threshold the probabilities in the results shapefile
 
 ## start with a fresh workspace with no objects loaded
-library(raster)
 library(sf)
 library(ROCR)
 library(RSQLite)
@@ -18,61 +17,37 @@ load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 #set an empty list
 cutList <- list()
 
-# total number of EOs (subtract absence class)
-totEOs <- length(unique(df.full$eo_id_st)) - 1
-# total number of polys
-totPolys <- length(unique(df.full$stratum)) - 1
-
 #get minimum training presence
 allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("eo_id_st", "stratum")])
 allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
 
-MTP <- min(allVotesPresPts$X1)
-capturedEOs <- length(unique(allVotesPresPts$eo_id_st))
-capturedPolys <- length(unique(allVotesPresPts$stratum))
+# na.rm = TRUE for testing
+MTP <- min(allVotesPresPts$X1, na.rm = FALSE)
+###capturedEOs <- length(unique(allVotesPresPts$eo_id_st))  # only captured points, not EO and poly
+###capturedPolys <- length(unique(allVotesPresPts$stratum))
 capturedPts <- nrow(allVotesPresPts)
 cutList$MTP <- list("value" = MTP, "code" = "MTP", 
-                    "capturedEOs" = capturedEOs,
-                    "capturedPolys" = capturedPolys,
+                    #"capturedEOs" = capturedEOs,
+                    #"capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
 
 #get 10 percentile training presence
-TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1))
+TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1), na.rm = FALSE)
 TenPctilePts <- allVotesPresPts[allVotesPresPts$X1 >= TenPctile,]
-capturedEOs <- length(unique(TenPctilePts$eo_id_st))
-capturedPolys <- length(unique(TenPctilePts$stratum))
+#capturedEOs <- length(unique(TenPctilePts$eo_id_st))
+#capturedPolys <- length(unique(TenPctilePts$stratum))
 capturedPts <- nrow(TenPctilePts)
 cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
-                    "capturedEOs" = capturedEOs,
-                    "capturedPolys" = capturedPolys,
+#                    "capturedEOs" = capturedEOs,
+#                    "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
 
-# get min of max values by polygon (MTPP; minimum training polygon presence)
-maxInEachPoly <- aggregate(allVotesPresPts$X1, 
-                           by=list(allVotesPresPts$stratum, allVotesPresPts$eo_id_st), max)
-names(maxInEachPoly) <- c("stratum","eo_id_st","X1")
-MTPP <- min(maxInEachPoly$X1)
-capturedEOs <- length(unique(maxInEachPoly$eo_id_st))
-capturedPolys <- length(unique(maxInEachPoly$stratum))
-capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPP,])
-cutList$MTPP <- list("value" = MTPP, "code" = "MTPP", 
-                    "capturedEOs" = capturedEOs,
-                    "capturedPolys" = capturedPolys,
-                    "capturedPts" = capturedPts)
-
-# get min of max values by EO (MTPEO; minimum training EO presence)
-maxInEachEO <- aggregate(allVotesPresPts$X1, 
-                           by=list(allVotesPresPts$eo_id_st), max)
-names(maxInEachEO) <- c("eo_id_st","X1")
-MTPEO <- min(maxInEachEO$X1)
-capturedEOs <- length(unique(maxInEachEO$eo_id_st))
-capturedPolys <- length(unique(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,"stratum"]))
-capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,])
-cutList$MTPEO <- list("value" = MTPEO, "code" = "MTPEO", 
-                     "capturedEOs" = capturedEOs,
-                     "capturedPolys" = capturedPolys,
+# get MTPG (by group)
+MTPG <- min(aggregate(allVotesPresPts$X1, by = list(allVotesPresPts$stratum), FUN = max)$x)
+MTPGPts <- allVotesPresPts[allVotesPresPts$X1 >= MTPG,]
+capturedPts <- nrow(MTPGPts)
+cutList$MTPG <- list("value" = MTPG, "code" = "MTPG", 
                      "capturedPts" = capturedPts)
-
 
 # F-measure cutoff skewed towards capturing more presence points.
 # extract the precision-recall F-measure from training data
@@ -90,12 +65,12 @@ rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]]
 names(rf.full.ctoff) <- c("0","1")
 FMeasPt01 <- rf.full.ctoff[2]
 z <- allVotesPresPts[allVotesPresPts$X1 >= FMeasPt01,]
-capturedEOs <- length(unique(z$eo_id_st))
-capturedPolys <- length(unique(z$stratum))
+#capturedEOs <- length(unique(z$eo_id_st))
+#capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
 cutList$FMeasPt01 <- list("value" = FMeasPt01, "code" = "FMeasPt01",
-                          "capturedEOs" = capturedEOs,
-                          "capturedPolys" = capturedPolys,
+#                          "capturedEOs" = capturedEOs,
+#                          "capturedPolys" = capturedPolys,
                           "capturedPts" = capturedPts)
 
 #max sensitivity plus specificity (maxSSS per Liu et al 2016)
@@ -106,24 +81,24 @@ rf.full.sss <- data.frame(cutSens = unlist(rf.full.sens@x.values),sens = unlist(
 rf.full.sss$sss <- with(rf.full.sss, sens + spec)
 maxSSS <- rf.full.sss[which.max(rf.full.sss$sss),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$X1 >= maxSSS,]
-capturedEOs <- length(unique(z$eo_id_st))
-capturedPolys <- length(unique(z$stratum))
+#capturedEOs <- length(unique(z$eo_id_st))
+#capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
 cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
-  "capturedEOs" = capturedEOs,
-  "capturedPolys" = capturedPolys,
+#  "capturedEOs" = capturedEOs,
+#  "capturedPolys" = capturedPolys,
   "capturedPts" = capturedPts)
 
 #equal sensitivity and specificity
 rf.full.sss$diff <- abs(rf.full.sss$sens - rf.full.sss$spec)
 eqss <- rf.full.sss[which.min(rf.full.sss$diff),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$X1 >= eqss,]
-capturedEOs <- length(unique(z$eo_id_st))
-capturedPolys <- length(unique(z$stratum))
+#capturedEOs <- length(unique(z$eo_id_st))
+#capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
 cutList$eqss <- list("value" = eqss, "code" = "eqSS",
-                       "capturedEOs" = capturedEOs,
-                       "capturedPolys" = capturedPolys,
+#                       "capturedEOs" = capturedEOs,
+#                       "capturedPolys" = capturedPolys,
                        "capturedPts" = capturedPts)
 
 # upper left corner of ROC plot
@@ -146,6 +121,17 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 
 # collate and write to DB ----
 
+# load the prediction vector, for calculating MRV
+results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T)
+
+# MRV (on full model predictions)
+pres.comid <- df.full$comid[df.full$pres==1]
+mrv <- min(results_shape$prbblty[results_shape$comid %in% pres.comid], na.rm = T)
+cutList$MRV <- list("value" = mrv, "code" = "MRV",
+                    "capturedPts" = length(pres.comid))
+
+
+
 # number of thresholds to write to the db
 numThresh <- length(cutList)
 
@@ -154,96 +140,35 @@ allThresh <- data.frame("model_run_name" = rep(modelrun_meta_data$model_run_name
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
                 "cutCode" = unlist(lapply(cutList, function(x) x[2])),
                 "cutValue" = unlist(lapply(cutList, function(x) x[1])),
-                "capturedEOs" = unlist(lapply(cutList, function(x) x[3])),
-                "capturedPolys" = unlist(lapply(cutList, function(x) x[4])),
-                "capturedPts" = unlist(lapply(cutList, function(x) x[5])),
+#                "capturedEOs" = unlist(lapply(cutList, function(x) x[3])),
+#                "capturedPolys" = unlist(lapply(cutList, function(x) x[4])),
+                "capturedPts" = unlist(lapply(cutList, function(x) x[3])),
                 stringsAsFactors = FALSE)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
-
-
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
-
-# for(i in 1:numThresh){
-#   SQLquery <- paste("INSERT INTO tblCutoffs (", 
-#                     toString(names(allThresh)),
-#                     ") VALUES (",
-#                     toString(sQuote(allThresh[i,])),
-#                     ");", sep = "")
-#   dbSendQuery(db, SQLquery)
-# }
+dbcheck <- dbGetQuery(db, paste0("SELECT cutCode c FROM tblModelResultsCutoffs WHERE model_run_name = '",
+                                 modelrun_meta_data$model_run_name,"';"))$c
 
 dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = T)
 # clean up
 options(op)
 dbDisconnect(db)
 
-## create all thresholds grid
-t2 <- sort(unique(allThresh$cutValue))
-t2 <- t2[!is.na(t2)]
-# get unique thresholds
-t3 <- data.frame(cutCodes = unlist(lapply(t2, FUN = function(x) {paste(allThresh$cutCode[allThresh$cutValue == x], collapse = ";")})),
-                 cutValue = t2,
-                 order = 1:length(t2))
-
-# load the prediction grid
-ras <- raster(paste0("model_predictions/", model_run_name, ".tif"))
-
-# reclassify the raster based on the threshold into binary 0/1
-m <- cbind(
-  from = c(-Inf, t3$cutValue),
-  to = c(t3$cutValue, Inf),
-  becomes = c(0, t3$order)
-)
-# reclassify (multi-core try)
-if (all(c("snow","parallel") %in% installed.packages())) {
-  try({
-    cat("Using multi-core processing...\n")
-    beginCluster(type = "SOCK")
-    rasrc <- clusterR(ras, reclassify, args = list(rcl = m))
-  })
-  try(endCluster())
-  if (!exists("rasrc")) {
-    cat("Cluster processing failed. Falling back to single-core processing...\n")
-    rasrc <- reclassify(ras, m)
+# THE next lines are for creating threshold column(s) in the shapefile
+# add columns for all thresholds
+for (t in allThresh$cutCode) {
+  threshold <- as.numeric(allThresh$cutValue[allThresh$cutCode == t])
+  if (!is.na(threshold)) {
+    # reclassify the vector based on the threshold into binary 0/1
+    results_shape[,t] <- NA
+    results_shape[,t] <- ifelse(results_shape$prbblty < threshold, 0, 1)
   }
-} else {
-  rasrc <- reclassify(ras, m)
 }
-rasrc <- as.factor(rasrc)
-levels(rasrc) <- merge(levels(rasrc), t3, by.x = "ID", by.y = "order", all.x = T)
 
-outfile <- paste("model_predictions/",model_run_name,"_all_thresholds.tif", sep = "")
-writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE, datatype = "INT2U")
+#write outshapefile
+st_write(results_shape, paste0("model_predictions/",modelrun_meta_data$model_run_name, "_results.shp"), delete_layer = T)
 
 #clean up
-rm(m, rasrc)
-
-## continuous grid that drops cells below lowest calculated thresh ----
-# reclassify the raster based on the threshold into Na below thresh
-m <- cbind(
-  from = c(-Inf),
-  to = min(t3$cutValue),
-  becomes = c(NA)
-)
-
-# reclassify (multi-core try)
-if (all(c("snow","parallel") %in% installed.packages())) {
-  try({
-    cat("Using multi-core processing...\n")
-    beginCluster(type = "SOCK")
-    rasrc <- clusterR(ras, reclassify, args = list(rcl = m))
-  })
-  try(endCluster())
-  if (!exists("rasrc")) {
-    cat("Cluster processing failed. Falling back to single-core processing...\n")
-    rasrc <- reclassify(ras, m)
-  }
-} else {
-  rasrc <- reclassify(ras, m)
-}
-
-#plot(rasrc)
-outfile <- paste("model_predictions/",model_run_name,"_min_thresh_continuous.tif", sep = "")
-writeRaster(rasrc, filename=outfile, format="GTiff", overwrite=TRUE)
+rm(results_shape)
