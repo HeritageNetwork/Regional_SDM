@@ -23,7 +23,7 @@ nm_refBoundaries = here("_data","other_spatial","feature","US_States.shp") # bac
 # model comment in database
 model_comments = ""
 # comment printed in PDF metadata
-metaData_comments = ""
+metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 # your name
 modeller = "Christopher Tracey"
 
@@ -136,8 +136,9 @@ run_SDM(
   begin_step = "5",
   model_species = "chrocumb",
   loc_model = loc_model,
-  model_rdata = "chrocumb_20181219_123238"#,
-  #metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+  model_rdata = "chrocumb_20190108_143402",
+  model_comments = "Testing out model model comments.",
+  metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
 
 # example pick-up a model run at step 4c (metadata/comment update)
@@ -146,14 +147,10 @@ run_SDM(
   begin_step = "4c",
   model_species = "chrocumb",
   loc_model = loc_model,
-  rubric_default = rubric_default,
-  model_rdata = "chrocumb_20181218_164119"#,
-  #metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+  #rubric_default = rubric_default,
+  model_rdata = "chrocumb_20190108_143402",
+  metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
-
-
-
-
 
 
 

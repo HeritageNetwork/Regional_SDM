@@ -45,7 +45,7 @@ options(useFancyQuotes = FALSE)
 rubric <- sQuote(rubric)
 rubric <- paste(as.character(rubric), collapse=",")
 SQLquery <- paste("INSERT INTO tblRubric (model_run_name, spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, spdata_dataqualNotes,spdata_absNotes,spdata_evalNotes,envvar_relevanceNotes,envvar_alignNotes,process_algoNotes,process_sensNotes,process_rigorNotes,process_performNotes,process_reviewNotes,products_mappedNotes,products_supportNotes,products_repoNotes,interativeNotes) VALUES (",rubric,");", sep="")
-dbSendQuery(db, SQLquery)
+dbExecute(db, SQLquery)
 
 ## clean up ----
 dbDisconnect(db)

@@ -3,8 +3,8 @@
 \usepackage[utf8]{inputenc}
 \DeclareUnicodeCharacter{B0}{$^{\circ}$}
 \usepackage{geometry}
-\usepackage{fancyhdr}     %for headers,footers
-\usepackage{underscore}  %needed if any text has underscores
+\usepackage{fancyhdr} %for headers,footers
+\usepackage{underscore} %needed if any text has underscores
 \usepackage{rotating}
 \usepackage{caption} %for managing table captions
 \usepackage[super,comma]{natbib}
@@ -329,16 +329,6 @@ Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final mo
 
 \medskip
 \noindent
-<<customComments, results="asis", echo = FALSE>>=
-if(nrow(sdm.customComments.subset) > 0){
-  {cat(sdm.customComments.subset$comments)}
-}
-@
-
-
-
-\medskip
-\noindent
 \textbf{Model Evaluation and Intended Use} \\
 All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al.  2019 \cite{SofaerEtAl2019}. \Sexpr{as.character(project_blurb)}
 \\
@@ -366,10 +356,14 @@ Category & Metric & Score & Notes \\ \hline
 \end{tabular}
 \end{table}
 
-
-
-
-
+\medskip
+\noindent
+<<customComments, results="asis", echo = FALSE>>=
+if(nrow(sdm.customComments.subset) > 0){
+  cat("Model Comments\n")
+  cat(sdm.customComments.subset$comments)
+}
+@
 
 
 \pagebreak
@@ -457,9 +451,6 @@ Please cite this document and its associated SDM as: \\
 \end{minipage}
 }
 
-
-
-
 \medskip
 \noindent
 \textbf{References}
@@ -501,7 +492,7 @@ Please cite this document and its associated SDM as: \\
   \bibitem{LiuEtAl2015} Liu, C., G. Newell, and M. White. 2015. On the selection of 
     thresholds for predicting species occurrence with presence-only data. Ecology and 
     Evolution 6:337–348. 
-  \bibitem{SofaerEtAl2019} Sofaer, H. R., C. S. Jarnevich1, I. S. Pearse, R. Lyons Smyth, S. Auer, G. L. Cook, T. C. Edwards, Jr., G. F. Guala, T. G. Howard, J. T. Morisette, and H. Hamilton. 2019. The development and delivery of species distribution models to inform decision-making. BioScience. In press.
+  \bibitem{SofaerEtAl2019} Sofaer, H. R., C. S. Jarnevich1, I. S. Pearse, R. L. Smyth, S. Auer, G. L. Cook, T. C. Edwards, Jr., G. F. Guala, T. G. Howard, J. T. Morisette, and H. Hamilton. (In press). The development and delivery of species distribution models to inform decision-making. BioScience. 
   \bibitem{streamcat} Hill, R. A., M. H. Weber, S. G. Leibowitz, A. R. Olsen, and D. J. Thornbrugh. 
     The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. 
     2016. Journal of the American Water Resources Association (JAWRA) 52:120-128.
