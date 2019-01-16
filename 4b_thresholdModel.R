@@ -19,16 +19,16 @@ load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 cutList <- list()
 
 # total number of EOs (subtract absence class)
-totEOs <- length(unique(df.full$eo_id_st)) - 1
+totEOs <- length(unique(df.full$group_id)) - 1
 # total number of polys
 totPolys <- length(unique(df.full$stratum)) - 1
 
 #get minimum training presence
-allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("eo_id_st", "stratum")])
+allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("group_id", "stratum")])
 allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
 
 MTP <- min(allVotesPresPts$X1)
-capturedEOs <- length(unique(allVotesPresPts$eo_id_st))
+capturedEOs <- length(unique(allVotesPresPts$group_id))
 capturedPolys <- length(unique(allVotesPresPts$stratum))
 capturedPts <- nrow(allVotesPresPts)
 cutList$MTP <- list("value" = MTP, "code" = "MTP", 
@@ -39,7 +39,7 @@ cutList$MTP <- list("value" = MTP, "code" = "MTP",
 #get 10 percentile training presence
 TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1))
 TenPctilePts <- allVotesPresPts[allVotesPresPts$X1 >= TenPctile,]
-capturedEOs <- length(unique(TenPctilePts$eo_id_st))
+capturedEOs <- length(unique(TenPctilePts$group_id))
 capturedPolys <- length(unique(TenPctilePts$stratum))
 capturedPts <- nrow(TenPctilePts)
 cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
@@ -49,10 +49,10 @@ cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
 
 # get min of max values by polygon (MTPP; minimum training polygon presence)
 maxInEachPoly <- aggregate(allVotesPresPts$X1, 
-                           by=list(allVotesPresPts$stratum, allVotesPresPts$eo_id_st), max)
-names(maxInEachPoly) <- c("stratum","eo_id_st","X1")
+                           by=list(allVotesPresPts$stratum, allVotesPresPts$group_id), max)
+names(maxInEachPoly) <- c("stratum","group_id","X1")
 MTPP <- min(maxInEachPoly$X1)
-capturedEOs <- length(unique(maxInEachPoly$eo_id_st))
+capturedEOs <- length(unique(maxInEachPoly$group_id))
 capturedPolys <- length(unique(maxInEachPoly$stratum))
 capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPP,])
 cutList$MTPP <- list("value" = MTPP, "code" = "MTPP", 
@@ -62,10 +62,10 @@ cutList$MTPP <- list("value" = MTPP, "code" = "MTPP",
 
 # get min of max values by EO (MTPEO; minimum training EO presence)
 maxInEachEO <- aggregate(allVotesPresPts$X1, 
-                           by=list(allVotesPresPts$eo_id_st), max)
-names(maxInEachEO) <- c("eo_id_st","X1")
+                           by=list(allVotesPresPts$group_id), max)
+names(maxInEachEO) <- c("group_id","X1")
 MTPEO <- min(maxInEachEO$X1)
-capturedEOs <- length(unique(maxInEachEO$eo_id_st))
+capturedEOs <- length(unique(maxInEachEO$group_id))
 capturedPolys <- length(unique(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,"stratum"]))
 capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,])
 cutList$MTPEO <- list("value" = MTPEO, "code" = "MTPEO", 
@@ -90,7 +90,7 @@ rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]]
 names(rf.full.ctoff) <- c("0","1")
 FMeasPt01 <- rf.full.ctoff[2]
 z <- allVotesPresPts[allVotesPresPts$X1 >= FMeasPt01,]
-capturedEOs <- length(unique(z$eo_id_st))
+capturedEOs <- length(unique(z$group_id))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
 cutList$FMeasPt01 <- list("value" = FMeasPt01, "code" = "FMeasPt01",
@@ -106,7 +106,7 @@ rf.full.sss <- data.frame(cutSens = unlist(rf.full.sens@x.values),sens = unlist(
 rf.full.sss$sss <- with(rf.full.sss, sens + spec)
 maxSSS <- rf.full.sss[which.max(rf.full.sss$sss),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$X1 >= maxSSS,]
-capturedEOs <- length(unique(z$eo_id_st))
+capturedEOs <- length(unique(z$group_id))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
 cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
@@ -118,7 +118,7 @@ cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
 rf.full.sss$diff <- abs(rf.full.sss$sens - rf.full.sss$spec)
 eqss <- rf.full.sss[which.min(rf.full.sss$diff),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$X1 >= eqss,]
-capturedEOs <- length(unique(z$eo_id_st))
+capturedEOs <- length(unique(z$group_id))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
 cutList$eqss <- list("value" = eqss, "code" = "eqSS",
@@ -136,7 +136,7 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 # cutpt <- which.max(abs(rf.full.perf@x.values[[1]]-rf.full.perf@y.values[[1]]))
 # ROCupperleft <- rf.full.perf@alpha.values[[1]][cutpt]
 # z <- allVotesPresPts[allVotesPresPts$X1 >= ROCupperleft,]
-# capturedEOs <- length(unique(z$eo_id_st))
+# capturedEOs <- length(unique(z$group_id))
 # capturedPolys <- length(unique(z$stratum))
 # capturedPts <- nrow(z)
 # cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",

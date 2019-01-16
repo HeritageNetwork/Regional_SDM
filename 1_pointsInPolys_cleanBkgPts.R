@@ -33,15 +33,15 @@ presPolys <- st_zm(st_read(nm_presFile, quiet = T))
 #check for proper column names. If no error from next code block, then good to go
 #presPolys$RA <- presPolys$SFRACalc
 shpColNms <- names(presPolys)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "RA", "OBSDATE")
+desiredCols <- c("UID", "GROUP_ID", "SPECIES_CD", "RA", "OBSDATE")
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 	  stop(paste0("Column(s) are missing or incorrectly named: ", paste(desiredCols[!desiredCols %in% shpColNms], collapse = ", ")))
   } else {
     print("Required columns are present")
   }
 
-if(any(is.na(presPolys[,c("EO_ID_ST", "SNAME", "SCOMNAME", "RA")]))) {
-  stop("The columns 'EO_ID_ST','SNAME','SCOMNAME', and 'RA' (SFRACalc) cannot have NA values.")
+if(any(is.na(presPolys[,c("UID", "GROUP_ID", "SPECIES_CD", "RA")]))) {
+  stop("The columns 'UID','GROUP_ID','SPECIES_CD', and 'RA' (SFRACalc) cannot have NA values.")
 }
 
 #pare down columns
@@ -126,7 +126,7 @@ if("FALSE" %in% c(shp_expl$ra %in% raLevels)) {
 }
 
 
-#EObyRA <- unique(shp_expl[,c("expl_id", "eo_id_st","ra")])
+#EObyRA <- unique(shp_expl[,c("expl_id", "group_id","ra")])
 shp_expl$minSamps[shp_expl$ra == "very high"] <- 5
 shp_expl$minSamps[shp_expl$ra == "high"] <- 4
 shp_expl$minSamps[shp_expl$ra == "medium"] <- 3
