@@ -309,14 +309,14 @@ Species distribution model outputs display the probability (0-1) of a location (
 \medskip
 \noindent
 \begin{minipage}{\linewidth} %keep table header with table
-Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final model. The Value column reports the threshold; EOs indicates the percentage (number in brackets) of EOs within which at least one point was predicted as suitable habitat; Polys indicates the percentage (number) of polygons within which at least one point was predicted as having suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of EOs, polygons, and PR points used in the final model are reported in Table 1.
+Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final model. The Value column reports the threshold; Groups indicates the percentage (number in brackets) of groups within which at least one point was predicted as suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of groups and PR points used in the final model are reported in Table 1.
 
 \medskip
 \noindent
 <<tableThree, results="asis", echo = FALSE>>=
   tbl <- sdm.thresh.table
   #tbl$Citation <- gsub("(^.*)","\\\\cite{\\1}",sdm.thresh.table$Citation)
-  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","r","p{2.3in}")), 
+  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","p{2.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
 \end{minipage}
