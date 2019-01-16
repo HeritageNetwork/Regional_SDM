@@ -10,6 +10,8 @@
 \usepackage[super,comma]{natbib}
 \usepackage[table,xcdraw]{xcolor}
 \usepackage{multirow}
+\usepackage{array}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 \usepackage[normalem]{ulem}
 \useunder{\uline}{\ul}{}
 
@@ -349,7 +351,7 @@ All SDMs are sensitive to data inputs and methodological choices. Table 4 presen
 \begin{table}[h]
 \small
 \centering
-\begin{tabular}{llcl}
+\begin{tabular}{m{4cm}m{5cm}P{2cm}m{4.5cm}}
 \hline
 Category & Metric & Score & Notes 
 \\ \hline
@@ -370,8 +372,8 @@ Category & Metric & Score & Notes
 \\ \cline{2-4} & Reproducibility & \Sexpr{as.character(sdm.modeluse$products_repo)} & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} 
 \\ \hline & Iterative & \Sexpr{as.character(sdm.modeluse$interative)} & \Sexpr{as.character(sdm.modeluse$interativeNotes)} 
 \\ \hline                      
-	\end{tabular}
-	\end{table}
+\end{tabular}
+\end{table}
 
 
 
