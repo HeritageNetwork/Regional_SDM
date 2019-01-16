@@ -186,9 +186,19 @@ st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TR
 ### remove Coincident Background points ----
 ###
 
+# get range info from the DB (as a list of HUCs)
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+SQLquery <- paste0("SELECT huc10_id from lkpRange
+                   inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
+                   where lkpSpecies.sp_code = '", model_species, "';")
+hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+dbDisconnect(db)
+rm(db)
+
 # get the background data from the DB
 db <- dbConnect(SQLite(), nm_bkgPts[1])
-bkgd <- dbReadTable(db, nm_bkgPts[2])
+qry <- paste0("SELECT * from ", nm_bkgPts[2], " where substr(huc12,1,10) IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," );")
+bkgd <- dbGetQuery(db, qry)
 tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", nm_bkgPts[2], "';"))$p
 samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 
@@ -200,15 +210,23 @@ coincidentPts <- unlist(st_contains(polybuff, samps, sparse = TRUE))
 
 # remove them (if any)
 if (length(coincidentPts) > 0) backgSubset <- samps[-coincidentPts,] else backgSubset <- samps
-attDat <- dbReadTable(db, paste0(nm_bkgPts[2], "_att"))
-bgSubsAtt <- merge(backgSubset, attDat)
-dbDisconnect(db)
 
-# write back to the inputs DB as these are species-specific bkg points
-st_geometry(bgSubsAtt) <- NULL
+#write it up and do join in sqlite (faster than downloading entire att set)
+st_geometry(backgSubset) <- NULL
+tmpTableName <- paste0(nm_bkgPts[2], "_", baseName)
+dbWriteTable(db, tmpTableName, backgSubset, overwrite = TRUE)
+
+# do the join, get all the data back down
+qry <- paste0("SELECT * from ", tmpTableName, " INNER JOIN ", nm_bkgPts[2], "_att on ",
+              tmpTableName,".fid = ", nm_bkgPts[2], "_att.fid;")
+bgSubsAtt <- dbGetQuery(db, qry)
+# delete the table on the db
+dbRemoveTable(db, tmpTableName)
+dbDisconnect(db)
 
 dbName <- paste0(loc_model, "/", model_species, "/inputs/model_input/", baseName, "_att.sqlite")
 db <- dbConnect(SQLite(), dbName)
 dbWriteTable(db, paste0(nm_bkgPts[2], "_clean"), bgSubsAtt, overwrite = TRUE)
 
 dbDisconnect(db)
+
