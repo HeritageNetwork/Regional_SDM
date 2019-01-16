@@ -246,8 +246,12 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
+<<<<<<< HEAD
 model using all background and presence points as input. Importance values (mean decrease in accuracy) are extracted from the randomForest function\cite{liaw2002}. See Table 4 for variable descriptions.
 
+=======
+model using all sites as input. Importance values (mean decrease in accuracy) are extracted from the randomForest function\cite{liaw2002}. See Appendix 1 for variable descriptions.
+>>>>>>> 7241818... table 4 rename to app1
 \end{minipage} 
 
 \normalsize
@@ -297,7 +301,7 @@ for (plotpi in 1:length(pPlots)){
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
 \small
-Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed \cite{liaw2002}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationshiop overall; increasing lines, positive. The distribution of each category (thin red = BG points, thick blue = PR points) is depicted at the top margin. See Table 4 for variable descriptions.
+Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed \cite{liaw2002}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationshiop overall; increasing lines, positive. The distribution of each category (thin red = BG points, thick blue = PR points) is depicted at the top margin. See Appendix 1 for variable descriptions.
 \normalsize
 
 \medskip
@@ -522,7 +526,8 @@ Please cite this document and its associated SDM as: \\
 
 \pagebreak
 \noindent
-Table 4. Descriptions for environmental variables included in the model.
+
+Appendix 1. Descriptions for environmental variables included in model.
 \begin{center}
 <<tableFour, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
@@ -530,7 +535,7 @@ addtorow <- list()
 addtorow$pos <- list()
 addtorow$pos[[1]] <- c(0)
 addtorow$command <- c(paste("\\hline \n","\\hline \n",sep=""))
-print(xtable(sdm.var.info, label = NULL), # caption = "Table 4. Descriptions for environmental variables included in model."),
+print(xtable(sdm.var.info, label = NULL), # caption = "Appendix 1. Descriptions for environmental variables included in model."),
       include.rownames=FALSE, scalebox = 0.7, #floating = TRUE, #floating.environment = "sidewaystable",
       #caption.placement = "top", 
       sanitize.text = force, add.to.row = addtorow)
