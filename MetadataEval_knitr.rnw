@@ -245,7 +245,7 @@ par(mar=c(3.2,2.5,.25,0.1),   #bottom, left, top, right
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
-model using all sites as input. Importance values (mean decrease in accuracy) are extracted from the randomForest function\cite{liaw2002}. See Appendix 1 for variable descriptions.
+model using all sites as input. Importance values (mean decrease in accuracy) are extracted from the randomForest\cite{liaw2002} function. See Appendix 1 for variable descriptions.
 \end{minipage}% 
 
 \normalsize
@@ -295,14 +295,13 @@ for (plotpi in 1:length(pPlots)){
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
 \small
-Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed \cite{liaw2002}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationshiop overall; increasing lines, positive. The distribution of each category (thin red = BG points, thick blue = PR points) is depicted at the top margin. See Appendix 1 for variable descriptions.
+Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed \cite{liaw2002}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the black line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationshiop overall; increasing lines, positive. The distribution of each category (thin red = BG points, thick blue = PR points) is depicted at the top margin. See Appendix 1 for variable descriptions.
 \normalsize
 
 \medskip
 \medskip
-\medskip
 \noindent
-Species distribution model outputs display the probability (0-1) of a location (i.e. stream reach or raster cell) having similar environmental conditions in comparison to known presence locations. No model will ever depict sites where a targeted element will occur with certainty, it can \textit{only} depict locations it interprets as appropriate habitat for the targeted element. The delineation of suitable habitats is made by the selection of a threshold value, where locations with values above the threshold are designated as likely suitable habitat, and those with values below the threshold may be unsuitable. Threshold values are often statistically calculated. SDMs can be used in many ways and the depiction of appropriate habitat should be varied depending on intended use. For targeting field surveys, an SDM may be used to refine the search area; users should always employ additional GIS tools to further direct search efforts. A lower threshold depicting more land area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less land area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
+Species distribution model outputs display the probability (0-1) of a location (i.e. stream reach or raster cell) having similar environmental conditions in comparison to known presence locations. No model will ever depict sites where a targeted element will occur with certainty, it can \textit{only} depict locations it interprets as appropriate habitat for the targeted element. The delineation of suitable habitats is made by the selection of a threshold value, where locations with values above the threshold are designated as likely suitable habitat, and those with values below the threshold may be unsuitable. Threshold values are often statistically calculated. SDMs can be used in many ways and the depiction of appropriate habitat should be varied depending on intended use. For targeting field surveys, an SDM may be used to refine the search area; users should always employ additional GIS tools to further direct search efforts. A lower threshold depicting more area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
 
 \pagebreak
 \noindent
@@ -321,14 +320,6 @@ Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final mo
 \end{center}
 \normalsize
 \end{minipage}
-
-\medskip
-\noindent
-<<customComments, results="asis", echo = FALSE>>=
-if(nrow(sdm.customComments.subset) > 0){
-  {cat(sdm.customComments.subset$comments)}
-}
-@
 
 \medskip
 \noindent
@@ -368,7 +359,13 @@ Category & Metric & Score & Notes
 \end{tabular}
 \end{table}
 
-
+\medskip
+\noindent
+<<customComments, results="asis", echo = FALSE>>=
+if(nrow(sdm.customComments.subset) > 0){
+  {cat(sdm.customComments.subset$comments)}
+}
+@
 
 \pagebreak
 \medskip
@@ -499,7 +496,7 @@ Please cite this document and its associated SDM as: \\
   \bibitem{LiuEtAl2015} Liu, C., G. Newell, and M. White. 2015. On the selection of 
     thresholds for predicting species occurrence with presence-only data. Ecology and 
     Evolution 6:337–348. 
-  \bibitem{SofaerEtAl2019} Sofaer, H. R., C. S. Jarnevich1, I. S. Pearse, R. L. Smyth, S. Auer, G. L. Cook, T. C. Edwards, Jr., G. F. Guala, T. G. Howard, J. T. Morisette, and H. Hamilton. (In press). The development and delivery of species distribution models to inform decision-making. BioScience. 
+  \bibitem{SofaerEtAl2019} Sofaer, H. R., C. S. Jarnevich1, I. S. Pearse, R. L. Smyth, S. Auer, G. L. Cook, T. C. Edwards, Jr., G. F. Guala, T. G. Howard, J. T. Morisette, and H. Hamilton. (In press). The development and delivery of species distribution models to inform decision-making. BioScience.
   \bibitem{streamcat} Hill, R. A., M. H. Weber, S. G. Leibowitz, A. R. Olsen, and D. J. Thornbrugh. 
     The Stream-Catchment (StreamCat) Dataset: A Database of Watershed Metrics for the Conterminous United States. 
     2016. Journal of the American Water Resources Association (JAWRA) 52:120-128.
@@ -508,7 +505,7 @@ Please cite this document and its associated SDM as: \\
 \pagebreak
 \noindent
 
-Appendix 1. Descriptions for environmental variables included in model. Variables were derived from the StreamCat \cite{streamcat} and National Hydrography Dataset, Plus \cite{nhd} datasets.
+Appendix 1. Descriptions for environmental variables included in model. Variables were derived from the StreamCat \cite{streamcat} and National Hydrography Dataset (NHD) Plus \cite{nhd} datasets.
 \begin{center}
 <<tableFour, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
