@@ -26,10 +26,14 @@ nm_HUC_file <- here("_data","other_sp","HUC10.shp")
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  # background grey reference lines in map
 
+# project overview - this appears in the first paragraph of the metadata
+project_overview = "The following metadata describes the SDM for one species of 2,700 included in a Map of Biodiversity Irreplaceability (MoBI) in the continental U.S. developed by  NatureServe and the Network of Natural Heritage Programs and funded by ESRI."
+
 # model comment in database
 model_comments = "custom model comments"
 # comment printed in PDF metadata
-metaData_comments = "custom metadata comments"
+metaData_comments = "This is an updated comment that will appear in the metadata PDF on Jan16."
+
 # your name
 modeller = "Tim Howard"
 
@@ -68,6 +72,7 @@ run_SDM(
   nm_bkgPts = nm_bkgPts,
   nm_HUC_file = nm_HUC_file,
   nm_refBoundaries = nm_refBoundaries, # background grey refernce lines in map
+  project_overview = project_overview,
   model_comments = model_comments,
   metaData_comments = metaData_comments,
   modeller = modeller,
@@ -78,6 +83,79 @@ run_SDM(
   prompt = prompt
 )
 
+#############################################################################
+#############################################################################
+#############################################################################
+
+# Step 2-alternate: run additional model, or pick up from previous model run
+
+# if using add_vars or remove_vars for a new model run, start at step 2.
+
+# if you want to run a new model with the same input data as a previous run, start at step 3.
+
+# If picking up from a previously started run, always
+# provide the begin_step, model_species, and loc_model.
+# When starting at script #4 or later, also provide the name of the 
+# model rdata file to 'model_rdata'. 
+# You can also include any other arguments that you wish to change from 
+# the previous run (e.g., model_comments or metaData_comments).
+# 
+# Note that you can manually update the scripts, if desired. 
+# The scripts will automatically be accessed from 'loc_scripts' (if provided) 
+
+# or the location that was specified for the original model run. 
+library(here)
+rm(list=ls())
+
+# set project folder and species code for this run
+model_species <- "chrocumb"
+loc_model <- here("_data", "species")
+
+# set wd and load function
+loc_scripts <- here()
+setwd(loc_scripts)
+source(here("helper", "run_SDM.R"))
+
+# example pick-up a model run at step 2 (same presence/bkgd data, new model with different variables)
+  # need to provide an input tableCode to nm_presFile 
+  # to add/remove variables, begin at step 2
+  # to just run new model, begin at step 3 (see next example)
+run_SDM(
+  begin_step = "2",
+  model_species = "chrocumb",
+  loc_model = loc_model,
+  nm_presFile = "chrocumb_20181217_131103",
+  model_comments = "Testing out model with removed variables.",
+  remove_vars = "cbnfws"
+)
+
+
+
+
+# example pick-up a model run at step 5 (metadata create)
+  # if starting at step 4 or later, must provide model run name to model_rdata
+run_SDM(
+  begin_step = "5",
+  model_species = "chrocumb",
+  loc_model = loc_model,
+  model_rdata = "chrocumb_20190116_142650",
+  model_comments = "Testing out model model comments.",
+  metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+)
+
+
+
+# example pick-up a model run at step 4c (metadata/comment update)
+# if starting at step 4 or later, must provide model run name to model_rdata
+run_SDM(
+  begin_step = "4c",
+  model_species = "chrocumb",
+  loc_model = loc_model,
+  #rubric_default = rubric_default,
+  model_rdata = "chrocumb_20190108_143402",
+  metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+)
+>>>>>>> a14fcc6... introblurb, fig2, etc
 
 ########## 
 ##########

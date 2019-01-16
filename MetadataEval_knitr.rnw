@@ -64,7 +64,7 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
   
 @
   \begin{center}
-  \includegraphics{figure/thermometer1-1.pdf} \\     %place it
+  \includegraphics{figure/thermometer1-1.pdf} \\ %place it
   ability to find new sites \end{center}
 \end{minipage}  
 
@@ -82,7 +82,10 @@ by \Sexpr{as.character(group$JackknType)} for a total of \Sexpr{length(group$val
 The statistics in Table 2 report the mean and variance for these jackknifing runs.
 
 \smallskip
-
+\noindent 
+\Sexpr{as.character(project_overview)} \\\\
+\noindent This SDM incorporates the number of known and background locations indicated in Table 1, modeled with the random forests routine \cite{breiman2001, iverson2004} in the R statistical environment \cite{liaw2002, r}. The modeling unit was a stream reach, as defined in the Medium Resolution National Hydrography Dataset \cite{nhd}. Adjacent presence reaches were combined into "reach groups". We validated the model by jackknifing (also called leave-one-out \cite{fielding1997, fielding2002, pearson2007}) by \Sexpr{tolower(as.character(group$JackknType))} for a total of \Sexpr{length(group$vals)} groups. The statistics in Table 2 report the mean and variance of validation statistics for these jackknifing runs.\\
+\medskip
 \small
 \begin{minipage}[t]{3in}
 
@@ -135,7 +138,8 @@ fielding2002}.
 \end{center}
 
 \medskip
-<<checkEvalExists, include=FALSE, echo=FALSE>>=
+\normalsize
+    <<checkEvalExists, include=FALSE, echo=FALSE>>=
 if (exists("n.var")) {
   txt <- paste0("Validation runs used ",n.var," environmental 
   variables, the most important of ",OriginalNumberOfEnvars," 
@@ -152,8 +156,7 @@ cat(txt)
 @
 The final model was built using \Sexpr{rf.full$ntree} trees, all presence 
 and background points, with an mtry of \Sexpr{rf.full$mtry}, and \Sexpr{length(EnvVars$impVal)} environmental variables.
-
-
+\small
 \begin{center}
 <<ROCplot, fig.width=2.9, fig.height=1.6, include=FALSE, echo=FALSE>>=
 par(mar=c(2.8,2.5,.5,10),   #bottom, left, top, right
@@ -222,15 +225,16 @@ rm(list=ls(pattern="rl."))
 Figure 1. ROC plot for all \Sexpr{length(group$vals)} validation runs, 
 averaged along cutoffs.
 
-\end{minipage}
+\end{minipage}%
 \hfill \begin{minipage}[t]{3.5in}
 
 \smallskip  %dummy first line to align with previous minipage
 
-<<importanceFig, fig.width=3.0, fig.height=6.6, include=FALSE, echo=FALSE>>=
-par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
+<<importanceFig, fig.width=3.2, fig.height=5.5, include=FALSE, echo=FALSE>>=
+par(mar=c(3.2,2.5,.25,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
-    mgp=c(1.3,0.4,0) #placement of axis title, labels, line
+    mgp=c(1.3,0.4,0), #placement of axis title, labels, line
+    bty="l"
     )
   #get the order for the importance charts
   ord <- rev(order(EnvVars$impVal, decreasing = TRUE)[1:length(EnvVars$impVal)])
@@ -246,12 +250,7 @@ par(mar=c(3.2,2.5,.5,0.1),   #bottom, left, top, right
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
 Figure 2. Relative importance of each environmental variable based on the full
-<<<<<<< HEAD
-model using all background and presence points as input. Importance values (mean decrease in accuracy) are extracted from the randomForest function\cite{liaw2002}. See Table 4 for variable descriptions.
-
-=======
 model using all sites as input. Importance values (mean decrease in accuracy) are extracted from the randomForest function\cite{liaw2002}. See Appendix 1 for variable descriptions.
->>>>>>> 7241818... table 4 rename to app1
 \end{minipage} 
 
 \normalsize
@@ -338,6 +337,7 @@ if(nrow(sdm.customComments.subset) > 0){
 \medskip
 \noindent
 \textbf{Model Evaluation and Intended Use} \\
+\smallskip
 All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 \cite{SofaerEtAl2019}. \Sexpr{as.character(project_blurb)}
 \\
 \\
