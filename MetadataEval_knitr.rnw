@@ -294,11 +294,9 @@ for (plotpi in 1:length(pPlots)){
   mtext("log of fraction of votes", side = 2, line = -1, outer=TRUE, cex = 0.7)
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
-Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect 
-of the variable on the probability of appropriate habitat with the 
-effects of the other variables removed \cite{liaw2002}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting 
-appropriate habitat. Decreasing lines from left to right show a negative relationshiop overall; increasing lines, positive. The distribution of each category (thin red = BG points, 
-thick blue = PR points) is depicted at the top margin. See Table 4 for variable descriptions.
+\small
+Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed \cite{liaw2002}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationshiop overall; increasing lines, positive. The distribution of each category (thin red = BG points, thick blue = PR points) is depicted at the top margin. See Table 4 for variable descriptions.
+\normalsize
 
 \medskip
 \medskip
@@ -319,6 +317,8 @@ Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final mo
   print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","p{2.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
+\end{center}
+\normalsize
 \end{minipage}
 
 \medskip
@@ -336,8 +336,11 @@ All SDMs are sensitive to data inputs and methodological choices. Table 4 presen
 \\
 \\
 \smallskip
+\small
 \noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or problematic.
+\normalsize
 \begin{table}[h]
+\small
 \centering
 \begin{tabular}{llcl}
 \hline
@@ -434,8 +437,10 @@ plot(st_geometry(studyAreaExtent), border = "red", lwd = 2, add = T)
 @
 \includegraphics{figure/mapFig-1.pdf}    
 \end{center}
+\noindent
+\small
 Figure 4. A generalized view of the model predictions throughout the modeled. State boundaries are shown in gray. The modeled area is outlined in red. 
-
+\normalsize
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
 \begin{itemize}
