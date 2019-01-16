@@ -199,13 +199,8 @@ rm(db)
 db <- dbConnect(SQLite(), nm_bkgPts[1])
 qry <- paste0("SELECT * from ", nm_bkgPts[2], " where substr(huc12,1,10) IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," );")
 bkgd <- dbGetQuery(db, qry)
-
-bkgd <- dbReadTable(db, nm_bkgPts[2])
 tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", nm_bkgPts[2], "';"))$p
 samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
-dbDisconnect(db)
-rm(db)
-
 
 # find coincident points ----
 polybuff <- st_transform(shp_expl, st_crs(samps))
@@ -215,15 +210,23 @@ coincidentPts <- unlist(st_contains(polybuff, samps, sparse = TRUE))
 
 # remove them (if any)
 if (length(coincidentPts) > 0) backgSubset <- samps[-coincidentPts,] else backgSubset <- samps
-attDat <- dbReadTable(db, paste0(nm_bkgPts[2], "_att"))
-bgSubsAtt <- merge(backgSubset, attDat)
-dbDisconnect(db)
 
-# write back to the inputs DB as these are species-specific bkg points
-st_geometry(bgSubsAtt) <- NULL
+#write it up and do join in sqlite (faster than downloading entire att set)
+st_geometry(backgSubset) <- NULL
+tmpTableName <- paste0(nm_bkgPts[2], "_", baseName)
+dbWriteTable(db, tmpTableName, backgSubset, overwrite = TRUE)
+
+# do the join, get all the data back down
+qry <- paste0("SELECT * from ", tmpTableName, " INNER JOIN ", nm_bkgPts[2], "_att on ",
+              tmpTableName,".fid = ", nm_bkgPts[2], "_att.fid;")
+bgSubsAtt <- dbGetQuery(db, qry)
+# delete the table on the db
+dbRemoveTable(db, tmpTableName)
+dbDisconnect(db)
 
 dbName <- paste0(loc_model, "/", model_species, "/inputs/model_input/", baseName, "_att.sqlite")
 db <- dbConnect(SQLite(), dbName)
 dbWriteTable(db, paste0(nm_bkgPts[2], "_clean"), bgSubsAtt, overwrite = TRUE)
 
 dbDisconnect(db)
+
