@@ -186,11 +186,26 @@ st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TR
 ### remove Coincident Background points ----
 ###
 
+# get range info from the DB (as a list of HUCs)
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+SQLquery <- paste0("SELECT huc10_id from lkpRange
+                   inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
+                   where lkpSpecies.sp_code = '", model_species, "';")
+hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+dbDisconnect(db)
+rm(db)
+
 # get the background data from the DB
 db <- dbConnect(SQLite(), nm_bkgPts[1])
+qry <- paste0("SELECT * from ", nm_bkgPts[2], " where substr(huc12,1,10) IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," );")
+bkgd <- dbGetQuery(db, qry)
+
 bkgd <- dbReadTable(db, nm_bkgPts[2])
 tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", nm_bkgPts[2], "';"))$p
 samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
+dbDisconnect(db)
+rm(db)
+
 
 # find coincident points ----
 polybuff <- st_transform(shp_expl, st_crs(samps))
