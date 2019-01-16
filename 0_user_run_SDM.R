@@ -21,10 +21,14 @@ nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv"))
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature","US_States.shp") # background grey reference lines in map
+
+# project overview - this appears in the first paragraph of the metadata
+project_overview = "The following metadata describes the SDM for one species of 2,700 included in a Map of Biodiversity Irreplaceability (MoBI) in the continental U.S. developed by  NatureServe and the Network of Natural Heritage Programs and funded by ESRI."
+
 # model comment in database
 model_comments = ""
 # comment printed in PDF metadata
-metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+metaData_comments = "This is an updated comment that will appear in the metadata PDF on Jan16."
 # your name
 modeller = "Christopher Tracey"
 
@@ -75,6 +79,7 @@ run_SDM(
   #nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   huc_level = huc_level,
   nm_refBoundaries = nm_refBoundaries, # background grey reference lines in map
+  project_overview = project_overview,
   model_comments = model_comments,
   metaData_comments = metaData_comments,
   modeller = modeller,
@@ -131,16 +136,21 @@ run_SDM(
   remove_vars = "cbnfws"
 )
 
+
+
+
 # example pick-up a model run at step 5 (metadata create)
   # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
   begin_step = "5",
   model_species = "chrocumb",
   loc_model = loc_model,
-  model_rdata = "chrocumb_20190108_143402",
+  model_rdata = "chrocumb_20190116_142650",
   model_comments = "Testing out model model comments.",
   metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
+
+
 
 # example pick-up a model run at step 4c (metadata/comment update)
 # if starting at step 4 or later, must provide model run name to model_rdata
