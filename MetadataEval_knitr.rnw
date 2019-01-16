@@ -463,11 +463,11 @@ for(i in 1:length(sdm.dataSources$ProgramName)){
 \end{itemize}
 
 \medskip
+\noindent
 This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. It is one of a suite of aquatic species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.
 
 \medskip
 \noindent
-
 \setlength{\fboxsep}{5pt}
 \fbox{
 \begin{minipage}[t]{0.90\linewidth}%
@@ -532,7 +532,7 @@ Appendix 1. Descriptions for environmental variables included in model.
 addtorow <- list()
 addtorow$pos <- list()
 addtorow$pos[[1]] <- c(0)
-addtorow$command <- c(paste("\\hline \n","\\hline \n",sep=""))
+addtorow$command <- c(paste("\\hline \n",sep=""))
 print(xtable(sdm.var.info, label = NULL), # caption = "Appendix 1. Descriptions for environmental variables included in model."),
       include.rownames=FALSE, scalebox = 0.7, #floating = TRUE, #floating.environment = "sidewaystable",
       #caption.placement = "top", 
