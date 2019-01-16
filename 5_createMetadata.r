@@ -75,7 +75,7 @@ if(nrow(sdm.customComments) > 1) {
 }
 
 ## Get threshold information ----
-SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPolys, capturedPts ", 
+SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPts ", 
                   "FROM tblModelResultsCutoffs ", 
                   "WHERE model_run_name ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
@@ -96,12 +96,12 @@ sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 #sort it
 sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
-  "capturedEOs", "capturedPolys", "capturedPts", "cutDescription")]
-names(sdm.thresh.table) <- c("Threshold", "Value", "EOs","Polys","Pts","Description")
-sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
-                                     "(",sdm.thresh.table$EOs, ")", sep="")
-sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
-                              "(",sdm.thresh.table$Polys, ")", sep="")
+  "capturedEOs", "capturedPts", "cutDescription")]
+names(sdm.thresh.table) <- c("Threshold", "Value", "Groups","Pts","Description")
+sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/numEOs*100, 1),
+                                     "(",sdm.thresh.table$Groups, ")", sep="")
+# sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
+#                               "(",sdm.thresh.table$Polys, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
                               sep="")
