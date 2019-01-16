@@ -146,7 +146,7 @@ run_SDM(
   model_species = "chrocumb",
   loc_model = loc_model,
   model_rdata = "chrocumb_20190116_142650",
-  model_comments = "Testing out model model comments.",
+  model_comments = "Testing out model model comments. Woo-hoo",
   metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
 
@@ -160,6 +160,7 @@ run_SDM(
   loc_model = loc_model,
   #rubric_default = rubric_default,
   model_rdata = "chrocumb_20190108_143402",
+  model_comments = "Testing out model model comments.",
   metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
 
