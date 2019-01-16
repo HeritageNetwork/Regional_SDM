@@ -325,12 +325,11 @@ Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final mo
 \normalsize
 \end{minipage}
 
-\medskip
+\bigskip
 \noindent
 \textbf{Model Evaluation and Intended Use} \\
 \smallskip
 All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 \cite{SofaerEtAl2019}. \Sexpr{as.character(project_blurb)}
-\\
 \\
 \smallskip
 \small
@@ -410,7 +409,8 @@ Category & Metric & Score & Notes
 \noindent
 <<customComments, results="asis", echo = FALSE>>=
 if(nrow(sdm.customComments.subset) > 0){
-  {cat(sdm.customComments.subset$comments)}
+  cat("\\textbf{Model Comments} \\\\")
+  cat(sdm.customComments.subset$comments)
 }
 @
 
