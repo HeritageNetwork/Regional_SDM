@@ -13,7 +13,6 @@ library(foreign) #for reading dbf files
 library(randomForest)
 source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = T) # generates modelrun_meta_data
 
-
 setwd(loc_model)
 dir.create(paste0(model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
 setwd(paste0("./",model_species,"/inputs"))
@@ -39,7 +38,7 @@ ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
 
 tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.character(Sys.time()),
                              feat_count = length(unique(df.in$stratum)), 
-                             feat_grp_count = length(unique(df.in$eo_id_st)), 
+                             feat_grp_count = length(unique(df.in$group_id)), 
                              obs_count = length(df.in[,1]), bkgd_count = length(df.abs[,1]),
                              range_area_sqkm = NA)
 dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, "';")) # remove any previously prepped dataset entry
@@ -64,8 +63,8 @@ df.abs <- df.abs[complete.cases(df.abs),]
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
 df.abs$stratum <- "pseu-a"
-df.abs <- cbind(df.abs, EO_ID_ST="pseu-a", 
-					pres=0, RA="high", SNAME="background")
+df.abs <- cbind(df.abs, GROUP_ID="pseu-a", 
+					pres=0, RA="high", SPECIES_CD="background")
 
 # lower case column names
 names(df.in) <- tolower(names(df.in))
@@ -108,7 +107,7 @@ rm(db)
 #    not be driving the model. Group decision to remove.)
 
 # get the ones we are using here
-dtRas <- rasnames[rasnames %in% dtGrids$gridName]
+dtRas <- rasnames[rasnames %in% tolower(dtGrids$gridName)]
 # what's the closest distance for each?
 dtRas.min <- apply(as.data.frame(df.in[,dtRas]), 2, min)
 # remove those whose closest distance is greater than 10km
@@ -117,7 +116,9 @@ rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
 
 # clean up, merge data sets -----
 # this is the full list of fields, arranged appropriately
-colList <- c("sname","eo_id_st","pres","stratum", "ra", rasnames)
+colList <- c("species_cd","group_id","pres","stratum", "ra", rasnames)
+
+####c("UID", "GROUP_ID", "SPECIES_CD", "RA", "OBSDATE")
 
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
@@ -129,39 +130,39 @@ df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
 
 # row bind the pseudo-absences with the presence points
-df.abs$eo_id_st <- factor(df.abs$eo_id_st)
+df.abs$group_id <- factor(df.abs$group_id)
 df.full <- rbind(df.in, df.abs)
 
 # reset these factors
 df.full$stratum <- factor(df.full$stratum)
-df.full$eo_id_st <- factor(df.full$eo_id_st)
+df.full$group_id <- factor(df.full$group_id)
 df.full$pres <- factor(df.full$pres)
 df.full$ra <- factor(tolower(as.character(df.full$ra)))
-df.full$sname <- factor(df.full$sname)
+df.full$species_cd <- factor(df.full$species_cd)
 
 # make samp size groupings ----
-EObyRA <- unique(df.full[,c("eo_id_st","ra")])
+EObyRA <- unique(df.full[,c("group_id","ra")])
 EObyRA$sampSize[EObyRA$ra == "very high"] <- 5
 EObyRA$sampSize[EObyRA$ra == "high"] <- 4
 EObyRA$sampSize[EObyRA$ra == "medium"] <- 3
 EObyRA$sampSize[EObyRA$ra == "low"] <- 2
 EObyRA$sampSize[EObyRA$ra == "very low"] <- 1
 # set the background pts to the sum of the EO samples
-# EObyRA$sampSize[EObyRA$eo_id_st == "pseu-a"] <- sum(EObyRA[!EObyRA$eo_id_st == "pseu-a", "sampSize"])
+# EObyRA$sampSize[EObyRA$group_id == "pseu-a"] <- sum(EObyRA[!EObyRA$group_id == "pseu-a", "sampSize"])
 
 # there appear to be cases where more than one 
 # RA is assigned per EO. Handle it here by 
 # taking max value
-EObySS <- aggregate(EObyRA$sampSize, by=list(EObyRA$eo_id_st), max)
+EObySS <- aggregate(EObyRA$sampSize, by=list(EObyRA$group_id), max)
 # set the background pts to the sum of the EO samples
-names(EObySS) <- c("eo_id_st","sampSize")
-EObySS$sampSize[EObySS$eo_id_st == "pseu-a"] <- sum(EObySS[!EObySS$eo_id_st == "pseu-a", "sampSize"])
+names(EObySS) <- c("group_id","sampSize")
+EObySS$sampSize[EObySS$group_id == "pseu-a"] <- sum(EObySS[!EObySS$group_id == "pseu-a", "sampSize"])
 
 sampSizeVec <- EObySS$sampSize
-names(sampSizeVec) <- as.character(EObySS$eo_id_st)
+names(sampSizeVec) <- as.character(EObySS$group_id)
 # reset sample sizes to number of points, when it is smaller than desired sample size
 # This is only relevant when complete.cases may have removed some points from an already-small set of points
-totPts <- table(df.full$eo_id_st)
+totPts <- table(df.full$group_id)
 for (i in names(sampSizeVec)) if (sampSizeVec[i] > totPts[i]) sampSizeVec[i] <- totPts[i]
 
 ##
@@ -170,14 +171,14 @@ for (i in names(sampSizeVec)) if (sampSizeVec[i] > totPts[i]) sampSizeVec[i] <- 
 x <- tuneRF(df.full[,indVarCols],
              y=df.full[,depVarCol],
              ntreeTry = 300, stepFactor = 2, mtryStart = 6,
-            strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
+            strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
-            strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
+            strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
 rm(x,y)
@@ -192,7 +193,7 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
                         importance=TRUE,
                         ntree=ntrees,
                         mtry=mtry,
-                        strata = df.full$eo_id_st, sampsize = sampSizeVec, replace = TRUE)
+                        strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
@@ -231,8 +232,8 @@ df.in2 <- subset(df.full,pres == "1")
 df.abs2 <- subset(df.full, pres == "0")
 df.in2$stratum <- factor(df.in2$stratum)
 df.abs2$stratum <- factor(df.abs2$stratum)
-df.in2$eo_id_st <- factor(df.in2$eo_id_st)
-df.abs2$eo_id_st <- factor(df.abs2$eo_id_st)
+df.in2$group_id <- factor(df.in2$group_id)
+df.abs2$group_id <- factor(df.abs2$group_id)
 df.in2$pres <- factor(df.in2$pres)
 df.abs2$pres <- factor(df.abs2$pres)
 
@@ -243,24 +244,24 @@ row.names(df.abs2) <- 1:nrow(df.abs2)
 #how many polygons do we have?
 numPys <-  nrow(table(df.in2$stratum))
 #how many EOs do we have?
-numEOs <- nrow(table(df.in2$eo_id_st))
+numEOs <- nrow(table(df.in2$group_id))
 
 #initialize the grouping list, and set up grouping variables
 #if we have fewer than 10 EOs, move forward with jackknifing by polygon, otherwise
 #jackknife by EO.
 group <- vector("list")
-# group$colNm <- ifelse(numEOs < 10,"stratum","eo_id_st")
+# group$colNm <- ifelse(numEOs < 10,"stratum","group_id")
 # group$JackknType <- ifelse(numEOs < 10,"polygon","element occurrence")
 # if(numEOs < 10) {
 # 		group$vals <- unique(df.in2$stratum)
 # } else {
-# 		group$vals <- unique(df.in2$eo_id_st)
+# 		group$vals <- unique(df.in2$group_id)
 # }
 ## TODO: bring back by-polygon validation. SampSize needs to be able to handle this to make it possible
 # only validate by EO at this time:
-group$colNm <- "eo_id_st"
-group$JackknType <- "element occurrence"
-group$vals <- unique(df.in2$eo_id_st)
+group$colNm <- "group_id"
+group$JackknType <- "spatial grouping"
+group$vals <- unique(df.in2$group_id)
 
 #reduce the number of trees if group$vals has more than 30 entries
 #this is for validation
@@ -324,7 +325,7 @@ if(length(group$vals)>1){
 		  trSetBG <-  df.abs2[-TrBGsamps,]  #get everything that isn't in TrBGsamps
 		   # join em, clean up
 		  trSet <- rbind(trSet, trSetBG)
-		  trSet$eo_id_st <- factor(trSet$eo_id_st)
+		  trSet$group_id <- factor(trSet$group_id)
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
 		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
@@ -515,7 +516,7 @@ rf.full <- randomForest(df.full[,indVarCols],
                         importance=TRUE,
                         ntree=ntrees,
                         mtry=mtry,
-                        strata = df.full[,"eo_id_st"],
+                        strata = df.full[,"group_id"],
                         sampsize = sampSizeVec, replace = TRUE,
                         norm.votes = TRUE)
 ####
