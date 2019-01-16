@@ -314,7 +314,7 @@ Species distribution model outputs display the probability (0-1) of a location (
 
 \pagebreak
 \noindent
-
+\begin{minipage}{\linewidth} %keep table header with table
 Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final model. The Value column reports the threshold; Pct indicates the percentage of PR reaches predicted having suitable habitat. Total numbers of PR reaches and contiguous PR reach groups used in the final model are reported in Table 1.
 
 \smallskip
@@ -325,18 +325,16 @@ Table 3. Thresholds \cite{LiuEtAl2005, LiuEtAl2015} calculated from the final mo
   print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","p{3.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
-
+\end{center}
 \end{minipage}
 
 \medskip
 \noindent
 <<customComments, results="asis", echo = FALSE>>=
 if(nrow(sdm.customComments.subset) > 0){
-  cat("Model Comments\n")
-  cat(sdm.customComments.subset$comments)
+  {cat(sdm.customComments.subset$comments)}
 }
 @
-
 
 \medskip
 \noindent
@@ -352,65 +350,22 @@ All SDMs are sensitive to data inputs and methodological choices. Table 4 presen
 \hline
 Category & Metric & Score & Notes 
 \\ \hline
-\multirow{3}{*}{Species Data} 
-  & Presence data quality 
-  & \Sexpr{as.character(sdm.modeluse$spdata_dataqual)} 
-  & \Sexpr{as.character(sdm.modeluse$spdata_dataqualNotes)} 
-\\ \cline{2-4}
-  & Absence/Background Data 
-  & \Sexpr{as.character(sdm.modeluse$spdata_abs)} 
-  & \Sexpr{as.character(sdm.modeluse$spdata_absNotes)} 
-\\ \cline{2-4}
-  & Evaluation Data 
-  & \Sexpr{as.character(sdm.modeluse$spdata_eval)} 
-  & \Sexpr{as.character(sdm.modeluse$spdata_evalNotes)} 
+\multirow{3}{*}{Species Data} & Presence data quality & \Sexpr{as.character(sdm.modeluse$spdata_dataqual)} & \Sexpr{as.character(sdm.modeluse$spdata_dataqualNotes)} 
+\\ \cline{2-4} & Absence/Background Data & \Sexpr{as.character(sdm.modeluse$spdata_abs)} & \Sexpr{as.character(sdm.modeluse$spdata_absNotes)} 
+\\ \cline{2-4} & Evaluation Data & \Sexpr{as.character(sdm.modeluse$spdata_eval)} & \Sexpr{as.character(sdm.modeluse$spdata_evalNotes)} 
 \\ \hline
-\multirow{2}{*}{Environmental Predictors} 
-  & Ecological and predictive relevance 
-  & \Sexpr{as.character(sdm.modeluse$envvar_relevance)} 
-  & \Sexpr{as.character(sdm.modeluse$envvar_relevanceNotes)} 
-\\ \cline{2-4}
-  & Spatial and temporal alignment 
-  & \Sexpr{as.character(sdm.modeluse$envvar_align)} 
-  & \Sexpr{as.character(sdm.modeluse$envvar_alignNotes)} 
+\multirow{2}{*}{Environmental Predictors} & Ecological and predictive relevance & \Sexpr{as.character(sdm.modeluse$envvar_relevance)} & \Sexpr{as.character(sdm.modeluse$envvar_relevanceNotes)} 
+\\ \cline{2-4} & Spatial and temporal alignment & \Sexpr{as.character(sdm.modeluse$envvar_align)} & \Sexpr{as.character(sdm.modeluse$envvar_alignNotes)} \\ \hline
+\multirow{5}{*}{Modeling Process} & Algorithm choice & \Sexpr{as.character(sdm.modeluse$process_algo)} & \Sexpr{as.character(sdm.modeluse$process_algoNotes)} 
+\\ \cline{2-4} & Sensitivity & \Sexpr{as.character(sdm.modeluse$process_sens)} & \Sexpr{as.character(sdm.modeluse$process_sensNotes)} 
+\\ \cline{2-4} & Statistical rigor & \Sexpr{as.character(sdm.modeluse$process_rigor)} & \Sexpr{as.character(sdm.modeluse$process_rigorNotes)} 
+\\ \cline{2-4} & Performance & \Sexpr{as.character(sdm.modeluse$process_perform)} & \Sexpr{as.character(sdm.modeluse$process_performNotes)} 
+\\ \cline{2-4} & Model review & \Sexpr{as.character(sdm.modeluse$process_review)} &  \Sexpr{as.character(sdm.modeluse$process_reviewNotes)}
 \\ \hline
-\multirow{5}{*}{Modeling Process} 
-  & Algorithm choice 
-  & \Sexpr{as.character(sdm.modeluse$process_algo)} 
-  & \Sexpr{as.character(sdm.modeluse$process_algoNotes)} 
-\\ \cline{2-4}
-  & Sensitivity 
-  & \Sexpr{as.character(sdm.modeluse$process_sens)} 
-  & \Sexpr{as.character(sdm.modeluse$process_sensNotes)} 
-\\ \cline{2-4}
-  & Statistical rigor 
-  & \Sexpr{as.character(sdm.modeluse$process_rigor)} 
-  & \Sexpr{as.character(sdm.modeluse$process_rigorNotes)} 
-\\ \cline{2-4}
-  & Performance 
-  & \Sexpr{as.character(sdm.modeluse$process_perform)} 
-  & \Sexpr{as.character(sdm.modeluse$process_performNotes)} 
-\\ \cline{2-4}
-  & Model review 
-  & \Sexpr{as.character(sdm.modeluse$process_review)} 
-  &  \Sexpr{as.character(sdm.modeluse$process_reviewNotes)}
-\\ \hline
-\multirow{3}{*}{Model Products} 
-  & Mapped products 
-  & \Sexpr{as.character(sdm.modeluse$products_mapped)} 
-  & \\Sexpr{as.character(sdm.modeluse$products_mappedNotes)} 
-\\ \cline{2-4}
-  & Interpretation support products 
-  & \Sexpr{as.character(sdm.modeluse$products_support)} 
-  & \Sexpr{as.character(sdm.modeluse$products_supportNotes)} 
-\\ \cline{2-4}
-  & Reproducibility 
-  & \Sexpr{as.character(sdm.modeluse$products_repo)} 
-  & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} 
-\\ \hline
-  & Iterative 
-  & \Sexpr{as.character(sdm.modeluse$interative)} 
-  & \Sexpr{as.character(sdm.modeluse$interativeNotes)} 
+\multirow{3}{*}{Model Products} & Mapped products & \Sexpr{as.character(sdm.modeluse$products_mapped)} & \\Sexpr{as.character(sdm.modeluse$products_mappedNotes)} 
+\\ \cline{2-4} & Interpretation support products & \Sexpr{as.character(sdm.modeluse$products_support)} & \Sexpr{as.character(sdm.modeluse$products_supportNotes)} 
+\\ \cline{2-4} & Reproducibility & \Sexpr{as.character(sdm.modeluse$products_repo)} & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} 
+\\ \hline & Iterative & \Sexpr{as.character(sdm.modeluse$interative)} & \Sexpr{as.character(sdm.modeluse$interativeNotes)} 
 \\ \hline                      
 	\end{tabular}
 	\end{table}
@@ -469,6 +424,8 @@ box(which = "outer")
 @
 \includegraphics{figure/mapFig-1.png}    
 \end{center}
+\end{center}
+\noindent
 Figure 4. A generalized view of the model predictions throughout the modeled. State boundaries are shown in gray. The modeled area is outlined in red. 
 
 \pagebreak
