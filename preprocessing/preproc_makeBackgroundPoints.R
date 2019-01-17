@@ -1,56 +1,51 @@
 # File: preproc_makeBackgroundPoints.r
-# Purpose: GRTS sampling of study area polygon to generate background random points
+# Purpose: sampling of study area polygon to generate background random points
 
-library(spsurvey)
-library(rgdal)
-
-## set paths ----
-# This is the directory that has your study area polygon.
-setwd("G:/SDM_test/other_spatial")
-
-
-# the name of the study area polygon
-StudyAreaPoly <- "testArea_Albers.shp"
-
-# read in the shapefile, get the attribute data
-layer <- strsplit(StudyAreaPoly,"\\.")[[1]][[1]]
-shapef <- readOGR(StudyAreaPoly, layer = layer)
-att.pt <- shapef@data
-
-#get projection info for later
-projInfo <- shapef@proj4string
-
-# name of random points output shapefile
-nm.RanPtFile <- paste(layer, "_RanPts", sep = "")
-
-## set up and run GRTS ----
-# Enter the number of random points you want to generate 
-# total area of entire study area is about 1,064,000 km^2
-# if our target is about 1 pt / 20 km^2, that comes out to about 53,000 points. 
-numpts <- 20000
-
-# Create the design list
-dsgn <- list(None=list(panel=c(Panel=numpts), seltype="Equal"))
-
-# Call the grts function
-grtsResult <- grts(design=dsgn,
-			src.frame="shapefile",
-			in.shape=layer,
-			att.frame=att.pt,
-			type.frame="area",
-			DesignID="BG-",
-			prjfilename=layer,
-			out.shape=nm.RanPtFile)
-			
-# remove extranneous fields, write it out ----
-ranPts <- as(grtsResult, "SpatialPointsDataFrame")
-colsToKeep <- c("siteID")
-ranPts <- ranPts[,colsToKeep]
-
-# apply projection info
-ranPts@proj4string <- projInfo
-writeOGR(ranPts, dsn = ".", layer = nm.RanPtFile, driver="ESRI Shapefile", overwrite_layer=TRUE)
-
-## clean up ----
-# remove all objects before using another script
+## start with a fresh workspace with no objects loaded
 rm(list=ls())
+library(sf)
+library(here)
+library(RSQLite)
+
+# background points shapefile (points are generated within this boundary). 
+# this should be in the project's projection (matching the raster EVs)
+StudyAreaPoly <- "C:/David/scratch/jurisbnd_lam_clipbound.shp"
+# huc12s. These polygons are used to attribute points. Must have "HUC_12" column.
+huc12 <- "C:/David/scratch/huc12s_VA.shp"
+# number of points to generate
+numpts <- 10000
+# new/existing db table name (overwritten)
+table <- "background_pts_VA"
+
+# path to background points shapefile
+pathToPts <- here("_data","env_vars","background")
+# path to output tables (a database (background.sqlite) is generated here if it doesn't exist)
+pathToTab <- here("_data","env_vars","tabular")
+
+# load layers
+sa <- st_read(StudyAreaPoly)
+crs <- st_crs(sa)
+huc <- st_transform(st_read(huc12), crs)
+
+# generate points
+samps1 <- st_sample(sa, size = numpts)
+samps1 <- st_sf(fid = 1:length(samps1), geometry = samps1)
+samps <- st_join(samps1, huc, join = st_intersects)[c("fid", "HUC_12")]
+names(samps) <- c("fid", "huc12", "geometry")
+
+# create DF
+sampsDF <- data.frame(fid = samps$fid, huc12 = samps$huc12, wkt = st_as_text(samps$geometry))
+
+# send to database
+db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background.sqlite"))
+tp <- as.vector("INTEGER")
+names(tp) <- "fid"
+dbWriteTable(db, table, sampsDF, overwrite = T, field.types = tp)
+
+# write CRS
+tcrs <- data.frame(table_name = table, proj4string = as.character(crs$proj4string))
+try(dbExecute(db, paste0("DELETE FROM lkpCRS where table_name = '", table, "';")), silent = T)
+dbWriteTable(db, "lkpCRS", tcrs, append = T)
+
+# also write to shapefile
+st_write(samps, paste0(pathToPts, "/", table, "_RanPts.shp"), delete_layer = T)

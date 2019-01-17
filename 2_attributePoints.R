@@ -32,6 +32,7 @@ dbDisconnect(db)
 if (!is.null(add_vars)) {
   add_vars1 <- add_vars
   add_vars <- tolower(add_vars)
+
   # get all aquatic vars (including ones marked use_A = 0)
   db <- dbConnect(SQLite(),dbname=nm_db_file)
   SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVarsAqua;")
@@ -83,3 +84,4 @@ write.csv(bkgd.reaches_attributed, paste0("model_input/",baseName,"_bkgd_att.csv
 
 # clean up
 rm(gridlistSub, modType)
+

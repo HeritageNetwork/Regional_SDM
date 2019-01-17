@@ -24,6 +24,7 @@ run_SDM <- function(
   nm_huc12 = nm_huc12,
   nm_refBoundaries,
   nm_aquaArea = NULL,
+  project_overview = "",
   model_comments = "",
   metaData_comments = "",
   modeller = NULL,
@@ -36,13 +37,14 @@ run_SDM <- function(
   project_blurb = NULL,
   prompt = FALSE
 ) {
+
   if ((hasArg(add_vars) | hasArg(remove_vars)) & !begin_step %in% c("1","2")) 
     stop("Need to begin on step 1 or 2 if adding or removing variables.")
   if (hasArg(huc_level) & begin_step != "1") 
     stop("Need to begin on step 1 if using HUC subset.")
   if ((hasArg(huc_level) & !is.null(huc_level)) && !huc_level %in% c(0,2,4,6,8,10,12))
     stop("Valid 'huc_level' values are 0, 2, 4, 6, 8, 10, or 12.")
-  
+
   if (begin_step != "1") {
     if (begin_step %in% c("2","3")) {
       message("Loading most recent saved runSDM settings...")
@@ -75,6 +77,7 @@ run_SDM <- function(
       nm_huc12 = nm_huc12,
       nm_refBoundaries = nm_refBoundaries,
       nm_aquaArea = nm_aquaArea,
+      project_overview = project_overview,
       model_comments = model_comments,
       metaData_comments = metaData_comments,
       modeller = modeller,
@@ -91,16 +94,16 @@ run_SDM <- function(
   if (!hasArg(metaData_comments)) metaData_comments <- fn_args$metaData_comments
   if (!is.null(add_vars)) {
     fn_args$add_vars <- add_vars
-    model_comments <- paste0(model_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
+    model_comments <- paste0("Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model. ", model_comments)
     fn_args$model_comments <- model_comments
-    metaData_comments <- paste0(metaData_comments, " Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model.")
+    metaData_comments <- paste0("Non-standard variables (", paste(add_vars, collapse = ", "), ") were included in this model. ", metaData_comments)
     fn_args$metaData_comments <- metaData_comments
   }
   if (!is.null(remove_vars)) {
     fn_args$remove_vars <- remove_vars
-    model_comments <- paste0(model_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
+    model_comments <- paste0("The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model. ", model_comments)
     fn_args$model_comments <- model_comments
-    metaData_comments <- paste0(metaData_comments, " The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model.")
+    metaData_comments <- paste0("The standard variables (", paste(remove_vars, collapse = ", "), ") were excluded from this model. ", metaData_comments)
     fn_args$metaData_comments <- metaData_comments
   }
   # save fn_args
@@ -112,11 +115,10 @@ run_SDM <- function(
   
   # check for missing packages
   req.pack <- c("RSQLite","rgdal","sp","rgeos","raster","maptools","ROCR","vcd","abind","git2r","sf",
-                "foreign","randomForest","DBI","knitr","RColorBrewer","rasterVis","xtable","data.table","classInt","stringr")
+                "foreign","randomForest","DBI","knitr","RColorBrewer","rasterVis","xtable")
   miss.pack <- req.pack[!req.pack %in% names(installed.packages()[,1])]
   if (length(miss.pack) > 0) {
-    stop("Need to install the following package(s) before running this function: ", paste(miss.pack, collapse = ", "),
-         ". Run script helper/pkg_check.R to download/update.")
+    stop("Need to install the following package(s) before running this function: ", paste(miss.pack, collapse = ", "), ". Run script helper/pkg_check.R to download/update.")
   }
   
   # steps to run
@@ -146,7 +148,7 @@ run_SDM <- function(
     source(paste(loc_scripts, scrpt, sep = "/"), local = TRUE)
     
     # clean up everything but loop objects
-    rm(list=ls()[!ls() %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args")])#,"add_vars","remove_vars","list_presReaches","huc_level","HUCsubset")])
+    rm(list=ls()[!ls() %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args")])
     
     message(paste0("Completed script ", scrpt , "..."))
     

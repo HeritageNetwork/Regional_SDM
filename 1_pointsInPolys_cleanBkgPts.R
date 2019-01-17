@@ -40,6 +40,7 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 } else {
   print("Required columns are present")
 }
+
 # check if all columns have complete data
 if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id")]))) {   # "SNAME", "SCOMNAME", 
   stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID', and 'group_id' cannot have NA values.")

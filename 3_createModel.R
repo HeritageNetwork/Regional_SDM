@@ -46,8 +46,8 @@ corrdEVs <- dbGetQuery(db, statement = SQLquery)
 dbDisconnect(db)
 rm(db)
 
-# get an original list of env-vars that are included in bkgd dataset
-envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables  ## This is failing for some reason...
+# get an original list of env-vars for later writing to tblVarsUsed
+envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
@@ -107,6 +107,7 @@ indVarCols <- c(7:length(colList))
 #re-arrange
 df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
+
 # now remove absence rows with NAs
 df.abs <- df.abs[complete.cases(df.abs),]
 
@@ -165,23 +166,21 @@ impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
 
 # first remove the bottom of the correlated vars
+corrdEVs <- corrdEVs[tolower(corrdEVs$gridName) %in% row.names(impvals),]
 for(grp in unique(corrdEVs$correlatedVarGroupings)){
- vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
- imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
- suppressWarnings(varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE])
- impvals <- impvals[!rownames(impvals) %in% rownames(varsToDrop),,drop = FALSE]
+  vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
+  imp.sub <- impvals[rownames(impvals) %in% vars,, drop = FALSE]
+  suppressWarnings(varsToDrop <- imp.sub[!imp.sub == max(imp.sub),, drop = FALSE])
+  impvals <- impvals[!rownames(impvals) %in% rownames(varsToDrop),,drop = FALSE]
 }
 rm(vars, imp.sub, varsToDrop)
 
-# remove variables with negative/0 importance values (replaces percentile variable choosing, commented out below)
-impEnvVars <- impvals[impvals > 0,]
 # set the percentile, here choosing above 25% percentile
-# envarPctile <- 0.5
-# y <- quantile(impvals, probs = envarPctile)
-# impEnvVars <- impvals[impvals > y,]
+envarPctile <- 0.25
+y <- quantile(impvals, probs = envarPctile)
+impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
-# rm(y)
-
+rm(y)
 # which columns are these, then flip the non-envars to TRUE
 impEnvVarCols <- names(df.full) %in% names(impEnvVars)
 impEnvVarCols[1:6] <- TRUE  # first 6 columns are fixed attributes, not env. vars
@@ -290,7 +289,7 @@ if(length(group$vals)>2){
 		  ssVec <- c(npres, npres)
 		  names(ssVec) <- c("0", "1")
 		  rm(npres)
-		  
+  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
 		                             importance=TRUE,ntree=ntrees,mtry=mtry,
 		                             # strata = trSet[,group$colNm], replace = TRUE, sampsize = ssVec
@@ -519,7 +518,7 @@ for(i in 1:n.plots){
   pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
   cat("finished partial plot ", i, " of ",n.plots, "\n")
 }
-rm(curvar, n.plots, pplotSamp)
+rm(curvar)
 
 # save the project, return to the original working directory
 dir.create(paste0(loc_model, "/", model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
@@ -541,7 +540,7 @@ tblModelResults <- data.frame(model_run_name = model_run_name, EGT_ID = ElementN
 dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
 
 # tblModelResultsVarsUsed
-varImpDB <- data.frame(model_run_name = model_run_name, gridName = envvar_list, inFinalModel = 0)
+varImpDB <- data.frame(model_run_name = model_run_name, gridName = tolower(envvar_list), inFinalModel = 0)
 varImpDB <- merge(varImpDB, EnvVars[c("gridName","impVal")], by = "gridName", all.x = T)
 varImpDB$inFinalModel[!is.na(varImpDB$impVal)] <- 1
 dbWriteTable(db, "tblModelResultsVarsUsed", varImpDB, append = T)

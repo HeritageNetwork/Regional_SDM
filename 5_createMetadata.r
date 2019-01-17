@@ -88,7 +88,7 @@ SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, ca
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
 
 # get info about thresholds
-SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull ", 
+SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull, sortOrder ", 
                   "FROM lkpThresholdTypes ", 
                   "WHERE cutCode IN (", 
                   toString(sQuote(sdm.thresholds$cutCode)),
@@ -96,7 +96,8 @@ SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort
 sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
 
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
-
+#sort it
+sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
                                         "capturedPts", "cutDescription")]
 names(sdm.thresh.table) <- c("Threshold", "Value", "Pct","Description")
@@ -112,6 +113,20 @@ sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),
 # get grank definition
 SQLquery <- paste0("SELECT rank, rankname FROM lkpRankDefinitions where rank = '",ElementNames$rounded_g_rank,"';", sep="")
 grank_desc <- dbGetQuery(db, SQLquery)
+
+# make a url to NatureServe Explorer
+NSurl <- paste("http://explorer.natureserve.org/servlet/NatureServe?searchName=",gsub(" ", "+", ElementNames[[1]], fixed=TRUE), sep="")
+
+
+# get Model Evaluation and Use data
+SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, spdata_dataqualNotes, spdata_absNotes, spdata_evalNotes, envvar_relevanceNotes, envvar_alignNotes, process_algoNotes, process_sensNotes, process_rigorNotes, process_performNotes, process_reviewNotes, products_mappedNotes, products_supportNotes, products_repoNotes, interativeNotes ", 
+                  "FROM tblRubric ", 
+                  "WHERE model_run_name ='", model_run_name, "'; ", sep="")
+sdm.modeluse <- dbGetQuery(db, statement = SQLquery)
+sdm.modeluse[sdm.modeluse=="I"] <- "\\cellcolor[HTML]{9AFF99} Ideal"
+sdm.modeluse[sdm.modeluse=="A"] <- "\\cellcolor[HTML]{FFFFC7} Acceptable"
+sdm.modeluse[sdm.modeluse=="P"] <- "\\cellcolor[HTML]{FD6864} Problematic"
+
 # Get env. var lookup table
 SQLquery <- paste0("SELECT gridName g from tblModelResultsVarsUsed where model_run_name = '",
                    model_run_name, "' and inFinalModel = 1;")
@@ -124,15 +139,6 @@ SQLquery <- paste("SELECT fullName, description ",
 sdm.var.info <- dbGetQuery(db, statement = SQLquery)
 names(sdm.var.info) <- c("Variable Name","Variable Description")
 
-# get Model Evaluation and Use data
-SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, spdata_dataqualNotes, spdata_absNotes, spdata_evalNotes, envvar_relevanceNotes, envvar_alignNotes, process_algoNotes, process_sensNotes, process_rigorNotes, process_performNotes, process_reviewNotes, products_mappedNotes, products_supportNotes, products_repoNotes, interativeNotes ", 
-                  "FROM tblRubric ", 
-                  "WHERE model_run_name ='", model_run_name, "'; ", sep="")
-sdm.modeluse <- dbGetQuery(db, statement = SQLquery)
-sdm.modeluse[sdm.modeluse=="I"] <- "\\cellcolor[HTML]{9AFF99} Ideal"
-sdm.modeluse[sdm.modeluse=="A"] <- "\\cellcolor[HTML]{FFFFC7} Acceptable"
-sdm.modeluse[sdm.modeluse=="P"] <- "\\cellcolor[HTML]{FD6864} Problematic"
- 
 # escape symbols for latex
 ls <- c("&","%","$","#","_","{","}")
 for (l in ls) {
@@ -158,7 +164,7 @@ sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Va
 # Also, might need to run this twice. First time through tex builds the reference
 # list, second time through it can then number the refs in the doc.
 
-setwd("./metadata")
+setwd("metadata")
 
 # knit2pdf errors for some reason...just knit then call directly
 knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
@@ -168,8 +174,10 @@ system(call)
 system(call) # 2nd run to apply citation numbers
 
 # delete .txt, .log etc if pdf is created successfully.
-fn_ext <- c(".log",".aux",".out") # ".tex" was removed from the list as dbucklin indicted its useful for regenerating files
+fn_ext <- c(".log",".aux",".out") 
 if (file.exists(paste(model_run_name, ".pdf",sep=""))){
+  #setInternet2(TRUE)
+  #download.file(fileURL ,destfile,method="auto")
   for(i in 1:NROW(fn_ext)){
     fn <- paste(model_run_name, fn_ext[i],sep="")
     if (file.exists(fn)){ 
@@ -177,8 +185,6 @@ if (file.exists(paste(model_run_name, ".pdf",sep=""))){
     }
   }
 }
-
-
 
 ## clean up ----
 dbDisconnect(db)

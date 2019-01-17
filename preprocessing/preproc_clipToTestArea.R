@@ -8,17 +8,17 @@ library(rgdal)
 
 ## set paths ----
 # set this path to the folder where the environmental rasters reside
-pathToTifs <- "K:/Reg5Modeling_Project/inputs/env_vars/newVars"
+pathToTifs <- "D:/SDM/Tobacco/env_vars/Tobacco"
 
 # the path to write out the tiffs to
-pathToClipped <- "K:/Reg5Modeling_Project/inputs/env_vars/newVars_masked"
+pathToClipped <- "D:/SDM/Tobacco/env_vars/Tobacco/newVars_masked"
 
 
 # path to the shape to use for clipping
-pathToClipShape <- "K:/Reg5Modeling_Project/other_spatial"
-clipShapeName <- "reg5_pred_20161027"
+pathToClipShape <- "D:/SDM/Tobacco/other_spatial/shp"
+clipShapeName <- "StatesVA"
 
-clpShp <- readOGR(pathToClipShape,clipShapeName)
+clpShp <- readOGR(dsn = pathToClipShape, layer = clipShapeName)
 
 # get a list of the grids
 tiflist <- list.files(path = pathToTifs, pattern = ".tif$")
@@ -40,7 +40,8 @@ names(gridlist)<-nm
 for (i in 1:length(gridlist)){
   ras <- raster(gridlist[[i]])
   fn <- paste(pathToClipped, "/", names(gridlist[i]), ".tif", sep="")
-  a <- crop(ras,clpShp, filename = fn, format = "GTiff", overwrite = TRUE)
+  a <- crop(ras,clpShp)
+  writeRaster(a, filename = fn, format = "GTiff", overwrite = TRUE) # datatype = "INT4S"
 }
 
 
