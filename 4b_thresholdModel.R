@@ -47,18 +47,18 @@ cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
                     "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
 
-# get min of max values by polygon (MTPP; minimum training polygon presence)
-maxInEachPoly <- aggregate(allVotesPresPts$X1, 
-                           by=list(allVotesPresPts$stratum, allVotesPresPts$group_id), max)
-names(maxInEachPoly) <- c("stratum","group_id","X1")
-MTPP <- min(maxInEachPoly$X1)
-capturedEOs <- length(unique(maxInEachPoly$group_id))
-capturedPolys <- length(unique(maxInEachPoly$stratum))
-capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPP,])
-cutList$MTPP <- list("value" = MTPP, "code" = "MTPP", 
-                    "capturedEOs" = capturedEOs,
-                    "capturedPolys" = capturedPolys,
-                    "capturedPts" = capturedPts)
+# # get min of max values by polygon (MTPP; minimum training polygon presence)
+# maxInEachPoly <- aggregate(allVotesPresPts$X1, 
+#                            by=list(allVotesPresPts$stratum, allVotesPresPts$group_id), max)
+# names(maxInEachPoly) <- c("stratum","group_id","X1")
+# MTPP <- min(maxInEachPoly$X1)
+# capturedEOs <- length(unique(maxInEachPoly$group_id))
+# capturedPolys <- length(unique(maxInEachPoly$stratum))
+# capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPP,])
+# cutList$MTPP <- list("value" = MTPP, "code" = "MTPP", 
+#                     "capturedEOs" = capturedEOs,
+#                     "capturedPolys" = capturedPolys,
+#                     "capturedPts" = capturedPts)
 
 # get min of max values by EO (MTPEO; minimum training EO presence)
 maxInEachEO <- aggregate(allVotesPresPts$X1, 

@@ -195,12 +195,16 @@ hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
 dbDisconnect(db)
 rm(db)
 
+op <- options()
+options(useFancyQuotes = FALSE) #need straight quotes for query
 # get the background data from the DB
 db <- dbConnect(SQLite(), nm_bkgPts[1])
 qry <- paste0("SELECT * from ", nm_bkgPts[2], " where substr(huc12,1,10) IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," );")
 bkgd <- dbGetQuery(db, qry)
 tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", nm_bkgPts[2], "';"))$p
 samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
+options(op)
+rm(op)
 
 # find coincident points ----
 polybuff <- st_transform(shp_expl, st_crs(samps))
