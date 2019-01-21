@@ -80,10 +80,12 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 
 \smallskip
 \hrule
-\smallskip
+\medskip
 \noindent 
-\Sexpr{as.character(project_overview)} \\\\
-\noindent This SDM incorporates the number of known and background locations indicated in Table 1, modeled with the random forests routine {\protect\NoHyper\cite{breiman2001, iverson2004}\protect\endNoHyper} in the R statistical environment {\protect\NoHyper\cite{liaw2002, r}\protect\endNoHyper}. The modeling unit was a stream reach, as defined in the Medium Resolution National Hydrography Dataset {\protect\NoHyper\cite{nhd}\protect\endNoHyper}. Adjacent presence reaches were combined into "reach groups". We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} for a total of \Sexpr{length(group$vals)} groups. The statistics in Table 2 report the mean and variance of validation statistics for these jackknifing runs.\\
+\Sexpr{as.character(project_overview)}
+
+\noindent
+This SDM incorporates the number of known and background locations indicated in Table 1, modeled with the random forests routine {\protect\NoHyper\cite{breiman2001, iverson2004}\protect\endNoHyper} in the R statistical environment {\protect\NoHyper\cite{liaw2002, r}\protect\endNoHyper}. We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} for a total of \Sexpr{length(group$vals)} groups. The statistics in Table 2 report the mean and variance of validation statistics for these jackknifing runs.\\
 \medskip
 \small
 \begin{minipage}[t]{3in}
@@ -302,13 +304,12 @@ for (plotpi in 1:length(pPlots)){
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
 \small
-Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed {\protect\NoHyper\cite{liaw2002}\protect\endNoHyper}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the black line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationshiop overall; increasing lines, positive. The distribution of each category (thin red = BG points, thick blue = PR points) is depicted at the top margin. See Appendix 1 for variable descriptions.
-\normalsize
+Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed {\protect\NoHyper\cite{liaw2002}\protect\endNoHyper}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the black line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationship overall; increasing lines, positive. The distribution of each category (thin red = BG points, thick blue = PR points) is depicted at the top margin. See Appendix 1 for variable descriptions.
 
-\medskip
+\normalsize
 \medskip
 \noindent
-Species distribution model outputs display the probability (0-1) of a location (i.e. stream reach or raster cell) having similar environmental conditions in comparison to known presence locations. No model will ever depict sites where a targeted element will occur with certainty, it can \textit{only} depict locations it interprets as appropriate habitat for the targeted element. The delineation of suitable habitats is made by the selection of a threshold value, where locations with values above the threshold are designated as likely suitable habitat, and those with values below the threshold may be unsuitable. Threshold values are often statistically calculated. SDMs can be used in many ways and the depiction of appropriate habitat should be varied depending on intended use. For targeting field surveys, an SDM may be used to refine the search area; users should always employ additional GIS tools to further direct search efforts. A lower threshold depicting more area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
+Species distribution model outputs display the probability (0-1) of a location (i.e. stream reach or raster cell) having similar environmental conditions in comparison to known presence locations. No model will ever depict sites where a targeted element will occur with certainty, it can \textit{only} depict locations it interprets as appropriate habitat for the targeted element. The delineation of suitable habitats is made by the selection of a threshold value, where locations with values above the threshold are designated as likely suitable habitat, and those with values below the threshold may be unsuitable. Threshold values are often statistically calculated. SDMs can be used in many ways and the depiction of appropriate habitat should be varied depending on intended use. For targeting field surveys, an SDM may be used to refine the search area; users should always employ additional GIS tools to further direct search efforts. A lower threshold depicting more area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
 
 \pagebreak
 \noindent
@@ -325,18 +326,19 @@ Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\end
               floating=FALSE, include.rownames=FALSE)
 @
 \end{center}
-\normalsize
 \end{minipage}
 
+\normalsize
 \bigskip
 \noindent
-\textbf{Model Evaluation and Intended Use} \\
-\smallskip
+\textbf{Model Evaluation and Intended Use} \\\\
 All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 {\protect\NoHyper\cite{SofaerEtAl2019}\protect\endNoHyper}. \Sexpr{as.character(project_blurb)}
 \\
 \smallskip
 \small
+
 \noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or problematic.
+\smallskip
 \normalsize
 \begin{table}[h]
 \small
@@ -431,8 +433,10 @@ box(which = "outer")
 \noindent
 \small
 Figure 4. A generalized view of the model predictions throughout the modeled. State boundaries are shown in gray. The modeled area is outlined in red. 
+
 \normalsize
 \pagebreak
+
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
 \begin{itemize}
     \setlength{\itemsep}{0pt}
@@ -450,7 +454,7 @@ for(i in 1:length(sdm.dataSources$ProgramName)){
 
 \medskip
 \noindent
-This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. It is one of a suite of aquatic species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.
+This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. This work was improved by the collaboration of other members of the Natural Heritage Network who generously gave their time and talents in support of the technical methods and processes used to develop these models. Our appreciation goes out to the Colorado Natural Heritage Program, Oregon Natural Heritage Program, Wyoming Natural Heritage Program, and the Florida Natural Areas Inventory. It is one of a suite of species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.
 
 \medskip
 \noindent
@@ -459,7 +463,7 @@ This model was built using a methodology developed through collaboration among t
 \fbox{
 \begin{minipage}[t]{0.90\linewidth}%
 Please cite this document and its associated SDM as: \\
-\Sexpr{sdm.modeler$ProgramName}. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}. \Sexpr{sdm.modeler$FullOrganizationName}, \Sexpr{sdm.modeler$City}, \Sexpr{sdm.modeler$State}.
+NatureServe and Heritage Network Partners. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}. Arlington, VA with Network partners from VA, PA, and NY.
 \end{minipage}
 }
 \end{center}
@@ -512,20 +516,40 @@ Please cite this document and its associated SDM as: \\
 \end{thebibliography}
 
 \pagebreak
+\normalsize
 \noindent
 Appendix 1. Descriptions for environmental variables included in model. Variables were derived from the StreamCat {\protect\NoHyper\cite{streamcat}\protect\endNoHyper} and National Hydrography Dataset (NHD) Plus {\protect\NoHyper\cite{nhd}\protect\endNoHyper} datasets.
 \begin{center}
-<<tableFour, results="asis", echo = FALSE>>=
+\begin{table}[h]
+\resizebox{\textwidth}{!}{
+<<Appendix1, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
 addtorow <- list()
 addtorow$pos <- list()
 addtorow$pos[[1]] <- c(0)
-addtorow$command <- c(paste("\\hline \n",sep=""))
-print(xtable(sdm.var.info, label = NULL), # caption = "Appendix 1. Descriptions for environmental variables included in model."),
-      include.rownames=FALSE, scalebox = 0.7, #floating = TRUE, #floating.environment = "sidewaystable",
-      #caption.placement = "top", 
-      sanitize.text = force, add.to.row = addtorow)
+addtorow$command <- c(paste("\\hline \n", sep=""))
+print(xtable(sdm.var.info, label=NULL),
+    include.rownames=FALSE,
+      sanitize.text=force, add.to.row=addtorow, floating=FALSE)
 @
+}
+\end{table}
 \end{center}
+
+\bigskip
+
+\normalsize
+\noindent
+Appendix 2. Model details for reproducibility. All R Scripts are available at \href{https://github.com/HeritageNetwork/Regional_SDM}{github}.
+\begin{itemize}
+    \setlength{\itemsep}{0pt}
+    \setlength{\parskip}{0pt}
+    \setlength{\parsep}{0pt}
+  \item{The repository version (repo head) used for this run was: \Sexpr{modelrun_meta_data$repo_head}}
+  \item{R version: \Sexpr{modelrun_meta_data$r_version}}
+  \item{Random seed for full randomForest model: \Sexpr{modelrun_meta_data$seed}}
+  \item{randomForest mtry: \Sexpr{rf.full$mtry}}
+  \item{randomForest ntrees: \Sexpr{rf.full$ntree}}
+\end{itemize}
 
 \end{document}
