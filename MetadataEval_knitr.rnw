@@ -326,6 +326,7 @@ Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\end
   print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","p{3.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
+\end{center}
 \end{minipage}
 
 \normalsize
@@ -514,30 +515,35 @@ NatureServe and Heritage Network Partners. \Sexpr{format(Sys.Date(), "%Y")}. Spe
 \end{thebibliography}
 
 \pagebreak
+\normalsize
 \noindent
 Appendix 1. Descriptions for environmental variables included in model. Variables were derived from the StreamCat {\protect\NoHyper\cite{streamcat}\protect\endNoHyper} and National Hydrography Dataset (NHD) Plus {\protect\NoHyper\cite{nhd}\protect\endNoHyper} datasets.
 \begin{center}
-<<tableFour, results="asis", echo = FALSE>>=
+\begin{table}[h]
+\resizebox{\textwidth}{!}{
+<<Appendix1, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
 addtorow <- list()
 addtorow$pos <- list()
 addtorow$pos[[1]] <- c(0)
-addtorow$command <- c(paste("\\hline \n",sep=""))
-print(xtable(sdm.var.info, label = NULL),
+addtorow$command <- c(paste("\\hline \n", sep=""))
+print(xtable(sdm.var.info, label=NULL),
     include.rownames=FALSE,
-      sanitize.text = force, add.to.row = addtorow, floating=FALSE)
+      sanitize.text=force, add.to.row=addtorow, floating=FALSE)
 @
 }
 \end{table}
-\medskip
+\end{center}
 
-Appendix 2. Model details for reproducibility
+\bigskip
 
+\normalsize
+\noindent
+Appendix 2. Model details for reproducibility. All R Scripts are available at \href{https://github.com/HeritageNetwork/Regional_SDM}{github}.
 \begin{itemize}
     \setlength{\itemsep}{0pt}
     \setlength{\parskip}{0pt}
     \setlength{\parsep}{0pt}
-  \item{All R Scripts are available at \href{https://github.com/HeritageNetwork/Regional_SDM}{github}}
   \item{The repository version (repo head) used for this run was: \Sexpr{modelrun_meta_data$repo_head}}
   \item{R version: \Sexpr{modelrun_meta_data$r_version}}
   \item{Random seed for full randomForest model: \Sexpr{modelrun_meta_data$seed}}
