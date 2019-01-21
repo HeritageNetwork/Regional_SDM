@@ -2,9 +2,10 @@
 # Purpose: attribute environmental data to presence points
 
 library(raster)
-library(rgdal)
+library(sf)
+# library(rgdal)
 library(RSQLite)
-library(maptools)
+# library(maptools)
 
 # load data, QC ----
 setwd(loc_envVars)
@@ -22,7 +23,7 @@ raslist.short <- unlist(
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- "select gridName, fileName from lkpEnvVars;"
 evs <- dbGetQuery(db, SQLQuery)
-shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist), evs)
+shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist, stringsAsFactors = FALSE), evs)
 dbDisconnect(db)
 
 gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
@@ -36,11 +37,7 @@ max(nmLen) # if this result is greater than 10, you've got a renegade
 # Set working directory to the random points location
 setwd(paste0(loc_model, "/", model_species, "/inputs"))
 
-ranPtsFilesNoExt <- paste0(baseName, "_RanPts")
-shpf <- readOGR("presence", layer = ranPtsFilesNoExt)
-
-#get projection info for later
-projInfo <- shpf@proj4string
+shpf <- st_read(paste0("presence/", baseName, "_RanPts.shp"),quiet = T)
 
 # subset input env. vars by model type (terrestrial, shore, etc)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -48,40 +45,49 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE sp_code = '", model_species, "';")
 modType <- dbGetQuery(db, SQLQuery)$m
 
-SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars WHERE use_",modType," = 1;")
-gridlistSub <- dbGetQuery(db, SQLQuery)$g
+# gridlistSub is a running list of variables to use. Uses fileName from lkpEnvVars
+SQLQuery <- paste0("SELECT gridName, fileName FROM lkpEnvVars WHERE use_",modType," = 1;")
+gridlistSub <- dbGetQuery(db, SQLQuery)
+gridlistSub$fileName <- gsub(".tif$","",gridlistSub$fileName)
+gridlistSub$gridName <- tolower(gridlistSub$gridName)
 dbDisconnect(db)
-
-# get just names of grids (removes folder for temporal vars)
-justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
 
 ## account for add/remove vars
 if (!is.null(add_vars)) {
   add_vars1 <- add_vars
   add_vars <- tolower(add_vars)
-
+  
   db <- dbConnect(SQLite(),dbname=nm_db_file)
-  SQLQuery <- paste0("SELECT gridName g FROM lkpEnvVars;")
-  gridlistAll <- tolower(dbGetQuery(db, SQLQuery)$g)
+  SQLQuery <- paste0("SELECT gridName, fileName FROM lkpEnvVars;")
+  gridlistAll <- dbGetQuery(db, SQLQuery)
+  gridlistAll$fileName <- gsub(".tif$","",gridlistAll$fileName)
+  gridlistAll$gridName <- tolower(gridlistAll$gridName)
   dbDisconnect(db)
   
-  if (!all(add_vars %in% gridlistAll)) {
+  if (!all(add_vars %in% gridlistAll$gridName)) {
     stop("Some environmental variables listed in `add_vars` were not found in `nm_EnvVars` dataset: ",
-         paste(add_vars1[!add_vars %in% gridlistSub], collapse = ", "), ".")
+         paste(add_vars1[!add_vars %in% gridlistAll$gridName], collapse = ", "), ".")
   }
-  gridlistSub <- c(gridlistSub, add_vars)
+  # add the variables
+  add_vars_df <- gridlistAll[gridlistAll$gridName %in% add_vars,]
+  gridlistSub <- rbind(gridlistSub, add_vars_df)
 }
 if (!is.null(remove_vars)) {
   remove_vars1 <- remove_vars
   remove_vars <- tolower(remove_vars)
-  if (!all(remove_vars %in% gridlistSub)) {
+  if (!all(remove_vars %in% gridlistSub$gridName)) {
     message("Some environmental variables listed in `remove_vars` were not found in the `nm_EnvVars` dataset: ",
-            paste(remove_vars1[!remove_vars %in% gridlistSub], collapse = ", "), ".")
+            paste(remove_vars1[!remove_vars %in% gridlistSub$gridName], collapse = ", "), ".")
   } 
-  gridlistSub <- gridlistSub[!tolower(gridlistSub) %in% tolower(remove_vars)]
+  # remove the variables
+  gridlistSub <- gridlistSub[!tolower(gridlistSub$gridName) %in% tolower(remove_vars),]
 }
+# remove duplicates
+gridlistSub <- gridlistSub[!duplicated(gridlistSub),]
 
-fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub)]
+# get just names of grids (removes folder for temporal vars)
+justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
+fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub$fileName)]
 
 # Could use this script here crop/mask rasters
 #source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
@@ -119,7 +125,7 @@ if (length(tv) > 0) {
     
     vals <- unlist(lapply(1:length(pa), FUN = function(x) {
       eval(parse(text = paste0("pa$", tvDataYear.s$dataset[1],"_",closestYear[x],".",i, "[", x , "]")
-                 ))
+      ))
     }))
     
     # add to pa
@@ -130,8 +136,6 @@ if (length(tv) > 0) {
 }
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
 
-# write it out ----
-points_attributed@proj4string <- projInfo
 # re-name table columns from filename to shrtNms$gridName
 shrtNms$fileName <- gsub(".tif$", "", shrtNms$fileName)
 for (n in 1:length(names(points_attributed))) {
@@ -139,5 +143,12 @@ for (n in 1:length(names(points_attributed))) {
     names(points_attributed)[n] <- shrtNms$gridName[shrtNms$fileName == names(points_attributed)[n]][1]
   }
 }
-filename <- paste(baseName, "_att", sep="")
-writeOGR(points_attributed, "model_input", layer=paste(filename), driver="ESRI Shapefile", overwrite_layer=TRUE)
+
+# write it out to the att db
+dbName <- paste(baseName, "_att.sqlite", sep="")
+db <- dbConnect(SQLite(), paste0("model_input/",dbName))
+att_dat <- points_attributed@data
+dbWriteTable(db, paste0(baseName, "_att"), att_dat)
+dbDisconnect(db)
+rm(db)
+

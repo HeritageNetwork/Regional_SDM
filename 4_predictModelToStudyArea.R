@@ -3,7 +3,6 @@
 
 ## start with a fresh workspace with no objects loaded
 library(raster)
-library(rgdal)
 library(randomForest)
 library(RSQLite)
 library(sf)
@@ -57,11 +56,12 @@ for (i in 1:length(stackOrder)) {
     rs1 <- do.call(rbind.data.frame, strsplit(rs, "_|/"))
     rs1$nm <- rs
     rs <- rs1$nm[which.max(as.numeric(rs1[,2]))]
+    rm(rs1)
   }
   fullL[[i]] <- rs
 }
 names(fullL) <- stackOrder
-rm(rs,rs1)
+rm(rs)
 
 source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
 envStack <- stack(newL)
@@ -95,6 +95,6 @@ if (all(c("snow","parallel") %in% installed.packages())) {
 }
 
 # delete temp rasts folder
-if (dir.exists(paste(loc_model, model_species, "inputs", "temp_rasts", sep = "/"))) {
-  unlink(x = paste(loc_model, model_species, "inputs", "temp_rasts", sep = "/"), recursive = T, force = T)
+if (dir.exists(paste0(options("rasterTmpDir")[1], "/", modelrun_meta_data$model_run_name))) {
+  unlink(x = paste0(options("rasterTmpDir")[1], "/", modelrun_meta_data$model_run_name), recursive = T, force = T)
 }

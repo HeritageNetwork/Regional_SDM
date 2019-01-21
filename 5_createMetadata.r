@@ -11,14 +11,13 @@ library(randomForest)
 library(knitr)
 library(raster)
 library(maptools)
-library(sp)
-library(rgdal)
+library(sf)
 library(RColorBrewer)
-library(rgdal)
 library(rasterVis)
 library(RSQLite)
 library(xtable)
 library(stringi)
+library(tables)
 
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
@@ -30,25 +29,17 @@ dir.create(paste0(model_species,"/outputs/metadata"), recursive = T, showWarning
 setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
-# source(paste(loc_scripts, "0_pathsAndSettings.R", sep = "/"))
-
-# get background poly data for the map
-layerdir <- dirname(nm_studyAreaExtent)
-layer <- strsplit(basename(nm_studyAreaExtent),"\\.")[[1]][[1]]
-studyAreaExtent <- readOGR(layerdir,  layer = layer) # study area
-
-# get background poly data for the map (study area, reference boundaries, and aquatic areas)
-layerdir <- dirname(nm_refBoundaries)
-layer <- strsplit(basename(nm_refBoundaries),"\\.")[[1]][[1]]
-referenceBoundaries <- readOGR(layerdir,  layer = layer) # name of state boundaries file
+# get background poly data for the map (study area, reference boundaries)
+studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)
+referenceBoundaries <- st_read(nm_refBoundaries, quiet = T) # name of state boundaries file
 
 r <- dir(path = "model_predictions", pattern = ".tif$",full.names=FALSE)
 fileName <- r[gsub(".tif", "", r) == model_run_name]
 ras <- raster(paste0("model_predictions/", fileName))
 
 # project to match raster, just in case
-studyAreaExtent <- spTransform(studyAreaExtent, ras@crs)
-referenceBoundaries <- spTransform(referenceBoundaries, ras@crs)
+studyAreaExtent <- st_transform(studyAreaExtent, as.character(ras@crs))
+referenceBoundaries <- st_transform(referenceBoundaries, as.character(ras@crs))
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
@@ -84,7 +75,7 @@ if(nrow(sdm.customComments) > 1) {
 }
 
 ## Get threshold information ----
-SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPolys, capturedPts ", 
+SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPts ", 
                   "FROM tblModelResultsCutoffs ", 
                   "WHERE model_run_name ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
@@ -105,12 +96,12 @@ sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 #sort it
 sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
-  "capturedEOs", "capturedPolys", "capturedPts", "cutDescription")]
-names(sdm.thresh.table) <- c("Threshold", "Value", "EOs","Polys","Pts","Description")
-sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
-                                     "(",sdm.thresh.table$EOs, ")", sep="")
-sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
-                              "(",sdm.thresh.table$Polys, ")", sep="")
+  "capturedEOs", "capturedPts", "cutDescription")]
+names(sdm.thresh.table) <- c("Threshold", "Value", "Groups","Pts","Description")
+sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/numEOs*100, 1),
+                                     "(",sdm.thresh.table$Groups, ")", sep="")
+# sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
+#                               "(",sdm.thresh.table$Polys, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
                               sep="")
@@ -118,6 +109,19 @@ sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
 # get grank definition
 SQLquery <- paste0("SELECT rank, rankname FROM lkpRankDefinitions where rank = '",ElementNames$rounded_g_rank,"';", sep="")
 grank_desc <- dbGetQuery(db, SQLquery)
+
+# make a url to NatureServe Explorer
+NSurl <- paste("http://explorer.natureserve.org/servlet/NatureServe?searchName=",gsub(" ", "+", ElementNames[[1]], fixed=TRUE), sep="")
+
+# get Model Evaluation and Use data
+SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, spdata_dataqualNotes, spdata_absNotes, spdata_evalNotes, envvar_relevanceNotes, envvar_alignNotes, process_algoNotes, process_sensNotes, process_rigorNotes, process_performNotes, process_reviewNotes, products_mappedNotes, products_supportNotes, products_repoNotes, interativeNotes ", 
+                  "FROM tblRubric ", 
+                  "WHERE model_run_name ='", model_run_name, "'; ", sep="")
+sdm.modeluse <- dbGetQuery(db, statement = SQLquery)
+sdm.modeluse[sdm.modeluse=="I"] <- "\\cellcolor[HTML]{9AFF99} Ideal"
+sdm.modeluse[sdm.modeluse=="A"] <- "\\cellcolor[HTML]{FFFFC7} Acceptable"
+sdm.modeluse[sdm.modeluse=="P"] <- "\\cellcolor[HTML]{FD6864} Problematic"
+
 # Get env. var lookup table
 SQLquery <- paste0("SELECT gridName g from tblModelResultsVarsUsed where model_run_name = '",
                    model_run_name, "' and inFinalModel = 1;")
@@ -157,15 +161,16 @@ sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Va
 
 setwd("metadata")
 # knit2pdf errors for some reason...just knit then call directly
-knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
+#knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+#call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
 # call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex") # this stops execution if there is an error. Not really necessary
-system(call)
-system(call) # 2nd run to apply citation numbers
+#system(call)
+#system(call) # 2nd run to apply citation numbers
 
 
 # delete .txt, .log etc if pdf is created successfully.
-fn_ext <- c(".tex",".log",".aux",".out")
+fn_ext <- c(".log",".aux",".out")
 if (file.exists(paste(model_run_name, ".pdf",sep=""))){
   #setInternet2(TRUE)
   #download.file(fileURL ,destfile,method="auto")

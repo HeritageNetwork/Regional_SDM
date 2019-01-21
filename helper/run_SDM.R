@@ -20,7 +20,7 @@ run_SDM <- function(
   nm_bkgPts,
   nm_HUC_file,
   nm_refBoundaries,
-  nm_studyAreaExtent,
+  project_overview = "",
   model_comments = "",
   metaData_comments = "",
   modeller = NULL,
@@ -28,6 +28,8 @@ run_SDM <- function(
   model_rdata = NULL,
   add_vars = NULL,
   remove_vars = NULL,
+  rubric_default = NULL,
+  project_blurb = NULL,
   prompt = FALSE
 ) {
   
@@ -67,13 +69,15 @@ run_SDM <- function(
       nm_bkgPts = nm_bkgPts,
       nm_HUC_file = nm_HUC_file,
       nm_refBoundaries = nm_refBoundaries,
-      nm_studyAreaExtent = nm_studyAreaExtent,
+      project_overview = project_overview,
       model_comments = model_comments,
       metaData_comments = metaData_comments,
       modeller = modeller,
       add_vars = add_vars,
       remove_vars = remove_vars,
-      baseName = baseName)
+      baseName = baseName,
+      rubric_default = rubric_default,
+      project_blurb = project_blurb)
   }
   
   # add comments for added/excluded vars
@@ -130,29 +134,6 @@ run_SDM <- function(
     message(paste0("Running script ", scrpt , "..."))
     # reload variables
     for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
-    
-    # modelrun_meta_data
-    if (scrpt == "3_createModel.R") {
-      repo <- git2r::repository()
-      repo_head <- git2r::last_commit(repo)$sha
-      rm(repo)
-      model_start_time <- as.character(Sys.time())
-      sdat <- Sys.info()
-      model_comp_name <- sdat[['nodename']]
-      r_version <- R.version.string
-      model_run_name <- paste0(model_species, "_" , gsub(" ","_",gsub(c("-|:"),"",as.character(model_start_time))))
-      if (modeller == "Your name") modeller <- sdat[['effective_user']]
-      modelrun_meta_data <- list(model_run_name = model_run_name,
-                                 model_start_time=model_start_time,
-                                 modeller = modeller,
-                                 model_comp_name=model_comp_name,
-                                 r_version = r_version,
-                                 model_comments = model_comments,
-                                 repo_head = repo_head)
-      # re-save fn_args with model_run
-      fn_args$modelrun_meta_data <- modelrun_meta_data
-      save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
-    }
     
     # run script
     source(paste(loc_scripts, scrpt, sep = "/"), local = TRUE)

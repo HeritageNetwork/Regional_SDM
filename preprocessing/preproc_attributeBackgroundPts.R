@@ -9,11 +9,11 @@ library(here)
 library(RSQLite)
 
 # path where .tif env. var rasters are stored
-pathToRas <- here("_data","env_vars","raster")
+pathToRas <- here("_data","env_vars","raster", "ras")
 # path to output tables (a database is generated here if it doesn't exist)
 pathToTab <- here("_data","env_vars","tabular")
 # background points table name (this should be already created with preproc_makeBackgroundPoints.R)
-table <- "background_pts_VA"
+table <- "background_pts"
 # lkpEnvVars database
 dbLookup <- dbConnect(SQLite(), here("_data","databases","SDM_lookupAndTracking.sqlite"))
 
@@ -21,7 +21,7 @@ dbLookup <- dbConnect(SQLite(), here("_data","databases","SDM_lookupAndTracking.
 setwd(pathToRas)
 
 ## create a stack. Note this is using native R rasters
-raslist <- list.files(pattern = ".tif$", recursive = TRUE)
+raslist <- list.files(pattern = ".tif$", recursive = FALSE)
 
 # temporal groups -> take only max year by group
 tv <- list.dirs(recursive = FALSE, full.names = FALSE)
@@ -62,6 +62,9 @@ tp <- as.vector("INTEGER")
 names(tp) <- "fid"
 dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = T, field.types = tp)
 # not writing shapefile, since base shapefile already exists
+
+dbDisconnect(db)
+rm(db)
 
 ## clean up ----
 # remove all objects before using another script
