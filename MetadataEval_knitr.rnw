@@ -478,9 +478,7 @@ mapshot(mv, file = here("_data","species",model_species,"outputs","metadata","fi
 @
 \includegraphics{figure/mapFig-1.png}    
 \end{center}
-\noindent
-\small
-Figure 4. A generalized view of the model predictions throughout the modeled. State boundaries are shown in gray. The modeled area is outlined in red. 
+Figure 4. A generalized view of the model predictions throughout the modeled area. State boundaries are shown in gray. The modeled area is outlined in red. 
 
 \normalsize
 \pagebreak
