@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS `tblModelResults` (
 	`model_end_time`	TEXT,
 	`r_version`	TEXT,
 	`repo_head`	TEXT,
+	`seed`	INTEGER,
 	PRIMARY KEY(`model_run_name`),
 	FOREIGN KEY(`model_run_name`) REFERENCES `tblModelResults`(`model_run_name`)
 );
