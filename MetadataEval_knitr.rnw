@@ -436,7 +436,7 @@ plot(studyAreaExtent$geometry, border = "red", lwd = 2, add = T)
 @
 \includegraphics{figure/mapFig-1.pdf}    
 \end{center}
-Figure 4. A generalized view of the model predictions throughout the modeled. State boundaries are shown in gray. The modeled area is outlined in red. 
+Figure 4. A generalized view of the model predictions throughout the modeled area. State boundaries are shown in gray. The modeled area is outlined in red. 
 
 \pagebreak
 This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
