@@ -32,7 +32,7 @@ setwd(paste0(loc_model,"/",model_species,"/inputs"))
 presReaches <- read.csv(nm_presFile)
 
 shpColNms <- names(presReaches)
-desiredCols <- c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID", "OBSDATE","group_id") # , "SNAME", "SCOMNAME", 
+desiredCols <- c("UID", "GROUP_ID", "SPECIES_CD", "COMID", "OBSDATE") # , "SNAME", "SCOMNAME", 
 
 # check if all required names are in file
 if("FALSE" %in% c(desiredCols %in% shpColNms)) {
@@ -42,8 +42,8 @@ if("FALSE" %in% c(desiredCols %in% shpColNms)) {
 }
 
 # check if all columns have complete data
-if(any(!complete.cases(presReaches[c("EO_ID_ST", "SNAME", "SCOMNAME", "COMID","group_id")]))) {   # "SNAME", "SCOMNAME", 
-  stop("The columns 'EO_ID_ST', 'SNAME', 'SCOMNAME', 'COMID', and 'group_id' cannot have NA values.")
+if(any(is.na(presReaches[c("UID", "GROUP_ID", "SPECIES_CD", "COMID")]))) {   # "SNAME", "SCOMNAME", 
+  stop("The columns 'UID', 'GROUP_ID', 'SPECIES_CD', and 'COMID' cannot have NA values.")
 }
 
 # check if file already exists; if it does, stop and print error

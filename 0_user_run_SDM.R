@@ -17,7 +17,6 @@ loc_model <- here("_data", "species")
 # Modeling database
 nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
-
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv"))
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature","US_States.shp") # background grey reference lines in map
@@ -142,10 +141,10 @@ run_SDM(
 # example pick-up a model run at step 5 (metadata create)
   # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
-  begin_step = "5",
+  begin_step = "4b",
   model_species = "chrocumb",
   loc_model = loc_model,
-  model_rdata = "chrocumb_20190116_142650",
+  model_rdata = "chrocumb_20190122_184827",
   metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
 

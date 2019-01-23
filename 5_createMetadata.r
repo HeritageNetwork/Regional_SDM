@@ -98,17 +98,13 @@ sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 #sort it
 sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
-sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
-                                        "capturedPts", "cutDescription")]
-names(sdm.thresh.table) <- c("Threshold", "Value", "Pct","Description")
-sdm.thresh.table$Description <- gsub("points", "reaches", sdm.thresh.table$Description, fixed = T) # hack to change points -> reaches
-#sdm.thresh.table$EOs <- paste(round(sdm.thresh.table$EOs/numEOs*100, 1),
-#                                    "(",sdm.thresh.table$EOs, ")", sep="")
-#sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
-#                         "(",sdm.thresh.table$Polys, ")", sep="")
+sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue", "capturedEOs", "capturedPts", "cutDescription")]
+names(sdm.thresh.table) <- c("Threshold", "Value", "Groups", "Pct","Description")
+sdm.thresh.table$Description <- gsub("points", "reaches", sdm.thresh.table$Description, fixed=TRUE) # hack to change points -> reaches
+sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/numEOs*100, 1), "(",sdm.thresh.table$Groups, ")", sep="")
+#sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),  "(",sdm.thresh.table$Polys, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
-sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),
-                              sep="")
+sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),  sep="")
 
 # get grank definition
 SQLquery <- paste0("SELECT rank, rankname FROM lkpRankDefinitions where rank = '",ElementNames$rounded_g_rank,"';", sep="")

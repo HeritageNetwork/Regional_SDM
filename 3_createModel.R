@@ -56,7 +56,7 @@ df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),] 
 # add some fields to each
 df.in <- cbind(df.in, pres=1)
 df.abs$stratum <- "pseu-a"
-df.abs <- cbind(df.abs, EO_ID_ST="pseu-a", pres=0, SNAME="background")
+df.abs <- cbind(df.abs, group_id="pseu-a", pres=0, SPECIES_CD="background")
 
 # lower case column names
 names(df.in) <- tolower(names(df.in))
@@ -96,7 +96,7 @@ df.in$scomname <- NULL  # not in df.abs --> causing issues on the rearrange belo
 df.in$stratum <- as.character(df.in$group_id) # group_id used for model stratification
 
 # this is the full list of fields, arranged appropriately
-colList <- c("sname","eo_id_st","pres","stratum","comid", "huc12", envvar_list)
+colList <- c("species_cd","group_id","pres","stratum","comid", "huc12", envvar_list)
 #colList <- names(df.in)
 
 # if colList gets modified, 
@@ -112,15 +112,15 @@ df.abs <- df.abs[,colList]
 df.abs <- df.abs[complete.cases(df.abs),]
 
 # row bind the pseudo-absences with the presence points
-df.abs$eo_id_st <- factor(df.abs$eo_id_st)
+df.abs$group_id <- factor(df.abs$group_id)
 df.full <- rbind(df.in, df.abs)
 
 # reset these factors
 df.full$stratum <- factor(df.full$stratum) # this is set below, just resetting and maintaining the column order
-df.full$eo_id_st <- factor(df.full$eo_id_st)
+df.full$group_id <- factor(df.full$group_id)
 df.full$pres <- factor(df.full$pres)
 df.full$huc12 <- factor(tolower(as.character(df.full$huc12)))
-df.full$sname <- factor(df.full$sname)
+df.full$species_cd <- factor(df.full$species_cd)
 
 # make sampSizeVec using assigned stratum
 #sampSizeVec <- table(df.full$stratum) # CHANGE THIS?? (sample sizes by HUC12? would need to change pseu-abs record values in that case)
@@ -207,6 +207,9 @@ df.abs2$pres <- factor(df.abs2$pres)
 #reset the row names, needed for random subsetting method of df.abs2, below
 row.names(df.in2) <- 1:nrow(df.in2)
 row.names(df.abs2) <- 1:nrow(df.abs2)
+
+#how many groups do we have?
+numEOs <- length(unique(factor(df.in2$group_id)))
 
 #initialize the grouping list, and set up grouping variables
 group <- vector("list")

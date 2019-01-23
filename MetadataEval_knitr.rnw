@@ -322,7 +322,7 @@ Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\end
 <<tableThree, results="asis", echo = FALSE>>=
   tbl <- sdm.thresh.table
   #tbl$Citation <- gsub("(^.*)","\\\\cite{\\1}",sdm.thresh.table$Citation)
-  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","p{3.3in}")), 
+  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","p{3.3in}")), 
               floating=FALSE, include.rownames=FALSE)
 @
 \end{center}
