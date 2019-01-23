@@ -411,17 +411,19 @@ if(length(group$vals)>1){
 	perf.avg@y.values <- list(rowMeans( data.frame( perf.avg@y.values)))
 	perf.avg@alpha.values <- list( alpha.values )
 
-	# find the best cutoff based on the averaged ROC curve
-	### TODO: customize/calculate this for each model rather than
-	### average? 
-	cutpt <- which.max(abs(perf.avg@x.values[[1]]-perf.avg@y.values[[1]]))
-	cutval <- perf.avg@alpha.values[[1]][cutpt]
-	cutX <- perf.avg@x.values[[1]][cutpt]
-	cutY <- perf.avg@y.values[[1]][cutpt]
-	cutval.rf <- c(1-cutval,cutval)
-	names(cutval.rf) <- c("0","1")
-
 	for(i in 1:length(group$vals)){
+	  # get threshold
+	  # max sensitivity plus specificity (maxSSS per Liu et al 2016)
+	  # create the prediction object for ROCR. Get pres col from votes (=named "1")
+	  pred <- prediction(trRes[[i]]$votes[,"1"],trRes[[i]]$y)
+	  sens <- performance(pred,"sens")
+	  spec <- performance(pred,"spec")
+	  sss <- data.frame(cutSens = unlist(sens@x.values),sens = unlist(sens@y.values),
+	                            cutSpec = unlist(spec@x.values), spec = unlist(spec@y.values))
+	  sss$sss <- with(sss, sens + spec)
+	  maxSSS <- sss[which.max(sss$sss),"cutSens"]
+    cutval.rf <- c(maxSSS, 1-maxSSS)
+	  names(cutval.rf) <- c("0","1")
 		#apply the cutoff to the validation data
 		v.rf.pred.cut <- predict(trRes[[i]], evSet[[i]],type="response", cutoff=cutval.rf)
 		#make the confusion matrix
