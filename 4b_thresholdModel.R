@@ -17,36 +17,35 @@ load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 cutList <- list()
 
 #get minimum training presence
-allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("eo_id_st", "stratum")])
-allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
-
+allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("group_id", "stratum")])
+allVotesPresPts <- allVotes[allVotes$rf.full.y==1,]
 # na.rm = TRUE for testing
 MTP <- min(allVotesPresPts$X1, na.rm = FALSE)
-###capturedEOs <- length(unique(allVotesPresPts$eo_id_st))  # only captured points, not EO and poly
+capturedEOs <- length(unique(allVotesPresPts$group_id))  
 ###capturedPolys <- length(unique(allVotesPresPts$stratum))
 capturedPts <- nrow(allVotesPresPts)
 cutList$MTP <- list("value" = MTP, "code" = "MTP", 
-                    #"capturedEOs" = capturedEOs,
+                    "capturedEOs" = capturedEOs,
                     #"capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
 
 #get 10 percentile training presence
 TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1), na.rm = FALSE)
 TenPctilePts <- allVotesPresPts[allVotesPresPts$X1 >= TenPctile,]
-#capturedEOs <- length(unique(TenPctilePts$eo_id_st))
+capturedEOs <- length(unique(TenPctilePts$group_id))
 #capturedPolys <- length(unique(TenPctilePts$stratum))
 capturedPts <- nrow(TenPctilePts)
 cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
-#                    "capturedEOs" = capturedEOs,
+                    "capturedEOs" = capturedEOs,
 #                    "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts)
 
 # get MTPG (by group)
-MTPG <- min(aggregate(allVotesPresPts$X1, by = list(allVotesPresPts$stratum), FUN = max)$x)
+MTPG <- min(aggregate(allVotesPresPts$X1, by=list(allVotesPresPts$stratum), FUN = max)$x)
 MTPGPts <- allVotesPresPts[allVotesPresPts$X1 >= MTPG,]
+capturedEOs <- length(unique(allVotesPresPts$group_id))
 capturedPts <- nrow(MTPGPts)
-cutList$MTPG <- list("value" = MTPG, "code" = "MTPG", 
-                     "capturedPts" = capturedPts)
+cutList$MTPG <- list("value"=MTPG, "code"="MTPG", "capturedEOs"=capturedEOs, "capturedPts"=capturedPts)
 
 # F-measure cutoff skewed towards capturing more presence points.
 # extract the precision-recall F-measure from training data
@@ -64,11 +63,11 @@ rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]]
 names(rf.full.ctoff) <- c("0","1")
 FMeasPt01 <- rf.full.ctoff[2]
 z <- allVotesPresPts[allVotesPresPts$X1 >= FMeasPt01,]
-#capturedEOs <- length(unique(z$eo_id_st))
+capturedEOs <- length(unique(z$group_id))
 #capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
 cutList$FMeasPt01 <- list("value" = FMeasPt01, "code" = "FMeasPt01",
-#                          "capturedEOs" = capturedEOs,
+                          "capturedEOs" = capturedEOs,
 #                          "capturedPolys" = capturedPolys,
                           "capturedPts" = capturedPts)
 
@@ -80,11 +79,11 @@ rf.full.sss <- data.frame(cutSens = unlist(rf.full.sens@x.values),sens = unlist(
 rf.full.sss$sss <- with(rf.full.sss, sens + spec)
 maxSSS <- rf.full.sss[which.max(rf.full.sss$sss),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$X1 >= maxSSS,]
-#capturedEOs <- length(unique(z$eo_id_st))
+capturedEOs <- length(unique(z$group_id))
 #capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
 cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
-#  "capturedEOs" = capturedEOs,
+  "capturedEOs" = capturedEOs,
 #  "capturedPolys" = capturedPolys,
   "capturedPts" = capturedPts)
 
@@ -92,11 +91,11 @@ cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
 rf.full.sss$diff <- abs(rf.full.sss$sens - rf.full.sss$spec)
 eqss <- rf.full.sss[which.min(rf.full.sss$diff),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$X1 >= eqss,]
-#capturedEOs <- length(unique(z$eo_id_st))
+capturedEOs <- length(unique(z$group_id))
 #capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
 cutList$eqss <- list("value" = eqss, "code" = "eqSS",
-#                       "capturedEOs" = capturedEOs,
+                       "capturedEOs" = capturedEOs,
 #                       "capturedPolys" = capturedPolys,
                        "capturedPts" = capturedPts)
 
@@ -110,7 +109,7 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 # cutpt <- which.max(abs(rf.full.perf@x.values[[1]]-rf.full.perf@y.values[[1]]))
 # ROCupperleft <- rf.full.perf@alpha.values[[1]][cutpt]
 # z <- allVotesPresPts[allVotesPresPts$X1 >= ROCupperleft,]
-# capturedEOs <- length(unique(z$eo_id_st))
+# capturedEOs <- length(unique(z$group_id))
 # capturedPolys <- length(unique(z$stratum))
 # capturedPts <- nrow(z)
 # cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
@@ -124,10 +123,9 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T)
 
 # MRV (on full model predictions)
-pres.comid <- df.full$comid[df.full$pres==1]
-mrv <- min(results_shape$prbblty[results_shape$comid %in% pres.comid], na.rm = T)
-cutList$MRV <- list("value" = mrv, "code" = "MRV",
-                    "capturedPts" = length(pres.comid))
+###pres.comid <- df.full$comid[df.full$pres==1]
+###mrv <- min(results_shape$prbblty[results_shape$comid %in% pres.comid], na.rm = T)
+##cutList$MRV <- list("value" = mrv, "code" = "MRV", "capturedPts" = length(pres.comid))
 
 
 
@@ -139,9 +137,9 @@ allThresh <- data.frame("model_run_name" = rep(modelrun_meta_data$model_run_name
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
                 "cutCode" = unlist(lapply(cutList, function(x) x[2])),
                 "cutValue" = unlist(lapply(cutList, function(x) x[1])),
-#                "capturedEOs" = unlist(lapply(cutList, function(x) x[3])),
+                "capturedEOs" = unlist(lapply(cutList, function(x) x[3])),
 #                "capturedPolys" = unlist(lapply(cutList, function(x) x[4])),
-                "capturedPts" = unlist(lapply(cutList, function(x) x[3])),
+                "capturedPts" = unlist(lapply(cutList, function(x) x[4])),
                 stringsAsFactors = FALSE)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
