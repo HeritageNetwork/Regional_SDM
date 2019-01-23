@@ -26,6 +26,10 @@ df.abs <- read.csv(fileName, colClasses=c("huc12"="character"))
 
 # write model input data to database before any other changes made
 db <- dbConnect(SQLite(),dbname=nm_db_file)
+
+# set the seed before validation loops
+set.seed(seed)
+
 # get species info
 SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id, g_rank, rounded_g_rank FROM lkpSpecies WHERE sp_code = '", model_species,"';", sep="")
 ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
@@ -467,9 +471,6 @@ if(length(group$vals)>2){
 # increase the number of trees for the full model
 ntrees <- 2000
 
-# set the seed
-set.seed(seed)
-   
 ####
 #   run the full model ----
 ####
