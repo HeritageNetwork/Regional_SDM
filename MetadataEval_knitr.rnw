@@ -462,7 +462,7 @@ for(i in 1:length(sdm.dataSources$ProgramName)){
 
 \medskip
 \noindent
-This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. It is one of a suite of aquatic species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.
+This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. It is one of a suite of species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.
 
 \medskip
 \noindent
@@ -550,6 +550,7 @@ Appendix 2. Model details for reproducibility
     \setlength{\parsep}{0pt}
   \item{All R Scripts are available at \href{https://github.com/HeritageNetwork/Regional_SDM}{github}}
   \item{The repository version (repo head) used for this run was: \Sexpr{modelrun_meta_data$repo_head}}
+  \item{Validation metrics requiring a threshold use maxSSS\cite{LiuEtAl2015}}
   \item{R version: \Sexpr{modelrun_meta_data$r_version}}
   \item{Random seed for full randomForest model: \Sexpr{modelrun_meta_data$seed}}
   \item{randomForest mtry: \Sexpr{rf.full$mtry}}
