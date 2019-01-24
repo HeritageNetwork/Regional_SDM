@@ -7,10 +7,6 @@ library(sf)
 library(randomForest)
 library(data.table)
 
-####
-## two lines need your attention. The one directly below (loc_scripts)
-## and about line 26 where you choose which Rdata file to use
-
 # load data ----
 # get the rdata file
 setwd(loc_model)
@@ -19,7 +15,6 @@ setwd(paste0(model_species,"/outputs"))
 
 # load rdata
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
-#load("rdata/chrocumb_20181108_223046.Rdata")
 
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
 presHUC <- stringr::str_pad(as.character(df.full$huc12[df.full$pres==1]), 12, pad = 0)
