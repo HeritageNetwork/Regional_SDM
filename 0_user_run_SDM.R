@@ -8,7 +8,7 @@ rm(list=ls())
 # set project folder, db, species code, and species reaches filename for this run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "chrocumb"
+model_species <- "pseugorz"
 
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
@@ -27,7 +27,7 @@ project_overview = "The following metadata describes the SDM for one species of 
 # model comment in database
 model_comments = ""
 # comment printed in PDF metadata
-metaData_comments = "This is an updated comment that will appear in the metadata PDF on Jan16."
+metaData_comments = ""
 # your name
 modeller = "Christopher Tracey"
 
@@ -36,9 +36,9 @@ nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
 nm_huc12 <- c(here("_data","env_vars","tabular", "background.sqlite"), "range_huc12")
 # name of aquatic areas shapefile (for mapping; optional) [Aquatic-only variable]
-nm_aquaArea <- here("_data","other_spatial", "feature","VA_nhdarea_wb.shp")
-# numeric HUC level to sub-set project area [Aquatic-only variable].
-  # NULL will auto-calculate the level where all presences are in a unique watershed at that level
+nm_aquaArea <- c(here("_data", "env_vars","tabular", "background.sqlite"), "nhdArea")
+
+# numeric HUC level to sub-set project area [Aquatic-only variable]. NULL will auto-calculate the level where all presences are in a unique watershed at that level
 huc_level <- NULL
 
 # list non-standard variables to "add" to model run
@@ -75,7 +75,7 @@ run_SDM(
   loc_model = loc_model,
   nm_bkg = nm_bkg,
   nm_huc12 = nm_huc12,
-  #nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
+  nm_aquaArea = nm_aquaArea, ### optional shapefile of all nhd 'area' types w/comid (for plotting model output)
   huc_level = huc_level,
   nm_refBoundaries = nm_refBoundaries, # background grey reference lines in map
   project_overview = project_overview,
@@ -174,7 +174,7 @@ rm(list=ls())
 # so you need to have executed run_SDM in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "chrocumb"
+model_species <- "pseugorz"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 

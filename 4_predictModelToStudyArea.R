@@ -50,7 +50,7 @@ names(shapef1) <- tolower(names(shapef1))
 SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
 proj4 <- dbGetQuery(db, SQLQuery)$p  # save for HUC12s down below
 
-shapef <- st_sf(shapef1[c("comid", "huc12")], geometry = st_as_sfc(shapef1$wkt), crs = proj4)
+shapef <- st_sf(shapef1[c("comid", "huc12", "wacomid")], geometry = st_as_sfc(shapef1$wkt), crs = proj4)
 try(shapef <- st_sf(shapef1[c("comid", "huc12", "wacomid","strord")], geometry = st_as_sfc(shapef1$wkt), crs = proj4), silent = T)
 
 # join probability to shapefile
@@ -66,9 +66,8 @@ SQLQuery <- paste0("SELECT * FROM ",nm_huc12[2], " WHERE ","substr(HUC12,1,",huc
 shapef2 <- dbGetQuery(db, SQLQuery)
 names(shapef2) <- tolower(names(shapef2))
 
-shapeh <- st_sf(shapef2[c("huc12")], geometry = st_as_sfc(shapef2$wkt), crs = proj4)
-try(shapeh <- st_sf(shapef2[c("huc12")], geometry = st_as_sfc(shapef2$wkt), crs = proj4), silent=T)
-# NEED a step in here to dissolve the polygons
-shapeh <- st_union(shapeh)
+shapeh <- st_sf(shapef2[c("huc12")], geometry=st_as_sfc(shapef2$wkt), crs=proj4)
+try(shapeh <- st_sf(shapef2[c("huc12")], geometry=st_as_sfc(shapef2$wkt), crs=proj4), silent=T)
+shapeh <- st_union(shapeh) # dissolve the polygons
 st_write(shapeh, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc12.shp"), delete_layer=T)
 dbDisconnect(db)
