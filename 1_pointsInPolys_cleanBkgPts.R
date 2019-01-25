@@ -114,7 +114,7 @@ SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_b
 proj4 <- dbGetQuery(dbEV, SQLQuery)$p
 # shapef <- st_read(nm_allflowlines)
 names(shapef) <- tolower(names(shapef))
-shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
+shapef <- st_sf(shapef[c("comid", "huc12","wacomid")], geometry=st_as_sfc(shapef$wkt), crs=proj4)
 # testcatchments <- shapef@data
 shapef$huc12 <- str_pad(shapef$huc12, 12, pad=0)
 

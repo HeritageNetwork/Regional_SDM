@@ -82,7 +82,7 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 \hrule
 \medskip
 \noindent 
-\Sexpr{as.character(project_overview)}
+\Sexpr{as.character(project_overview)} \\
 \smallskip
 \noindent
 This SDM incorporates the number of known and background locations indicated in Table 1, modeled with the random forests routine {\protect\NoHyper\cite{breiman2001, iverson2004}\protect\endNoHyper} in the R statistical environment {\protect\NoHyper\cite{liaw2002, r}\protect\endNoHyper}. We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} for a total of \Sexpr{length(group$vals)} groups. The statistics in Table 2 report the mean and variance of validation statistics for these jackknifing runs.\\
