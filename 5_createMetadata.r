@@ -19,6 +19,8 @@ library(xtable)
 library(stringi)
 library(tables)
 
+library(mapview)  
+
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
 ## about line 35 where you choose which Rdata file to use,

@@ -415,28 +415,66 @@ if(nrow(sdm.customComments.subset) > 0){
 \begin{center}
 
 <<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE>>=
-par(mar=c(0,0,4.5,0), xpd = F, cex=0.9, adj = 0.05)
+#par(mar=c(0,0,4.5,0), xpd = F, cex=0.9, adj = 0.05)
 nclr <- 5
 clrs <- brewer.pal('Blues',n=nclr)
+
+
 # myTheme=rasterTheme(region=brewer.pal('Blues', n=nclr))
 # levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=rasterTheme(region=brewer.pal('Blues',n=9)), scales=list(draw = FALSE),xlim=c( 1000000, 2300000),ylim=c(1500000, 3100000)) + layer(sp.polygons(referenceBoundaries,lwd=0.05,col='gray')) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'))
 
 # levelplot(ras, margin=FALSE, at=(0:10)/10, par.settings=myTheme, scales=list(draw = FALSE),xlim=c(as.vector(studyAreaExtent@bbox[1,1])-10000,as.vector(studyAreaExtent@bbox[1,2])+10000),ylim=c(as.vector(studyAreaExtent@bbox[2,1])-10000,as.vector(studyAreaExtent@bbox[2,2])+10000)) + layer(sp.polygons(referenceBoundaries,lwd=0.4,col='gray50'), data=list(referenceBoundaries=referenceBoundaries)) + layer(sp.polygons(studyAreaExtent,lwd=1, col='red'), data = list(studyAreaExtent=studyAreaExtent))
 
 # set up plot
-plot(st_geometry(studyAreaExtent), axes = F, col = NA, border = NA)
-plot(st_geometry(referenceBoundaries), add = T, border = "grey80")
-legend(par('usr')[2], par('usr')[4], legend = rev(c("Low Habitat Suitability", 
-                                 rep("               |               ", nclr-2), "High Habitat Suitability")),
-       fill = rev(clrs), border = rev(clrs), cex=0.8, bg = "white", xpd = NA, xjust = 1, yjust = 0)
-title(main = paste0(as.character(ElementNames[[2]]), " (", as.character(ElementNames[[1]]), "): \n    SDM Habitat Suitability Predictions"), cex.main = 1.1)
-box()
-box(which = "outer")
-# need to plot raster after legend, title, box, otherwise it messes up margins
-plot(ras, maxpixels = 500000, col = clrs, axes = F, add = T, legend = F)
-plot(st_geometry(studyAreaExtent), border = "red", lwd = 2, add = T)
+# plot(st_geometry(studyAreaExtent), axes = F, col = NA, border = NA)
+# plot(st_geometry(referenceBoundaries), add = T, border = "grey80")
+# legend(par('usr')[2], par('usr')[4], legend = rev(c("Low Habitat Suitability", 
+#                                  rep("               |               ", nclr-2), "High Habitat Suitability")),
+#        fill = rev(clrs), border = rev(clrs), cex=0.8, bg = "white", xpd = NA, xjust = 1, yjust = 0)
+# title(main = paste0(as.character(ElementNames[[2]]), " (", as.character(ElementNames[[1]]), "): \n    SDM Habitat Suitability Predictions"), cex.main = 1.1)
+# box()
+# box(which = "outer")
+# # need to plot raster after legend, title, box, otherwise it messes up margins
+# plot(ras, maxpixels = 500000, col = clrs, axes = F, add = T, legend = F)
+# plot(st_geometry(studyAreaExtent), border = "red", lwd = 2, add = T)
+
+######
+# library(ggmap)
+# studyAreaExtent_ll <- sf::st_transform(studyAreaExtent,"+proj=longlat +datum=WGS84")
+# bb <- st_bbox(studyAreaExtent_ll)
+# names(bb) <- c("left","bottom","right","top")
+# basem <- get_map(location = bb, source = "stamen", maptype = "toner")
+# 
+# ggmap(basem, extent = "device") +
+#   geom_sf(data = studyAreaExtent_ll, inherit.aes = FALSE, 
+#           fill = NA, colour = "red", size = 2) + 
+#   geom_raster(ras, inherit.aes = FALSE)
+
+atRamp <- seq(0,1,0.2)
+#names(atRamp) <- c("Low","","","","","High")
+mapviewOptions(legend.pos = "bottomleft", leafletHeight = 650, leafletWidth = 650)
+
+mv <- mapview(studyAreaExtent, alpha.regions = 0, color = "red",
+        map.types = c("Stamen.TonerLite"),
+        homebutton = FALSE, legend.opacity = 0) +
+    mapview(ras, maxpixels = 300000, col.regions = clrs, at = atRamp,
+        na.color = NA, legend = TRUE, layer.name = "Suitability",
+        homebutton = FALSE, legend.opacity = 0)
+
+## need phantomjs installed to work:
+## webshot::install_phantomjs()
+
+#knit_print(mv)
+mapshot(mv, file = here("_data","species",model_species,"outputs","metadata","figure","mapFig-1.png"))
+#,
+#        vwidth = 460, vheight = 500)
+#  mapview(referenceBoundaries, alpha.regions = 0, color = "grey")
+
+# for basemap options see http://leaflet-extras.github.io/leaflet-providers/preview/
+
+###############
 @
-\includegraphics{figure/mapFig-1.pdf}    
+\includegraphics{figure/mapFig-1.png}    
 \end{center}
 \noindent
 \small
