@@ -32,7 +32,7 @@ load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T) # shapefile results for mapping
 
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
-studyAreaExtent <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_huc12.shp")), quiet = T)
+studyAreaExtent <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_modelrange.shp")), quiet = T)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
 
 
