@@ -54,7 +54,7 @@ rm(db)
 envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
 
 #make sure we don't have any NAs
-df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
+df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date","wacomid")]),]  # to ensure missing dates are not excluding records
 
 # align data sets, QC ----
 # add some fields to each
