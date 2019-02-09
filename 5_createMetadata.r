@@ -37,7 +37,7 @@ referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
 
 
 if (!is.null(nm_aquaArea)) {
-  wacomid <- as.numeric(unique(results_shape$wacomid))
+  wacomid <- as.numeric(unique(as.character(results_shape$wacomid)))
   wacomid <- wacomid[!is.na(wacomid)]
   if (length(wacomid) > 0) { # on create the waterbodies if some are present
     db <- dbConnect(SQLite(),dbname=nm_aquaArea[1])
