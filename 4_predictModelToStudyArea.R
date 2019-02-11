@@ -70,5 +70,5 @@ shapeh <- st_sf(shapef2[c("huc12")], geometry=st_as_sfc(shapef2$wkt), crs=proj4)
 try(shapeh <- st_sf(shapef2[c("huc12")], geometry=st_as_sfc(shapef2$wkt), crs=proj4), silent=T)
 shapeh <- st_buffer(shapeh, 0) # zero-width buffer to deal with random geometry errors
 shapeh <- st_union(shapeh) # dissolve the polygons
-st_write(shapeh, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc12.shp"), delete_layer=T)
+st_write(shapeh, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_modelrange.shp"), delete_layer=T)
 dbDisconnect(db)

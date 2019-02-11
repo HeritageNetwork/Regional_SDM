@@ -53,8 +53,11 @@ rm(db)
 # get an original list of env-vars for later writing to tblVarsUsed
 envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
 
+# go through the envar columns and drop any that have NA values
+### a <- df.in[colSums(is.na(df.in[colnames(df.in) %in% envvar_list])) > 0]
+
 #make sure we don't have any NAs
-df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
+df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date","wacomid")]),]  # to ensure missing dates are not excluding records
 
 # align data sets, QC ----
 # add some fields to each
