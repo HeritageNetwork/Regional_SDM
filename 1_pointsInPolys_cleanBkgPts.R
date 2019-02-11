@@ -137,9 +137,9 @@ if (is.null(huc_level)) {
   } else if(length(unique(substr(presHUCs,1,4)))==1){
     huc_level <- 4  
   } else if(length(unique(substr(presHUCs,1,2)))==1){
-    huc_level <- 2
+    huc_level <- 2 
   } else {
-    huc_level <- 2
+    huc_level <- 4 # changed from 2 to try to narrow up the prediction area
   }
   fn_args$huc_level <- huc_level
   save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
