@@ -121,6 +121,7 @@ SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relev
                   "WHERE sp_code ='", model_species, "'; ", sep="")
 sdm.modeluse <- dbGetQuery(db, statement = SQLquery)
 sdm.modeluse$process_perform <- ifelse(tss.summ$mean<=0.6, "C", "A") # this downgrades the performance metric to 'Interpet with Caution' if the TSS score is below 0.6
+sdm.modeluse[is.na(sdm.modeluse)] <- " "
 sdm.modeluse[sdm.modeluse=="I"] <- "\\cellcolor[HTML]{9AFF99} Ideal"
 sdm.modeluse[sdm.modeluse=="A"] <- "\\cellcolor[HTML]{FFFFC7} Acceptable"
 sdm.modeluse[sdm.modeluse=="C"] <- "\\cellcolor[HTML]{FD6864} Interpet with Caution"
