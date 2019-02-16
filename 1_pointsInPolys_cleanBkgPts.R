@@ -152,6 +152,8 @@ if(nrow(polysWithNoPoints) > 0){
 
 # get actual finalSampNum
 ranPts.joined2 <- ranPts.joined[0,]
+
+#### this is slow! ####
 for (ex in 1:length(shp_expl$geometry)) {
   s1 <- shp_expl[ex,]
   samps <- row.names(ranPts.joined[ranPts.joined$expl_id==s1$expl_id,])

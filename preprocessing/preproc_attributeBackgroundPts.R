@@ -48,14 +48,41 @@ for (n in 1:length(names(envStack))) {
 }
 
 ## Get random points table ----
-db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background.sqlite"))
+db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_amazviri.sqlite"))
 bkgd <- dbReadTable(db, table)
+
+#remove any huc12 nulls
+bkgd <- bkgd[complete.cases(bkgd),]
+
 tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", table, "';"))$p
 samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 
+#### exploring multi-core options
+#https://gis.stackexchange.com/questions/253618/r-multicore-approach-to-extract-raster-values-using-spatial-points
+library(snowfall)
+# Extract values to a data frame - multicore approach
+# First, convert raster stack to list of single raster layers
+s.list <- unstack(envStack)
+names(s.list) <- names(envStack)
+
+# Now, create a R cluster using all the machine cores minus one
+sfInit(parallel=TRUE, cpus=parallel:::detectCores()-1)
+
+# Load the required packages inside the cluster
+sfLibrary(raster)
+sfLibrary(sf)
+
+# Run parallelized 'extract' function and stop cluster
+e.df <- sfSapply(s.list, extract, y=samps, method = "simple")
+sfStop()
+
+DF <- data.frame(e.df)
+
+
+
 # extract values
-x <- extract(envStack, samps, method="simple")
-sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), x))
+#x <- extract(envStack, samps, method="simple")
+sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), DF))
 
 # write to DB
 tp <- as.vector("INTEGER")
