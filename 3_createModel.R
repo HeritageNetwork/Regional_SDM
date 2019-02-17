@@ -417,16 +417,24 @@ if(length(group$vals)>1){
 	for(i in 1:length(group$vals)){
 	  # get threshold
 	  # max sensitivity plus specificity (maxSSS per Liu et al 2016)
-	  # create the prediction object for ROCR. Get pres col from votes (=named "1")
-	  pred <- prediction(trRes[[i]]$votes[,"1"],trRes[[i]]$y)
-	  sens <- performance(pred,"sens")
-	  spec <- performance(pred,"spec")
-	  sss <- data.frame(cutSens = unlist(sens@x.values),sens = unlist(sens@y.values),
-	                            cutSpec = unlist(spec@x.values), spec = unlist(spec@y.values))
-	  sss$sss <- with(sss, sens + spec)
-	  maxSSS <- sss[which.max(sss$sss),"cutSens"]
-    cutval.rf <- c(maxSSS, 1-maxSSS)
+	  # create the prediction object for ROCR. Get pres col from y, prediction from votes (=named "1")
+# 	  pred <- prediction(trRes[[i]]$votes[,"1"],trRes[[i]]$y)
+# 	  sens <- performance(pred,"sens")
+# 	  spec <- performance(pred,"spec")
+# 	  sss <- data.frame(cutSens = unlist(sens@x.values),sens = unlist(sens@y.values),
+# 	                            cutSpec = unlist(spec@x.values), spec = unlist(spec@y.values))
+# 	  sss$sss <- with(sss, sens + spec)
+# 	  maxSSS <- sss[which.max(sss$sss),"cutSens"]
+#     cutval.rf <- c(1-maxSSS, maxSSS)
+# 	  names(cutval.rf) <- c("0","1")
+	  
+	  # get MTP: minimum training presence (minimum votes recieved [probability]
+	  # for any training point)
+	  allVotesPrespts <- trRes[[i]]$votes[,"1"][trRes[[i]]$y == 1]
+	  MTP <- min(allVotesPrespts)
+	  cutval.rf <- c(1-MTP, MTP)
 	  names(cutval.rf) <- c("0","1")
+	  
 		#apply the cutoff to the validation data
 		v.rf.pred.cut <- predict(trRes[[i]], evSet[[i]],type="response", cutoff=cutval.rf)
 		#make the confusion matrix
