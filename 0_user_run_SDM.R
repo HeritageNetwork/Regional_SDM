@@ -8,7 +8,7 @@ rm(list=ls())
 # set project folder, db, species code, and species reaches filename for this run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "pseugorz"
+model_species <- "chrocumb"
 
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
@@ -22,10 +22,10 @@ nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv"))
 nm_refBoundaries = here("_data","other_spatial","feature","US_States.shp") # background grey reference lines in map
 
 # project overview - this appears in the first paragraph of the metadata
-project_overview = "The following metadata describes the SDM for one species of 2,700 included in a Map of Biodiversity Irreplaceability (MoBI) in the continental U.S. developed by  NatureServe and the Network of Natural Heritage Programs and funded by ESRI."
+project_overview = "The following metadata describes the SDM for one species of 2,700 included in a Map of Biodiversity Irreplaceability (MoBI) in the continental U.S. developed by NatureServe and the Network of Natural Heritage Programs and funded by ESRI."
 
 # model comment in database
-model_comments = ""
+model_comments = "2km sep distance"
 # comment printed in PDF metadata
 metaData_comments = ""
 # your name
@@ -47,10 +47,6 @@ add_vars = NULL
 remove_vars = NULL
 # do you want to stop execution after each modeling step (script)?
 prompt = FALSE
-
-# default values for Model Use rubric
-# order should be "spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqualNotes,spdata_absNotes,spdata_evalNotes,envvar_relevanceNotes,envvar_alignNotes,process_algoNotes,process_sensNotes,process_rigorNotes,process_performNotes,process_reviewNotes,products_mappedNotes,products_supportNotes,products_repoNotes,interativeNotes"
-rubric_default = c("I","A","A","A","A","I","A","A","A","I","A","I","A","A","","","","","","","","","","","","","","")
 
 project_blurb = "Models developed for the MoBI project are intended to inform creation of a national map of biodiversity value, and we recommend additional refinement and review before these data are used for more targeted, species-specific decision making. In particular, many MoBI models would benefit from greater consideration of species data and environmental predictor inputs, a more thorough review by species experts, and iteration to address comments received."
 
@@ -84,7 +80,7 @@ run_SDM(
   modeller = modeller,
   add_vars = add_vars,
   remove_vars = remove_vars,
-  rubric_default = rubric_default,
+  #rubric_default = rubric_default,
   project_blurb = project_blurb,
   prompt = prompt
 )
@@ -114,7 +110,7 @@ library(here)
 rm(list=ls())
 
 # set project folder and species code for this run
-model_species <- "chrocumb"
+model_species <- "uttepeni"
 loc_model <- here("_data", "species")
 
 # set wd and load function
@@ -127,12 +123,12 @@ source(here("helper", "run_SDM.R"))
   # to add/remove variables, begin at step 2
   # to just run new model, begin at step 3 (see next example)
 run_SDM(
-  begin_step = "2",
-  model_species = "chrocumb",
+  begin_step = "3",
+  model_species = "fuscburk",
   loc_model = loc_model,
-  nm_presFile = "chrocumb_20181217_131103",
-  model_comments = "Testing out model with removed variables.",
-  remove_vars = "cbnfws"
+  nm_presFile = "fuscburk_20190207_221919_prepped"
+  #model_comments = "Testing out model with removed variables.",
+  #remove_vars = "cbnfws"
 )
 
 
@@ -141,11 +137,11 @@ run_SDM(
 # example pick-up a model run at step 5 (metadata create)
   # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
-  begin_step = "4b",
-  model_species = "chrocumb",
+  begin_step = "4",
+  model_species = "pleucoll",
   loc_model = loc_model,
-  model_rdata = "chrocumb_20190122_184827",
-  metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+  model_rdata = "pleucoll_20190207_142005"
+  #metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
 
 
@@ -174,7 +170,7 @@ rm(list=ls())
 # so you need to have executed run_SDM in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "pseugorz"
+model_species <- "villortm"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
