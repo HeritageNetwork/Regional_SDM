@@ -62,8 +62,8 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
   
 @
   \begin{center}
-  \includegraphics{figure/thermometer1-1.pdf} \\     %place it
-  ability to find new sites \end{center}
+  \includegraphics{figure/thermometer1-1.pdf} \\ %place it
+  validation success \end{center}
 \end{minipage}  
 
 \smallskip
