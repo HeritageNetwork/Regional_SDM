@@ -9,7 +9,7 @@ library(here)
 library(RSQLite)
 
 # path where .tif env. var rasters are stored
-pathToRas <- here("_data","env_vars","raster", "ras")
+pathToRas <- here("_data","env_vars","raster","ras")
 # path to output tables (a database is generated here if it doesn't exist)
 pathToTab <- here("_data","env_vars","tabular")
 # background points table name (this should be already created with preproc_makeBackgroundPoints.R)
@@ -20,8 +20,8 @@ dbLookup <- dbConnect(SQLite(), here("_data","databases","SDM_lookupAndTracking.
 ## create a stack from all envvars ----
 setwd(pathToRas)
 
-## create a stack. Note this is using native R rasters
-raslist <- list.files(pattern = ".tif$", recursive = FALSE)
+## create a stack.
+raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
 # temporal groups -> take only max year by group
 tv <- list.dirs(recursive = FALSE, full.names = FALSE)
@@ -34,18 +34,42 @@ if (length(tv) > 1) {
   }
 }
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
-nm <- substr(raslist,1,nchar(raslist) - 4)
-nm <- unlist(lapply(strsplit(nm, "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
-names(gridlist) <- nm
-envStack <- stack(gridlist)
 
-# change stack original (file) names to coded names
+# get coded names
 lkp <- dbGetQuery(dbLookup, "SELECT gridName, fileName from lkpEnvVars;")
-for (n in 1:length(names(envStack))) {
-  nm <- names(envStack)[n]
-  try(names(envStack)[n] <- lkp$gridName[paste0(nm, ".tif") == lkp$fileName]) 
-  # errors mean the fileName is missing from the DB.
-}
+
+
+# method 1
+# start_time <- Sys.time()
+nm <- unlist(lapply(strsplit(raslist, "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
+names(gridlist) <- nm
+
+shortNames <- merge(data.frame(fileName = names(gridlist)), lkp, all.x = TRUE)
+gridlist <- gridlist[order(names(gridlist))]
+names(gridlist) <- shortNames[order(shortNames$fileName),"gridName"]
+
+nulls <- gridlist[is.na(names(gridlist))]
+
+# if any records here, stop! there are some cases of no match in the DB
+nulls
+
+envStack <- stack(gridlist)
+# end_time <- Sys.time()
+# end_time - start_time
+
+# method 2 -- slightly slower
+# start_time <- Sys.time()
+# nm <- substr(raslist,1,nchar(raslist) - 4)
+# nm <- unlist(lapply(strsplit(nm, "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
+# envStack <- stack(gridlist)
+# 
+# for (n in 1:length(names(envStack))) {
+#   nm <- names(envStack)[n]
+#   try(names(envStack)[n] <- lkp$gridName[paste0(nm, ".tif") == lkp$fileName]) 
+#   # errors mean the fileName is missing from the DB.
+# }
+# end_time <- Sys.time()
+# end_time - start_time
 
 ## Get random points table ----
 db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_amazviri.sqlite"))
