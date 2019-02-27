@@ -27,7 +27,7 @@ library(here)
 
 # database location and name
 dbLoc <- here("_data","databases")
-dbName <- "SDM_lookupAndTracking.sqlite"
+dbName <- "SDM_lookupAndTracking_for_repo.sqlite"
 
 # path to sqlite dump folder
 gitLoc <- here("sqlite")
@@ -54,5 +54,5 @@ shell(toSQLitecmd)
 # setwd(gitLoc)
 # toTextcmd <- paste(dbLoc, '/sqlite3.exe \"',
 #                    dbLoc, '/', dbName, '\" .dump > ',
-#                    'sqliteDBDump.txt', sep = "")
+#                    'sqliteDBDump.sql', sep = "")
 # shell(toTextcmd)

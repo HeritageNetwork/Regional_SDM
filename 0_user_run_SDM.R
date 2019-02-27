@@ -8,6 +8,7 @@ rm(list=ls())
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
 model_species <- "amazviri"
+
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -27,10 +28,11 @@ nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
 nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  # background grey reference lines in map
 
 # project overview - this appears in the first paragraph of the metadata
-project_overview = "The following metadata describes the SDM for one species of 2,700 included in a Map of Biodiversity Irreplaceability (MoBI) in the continental U.S. developed by  NatureServe and the Network of Natural Heritage Programs and funded by ESRI."
+project_overview = "The following metadata describes the SDM for one species of 2,700 included in a Map of Biodiversity Irreplaceability (MoBI) in the continental U.S. developed by NatureServe and the Network of Natural Heritage Programs and funded by ESRI."
 
 # model comment in database
 model_comments = "custom model comments"
+
 # comment printed in PDF metadata
 metaData_comments = "This is an updated comment that will appear in the metadata PDF on Jan16."
 
@@ -43,10 +45,6 @@ add_vars = NULL
 remove_vars = NULL
 # do you want to stop execution after each modeling step (script)?
 prompt = FALSE
-
-# default values for Model Use rubric
-# order should be "spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqual,spdata_abs,spdata_eval,envvar_relevance,envvar_align,process_algo,process_sens,process_rigor,process_perform,process_review,products_mapped,products_support,products_repo,interative,spdata_dataqualNotes,spdata_absNotes,spdata_evalNotes,envvar_relevanceNotes,envvar_alignNotes,process_algoNotes,process_sensNotes,process_rigorNotes,process_performNotes,process_reviewNotes,products_mappedNotes,products_supportNotes,products_repoNotes,interativeNotes"
-rubric_default = c("I","A","A","A","A","I","A","A","A","I","A","I","A","A","","","","","","","","","","","","","","")
 
 project_blurb = "Models developed for the MoBI project are intended to inform creation of a national map of biodiversity value, and we recommend additional refinement and review before these data are used for more targeted, species-specific decision making. In particular, many MoBI models would benefit from greater consideration of species data and environmental predictor inputs, a more thorough review by species experts, and iteration to address comments received."
 
@@ -78,7 +76,7 @@ run_SDM(
   modeller = modeller,
   add_vars = add_vars,
   remove_vars = remove_vars,
-  rubric_default = rubric_default,
+  #rubric_default = rubric_default,
   project_blurb = project_blurb,
   prompt = prompt
 )
@@ -108,7 +106,7 @@ library(here)
 rm(list=ls())
 
 # set project folder and species code for this run
-model_species <- "chrocumb"
+model_species <- "uttepeni"
 loc_model <- here("_data", "species")
 
 # set wd and load function
@@ -121,12 +119,12 @@ source(here("helper", "run_SDM.R"))
   # to add/remove variables, begin at step 2
   # to just run new model, begin at step 3 (see next example)
 run_SDM(
-  begin_step = "2",
-  model_species = "chrocumb",
+  begin_step = "3",
+  model_species = "fuscburk",
   loc_model = loc_model,
-  nm_presFile = "chrocumb_20181217_131103",
-  model_comments = "Testing out model with removed variables.",
-  remove_vars = "cbnfws"
+  nm_presFile = "fuscburk_20190207_221919_prepped"
+  #model_comments = "Testing out model with removed variables.",
+  #remove_vars = "cbnfws"
 )
 
 

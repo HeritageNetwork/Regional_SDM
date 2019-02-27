@@ -7,9 +7,10 @@ library(raster)
 library(sf)
 library(here)
 library(RSQLite)
+library(snowfall)
 
 # path where .tif env. var rasters are stored
-pathToRas <- here("_data","env_vars","raster", "ras")
+pathToRas <- here("_data","env_vars","raster","ras")
 # path to output tables (a database is generated here if it doesn't exist)
 pathToTab <- here("_data","env_vars","tabular")
 # background points table name (this should be already created with preproc_makeBackgroundPoints.R)
@@ -20,8 +21,8 @@ dbLookup <- dbConnect(SQLite(), here("_data","databases","SDM_lookupAndTracking.
 ## create a stack from all envvars ----
 setwd(pathToRas)
 
-## create a stack. Note this is using native R rasters
-raslist <- list.files(pattern = ".tif$", recursive = FALSE)
+## create a stack.
+raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
 # temporal groups -> take only max year by group
 tv <- list.dirs(recursive = FALSE, full.names = FALSE)
@@ -34,61 +35,129 @@ if (length(tv) > 1) {
   }
 }
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
-nm <- substr(raslist,1,nchar(raslist) - 4)
-nm <- unlist(lapply(strsplit(nm, "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
-names(gridlist) <- nm
-envStack <- stack(gridlist)
 
-# change stack original (file) names to coded names
+# get coded names
 lkp <- dbGetQuery(dbLookup, "SELECT gridName, fileName from lkpEnvVars;")
-for (n in 1:length(names(envStack))) {
-  nm <- names(envStack)[n]
-  try(names(envStack)[n] <- lkp$gridName[paste0(nm, ".tif") == lkp$fileName]) 
-  # errors mean the fileName is missing from the DB.
+
+
+# method 1
+# start_time <- Sys.time()
+nm <- unlist(lapply(strsplit(raslist, "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
+names(gridlist) <- nm
+
+shortNames <- merge(data.frame(fileName = names(gridlist)), lkp, all.x = TRUE)
+gridlist <- gridlist[order(names(gridlist))]
+names(gridlist) <- shortNames[order(shortNames$fileName),"gridName"]
+
+nulls <- gridlist[is.na(names(gridlist))]
+if(length(nulls) > 0){
+  print(nulls)
+  stop("Some grids are not in DB.")
 }
 
-## Get random points table ----
-db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_amazviri.sqlite"))
-bkgd <- dbReadTable(db, table)
+envStack <- stack(gridlist)
+# end_time <- Sys.time()
+# end_time - start_time
 
-#remove any huc12 nulls
-bkgd <- bkgd[complete.cases(bkgd),]
+# method 2 -- slightly slower
+# start_time <- Sys.time()
+# nm <- substr(raslist,1,nchar(raslist) - 4)
+# nm <- unlist(lapply(strsplit(nm, "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
+# envStack <- stack(gridlist)
+# 
+# for (n in 1:length(names(envStack))) {
+#   nm <- names(envStack)[n]
+#   try(names(envStack)[n] <- lkp$gridName[paste0(nm, ".tif") == lkp$fileName]) 
+#   # errors mean the fileName is missing from the DB.
+# }
+# end_time <- Sys.time()
+# end_time - start_time
 
-tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", table, "';"))$p
-samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
-
-#### exploring multi-core options
-#https://gis.stackexchange.com/questions/253618/r-multicore-approach-to-extract-raster-values-using-spatial-points
-library(snowfall)
-# Extract values to a data frame - multicore approach
-# First, convert raster stack to list of single raster layers
 s.list <- unstack(envStack)
 names(s.list) <- names(envStack)
 
-# Now, create a R cluster using all the machine cores minus one
-sfInit(parallel=TRUE, cpus=parallel:::detectCores()-1)
+## Get random points table ----
+db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_CONUS.sqlite"))
 
-# Load the required packages inside the cluster
-sfLibrary(raster)
-sfLibrary(sf)
+## read in 1 million at a time
+# sql_countRows <- paste0("SELECT COUNT(*) AS c from ", table, ";")
+# countRows <- dbGetQuery(db, sql_countRows)
+# loops <- ceiling(countRows/1000000)
 
-# Run parallelized 'extract' function and stop cluster
-e.df <- sfSapply(s.list, extract, y=samps, method = "simple")
-sfStop()
+tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", table, "';"))$p
 
-DF <- data.frame(e.df)
+# get all the points
+bkgd <- dbReadTable(db, table)
+bkgd <- bkgd[complete.cases(bkgd),]
 
-
-
-# extract values
-#x <- extract(envStack, samps, method="simple")
-sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), DF))
-
-# write to DB
+# attribute and write the table with two points
+bkgd_subs <- bkgd[1:2,]
+samps <- st_sf(bkgd_subs, geometry = st_as_sfc(bkgd_subs$wkt, crs = tcrs))
+att <- extract(envStack, samps, method="simple")
+sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), att))
 tp <- as.vector("INTEGER")
 names(tp) <- "fid"
-dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = T, field.types = tp)
-# not writing shapefile, since base shapefile already exists
+dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = TRUE, field.types = tp)
+
+# now loop through the rest
+bkgd <- bkgd[-c(1:2),]
+brks <- cut(bkgd$fid, breaks = 30)
+brkgrps <- unique(brks)
+
+
+for(i in 1:length(brkgrps)){
+  bg <- bkgd[brks == brkgrps[i],]
+  samps <- st_sf(bg, geometry = st_as_sfc(bg$wkt, crs = tcrs))
+
+  # create an R cluster using all the machine cores minus two
+  sfInit(parallel=TRUE, cpus=parallel:::detectCores()-2)
+  # Load the required packages inside the cluster
+  sfLibrary(raster)
+  sfLibrary(sf)
+  # Run parallelized 'extract' function and stop cluster
+  e.df <- sfSapply(s.list, extract, y=samps, method = "simple")
+  sfStop()
+  DF <- data.frame(e.df)
+  sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), DF))
+  # write to DB
+  dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = FALSE, append = TRUE)
+  print(paste0("done with ", i, " of 30 loops"))
+}
+
+
+# without looping
+# bkgd <- dbReadTable(db, table)
+# 
+# #remove any huc12 nulls
+# bkgd <- bkgd[complete.cases(bkgd),]
+# 
+# tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", table, "';"))$p
+# samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
+
+
+#### multi-core !
+# https://gis.stackexchange.com/questions/253618/r-multicore-approach-to-extract-raster-values-using-spatial-points
+# Extract values to a data frame - multicore approach
+# First, convert raster stack to list of single raster layers
+# s.list <- unstack(envStack)
+# names(s.list) <- names(envStack)
+# # Now, create a R cluster using all the machine cores minus one
+# sfInit(parallel=TRUE, cpus=parallel:::detectCores()-1)
+# # Load the required packages inside the cluster
+# sfLibrary(raster)
+# sfLibrary(sf)
+# # Run parallelized 'extract' function and stop cluster
+# e.df <- sfSapply(s.list, extract, y=samps, method = "simple")
+# sfStop()
+# 
+# DF <- data.frame(e.df)
+# sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), DF))
+# 
+# # write to DB
+# tp <- as.vector("INTEGER")
+# names(tp) <- "fid"
+# dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = T, field.types = tp)
+# # not writing shapefile, since base shapefile already exists
 
 dbDisconnect(db)
 rm(db)
