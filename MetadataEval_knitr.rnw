@@ -421,6 +421,18 @@ if(nrow(sdm.customComments.subset) > 0){
 nclr <- 5
 clrs <- brewer.pal('Blues',n=nclr)
 
+# figure out size of study area, expand if less than 100km across
+bbox <- bb(studyAreaExtent)
+studyAreaWidth <- bbox$xmax - bbox$xmin
+studyAreaHeight <- bbox$ymax - bbox$ymin
+if(studyAreaWidth < 100000){
+  bbox <- bb(bbox, width = 100000, relative = FALSE)
+  }
+if(studyAreaHeight < 100000){
+  bbox <- bb(bbox, height = 100000, relative = FALSE)
+  }
+
+
 tmap_options(max.raster = c("plot" = 300000, "view" = 100000))
 tmap_mode("plot")
 ###get the basemap
@@ -434,7 +446,7 @@ tmap_mode("plot")
 
 ## this is CartoDB.Positron
 mtype <- 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-basetiles <- read_osm(studyAreaExtent, type = mtype, ext = 1.1)
+basetiles <- read_osm(bbox, type = mtype, ext = 1.1)
 # plot it
 qtm(basetiles) + 
   tm_shape(ras) + 
