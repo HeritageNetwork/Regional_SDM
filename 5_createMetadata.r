@@ -17,6 +17,9 @@ library(xtable)
 library(tinytex)
 library(stringi)
 library(tables)
+library(tmap)
+library(tmaptools)
+library(OpenStreetMap)
 
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
