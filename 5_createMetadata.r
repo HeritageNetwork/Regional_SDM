@@ -19,7 +19,10 @@ library(xtable)
 library(stringi)
 library(tables)
 
-library(mapview)  
+library(tmap)
+library(tmaptools)
+library(OpenStreetMap)
+
 
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
