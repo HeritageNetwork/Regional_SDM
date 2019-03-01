@@ -102,3 +102,13 @@ Tips for testing/editing:
 - use a spatially subset environmental variables .csv and background locations shapefiles
 - if running into an error at a specific line of code, add a `browser()` call right before it in the script to interact with the environment
   - Don't forget to remove the browser call after the error is fixed
+
+## License
+
+This project is licensed under the terms of the Creative Commons Attribution-ShareAlike 4.0 International Public
+License.
+
+license:cc-by-sa-4.0
+
+See `[LICENSE](LICENSE.txt)` to see the full text.
+
