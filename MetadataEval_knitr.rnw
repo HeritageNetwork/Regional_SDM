@@ -334,12 +334,12 @@ All SDMs are sensitive to data inputs and methodological choices. Table 4 presen
 \pagebreak
 
 
-\noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or problematic.
+\noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or interpret with caution.
 \normalsize
 \begin{table}[H]
 \small
 \centering
-\begin{tabular}{m{4cm}m{5cm}P{2cm}m{4.5cm}}
+\begin{tabular}{m{2.8cm}m{5cm}P{2cm}m{5.7cm}}
 \hline
 Category & Metric & Score & Notes 
 \\ \hline
@@ -356,7 +356,7 @@ Category & Metric & Score & Notes
   & \Sexpr{as.character(sdm.modeluse$spdata_eval)} 
   & \Sexpr{as.character(sdm.modeluse$spdata_evalNotes)} 
 \\ \hline
-\multirow{2}{*}{Environmental Predictors} 
+\multirow{2}{2.8cm}{Environmental Predictors} 
   & Ecological and predictive relevance 
   & \Sexpr{as.character(sdm.modeluse$envvar_relevance)} 
   & \Sexpr{as.character(sdm.modeluse$envvar_relevanceNotes)} 
@@ -469,7 +469,7 @@ Figure 4. A generalized view of the model predictions throughout the modeled are
 \normalsize
 \pagebreak
 
-This distribution model would not have been possible without data sharing among organizations. The following organizations provided data:
+This distribution model would not have been possible without data sharing among organizations. The following organizations provided data that were evaluated for inclusion into this model:
 \begin{itemize}
     \setlength{\itemsep}{0pt}
     \setlength{\parskip}{0pt}
@@ -479,7 +479,6 @@ for(i in 1:length(sdm.dataSources$ProgramName)){
   x <- paste("\\item ", sdm.dataSources$ProgramName[[i]], "\n", sep = "")
   y <- sub("&", "\\\\&", x) #escape ampersands if there are any - special character in latex
   cat(y)
-  #cat(paste("\\item ", sdm.dataSources$ProgramName[[i]], "\n", sep = ""))
 }
 @
 \end{itemize}
