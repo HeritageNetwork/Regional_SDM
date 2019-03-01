@@ -41,16 +41,16 @@ names(sppWorkFlow) <- c("EGT_ID","include_in_mobi","model_type","sp_code")
 sppWorkFlow$model_type <- toupper(sppWorkFlow$model_type)
 
 # add modtype based on a lookup table for model_type
-# add modelerID using vals from lkpModelers. 
+# add modelerID using vals from lkpModelers. 1=VA, 3=PA, 4=NY
 lkp <- data.frame(model_type = c("TER","AQU","BOTH","SUB"), 
                   modtype = c("T","A","B","S"),
-                  ModelerID = c(4,3,4,4))
+                  ModelerID = c(4,3,4,1))
 ### this is the table that should get used for aquatic modeling !!
 ## modelerID needs to be PA for "B"
 ## uncomment if creating lkpSpecies for Aquatics
 # lkp <- data.frame(model_type = c("TER","AQU","BOTH","SUB"), 
 #                   modtype = c("T","A","B","S"),
-#                   ModelerID = c(4,3,3,4))
+#                   ModelerID = c(4,3,3,1))
 
 sppWF <- merge(sppWorkFlow, lkp)
 
