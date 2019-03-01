@@ -152,11 +152,11 @@ numThresh <- length(cutList)
 allThresh <- data.frame("model_run_name" = rep(modelrun_meta_data$model_run_name, numThresh),
                         "ElemCode" = rep(ElementNames$Code, numThresh),
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
-                "cutCode" = unlist(lapply(cutList, function(x) x[2])),
-                "cutValue" = unlist(lapply(cutList, function(x) x[1])),
-                "capturedEOs" = unlist(lapply(cutList, function(x) x[3])),
-                "capturedPolys" = unlist(lapply(cutList, function(x) x[4])),
-                "capturedPts" = unlist(lapply(cutList, function(x) x[5])),
+                "cutCode" = unlist(lapply(cutList, function(x) x["code"])),
+                "cutValue" = unlist(lapply(cutList, function(x) x["value"])),
+                "capturedEOs" = unlist(lapply(cutList, function(x) x["capturedEOs"])),
+                "capturedPolys" = unlist(lapply(cutList, function(x) x["capturedPolys"])),
+                "capturedPts" = unlist(lapply(cutList, function(x) x["capturedPts"])),
                 stringsAsFactors = FALSE)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -165,16 +165,7 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
 
-# for(i in 1:numThresh){
-#   SQLquery <- paste("INSERT INTO tblCutoffs (", 
-#                     toString(names(allThresh)),
-#                     ") VALUES (",
-#                     toString(sQuote(allThresh[i,])),
-#                     ");", sep = "")
-#   dbSendQuery(db, SQLquery)
-# }
-
-dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = T)
+dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = TRUE)
 # clean up
 options(op)
 dbDisconnect(db)

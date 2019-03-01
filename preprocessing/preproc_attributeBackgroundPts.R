@@ -79,6 +79,9 @@ names(s.list) <- names(envStack)
 ## Get random points table ----
 db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_CONUS.sqlite"))
 
+db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_amazviri.sqlite"))
+
+
 ## read in 1 million at a time
 # sql_countRows <- paste0("SELECT COUNT(*) AS c from ", table, ";")
 # countRows <- dbGetQuery(db, sql_countRows)
@@ -132,7 +135,7 @@ for(i in 1:length(brkgrps)){
 # bkgd <- bkgd[complete.cases(bkgd),]
 # 
 # tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", table, "';"))$p
-# samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
+samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 
 
 #### multi-core !
@@ -142,21 +145,21 @@ for(i in 1:length(brkgrps)){
 # s.list <- unstack(envStack)
 # names(s.list) <- names(envStack)
 # # Now, create a R cluster using all the machine cores minus one
-# sfInit(parallel=TRUE, cpus=parallel:::detectCores()-1)
-# # Load the required packages inside the cluster
-# sfLibrary(raster)
-# sfLibrary(sf)
-# # Run parallelized 'extract' function and stop cluster
-# e.df <- sfSapply(s.list, extract, y=samps, method = "simple")
-# sfStop()
-# 
-# DF <- data.frame(e.df)
-# sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), DF))
-# 
-# # write to DB
-# tp <- as.vector("INTEGER")
-# names(tp) <- "fid"
-# dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = T, field.types = tp)
+sfInit(parallel=TRUE, cpus=parallel:::detectCores()-1)
+# Load the required packages inside the cluster
+sfLibrary(raster)
+sfLibrary(sf)
+# Run parallelized 'extract' function and stop cluster
+e.df <- sfSapply(s.list, extract, y=samps, method = "simple")
+sfStop()
+
+DF <- data.frame(e.df)
+sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), DF))
+
+# write to DB
+tp <- as.vector("INTEGER")
+names(tp) <- "fid"
+dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = T, field.types = tp)
 # # not writing shapefile, since base shapefile already exists
 
 dbDisconnect(db)
