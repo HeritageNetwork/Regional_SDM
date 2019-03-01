@@ -43,6 +43,19 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE sp_code = '", model_species, "';")
 modType <- dbGetQuery(db, SQLQuery)$m
 
+# if modtype is both (B), flip it to A or T
+# what git branch are we on?
+branches <- system("git branch", intern = TRUE)
+activeBranch <- branches[grep("\\*", branches)]
+activeBranch <- sub("\\*", "", activeBranch)
+activeBranch <- gsub(" ", "", activeBranch)
+
+if(modType == "B"){
+  if(activeBranch == "terrestrial") modType <- "T"
+  if(activeBranch == "aquatic") modType <- "A"
+}
+
+
 # gridlistSub is a running list of variables to use. Uses fileName from lkpEnvVars
 SQLQuery <- paste0("SELECT gridName, fileName FROM lkpEnvVars WHERE use_",modType," = 1;")
 gridlistSub <- dbGetQuery(db, SQLQuery)
@@ -93,7 +106,7 @@ fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub$fileName)]
 
 # make grid stack with subset
 envStack <- stack(fullL)
-rm(fullL, justTheNames, gridlistSub, modType)
+rm(fullL, justTheNames, gridlistSub, modType, branches, activeBranch)
 
 # extract raster data to points ----
 
