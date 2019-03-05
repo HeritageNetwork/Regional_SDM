@@ -424,15 +424,16 @@ if(nrow(sdm.customComments.subset) > 0){
 nclr <- 5
 clrs <- brewer.pal('Blues',n=nclr)
 
-# figure out size of study area, expand if less than 100km across
+# figure out size of study area, expand if less than 889km across,
+#  which is 1;5,000,000 when figure is 7 inches wide (which it is here)
 bbox <- bb(studyAreaExtent)
 studyAreaWidth <- bbox$xmax - bbox$xmin
 studyAreaHeight <- bbox$ymax - bbox$ymin
-if(studyAreaWidth < 100000){
-  bbox <- bb(bbox, width = 100000, relative = FALSE)
+if(studyAreaWidth < 889000){
+  bbox <- bb(bbox, width = 889000, relative = FALSE)
   }
-if(studyAreaHeight < 100000){
-  bbox <- bb(bbox, height = 100000, relative = FALSE)
+if(studyAreaHeight < 889000){
+  bbox <- bb(bbox, height = 889000, relative = FALSE)
   }
 
 

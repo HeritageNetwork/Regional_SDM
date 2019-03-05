@@ -1,6 +1,7 @@
 library(sf)
 library(raster)
 library(snow)
+library(smoothr)
 
 # needs raster list (fullL), loc_envVars, model_species
 
@@ -19,8 +20,17 @@ nm_range <- nm_HUC_file
 qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
 hucRange <- st_zm(st_read(nm_range, query = qry))
 
+# dissolve it
+rangeDissolved <- st_union(hucRange)
+# fill holes/slivers
+rangeDissHolesFilled <- fill_holes(rangeDissolved, threshold = units::set_units(10, km^2))
+# crop to CONUS boundary
+conus <- st_read(nm_refBoundaries)
+rangeClipped <- st_intersection(rangeDissHolesFilled, conus)
 # write out a dissolved version of hucRange for 'study area'
-st_write(st_union(hucRange), here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
+st_write(rangeClipped, here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
+
+rm(hucRange, rangeDissolved, rangeDissHolesFilled, conus)
 
 ########################################
 # hucRange <- st_zm(st_read(nm_studyAreaExtent,quiet = T)) #DNB TESTING ONLY
@@ -38,7 +48,7 @@ dir.create(temp, showWarnings = F)
 rtemp <- raster(fullL[[1]])
 
 # clipping/masking boundary
-rng <- st_transform(hucRange, crs = as.character(rtemp@crs))
+rng <- st_transform(rangeClipped, crs = as.character(rtemp@crs))
 rm(rtemp)
 rng <- st_sf(geometry = st_cast(st_union(rng), "POLYGON"))
 rng$id <- 1:length(rng$geometry)
