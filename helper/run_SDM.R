@@ -120,7 +120,7 @@ run_SDM <- function(
                   "3_createModel.R",
                   "4_predictModelToStudyArea.R",
                   "4b_thresholdModel.R",
-                  "4c_additionalMetadataComments.R",
+                  "4c_additMetadComments_rubricUpdate.r",
                   "5_createMetadata.R"
   )
   run_steps <- step_names[match(begin_step, all_steps) : length(all_steps)]
