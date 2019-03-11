@@ -30,7 +30,7 @@
 %add footers
 \cfoot{
 \small   %small font. The double slashes is newline in fancyhdr
-Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). \\ \Sexpr{sdm.modeler$ProgramName}
+Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}).
 }
 \rfoot{p. \thepage}
 
@@ -546,6 +546,7 @@ Appendix 2. Model details for reproducibility. All R Scripts are available at \h
     \setlength{\parskip}{0pt}
     \setlength{\parsep}{0pt}
   \item{The repository version (repo head) used for this run was: \Sexpr{modelrun_meta_data$repo_head}}
+  \item{Validation metrics requiring a threshold use MTP (minimum training presence)}
   \item{R version: \Sexpr{modelrun_meta_data$r_version}}
   \item{Random seed for full randomForest model: \Sexpr{modelrun_meta_data$seed}}
   \item{randomForest mtry: \Sexpr{rf.full$mtry}}
