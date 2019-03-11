@@ -112,25 +112,24 @@ sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/numEOs*100, 1), "
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),  sep="")
 
-# get grank definition
+## get grank definition ----
 SQLquery <- paste0("SELECT rank, rankname FROM lkpRankDefinitions where rank = '",ElementNames$rounded_g_rank,"';", sep="")
 grank_desc <- dbGetQuery(db, SQLquery)
 
 # make a url to NatureServe Explorer
 NSurl <- paste("http://explorer.natureserve.org/servlet/NatureServe?searchName=",gsub(" ", "+", ElementNames[[1]], fixed=TRUE), sep="")
 
-# get Model Evaluation and Use data
+## get Model Evaluation and Use data ----
 SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, spdata_dataqualNotes, spdata_absNotes, spdata_evalNotes, envvar_relevanceNotes, envvar_alignNotes, process_algoNotes, process_sensNotes, process_rigorNotes, process_performNotes, process_reviewNotes, products_mappedNotes, products_supportNotes, products_repoNotes, interativeNotes ", 
                   "FROM lkpSpeciesRubric ", 
                   "WHERE sp_code ='", model_species, "'; ", sep="")
 sdm.modeluse <- dbGetQuery(db, statement = SQLquery)
-sdm.modeluse$process_perform <- ifelse(tss.summ$mean<=0.6, "C", "A") # this downgrades the performance metric to 'Interpet with Caution' if the TSS score is below 0.6
 sdm.modeluse[is.na(sdm.modeluse)] <- " "
 sdm.modeluse[sdm.modeluse=="I"] <- "\\cellcolor[HTML]{9AFF99} Ideal"
 sdm.modeluse[sdm.modeluse=="A"] <- "\\cellcolor[HTML]{FFFFC7} Acceptable"
 sdm.modeluse[sdm.modeluse=="C"] <- "\\cellcolor[HTML]{FD6864} Interpet with Caution"
 
-# Get env. var lookup table
+## Get env. var lookup table ----
 SQLquery <- paste0("SELECT gridName g from tblModelResultsVarsUsed where model_run_name = '",
                    model_run_name, "' and inFinalModel = 1;")
 var_names <- dbGetQuery(db, SQLquery)$g
@@ -156,6 +155,11 @@ for (l in 1:length(sdm.var.info$`Variable Description`)) {
 }
 # put descriptions in parboxes for multiple lines
 sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Variable Description`,"}")
+
+# fix greater than and less than symbol in rubric table
+sdm.modeluse$process_performNotes <- gsub(">=","$\\\\geq$", sdm.modeluse$process_performNotes)
+sdm.modeluse$process_performNotes <- gsub("<","$<$ ", sdm.modeluse$process_performNotes)
+
 
 ## Run knitr and create metadata ----
 

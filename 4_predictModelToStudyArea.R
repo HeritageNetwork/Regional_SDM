@@ -3,9 +3,10 @@
 
 ## start with a fresh workspace with no objects loaded
 
-library(sf)
 library(randomForest)
 library(data.table)
+library(dplyr) 
+library(sf)
 
 # load data ----
 # get the rdata file
@@ -75,8 +76,10 @@ shapehuc <- shapeh # make a copy to generate the huc10s for the review tool.  Se
 shapeh <- st_union(shapeh) # dissolve the polygons
 st_write(shapeh, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_modelrange.shp"), delete_layer=T)
 
-shapehuc$huc10 <- substring(shapehuc$huc12,1,10)
-shapehuc <- shapehuc %>% group_by(huc10) %>% summarize(geometry = st_union(geometry))
-st_write(shapehuc, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc10.shp"), delete_layer=T)
+#shapehuc$huc10 <- substring(shapehuc$huc12,1,10)
+#shapehuc <- shapehuc %>% group_by(huc10) %>% summarize(geometry = st_union(geometry))
+#st_write(shapehuc, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc10.shp"), delete_layer=T)
 
 dbDisconnect(db)
+
+
