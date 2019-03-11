@@ -338,12 +338,8 @@ All SDMs are sensitive to data inputs and methodological choices. Table 4 presen
 
 \pagebreak
 
-<<<<<<< HEAD
-\noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or problematic.
-\smallskip
-=======
+
 \noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or interpret with caution.
->>>>>>> 4a26ad2... small metadata fixes
 \normalsize
 \begin{table}[H]
 \small
