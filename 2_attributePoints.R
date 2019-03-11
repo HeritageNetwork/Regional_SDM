@@ -9,11 +9,11 @@ library(snowfall)
 # load data, QC ----
 setwd(loc_envVars)
 
-# create a stack
-raslist <- list.files(pattern = ".tif$", recursive = FALSE)
+# get the rasters
+raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
 # get short names from the DB
-# first shorten names in subfolders (temporal vars). NOT FULLY TESTED, borrowed from script 3
+# first shorten names in subfolders
 raslist.short <- unlist(
   lapply(strsplit(raslist, "/"), function(x) {x[length(x)]})
 )
@@ -25,11 +25,20 @@ shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist, string
 dbDisconnect(db)
 
 gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
-nm <- substr(shrtNms$fullname,1,nchar(shrtNms$fullname) - 4) # remove .tif extension
-names(gridlist) <- nm
+#nm <- substr(shrtNms$fullname,1,nchar(shrtNms$fullname) - 4) # remove .tif extension
+names(gridlist) <- raslist.short
+
+gridlist <- gridlist[order(names(gridlist))]
+names(gridlist) <- shrtNms[order(shrtNms$fileName),"gridName"]
+
+nulls <- gridlist[is.na(names(gridlist))]
+if(length(nulls) > 0){
+  print(nulls)
+  stop("Some grids are not in DB.")
+}
 
 # check to make sure there are no names greater than 10 chars
-nmLen <- unlist(lapply(shrtNms$gridName, nchar))
+nmLen <- unlist(lapply(names(gridlist),nchar))
 max(nmLen) # if this result is greater than 10, you've got a renegade
 
 # Set working directory to the random points location
@@ -54,7 +63,6 @@ if(modType == "B"){
   if(activeBranch == "terrestrial") modType <- "T"
   if(activeBranch == "aquatic") modType <- "A"
 }
-
 
 # gridlistSub is a running list of variables to use. Uses fileName from lkpEnvVars
 SQLQuery <- paste0("SELECT gridName, fileName FROM lkpEnvVars WHERE use_",modType," = 1;")
@@ -93,12 +101,9 @@ if (!is.null(remove_vars)) {
   # remove the variables
   gridlistSub <- gridlistSub[!tolower(gridlistSub$gridName) %in% tolower(remove_vars),]
 }
-# remove duplicates
+# remove duplicates, then subset
 gridlistSub <- gridlistSub[!duplicated(gridlistSub),]
-
-# get just names of grids (removes folder for temporal vars)
-justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
-fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub$fileName)]
+fullL <- gridlist[names(gridlist) %in% tolower(gridlistSub$gridName)]
 
 # Could use this script here crop/mask rasters
 #source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
@@ -106,7 +111,7 @@ fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub$fileName)]
 
 # make grid stack with subset
 envStack <- stack(fullL)
-rm(fullL, justTheNames, gridlistSub, modType, branches, activeBranch)
+rm(fullL, gridlistSub, modType, branches, activeBranch)
 
 # extract raster data to points ----
 
@@ -160,14 +165,6 @@ if (length(tv) > 0) {
   points_attributed <- pa[-grep(".", names(pa), fixed = TRUE)]
 }
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
-
-# re-name table columns from filename to shrtNms$gridName
-shrtNms$fileName <- gsub(".tif$", "", shrtNms$fileName)
-for (n in 1:length(names(points_attributed))) {
-  if (names(points_attributed)[n] %in% shrtNms$fileName) {
-    names(points_attributed)[n] <- shrtNms$gridName[shrtNms$fileName == names(points_attributed)[n]][1]
-  }
-}
 
 # write it out to the att db
 dbName <- paste(baseName, "_att.sqlite", sep="")
