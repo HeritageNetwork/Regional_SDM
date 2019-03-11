@@ -415,7 +415,7 @@ if(length(group$vals)>1){
 	perf.avg@alpha.values <- list( alpha.values )
 
 	for(i in 1:length(group$vals)){
-	  # get threshold
+	  ### get threshold
 	  # max sensitivity plus specificity (maxSSS per Liu et al 2016)
 	  # create the prediction object for ROCR. Get pres col from y, prediction from votes (=named "1")
 # 	  pred <- prediction(trRes[[i]]$votes[,"1"],trRes[[i]]$y)
