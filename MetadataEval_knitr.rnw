@@ -437,17 +437,17 @@ mtype <- 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 basetiles <- read_osm(studyAreaExtent, type = mtype, ext = 1.1)
 # plot it
 qtm(basetiles) + 
-  tm_shape(results_shape) + # results_shape$prbblty
-    tm_lines(col="prbblty", palette=clrs, labels=c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability")) + # title="modeled suitability",    
-  tm_shape(area.wb.pred) +
-    tm_fill(col="pred", palette=clrs) + 
+  tm_shape(results_shape, name="modeled suitability") + # stream linework
+    tm_lines(col="prbblty", palette=clrs, labels=c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability"),
+             title.col = "modeled suitability") +     
+  tm_shape(area.wb.pred) + # waterbodies and NHD polys
+    tm_fill(col="pred", palette=clrs, legend.show = FALSE) + 
   tm_shape(referenceBoundaries) +
     tm_borders(col = "grey", lwd = 1) + 
   tm_shape(studyAreaExtent) + 
-    tm_borders(col = "red", lwd = 2) + 
+    tm_borders(col = "red", lwd = 2) +
   tm_compass(north = 0, type = "arrow", position = c("left","bottom")) + 
   tm_scale_bar()
-
 @
 \includegraphics{figure/mapFig-1.png}    
 \end{center}
