@@ -106,7 +106,7 @@ library(here)
 rm(list=ls())
 
 # set project folder and species code for this run
-model_species <- "uttepeni"
+model_species <- "amazviri"
 loc_model <- here("_data", "species")
 
 # set wd and load function
@@ -120,9 +120,9 @@ source(here("helper", "run_SDM.R"))
   # to just run new model, begin at step 3 (see next example)
 run_SDM(
   begin_step = "3",
-  model_species = "fuscburk",
+  model_species = "amazviri",
   loc_model = loc_model,
-  nm_presFile = "fuscburk_20190207_221919_prepped"
+  #nm_presFile = "fuscburk_20190207_221919_prepped"
   #model_comments = "Testing out model with removed variables.",
   #remove_vars = "cbnfws"
 )
