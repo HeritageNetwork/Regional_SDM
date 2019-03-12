@@ -59,6 +59,9 @@ reviewerData <- sqlQuery(cn, sql)
 close(cn)
 rm(cn)
 
+# fill status if it is NA
+localityData[is.na(localityData$status),"status"] <- "in progress"
+
 if(localityData$status == "complete"){
   # if complete, take scoring assessment from DB
   #1 = caution, 2 = acceptible, 3 = ideal

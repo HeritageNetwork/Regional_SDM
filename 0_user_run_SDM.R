@@ -80,7 +80,6 @@ run_SDM(
   modeller = modeller,
   add_vars = add_vars,
   remove_vars = remove_vars,
-  #rubric_default = rubric_default,
   project_blurb = project_blurb,
   prompt = prompt
 )
@@ -170,7 +169,7 @@ rm(list=ls())
 # so you need to have executed run_SDM in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "villortm"
+model_species <- "chrocumb"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
