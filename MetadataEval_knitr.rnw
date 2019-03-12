@@ -410,17 +410,16 @@ if(studyAreaHeight < 889000){
 # could use dissolved range here
 # plot(st_transform(studyAreaExtent$geometry, st_crs(results_shape)), col = NA, border = NA, axes = TRUE)
 
-##if (!is.null(nm_aquaArea)) {
-  # plot aqua area polygons by mean value of reaches in area
-##  aqua.pred <- do.call(data.frame, aggregate(results_shape$prbblty,
-  ##                                           by = list(results_shape$wacomid),
-  ##                                           FUN = function(x) c(mn = mean(x, na.rm = TRUE), n = length(x))))
-##  colnames(aqua.pred) <- c("comid","pred","count")
-##  area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
-##  area.wb.pred$colcode <- clrs[findInterval(area.wb.pred$pred, class$brks)]
-
-##  plot(area.wb.pred$geometry, col = area.wb.pred$colcode, border = NA, add = TRUE)
-##}
+if (!is.null(nm_aquaArea)) {
+# plot aqua area polygons by mean value of reaches in area
+aqua.pred <- do.call(data.frame, aggregate(results_shape$prbblty,
+                                           by = list(results_shape$wacomid),
+                                           FUN = function(x) c(mn = mean(x, na.rm = TRUE), n = length(x))))
+  colnames(aqua.pred) <- c("comid","pred","count")
+  area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
+  ##area.wb.pred$colcode <- clrs[findInterval(area.wb.pred$pred, class$brks)]
+  ##plot(area.wb.pred$geometry, col = area.wb.pred$colcode, border = NA, add = TRUE)
+}
 
 #tmap_options(max.raster = c("plot" = 300000, "view" = 100000)) ## this may not be important for vectors
 tmap_mode("plot")
@@ -440,7 +439,9 @@ basetiles <- read_osm(studyAreaExtent, type = mtype, ext = 1.1)
 qtm(basetiles) + 
   tm_shape(results_shape) + # results_shape$prbblty
     tm_lines(col="prbblty", palette=clrs, labels=c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability")) + # title="modeled suitability",    
-    tm_shape(referenceBoundaries) +
+  tm_shape(area.wb.pred) +
+    tm_fill(col="pred", palette=clrs) + 
+  tm_shape(referenceBoundaries) +
     tm_borders(col = "grey", lwd = 1) + 
   tm_shape(studyAreaExtent) + 
     tm_borders(col = "red", lwd = 2) + 
