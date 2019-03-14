@@ -470,17 +470,16 @@ This model was built using a methodology developed through collaboration among t
 
 \medskip
 \noindent
-%\setlength{\fboxsep}{5pt}
-%\fbox{
+\setlength{\fboxsep}{5pt}
+\fbox{
 \begin{minipage}[c]{0.2\linewidth}
 \includegraphics[width=1.0\linewidth]{../../../../../NatureServeLogo}%png logo file at repository root
 \end{minipage}%
-\begin{minipage}[c]{0.80\linewidth}
+\begin{minipage}[c]{0.75\linewidth}
 Please cite this document and its associated SDM as: \\
 NatureServe and Heritage Network Partners. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}. Arlington, VA with Network partners from VA, PA, and NY.
 \end{minipage}
-%}
-
+}
 
 \medskip
 \noindent
