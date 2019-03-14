@@ -266,13 +266,13 @@ group$colNm <- "group_id"
 group$JackknType <- "spatial grouping"
 group$vals <- unique(df.in2$group_id)
 
-#reduce the number of trees if group$vals has more than 30 entries
+#reduce the number of trees if group$vals has more than 30 entries #commented out to be parallel with aquatic
 #this is for validation
-if(length(group$vals) > 30) {
-	ntrees <- 750
-} else {
-	ntrees <- 1000
-}
+# if(length(group$vals) > 30) {
+# 	ntrees <- 750
+# } else {
+# 	ntrees <- 1000
+# }
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
