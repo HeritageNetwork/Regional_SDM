@@ -360,7 +360,7 @@ Category & Metric & Score & Notes
 \\ \cline{2-4} & Performance & \Sexpr{as.character(sdm.modeluse$process_perform)} & \Sexpr{as.character(sdm.modeluse$process_performNotes)} 
 \\ \cline{2-4} & Model review & \Sexpr{as.character(sdm.modeluse$process_review)} &  \Sexpr{as.character(sdm.modeluse$process_reviewNotes)}
 \\ \hline
-\multirow{3}{*}{Model Products} & Mapped products & \Sexpr{as.character(sdm.modeluse$products_mapped)} & \\Sexpr{as.character(sdm.modeluse$products_mappedNotes)} 
+\multirow{3}{*}{Model Products} & Mapped products & \Sexpr{as.character(sdm.modeluse$products_mapped)} & \Sexpr{as.character(sdm.modeluse$products_mappedNotes)} 
 \\ \cline{2-4} & Interpretation support products & \Sexpr{as.character(sdm.modeluse$products_support)} & \Sexpr{as.character(sdm.modeluse$products_supportNotes)} 
 \\ \cline{2-4} & Reproducibility & \Sexpr{as.character(sdm.modeluse$products_repo)} & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} 
 \\ \hline & Iterative & \Sexpr{as.character(sdm.modeluse$interative)} & \Sexpr{as.character(sdm.modeluse$interativeNotes)} 
@@ -383,8 +383,8 @@ if(nrow(sdm.customComments.subset) > 0){
 
 
 
-<<mapFig, fig.width=7, fig.height=8, include=FALSE, echo=FALSE, dev='png', dpi=600>>=
-#par(mar=c(0,0,4.5,0), xpd=F, cex=0.9, adj=0.05)
+<<mapFig, fig.width=7, fig.height=7, include=FALSE, echo=FALSE, dev='png', dpi=600>>=
+#par(mar=c(0,0,0,0), xpd=F, cex=0.9, adj=0.05)
 #equal-width class intervals
 #plotvar <- results_shape$prbblty ## not in Tim's version
 nclr <- 5
@@ -412,13 +412,9 @@ if(studyAreaHeight < 889000){
 
 if (!is.null(nm_aquaArea)) {
 # plot aqua area polygons by mean value of reaches in area
-aqua.pred <- do.call(data.frame, aggregate(results_shape$prbblty,
-                                           by = list(results_shape$wacomid),
-                                           FUN = function(x) c(mn = mean(x, na.rm = TRUE), n = length(x))))
+  aqua.pred <- do.call(data.frame, aggregate(results_shape$prbblty, by=list(results_shape$wacomid), FUN=function(x) c(mn=mean(x, na.rm=TRUE), n=length(x))))
   colnames(aqua.pred) <- c("comid","pred","count")
   area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
-  ##area.wb.pred$colcode <- clrs[findInterval(area.wb.pred$pred, class$brks)]
-  ##plot(area.wb.pred$geometry, col = area.wb.pred$colcode, border = NA, add = TRUE)
 }
 
 #tmap_options(max.raster = c("plot" = 300000, "view" = 100000)) ## this may not be important for vectors
@@ -428,13 +424,12 @@ tmap_mode("plot")
 # for native options provided by read_osm, see ?OpenStreetMap::openmap
 ## this is stamen-toner
 #basetiles <- read_osm(studyAreaExtent, type = "stamen-toner", ext = 1.1)
-
 ## this is Esri.WorldGrayCanvas
 #mtype <- 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}.png?'
 
 ## this is CartoDB.Positron
 mtype <- 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-basetiles <- read_osm(studyAreaExtent, type = mtype, ext = 1.1)
+basetiles <- read_osm(bbox, type = mtype, ext = 1.1)
 # plot it
 qtm(basetiles) + 
   tm_shape(results_shape, name="modeled suitability") + # stream linework
@@ -447,7 +442,8 @@ qtm(basetiles) +
   tm_shape(studyAreaExtent) + 
     tm_borders(col = "red", lwd = 2) +
   tm_compass(north = 0, type = "arrow", position = c("left","bottom")) + 
-  tm_scale_bar()
+  tm_scale_bar() +
+  tm_layout(outer.margins=c(0,0,0,0))
 @
 \includegraphics{figure/mapFig-1.png}    
 \end{center}
