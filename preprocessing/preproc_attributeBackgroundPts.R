@@ -36,12 +36,10 @@ if (length(tv) > 1) {
 }
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 
-# get coded names
+# get short names
 lkp <- dbGetQuery(dbLookup, "SELECT gridName, fileName from lkpEnvVars;")
 
-
-# method 1
-# start_time <- Sys.time()
+#align names
 nm <- unlist(lapply(strsplit(raslist, "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
 names(gridlist) <- nm
 
@@ -55,31 +53,19 @@ if(length(nulls) > 0){
   stop("Some grids are not in DB.")
 }
 
+#stack only half of it (54 layers)
+#gl <- gridlist[1:35]
+
 envStack <- stack(gridlist)
-# end_time <- Sys.time()
-# end_time - start_time
 
-# method 2 -- slightly slower
-# start_time <- Sys.time()
-# nm <- substr(raslist,1,nchar(raslist) - 4)
-# nm <- unlist(lapply(strsplit(nm, "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
-# envStack <- stack(gridlist)
-# 
-# for (n in 1:length(names(envStack))) {
-#   nm <- names(envStack)[n]
-#   try(names(envStack)[n] <- lkp$gridName[paste0(nm, ".tif") == lkp$fileName]) 
-#   # errors mean the fileName is missing from the DB.
-# }
-# end_time <- Sys.time()
-# end_time - start_time
-
+# prep for parallel
 s.list <- unstack(envStack)
 names(s.list) <- names(envStack)
 
 ## Get random points table ----
 db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_CONUS.sqlite"))
 
-db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_amazviri.sqlite"))
+#db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_pletasup.sqlite"))
 
 
 ## read in 1 million at a time
@@ -93,6 +79,11 @@ tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name
 bkgd <- dbReadTable(db, table)
 bkgd <- bkgd[complete.cases(bkgd),]
 
+## export to FGDB
+# samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
+# st_write(samps, dsn = "N:/_TerrestrialModels/_data/env_vars/background/conus_bkgd.shp")
+##
+
 # attribute and write the table with two points
 bkgd_subs <- bkgd[1:2,]
 samps <- st_sf(bkgd_subs, geometry = st_as_sfc(bkgd_subs$wkt, crs = tcrs))
@@ -101,10 +92,11 @@ sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), att))
 tp <- as.vector("INTEGER")
 names(tp) <- "fid"
 dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = TRUE, field.types = tp)
+#dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = FALSE, append = TRUE)
 
 # now loop through the rest
 bkgd <- bkgd[-c(1:2),]
-brks <- cut(bkgd$fid, breaks = 30)
+brks <- cut(bkgd$fid, breaks = 100)
 brkgrps <- unique(brks)
 
 
@@ -113,7 +105,7 @@ for(i in 1:length(brkgrps)){
   samps <- st_sf(bg, geometry = st_as_sfc(bg$wkt, crs = tcrs))
 
   # create an R cluster using all the machine cores minus two
-  sfInit(parallel=TRUE, cpus=parallel:::detectCores()-2)
+  sfInit(parallel=TRUE, cpus=parallel:::detectCores()-4)
   # Load the required packages inside the cluster
   sfLibrary(raster)
   sfLibrary(sf)
@@ -124,8 +116,20 @@ for(i in 1:length(brkgrps)){
   sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), DF))
   # write to DB
   dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = FALSE, append = TRUE)
-  print(paste0("done with ", i, " of 30 loops"))
+  print(paste0("done with ", i, " of 100 loops"))
 }
+
+
+###### loop, no parallel
+for(i in 1:length(brkgrps)){
+  bg <- bkgd[brks == brkgrps[i],]
+  samps <- st_sf(bg, geometry = st_as_sfc(bg$wkt, crs = tcrs))
+  att <- extract(envStack, samps, method="simple")
+  sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), att))
+  dbWriteTable(db, paste0(table, "_att"), sampsAtt, overwrite = FALSE, append = TRUE)
+  print(paste0("done with ", i, " of 100 loops"))
+}
+
 
 
 # without looping
