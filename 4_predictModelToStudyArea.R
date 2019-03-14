@@ -67,8 +67,6 @@ SQLQuery <- paste0("SELECT * FROM ",nm_huc12[2], " WHERE ","substr(HUC12,1,",huc
 shapef2 <- dbGetQuery(db, SQLQuery)
 names(shapef2) <- tolower(names(shapef2))
 
-
-
 shapeh <- st_sf(shapef2[c("huc12")], geometry=st_as_sfc(shapef2$wkt), crs=proj4)
 try(shapeh <- st_sf(shapef2[c("huc12")], geometry=st_as_sfc(shapef2$wkt), crs=proj4), silent=T)
 shapeh <- st_buffer(shapeh, 0) # zero-width buffer to deal with random geometry errors
@@ -76,9 +74,9 @@ shapehuc <- shapeh # make a copy to generate the huc10s for the review tool.  Se
 shapeh <- st_union(shapeh) # dissolve the polygons
 st_write(shapeh, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_modelrange.shp"), delete_layer=T)
 
-#shapehuc$huc10 <- substring(shapehuc$huc12,1,10)
-#shapehuc <- shapehuc %>% group_by(huc10) %>% summarize(geometry = st_union(geometry))
-#st_write(shapehuc, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc10.shp"), delete_layer=T)
+shapehuc$huc10 <- substring(shapehuc$huc12,1,10)
+shapehuc <- shapehuc %>% group_by(huc10) %>% summarize(geometry = st_union(geometry))
+st_write(shapehuc, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc10.shp"), delete_layer=T)
 
 dbDisconnect(db)
 
