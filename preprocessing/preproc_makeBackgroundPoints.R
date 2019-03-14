@@ -9,28 +9,28 @@ library(RSQLite)
 
 # temp - tgh - make a shapefile of study area based on HUC
 # get range info from the DB (as a list of HUCs)
-# model_species <- "amazviri"
-# nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
-# db <- dbConnect(SQLite(),dbname=nm_db_file)
-# SQLquery <- paste0("SELECT huc10_id from lkpRange
-#                    inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
-#                    where lkpSpecies.sp_code = '", model_species, "';")
-# hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
-# dbDisconnect(db)
-# rm(db)
-# # get the huc10 layer
-# nm_HUC_pth <- here("_data","other_spatial","feature")
-# nm_HUC_file <- "HUC10.shp"
-# 
-# op <- options()
-# options(useFancyQuotes = FALSE) #need straight quotes for query
-# qry <- paste0("SELECT * FROM \"HUC10\" where HUC10 IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," )")
-# rng <- st_read(nm_HUC_pth, nm_HUC_file,
-#                query = qry)
-# options(op)
-# rm(op)
-# 
-# sa <- st_union(rng)
+model_species <- "pletasup"
+nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+SQLquery <- paste0("SELECT huc10_id from lkpRange
+                   inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
+                   where lkpSpecies.sp_code = '", model_species, "';")
+hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+dbDisconnect(db)
+rm(db)
+# get the huc10 layer
+nm_HUC_pth <- here("_data","other_spatial","feature")
+nm_HUC_file <- "HUC10.shp"
+
+op <- options()
+options(useFancyQuotes = FALSE) #need straight quotes for query
+qry <- paste0("SELECT * FROM \"HUC10\" where HUC10 IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," )")
+rng <- st_read(nm_HUC_pth, nm_HUC_file,
+               query = qry)
+options(op)
+rm(op)
+
+sa <- st_union(rng)
 # 
 
 # background points shapefile (points are generated within this boundary). 
@@ -45,7 +45,7 @@ sa <- st_union(states)
 huc12 <- "N:/rangestuff/HUC_ref/huc12_fromChris/huc12.shp"
 
 # number of points to generate
-numpts <- 1000000
+numpts <- 10000
 
 # new/existing db table name (overwritten)
 table <- "background_pts"
@@ -75,6 +75,7 @@ sampsDF <- data.frame(fid = samps$fid, huc12 = samps$huc12, wkt = st_as_text(sam
 
 # send to database
 db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_conus.sqlite"))
+db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_pletasup.sqlite"))
 tp <- as.vector("INTEGER")
 names(tp) <- "fid"
 dbWriteTable(db, table, sampsDF, overwrite = T, field.types = tp)
