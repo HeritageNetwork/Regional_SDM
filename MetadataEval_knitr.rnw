@@ -8,6 +8,7 @@
 \usepackage{rotating}
 \usepackage[super,comma]{natbib}
 \usepackage{hyperref}
+\usepackage{graphicx}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue,
@@ -381,12 +382,8 @@ if(nrow(sdm.customComments.subset) > 0){
 \medskip
 \begin{center}
 
-
-
 <<mapFig, fig.width=7, fig.height=7, include=FALSE, echo=FALSE, dev='png', dpi=600>>=
-#par(mar=c(0,0,0,0), xpd=F, cex=0.9, adj=0.05)
-#equal-width class intervals
-#plotvar <- results_shape$prbblty ## not in Tim's version
+
 nclr <- 5
 clrs <- brewer.pal('Blues',n=nclr)
 #class <- classIntervals(plotvar, nclr, style="equal", dataPrecision = 2) ## not in Tim's version
@@ -453,7 +450,7 @@ Figure 4. A generalized view of the model predictions throughout the modeled are
 \normalsize
 \pagebreak
 
-This distribution model would not have been possible without data sharing among organizations. The following organizations provided data that were evaluated for inclusion into this model:
+This distribution model would not have been possible without data sharing among organizations. Other data sets and sources may have been evaluated, but this final model includes data from these sources:
 \begin{itemize}
     \setlength{\itemsep}{0pt}
     \setlength{\parskip}{0pt}
@@ -473,15 +470,16 @@ This model was built using a methodology developed through collaboration among t
 
 \medskip
 \noindent
-\begin{center}
 \setlength{\fboxsep}{5pt}
 \fbox{
-\begin{minipage}[t]{0.90\linewidth}%
+\begin{minipage}[c]{0.2\linewidth}
+\includegraphics[width=1.0\linewidth]{../../../../../NatureServeLogo}%png logo file at repository root
+\end{minipage}%
+\begin{minipage}[c]{0.75\linewidth}
 Please cite this document and its associated SDM as: \\
 NatureServe and Heritage Network Partners. \Sexpr{format(Sys.Date(), "%Y")}. Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}). Created on \Sexpr{format(Sys.Date(), "%d %b %Y")}. Arlington, VA with Network partners from VA, PA, and NY.
 \end{minipage}
 }
-\end{center}
 
 \medskip
 \noindent
