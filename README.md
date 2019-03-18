@@ -16,4 +16,6 @@ license:cc-by-sa-4.0
 
 See `COPYING <LICENSE.txt>` to see the full text.
 
-[![DOI](https://zenodo.org/badge/140332446.svg)](https://zenodo.org/badge/latestdoi/140332446)
+https://zenodo.org/record/2597227
+
+[![DOI](https://zenodo.org/badge/2597227.svg)](https://zenodo.org/badge/latestdoi/2597227)
