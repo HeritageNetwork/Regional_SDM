@@ -9,6 +9,7 @@
 library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp10/2009-February/189936.html
 library(randomForest)
 library(knitr)
+library(dplyr)
 library(sf)
 library(RColorBrewer)
 library(classInt)
@@ -176,13 +177,7 @@ sdm.modeluse$process_performNotes <- gsub("<","$<$ ", sdm.modeluse$process_perfo
 
 setwd("metadata")
 
-# knit2pdf errors for some reason...just knit then call directly
-#knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
 knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-#call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
-# call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex") # this stops execution if there is an error. Not really necessary
-#system(call)
-#system(call) # 2nd run to apply citation numbers
 
 # delete .txt, .log etc if pdf is created successfully.
 fn_ext <- c(".log",".aux",".out") 
