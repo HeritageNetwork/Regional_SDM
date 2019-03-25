@@ -20,8 +20,9 @@ library(raster)
 library(here)
 library(RSQLite)
 library(rgdal)
-library(reticulate)
+#library(reticulate)
 library(RSQLite)
+library(arcgisbinding)
 
 rootPath <- here("_data","species",model_species)
 outpath <- file.path(rootPath, "outputs","model_review_output")
@@ -52,29 +53,40 @@ modelPoly <- rasterToPolygons(rascut, fun = function(x){x==2}, dissolve = TRUE)
 modelPoly$cutecode <- model_species
 modelPoly <- modelPoly[,"cutecode"]
 
-writeOGR(obj=modelPoly, dsn=outpath, layer="modelPoly", driver="ESRI Shapefile")
+#writeOGR(obj=modelPoly, dsn=outpath, layer="modelPoly", driver="ESRI Shapefile")
+#inShp <- paste0(outpath, "/modelPoly.shp")
 
-
-# fire up python
-#use_python("C:/Users/Tim/AppData/Local/Esri/conda/envs/timsarcproclone")
-use_python(Sys.getenv("PYTHONPATH"))
-
-arcpy <- import("arcpy")
+# use bridge to write out file gdb
+arc.check_product()
+# copy over a blank gdb as the bridge can't create them by itself. I would store this in some other directory
+templateGDB <- here("_data","other_spatial","feature","template_db_predictedhabitat-poly.gdb")
+templateFiles <- list.files(templateGDB)
 gdbName <- "predictedhabitat-poly.gdb"
-arcpy$CreateFileGDB_management(outpath, gdbName)
+dir.create(gdbName)
+file.copy(file.path(templateGDB, templateFiles), gdbName)
+# xcopy kept erroring out for me
+#shell(paste0("Xcopy /E /I  '", templateGDB, "'  predictedhabitat-poly.gdb"))
+# write the results
+arc.write(paste0(gdbName,"/",model_species,"_mtpg"), modelPoly)
 
-inShp <- paste0(outpath, "/modelPoly.shp")
-outFC <- paste0(outpath, "/", gdbName, "/", model_species, "_mtpg")
-arcpy$CopyFeatures_management(inShp, outFC)
+#use_python("C:/Users/Tim/AppData/Local/Esri/conda/envs/timsarcproclone")
+#use_virtualenv(Sys.getenv("PYTHONPATH"))
+#use_virtualenv("C:/Users/Tim/AppData/Local/Esri/conda/envs/timsarcproclone")
+
+#arcpy <- import("arcpy")
+#gdbName <- "predictedhabitat-poly.gdb"
+#arcpy$CreateFileGDB_management(outpath, gdbName)
+# tried to here
+#inShp <- paste0(outpath, "/modelPoly.shp")
+#outFC <- paste0(outpath, "/", gdbName, "/", model_species, "_mtpg")
+#arcpy$CopyFeatures_management(inShp, outFC)
 
 #clean up
-delShp <- list.files(path = outpath, pattern = "modelPoly.*")
-file.remove(paste0(outpath,"/",delShp))
-
+#delShp <- list.files(path = outpath, pattern = "modelPoly.*")
+#file.remove(paste0(outpath,"/",delShp))
 
 # zip it
 #library(zip)
-setwd(outpath)
 
 zfiles <- file.path(gdbName, list.files(gdbName))
 utils::zip(paste0(gdbName,".zip"), files = zfiles)
@@ -82,8 +94,7 @@ utils::zip(paste0(gdbName,".zip"), files = zfiles)
 
 #clean up
 unlink(gdbName, recursive = TRUE)
-rm(arcpy, gdbName, inShp, outFC)                
-
+              
 ## get range data ----
 
 dbpath <- "N:/_TerrestrialModels/_data/databases/SDM_lookupAndTracking.sqlite"
