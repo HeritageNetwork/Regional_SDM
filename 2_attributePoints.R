@@ -2,6 +2,7 @@
 # Purpose: attribute environmental data to presence points
 
 ## start with a fresh workspace with no objects loaded
+library(dplyr)
 library(sf)
 library(RSQLite)
 library(stringr)

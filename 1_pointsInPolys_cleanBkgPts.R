@@ -5,8 +5,10 @@
 #  the input presence reach dataset.
 
 library(RSQLite)
+library(dplyr) # adding dplyr here as it may be causing downstream effects due to a bad interaction with 'sf'
 library(sf)
 library(stringr)
+
 
 ####
 # Assumptions
