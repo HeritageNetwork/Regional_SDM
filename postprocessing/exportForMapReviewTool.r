@@ -87,7 +87,11 @@ arc.check_product()
 # copy over a blank gdb as the bridge can't create them by itself. I would store this in some other directory
 templateGDB <- here("_data","other_spatial","feature","template_db_predictedhabitat-poly.gdb")
 templateFiles <- list.files(templateGDB)
-gdbName <- "predictedhabitat-poly.gdb"
+if (modType=="A"){ # Aquatic Option -
+  gdbName <- "predictedhabitat-line.gdb"
+} else if (modType=="T") { # Terrestrial Option -
+  gdbName <- "predictedhabitat-poly.gdb"
+}
 dir.create(gdbName)
 file.copy(file.path(templateGDB, templateFiles), gdbName)
 
