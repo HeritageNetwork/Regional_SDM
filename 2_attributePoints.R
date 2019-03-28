@@ -26,7 +26,7 @@ dbDisconnect(db)
 
 gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
 #nm <- substr(shrtNms$fullname,1,nchar(shrtNms$fullname) - 4) # remove .tif extension
-names(gridlist) <- raslist.short
+names(gridlist) <- shrtNms$fullname
 
 gridlist <- gridlist[order(names(gridlist))]
 names(gridlist) <- shrtNms[order(shrtNms$fileName),"gridName"]
