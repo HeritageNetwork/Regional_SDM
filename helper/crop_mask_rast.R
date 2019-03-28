@@ -30,7 +30,8 @@ rangeClipped <- st_intersection(rangeDissHolesFilled, conus)
 #dissolve again
 rangeDissolved_2 <- st_union(rangeClipped)
 # write out a dissolved version of hucRange for 'study area'
-st_write(rangeDissolved_2, here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
+st_write(rangeDissolved_2, delete_dsn = TRUE,
+         here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
 
 rm(hucRange, rangeDissolved, rangeDissHolesFilled, conus, rangeClipped)
 
