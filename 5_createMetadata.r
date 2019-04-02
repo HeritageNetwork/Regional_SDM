@@ -167,17 +167,15 @@ sdm.modeluse$process_performNotes <- gsub("<","$<$ ", sdm.modeluse$process_perfo
 
 ## Run knitr and create metadata ----
 
-# writing to the same folder as a grid might cause problems.
-# if errors check that first
-# more explanation: tex looks for and uses aux files, which are also used
-# by esri. If there's a non-tex aux file, knitr bails. 
-
 # Also, might need to run this twice. First time through tex builds the reference
 # list, second time through it can then number the refs in the doc.
 
 setwd("metadata")
-
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+#knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))  # using this causes a UTF8 error
+knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
+system(call)
+system(call) # 2nd run to apply citation numbers
 
 # delete .txt, .log etc if pdf is created successfully.
 fn_ext <- c(".log",".aux",".out") 
