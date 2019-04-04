@@ -5,36 +5,56 @@ library(smoothr)
 
 # needs raster list (fullL), loc_envVars, model_species
 
-########################################
-# get range info from the DB (as a list of HUCs)
-db <- dbConnect(SQLite(),dbname=nm_db_file)
-SQLquery <- paste0("SELECT huc10_id from lkpRange
-                   inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
-                   where lkpSpecies.sp_code = '", model_species, "';")
-hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
-dbDisconnect(db)
-rm(db)
+# has the range already been created? If so, don't waste time re-creating
 
-# now get that info spatially
-nm_range <- nm_HUC_file
-qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
-hucRange <- st_zm(st_read(nm_range, query = qry))
+allRanges_fn <- paste0(loc_scripts, "/_data/other_spatial/feature/","Terrestrial_Ranges_dis_clip.shp")
+if(file.exists(allRanges_fn)) {
+  allRanges <- st_read(allRanges_fn)
+  targRange <- allRanges[allRanges$EGT_ID == ElementNames$EGT_ID,]
+  #make sure a range actually got extracted above
+  if(!is.na(st_dimension(targRange))){
+    # rangeClipped <- targRange
+    # fill holes/slivers
+    rangeClipped <- fill_holes(targRange, threshold = units::set_units(10, km^2))
+  }
+}
 
-# dissolve it
-rangeDissolved <- st_union(hucRange)
-# fill holes/slivers
-rangeDissHolesFilled <- fill_holes(rangeDissolved, threshold = units::set_units(10, km^2))
-# crop to CONUS boundary
-conus <- st_read(nm_refBoundaries)
-rangeClipped <- st_intersection(rangeDissHolesFilled, conus)
-#dissolve again
-rangeDissolved_2 <- st_union(rangeClipped)
-# write out a dissolved version of hucRange for 'study area'
-st_write(rangeDissolved_2, delete_dsn = TRUE,
+# get the range the long way if rangeClipped didn't get created, above
+if(!exists("rangeClipped")){
+  # get range info from the DB (as a list of HUCs)
+  db <- dbConnect(SQLite(),dbname=nm_db_file)
+  SQLquery <- paste0("SELECT huc10_id from lkpRange
+                     inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
+                     where lkpSpecies.sp_code = '", model_species, "';")
+  hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+  dbDisconnect(db)
+  rm(db)
+  
+  # now get that info spatially
+  nm_range <- nm_HUC_file
+  qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
+  hucRange <- st_zm(st_read(nm_range, query = qry))
+  
+  # dissolve it
+  rangeDissolved <- st_union(hucRange)
+  # fill holes/slivers
+  rangeDissHolesFilled <- fill_holes(rangeDissolved, threshold = units::set_units(10, km^2))
+  # crop to CONUS boundary
+  # use the dissolved version
+  conus <- st_read(paste0(strsplit(nm_refBoundaries, "[.]")[[1]][[1]], "_dissolve.shp"))
+  #conus <- st_read(nm_refBoundaries)
+  rangeClipped <- st_intersection(rangeDissHolesFilled, conus)
+  #dissolve again (if not using the dissolved version)
+  #rangeDissolved_2 <- st_union(rangeClipped)
+  # write out a dissolved version of hucRange for 'study area'
+
+  rm(hucRange, rangeDissolved, rangeDissHolesFilled, conus)
+}
+  
+st_write(rangeClipped, delete_dsn = TRUE,
          here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
 
-rm(hucRange, rangeDissolved, rangeDissHolesFilled, conus, rangeClipped)
-
+  
 ########################################
 # hucRange <- st_zm(st_read(nm_studyAreaExtent,quiet = T)) #DNB TESTING ONLY
 
@@ -51,7 +71,7 @@ dir.create(temp, showWarnings = F)
 rtemp <- raster(fullL[[1]])
 
 # clipping/masking boundary
-rng <- st_transform(rangeDissolved_2, crs = as.character(rtemp@crs))
+rng <- st_transform(rangeClipped, crs = as.character(rtemp@crs))
 rm(rtemp)
 rng <- st_sf(geometry = st_cast(st_union(rng), "POLYGON"))
 rng$id <- 1:length(rng$geometry)
@@ -68,7 +88,7 @@ clusterExport(cl, list("temp", "ext", "clipshp"), envir = environment())
 clusterExport(cl, list("loc_envVars"), envir = environment()) 
 
 message("Creating raster subsets for species for ", length(fullL) , " environmental variables...")
-newL <- parLapply(cl, x = fullL, fun = function(x) {
+newL <- parLapply(cl, X = fullL, fun = function(x) {
   path <- x
   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
   if (grepl("/",subnm)) {
