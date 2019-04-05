@@ -50,6 +50,7 @@ tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.c
 dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, "';")) # remove any previously prepped dataset entry
 dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
 envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVars;")$g
+envvar_list <- tolower(envvar_list)
 
 #also get correlated env var information
 SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
@@ -57,6 +58,24 @@ corrdEVs <- dbGetQuery(db, statement = SQLquery)
 
 dbDisconnect(db)
 rm(db)
+
+# are we using the 330 m raster set? if so, rename df.abs
+# all 330m raster names begin with "z3"
+if(length(grep("z3",names(df.in))) > 0){
+  db <- dbConnect(SQLite(),dbname=nm_db_file)
+  sql <- "SELECT names_30m, names_330m from mapEnvVarDifferentResolutions;"
+  envarNames <- dbGetQuery(db, statement = sql, stringsAsFactors = FALSE) 
+  envarNames <- data.frame(sapply(envarNames, FUN = function(x) tolower(x)), stringsAsFactors = FALSE)
+  names(df.abs) <- tolower(names(df.abs))
+  namesDF <- data.frame(absNames = names(df.abs), stringsAsFactors = FALSE)
+  namesDF <- merge(namesDF, envarNames, by.x = "absNames", by.y = "names_30m", all.x = TRUE)
+  namesDF$names_330m[is.na(namesDF$names_330m)] <- namesDF$absNames[is.na(namesDF$names_330m)]
+  # order them, then rename them
+  df.abs <- df.abs[,namesDF$absNames]
+  names(df.abs) <- namesDF$names_330m
+  dbDisconnect(db)
+  rm(db, sql, envarNames, namesDF)
+  }
 
 # get an original list of env-vars for later writing to tblVarsUsed
 envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
@@ -625,8 +644,8 @@ if(length(ord) > 9){
 cat("... calculating partial plots \n")
 
 ### subsampling used in aquatic branch, should sample by group before being applied here.
-# pplotSamp <- min(c(length(df.full[,1])/10, 10000)) # take 10% of samples, or 10000, whichever is less
-# pplotSamp <- sample(1:length(df.full[,1]), size = round(pplotSamp), replace = F)
+#pplotSamp <- min(c(nrow(df.full)/10, 10000)) # take 10% of samples, or 10000, whichever is less
+#pplotSamp <- sample(1:nrow(df.full), size = round(pplotSamp), replace = FALSE)
 
 # run partial plots in parallel
 curvars = names(f.imp[ord])[1:pPlotListLen]
