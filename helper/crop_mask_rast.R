@@ -91,7 +91,7 @@ clusterExport(cl, list("temp", "ext", "clipshp"), envir = environment())
 clusterExport(cl, list("loc_envVars"), envir = environment()) 
 
 message("Creating raster subsets for species for ", length(fullL) , " environmental variables...")
-newL <- parLapply(cl, x = fullL, fun = function(path) {
+newL <- parLapply(cl, X = fullL, fun = function(path) {
   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
   if (grepl("/",subnm)) {
     subdir <- strsplit(subnm, "/", fixed = T)[[1]][1]
