@@ -12,7 +12,7 @@
 #    ii. It should already have only data that should show for predicted habitat results.
 #  3. {cutecode}.pdf  (the metadata file)
 
-## NOTE: run the final debugging section of script 0 to load the correct files and objects
+## NOTE: enter the species CuteCode on line 30 below
 
 library(raster)
 library(here)
@@ -22,6 +22,20 @@ library(rgdal)
 library(RSQLite)
 library(arcgisbinding)
 library(sf)
+
+# load in the data from the species run
+rm(list=ls())
+
+# for scripts 1-3, run just the following 3 lines
+model_species <- "obovretu"
+load(here("_data","species",model_species,"runSDM_paths.Rdata"))
+for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
+
+# if debugging script 4 or later, also load the specific model output rdata file
+model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata")))
+load(here("_data","species",model_species,"outputs","rdata",paste0(model_rdata)))
+
+
 
 rootPath <- here("_data","species",model_species)
 outpath <- file.path(rootPath, "outputs","model_review_output")
