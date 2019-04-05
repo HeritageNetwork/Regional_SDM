@@ -142,7 +142,7 @@ unlink(gdbName, recursive = TRUE)
 ## get range data ----
 if (modType=="A"){ # Aquatic Option - Huc10s output as part of the model
   hucPath <- file.path(rootPath, "outputs","model_predictions",paste0(model_run_name,"_huc10.csv"))
-  huc <- read.csv(hucPath)  # st_read(hucPath, quiet = T) 
+  huc <- read.csv(hucPath, colClasses=c("huc10"="character"))  # st_read(hucPath, quiet = T) 
   hucList <- huc$huc10
 } else if (modType=="T"){ # Terrestrial Option - get range info from the DB (as a list of HUCs) 
   dbpath <- "N:/_TerrestrialModels/_data/databases/SDM_lookupAndTracking.sqlite"
