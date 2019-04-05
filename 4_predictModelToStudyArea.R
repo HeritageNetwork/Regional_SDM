@@ -74,11 +74,11 @@ shapehuc <- shapeh # make a copy to generate the huc10s for the review tool.  Se
 shapeh <- st_union(shapeh) # dissolve the polygons
 st_write(shapeh, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_modelrange.shp"), delete_layer=T)
 
-# write out a huc10 based layer for the model review tool
+# write out a list of HUC10s for the model review tool
 shapehuc$huc10 <- substring(shapehuc$huc12,1,10)
-shapehuc <- shapehuc[c("huc12","huc10","geometry")]
-shapehuc <- shapehuc %>% group_by(huc10) %>% dplyr::summarize(geometry=st_union(geometry))
-st_write(shapehuc, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc10.shp"), delete_layer=T)
+listHUC10 <- as.data.frame(unique(shapehuc$huc10))
+names(listHUC10)[names(listHUC10) == 'unique(shapehuc$huc10)'] <- 'huc10'
+write.csv(listHUC10, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc10.csv"), row.names=FALSE)
 
 dbDisconnect(db)
 
