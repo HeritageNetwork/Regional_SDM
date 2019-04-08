@@ -26,16 +26,14 @@ library(sf)
 # load in the data from the species run
 rm(list=ls())
 
-# for scripts 1-3, run just the following 3 lines
+# change the model species here
 model_species <- "obovretu"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
-# if debugging script 4 or later, also load the specific model output rdata file
+# load the specific model output rdata file
 model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata")))
 load(here("_data","species",model_species,"outputs","rdata",paste0(model_rdata)))
-
-
 
 rootPath <- here("_data","species",model_species)
 outpath <- file.path(rootPath, "outputs","model_review_output")
@@ -137,7 +135,6 @@ if (modType=="A"){ # Aquatic Option -
 
 zfiles <- file.path(gdbName, list.files(gdbName))
 utils::zip(paste0(gdbName,".zip"), files = zfiles)
-#zip::zip(paste0(gdbName,".zip"), files = x)
 
 #clean up
 unlink(gdbName, recursive = TRUE)
