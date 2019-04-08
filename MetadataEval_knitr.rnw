@@ -382,7 +382,7 @@ if(nrow(sdm.customComments.subset) > 0){
 \medskip
 \begin{center}
 
-<<mapFig, fig.width=7, fig.height=7, include=FALSE, echo=FALSE, dev='png', dpi=450>>=
+<<mapFig, fig.width=7, fig.height=7, include=FALSE, echo=FALSE, dev='png', dpi=250>>=
 
 nclr <- 5
 clrs <- brewer.pal('Blues',n=nclr)

@@ -8,7 +8,7 @@ rm(list=ls())
 # set project folder, db, species code, and species reaches filename for this run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "lasmsubv"
+model_species <- "ellisloa"
 
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
