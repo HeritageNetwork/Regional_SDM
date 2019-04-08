@@ -150,24 +150,31 @@ if(nrow(polysWithNoPoints) > 0){
   stop("One or more polygons didn't get any points placed in them.")
 }
 
-# get actual finalSampNum
-ranPts.joined2 <- ranPts.joined[0,]
+#  remove extras using straight table work
 
-#### this is slow! ####
-for (ex in 1:length(shp_expl$geometry)) {
-  s1 <- shp_expl[ex,]
-  samps <- row.names(ranPts.joined[ranPts.joined$expl_id==s1$expl_id,])
-  if (length(samps) > s1$finalSampNum) samps <- sample(samps, size = s1$finalSampNum) # samples to remove
-  ranPts.joined2 <- rbind(ranPts.joined2, ranPts.joined[samps,])
-}
+# this randomly assigns digits to each point by group (stratum) then next row only takes 
+# members in group that are less than target number of points
+rndid <- with(ranPts.joined, ave(expl_id, stratum, FUN=function(x) {sample.int(length(x))}))
+ranPts.joined2 <- ranPts.joined[rndid <= ranPts.joined$finalSampNum,]
+
+# get actual finalSampNum
+#ranPts.joined2 <- ranPts.joined[0,]
+# #### this is slow! ####
+# for (ex in 1:length(shp_expl$geometry)) {
+#   s1 <- shp_expl[ex,]
+#   samps <- row.names(ranPts.joined[ranPts.joined$expl_id==s1$expl_id,])
+#   if (length(samps) > s1$finalSampNum) samps <- sample(samps, size = s1$finalSampNum) # samples to remove
+#   ranPts.joined2 <- rbind(ranPts.joined2, ranPts.joined[samps,])
+# }
 ranPts.joined <- ranPts.joined2
-rm(ex, s1, samps, ranPts.joined2)
+#rm(ex, s1, samps, ranPts.joined2)
+rm(rndid, ranPts.joined2)
 
 #check for cases where sample smaller than requested
 # how many points actually generated?
-
 ptCount <- table(ranPts.joined$expl_id)
-overUnderSampled <- ptCount - shp_expl$finalSampNum
+targCount <- shp_expl[order(shp_expl$expl_id),"finalSampNum"]
+overUnderSampled <- ptCount - targCount$finalSampNum
 
 #positive vals are oversamples, negative vals are undersamples
 print(table(overUnderSampled))
@@ -208,6 +215,13 @@ samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 options(op)
 rm(op)
 
+# reduce the number of bkg points if huge
+# use the greater of 20 * pres points or 50,000
+bkgTarg <- max(nrow(ranPts.joined) * 20, 50000)
+if(nrow(samps) > bkgTarg){
+  samps <- samps[sample(nrow(samps), bkgTarg),]
+}
+
 # find coincident points ----
 polybuff <- st_transform(shp_expl, st_crs(samps))
 polybuff <- st_buffer(polybuff, dist = 30)
@@ -229,6 +243,15 @@ bgSubsAtt <- dbGetQuery(db, qry)
 # delete the table on the db
 dbRemoveTable(db, tmpTableName)
 dbDisconnect(db)
+
+# # remove NAs #### convert this to removing columns instead?
+# bgSubsAtt$bulkDens <- as.numeric(bgSubsAtt$bulkDens)
+# bgSubsAtt$clay <- as.numeric(bgSubsAtt$clay) 
+# bgSubsAtt$soil_pH <- as.numeric(bgSubsAtt$soil_pH) 
+# bgSubsAtt$flowacc <- as.numeric(bgSubsAtt$flowacc) 
+# 
+# bgSubsAtt <- bgSubsAtt[complete.cases(bgSubsAtt),]
+# nrow(bgSubsAtt)
 
 dbName <- paste0(loc_model, "/", model_species, "/inputs/model_input/", baseName, "_att.sqlite")
 db <- dbConnect(SQLite(), dbName)
