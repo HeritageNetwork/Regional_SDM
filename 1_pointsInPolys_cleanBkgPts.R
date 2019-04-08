@@ -244,6 +244,15 @@ bgSubsAtt <- dbGetQuery(db, qry)
 dbRemoveTable(db, tmpTableName)
 dbDisconnect(db)
 
+# # remove NAs #### convert this to removing columns instead?
+# bgSubsAtt$bulkDens <- as.numeric(bgSubsAtt$bulkDens)
+# bgSubsAtt$clay <- as.numeric(bgSubsAtt$clay) 
+# bgSubsAtt$soil_pH <- as.numeric(bgSubsAtt$soil_pH) 
+# bgSubsAtt$flowacc <- as.numeric(bgSubsAtt$flowacc) 
+# 
+# bgSubsAtt <- bgSubsAtt[complete.cases(bgSubsAtt),]
+# nrow(bgSubsAtt)
+
 dbName <- paste0(loc_model, "/", model_species, "/inputs/model_input/", baseName, "_att.sqlite")
 db <- dbConnect(SQLite(), dbName)
 dbWriteTable(db, paste0(nm_bkgPts[2], "_clean"), bgSubsAtt, overwrite = TRUE)
