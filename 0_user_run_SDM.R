@@ -7,7 +7,7 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "pletasup"
+model_species <- "junccaes"
 
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
@@ -18,9 +18,9 @@ nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
-loc_envVars = here("_data","env_vars","raster", "ras")
+loc_envVars = here("_data","env_vars","raster", "ras330")
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
-nm_bkgPts <- c(here("_data","env_vars","tabular", "background_pletasup.sqlite"), "background_pts")
+nm_bkgPts <- c(here("_data","env_vars","tabular", "background_CONUS.sqlite"), "background_pts")
 
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
@@ -106,7 +106,7 @@ library(here)
 rm(list=ls())
 
 # set project folder and species code for this run
-model_species <- "amazviri"
+model_species <- "callirus"
 loc_model <- here("_data", "species")
 
 # set wd and load function
@@ -119,8 +119,8 @@ source(here("helper", "run_SDM.R"))
   # to add/remove variables, begin at step 2
   # to just run new model, begin at step 3 (see next example)
 run_SDM(
-  begin_step = "4c",
-  model_species = "amazviri",
+  begin_step = "2",
+  model_species = "callirus",
   loc_model = loc_model,
   model_rdata = max(list.files(here("_data","species",model_species,"outputs","rdata")))
 )
@@ -143,8 +143,8 @@ run_SDM(
 # example pick-up a model run at step 4c (metadata/comment update)
 # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
-  begin_step = "4c",
-  model_species = "chrocumb",
+  begin_step = "4b",
+  model_species = "eleodian",
   loc_model = loc_model,
   #rubric_default = rubric_default,
   model_rdata = "chrocumb_20190108_143402",
@@ -164,7 +164,7 @@ rm(list=ls())
 # so you need to have started a run_SDM() run in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "pletasup"
+model_species <- "junccaes"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
