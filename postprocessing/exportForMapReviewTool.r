@@ -43,12 +43,17 @@ threshInfo <- dbGetQuery(db, statement = sql)
 
 # get cutvalue for MTP by group
 cutval <- threshInfo[threshInfo$cutCode == "MTPEO","cutValue"]
+if(cutval == 0){
+  cutval <- threshInfo[threshInfo$cutCode == "maxSSS","cutValue"]
+}
+
 
 #reclassify the raster and create feature class ----
 breaks <- c(0,cutval,1)
 rascut <- cut(ras, breaks = breaks)
 # convert raster to polys
 modelPoly <- rasterToPolygons(rascut, fun = function(x){x==2}, dissolve = TRUE)
+
 # add cutecode as attribute, remove all other columns
 modelPoly$cutecode <- model_species
 modelPoly <- modelPoly[,"cutecode"]
@@ -97,7 +102,7 @@ unlink(gdbName, recursive = TRUE)
               
 ## get range data ----
 
-dbpath <- "N:/_TerrestrialModels/_data/databases/SDM_lookupAndTracking.sqlite"
+dbpath <- here("_data","databases", "SDM_lookupAndTracking.sqlite")
 
 # get range info from the DB (as a list of HUCs)
 db <- dbConnect(SQLite(),dbname=dbpath)

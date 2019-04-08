@@ -24,7 +24,7 @@ totEOs <- length(unique(df.full$group_id)) - 1
 totPolys <- length(unique(df.full$stratum)) - 1
 
 #get minimum training presence
-allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("group_id", "stratum")])
+allVotes <- data.frame(rf.full$y, rf.full$votes/numCores, df.full[,c("group_id", "stratum")])
 allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
 
 MTP <- min(allVotesPresPts$X1)
@@ -80,7 +80,7 @@ cutList$MTPEO <- list("value" = MTPEO, "code" = "MTPEO",
 # based on quick assessment in Spring 07, set alpha to 0.01
 alph <- 0.01
 #create the prediction object for ROCR. Get pres col from votes (=named "1")
-rf.full.pred <- prediction(rf.full$votes[,"1"],df.full$pres)
+rf.full.pred <- prediction(rf.full$votes[,"1"]/numCores,df.full$pres)
 #use ROCR performance to get the f measure
 rf.full.f <- performance(rf.full.pred,"f",alpha = alph)
 #extract the data out of the S4 object, then find the cutoff that maximize the F-value.
