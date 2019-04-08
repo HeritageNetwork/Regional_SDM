@@ -27,7 +27,7 @@ library(sf)
 rm(list=ls())
 
 # change the model species here
-model_species <- "obovretu"
+model_species <- "callirus"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
