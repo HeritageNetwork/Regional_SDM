@@ -20,7 +20,7 @@ nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
 loc_envVars = here("_data","env_vars","raster", "ras330")
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
-nm_bkgPts <- c(here("_data","env_vars","tabular", "background_pletasup.sqlite"), "background_pts")
+nm_bkgPts <- c(here("_data","env_vars","tabular", "background_CONUS.sqlite"), "background_pts")
 
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
