@@ -19,7 +19,7 @@ crs_aea <- st_crs(x)
 path <- paste0(loc_scripts,"/_data/occurrence")
 setwd(path)
 
-cutecode <- "scirlong"
+cutecode <- "dichhirs"
 
 obd_name <- paste0(cutecode, "_pt.shp")
 
@@ -27,28 +27,29 @@ obd <- st_read(obd_name, stringsAsFactors = FALSE)
 dat <- st_transform(obd, crs_aea)
 
 # confirm points are only within the range polygon
-# get range info from the DB (as a list of HUCs)
-nm_db_file <- paste0(loc_scripts,"/_data/databases/SDM_lookupAndTracking.sqlite")
-model_species <- obd$SPECIES_CD[[1]]
-nm_HUC_file <- paste0(loc_scripts,"/_data/other_spatial/feature/HUC10.shp")
+# # get range info from the DB (as a list of HUCs)
+# nm_db_file <- paste0(loc_scripts,"/_data/databases/SDM_lookupAndTracking.sqlite")
+# model_species <- obd$SPECIES_CD[[1]]
+# nm_HUC_file <- paste0(loc_scripts,"/_data/other_spatial/feature/HUC10.shp")
+# 
+# db <- dbConnect(SQLite(),dbname=nm_db_file)
+# SQLquery <- paste0("SELECT huc10_id from lkpRange
+#                    inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
+#                    where lkpSpecies.sp_code = '", model_species, "';")
+# hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+# dbDisconnect(db)
+# rm(db)
+# 
+# # now get that info spatially
+# nm_range <- nm_HUC_file
+# qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
+# hucRange <- st_zm(st_read(nm_range, query = qry))
+# 
+# # intersect observations with range to get only points within range polys
+# dat_rng <- st_intersection(dat, hucRange[,c("HUC10")])
+# nrow(dat_rng)
 
-db <- dbConnect(SQLite(),dbname=nm_db_file)
-SQLquery <- paste0("SELECT huc10_id from lkpRange
-                   inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
-                   where lkpSpecies.sp_code = '", model_species, "';")
-hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
-dbDisconnect(db)
-rm(db)
-
-# now get that info spatially
-nm_range <- nm_HUC_file
-qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
-hucRange <- st_zm(st_read(nm_range, query = qry))
-
-# intersect observations with range to get only points within range polys
-dat_rng <- st_intersection(dat, hucRange[,c("HUC10")])
-nrow(dat_rng)
-
+dat<-dat_rng
 # group by buffering (ideally buff distance would be sep dist)
 # make sure distance is in the appropriate units
 st_crs(dat_rng)$units 
