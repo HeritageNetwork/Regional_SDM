@@ -50,7 +50,13 @@ if(!exists("rangeClipped")){
 
   rm(hucRange, rangeDissolved, rangeDissHolesFilled, conus)
 }
-  
+
+#check if shape is valid
+if(!st_is_valid(rangeClipped)){
+  # st_make_valid not available to this install
+  rangeClipped <- st_buffer(rangeClipped, 0)
+}
+
 st_write(rangeClipped, delete_dsn = TRUE,
          here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
 
@@ -86,12 +92,12 @@ st_write(rng, dsn = temp, layer = "clipshp.shp", driver="ESRI Shapefile", delete
 ext <- st_bbox(rng)
 
 # cluster process rasters
-cl <- makeCluster(parallel::detectCores() - 1, type = "SOCK") 
-clusterExport(cl, list("temp", "ext", "clipshp"), envir = environment()) 
-clusterExport(cl, list("loc_envVars"), envir = environment()) 
+cl <- snow::makeCluster(parallel::detectCores() - 1, type = "SOCK") 
+snow::clusterExport(cl, list("temp", "ext", "clipshp"), envir = environment()) 
+snow::clusterExport(cl, list("loc_envVars"), envir = environment()) 
 
 message("Creating raster subsets for species for ", length(fullL) , " environmental variables...")
-newL <- parLapply(cl, x = fullL, fun = function(path) {
+newL <- snow::parLapply(cl, x = fullL, fun = function(path) {
   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
   if (grepl("/",subnm)) {
     subdir <- strsplit(subnm, "/", fixed = T)[[1]][1]
