@@ -7,12 +7,8 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-<<<<<<< HEAD
-model_species <- "callirus"
-=======
-model_species <- "pletasup"
 
->>>>>>> parent of 526f38a... new spp
+model_species <- "pletasup"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
