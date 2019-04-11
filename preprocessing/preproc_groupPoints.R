@@ -24,11 +24,13 @@ crs_aea <- st_crs(x)
 path <- paste0(loc_scripts,"/_data/occurrence")
 setwd(path)
 
-cutecode <- "scirlong"
+cutecode <- "dichhirs"
+
 
 # initialize in case repeatedly running
 havePolyData <- FALSE
 havePointData <- FALSE
+
 
 # check for poly data
 eo_name <- paste0(cutecode, ".shp")

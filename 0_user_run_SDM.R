@@ -8,7 +8,11 @@ rm(list=ls())
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
 
+<<<<<<< HEAD
+model_species <- "rhynknie"
+=======
 model_species <- "pletasup"
+>>>>>>> 6e3dc725ef659f0ad15ebf8295e5aeff31ec5a5e
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -37,14 +41,14 @@ model_comments = ""
 metaData_comments = ""
 
 # your name
-modeller = "Tim Howard"
+modeller = "Amy Conley"
 
 # list non-standard variables to add to model run
 add_vars = NULL
 # list standard variables to exclude from model run
 remove_vars = NULL
 # do you want to stop execution after each modeling step (script)?
-prompt = FALSE
+prompt = TRUE
 
 project_blurb = "Models developed for the MoBI project are intended to inform creation of a national map of biodiversity value, and we recommend additional refinement and review before these data are used for more targeted, species-specific decision making. In particular, many MoBI models would benefit from greater consideration of species data and environmental predictor inputs, a more thorough review by species experts, and iteration to address comments received."
 
@@ -78,7 +82,7 @@ run_SDM(
   remove_vars = remove_vars,
   #rubric_default = rubric_default,
   project_blurb = project_blurb,
-  prompt = prompt
+  prompt =FALSE
 )
 
 #############################################################################
@@ -106,7 +110,7 @@ library(here)
 rm(list=ls())
 
 # set project folder and species code for this run
-model_species <- "callirus"
+model_species <- "geumpeck"
 loc_model <- here("_data", "species")
 
 # set wd and load function
@@ -129,10 +133,10 @@ run_SDM(
 # example pick-up a model run at step 5 (metadata create)
   # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
-  begin_step = "3",
-  model_species = "callirus",
+  begin_step = "4",
+  model_species = "geumpeck",
   loc_model = loc_model,
-  model_rdata = "chrocumb_20190116_142650",
+  model_rdata = "geumpeck_20190409_155720",
   metaData_comments = "This is an updated comment that will appear in the metadata PDF."
 )
 
@@ -141,8 +145,8 @@ run_SDM(
 # example pick-up a model run at step 4c (metadata/comment update)
 # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
-  begin_step = "4b",
-  model_species = "atryquin",
+  begin_step = "4c",
+  model_species = "dichhirs",
   loc_model = loc_model,
   #rubric_default = rubric_default,
   model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata"))),
@@ -162,7 +166,12 @@ rm(list=ls())
 # so you need to have started a run_SDM() run in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
+<<<<<<< HEAD
+
+model_species <- "geumpeck"
+=======
 model_species <- "pletasup"
+>>>>>>> 6e3dc725ef659f0ad15ebf8295e5aeff31ec5a5e
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
