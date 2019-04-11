@@ -52,6 +52,10 @@ length(not_yet_exported)
 ####For manual use- to run one at a time UNCOMMENT this line and add cutecode(s) of the species interested ####
 #not_yet_exported<-c("cutecode")
 
+###Final step sends the finals to the model_review_staging folder
+##Assumes the model_review_staging folder is in the parent directory Lines 204 +206
+
+
 ####Run the packaging tool for all models in your vector####
 for (j in 1:length(not_yet_exported)){
   # change the model species here
@@ -194,8 +198,20 @@ for (j in 1:length(not_yet_exported)){
   mdOutF <- mdOutFiles[order(mdOutFiles, decreasing = TRUE)][[1]]
   shortName <- strsplit(mdOutF, split = "_")[[1]][[1]]
   file.copy(from = paste0(pdfPath,"/",mdOutF), to = paste0(shortName,".pdf"))
-  print (paste0("Export complete for ",j," of ",length(not_yet_exported)," : ",not_yet_exported[j]))
   
+  ## Create cutecode named folder in F://model_review_staging/ and copy model_review_output files there
+  if (modType=="A"){
+    staging_path<-file.path(dirname(here()),"model_review_staging","aquatic")
+  }else if (modType=="T"){
+    staging_path<-file.path(dirname(here()),"model_review_staging","terrestrial")
+  }
+  
+  spec_stage_path <- file.path(staging_path, model_species)
+  dir.create(spec_stage_path, showWarnings = FALSE)
+  stagingFiles<-list.files(path=outpath)
+  file.copy(stagingFiles,spec_stage_path,overwrite=TRUE)
+  
+  print (paste0("Export complete for ",j," of ",length(not_yet_exported)," : ",not_yet_exported[j]))
   
 }
 
