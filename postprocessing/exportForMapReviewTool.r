@@ -27,7 +27,7 @@ library(sf)
 rm(list=ls())
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "obovretu"
+model_species <- "elliroan"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
@@ -166,3 +166,4 @@ mdOutF <- mdOutFiles[order(mdOutFiles, decreasing = TRUE)][[1]]
 shortName <- strsplit(mdOutF, split = "_")[[1]][[1]]
 file.copy(from = paste0(pdfPath,"/",mdOutF), to = paste0(shortName,".pdf"))
 
+rm()

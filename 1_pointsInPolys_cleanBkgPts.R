@@ -167,8 +167,8 @@ shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), c
 # find presence and presence-adjacent reaches by intersection
 bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = F)
 bkgd.geom <- shapef[!apply(bkgd.int, 1, FUN = any),]
-if (length(bkgd.geom$geometry) > 10000) {
-  bkgd.geom <- bkgd.geom[sort(sample(as.numeric(row.names(bkgd.geom)), size = 10000, replace = F)),]
+if (length(bkgd.geom$geometry) > 3000) { 
+  bkgd.geom <- bkgd.geom[sort(sample(as.numeric(row.names(bkgd.geom)), size = 3000, replace = F)),]
 }
 
 # write species reach data

@@ -1,8 +1,12 @@
 library(here)
 library(RSQLite)
 library(sf)
+library(arcgisbinding)
 
-nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches")
+
+
+#nm_bkg <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_reaches")
+nm_bkg <- c("N:/_AquaticModels/_data/env_vars/tabular/background.sqlite", "background_reaches")
 
 #MAhuc <- c("0204","0205","0206","0207","0411","0412","0413","0501","0502","0503")
 
@@ -29,11 +33,14 @@ dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
 SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2],"_att WHERE COMID IN ('", paste(shapef1$comid, collapse = "','"),"')") 
 EnvVars <- dbGetQuery(dbEV, SQLQuery)
 names(EnvVars) <- tolower(names(EnvVars))
-
 dbDisconnect(dbEV)
 
 # merge two data frames by COMID
 reaches_attributed <- merge(shapef1,EnvVars,by="comid")
 
-st_write(reaches_attributed, "N:/chris/aqvar/aquatic_envvar.shp", driver = "ESRI Shapefile")
+# write it out
+arc.check_product()
+arc.write(paste0("N:/chris/aqvar/AquaticVariables_CONUS.gdb/NHD_att"), reaches_attributed)
+
+
 
