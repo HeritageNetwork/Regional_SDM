@@ -7,12 +7,7 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-
-<<<<<<< HEAD
-model_species <- "rhynknie"
-=======
 model_species <- "pletasup"
->>>>>>> 6e3dc725ef659f0ad15ebf8295e5aeff31ec5a5e
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -22,7 +17,7 @@ nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
-loc_envVars = here("_data","env_vars","raster", "ras330")
+loc_envVars = here("_data","env_vars","raster", "ras")
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
 nm_bkgPts <- c(here("_data","env_vars","tabular", "background_CONUS.sqlite"), "background_pts")
 
@@ -41,7 +36,7 @@ model_comments = ""
 metaData_comments = ""
 
 # your name
-modeller = "Amy Conley"
+modeller = "Tim Howard"
 
 # list non-standard variables to add to model run
 add_vars = NULL
@@ -166,12 +161,9 @@ rm(list=ls())
 # so you need to have started a run_SDM() run in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
-<<<<<<< HEAD
 
-model_species <- "geumpeck"
-=======
 model_species <- "pletasup"
->>>>>>> 6e3dc725ef659f0ad15ebf8295e5aeff31ec5a5e
+
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
