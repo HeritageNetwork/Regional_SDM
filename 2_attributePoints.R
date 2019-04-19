@@ -25,11 +25,7 @@ shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist, string
 dbDisconnect(db)
 
 gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
-#nm <- substr(shrtNms$fullname,1,nchar(shrtNms$fullname) - 4) # remove .tif extension
-names(gridlist) <- shrtNms$fullname
-
-gridlist <- gridlist[order(names(gridlist))]
-names(gridlist) <- shrtNms[order(shrtNms$fileName),"gridName"]
+names(gridlist) <- shrtNms$gridName
 
 nulls <- gridlist[is.na(names(gridlist))]
 if(length(nulls) > 0){
