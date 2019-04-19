@@ -197,6 +197,8 @@ if(rowCounts["0"] > (10 * rowCounts["1"])){
   tuneAbs <- df.full[df.full$pres == 0, ]
   tuneAbs <- tuneAbs[sample(nrow(tuneAbs), nrow(tunePres)* 10),]
   df.tune <- rbind(tunePres, tuneAbs)
+} else {
+  df.tune <- df.full
 }
 # run through mtry twice
 x <- tuneRF(df.tune[,indVarCols],

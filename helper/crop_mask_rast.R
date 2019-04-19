@@ -100,8 +100,9 @@ message("Creating raster subsets for species for ", length(fullL) , " environmen
 newL <- snow::parLapply(cl, x = fullL, fun = function(path) {
   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
   if (grepl("/",subnm)) {
-    subdir <- strsplit(subnm, "/", fixed = T)[[1]][1]
-    dir.create(paste0(temp, "/", subdir), showWarnings = F)
+    folderDepth <- length(gregexpr("/", subnm)[[1]])
+    subdir <- paste(strsplit(subnm, "/", fixed = T)[[1]][1:folderDepth],collapse = "/")
+    dir.create(paste0(temp, "/", subdir), showWarnings = FALSE, recursive = TRUE)
   }
   nnm <- paste0(temp, "/", subnm)
   

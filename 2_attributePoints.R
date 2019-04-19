@@ -172,7 +172,7 @@ db <- dbConnect(SQLite(), paste0("model_input/",dbName))
 att_dat <- points_attributed
 st_geometry(att_dat) <- NULL
 #att_dat <- points_attributed@data
-dbWriteTable(db, paste0(baseName, "_att"), att_dat)
+dbWriteTable(db, paste0(baseName, "_att"), att_dat, overwrite = TRUE)
 dbDisconnect(db)
 rm(db)
 
