@@ -32,16 +32,16 @@ tableName <- paste0(nm_bkgPts[2], "_clean")
 df.abs <- dbReadTable(db, tableName)
 dbDisconnect(db)
 
-# write model input data to database before any other changes made
-db <- dbConnect(SQLite(),dbname=nm_db_file)
-
 # set the seed before validation loops
 set.seed(seed)
 
+# connect to DB ..
+db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get species info
 SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id, g_rank, rounded_g_rank FROM lkpSpecies WHERE sp_code = '", model_species,"';", sep="")
 ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
 
+# write model input data to database before any other changes made
 tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.character(Sys.time()),
                              feat_count = length(unique(df.in$stratum)), 
                              feat_grp_count = length(unique(df.in$group_id)), 
@@ -197,6 +197,7 @@ if(rowCounts["0"] > (10 * rowCounts["1"])){
   tuneAbs <- df.full[df.full$pres == 0, ]
   tuneAbs <- tuneAbs[sample(nrow(tuneAbs), nrow(tunePres)* 10),]
   df.tune <- rbind(tunePres, tuneAbs)
+  rm(tuneAbs, tunePres)
 } else {
   df.tune <- df.full
 }
@@ -214,7 +215,7 @@ y <- tuneRF(df.tune[,indVarCols],
             strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
-rm(x,y, tunePres, tuneAbs, df.tune, rowCounts)
+rm(x,y, df.tune, rowCounts)
 
 ## old way if speed is not critical
 # x <- tuneRF(df.full[,indVarCols],
