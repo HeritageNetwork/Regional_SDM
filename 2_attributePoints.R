@@ -116,7 +116,7 @@ rm(fullL, gridlistSub, modType, branches, activeBranch)
 s.list <- unstack(envStack)
 names(s.list) <- names(envStack)
 # Now, create a R cluster using all the machine cores minus one
-sfInit(parallel=TRUE, cpus=parallel:::detectCores()-1)
+sfInit(parallel=TRUE, cpus=parallel:::detectCores()-3)
 # Load the required packages inside the cluster
 sfLibrary(raster)
 sfLibrary(sf)
@@ -170,5 +170,5 @@ st_geometry(att_dat) <- NULL
 #att_dat <- points_attributed@data
 dbWriteTable(db, paste0(baseName, "_att"), att_dat, overwrite = TRUE)
 dbDisconnect(db)
-rm(db)
+rm(db, SQLQuery)
 

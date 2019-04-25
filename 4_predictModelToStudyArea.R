@@ -2,24 +2,20 @@
 # Purpose: create the distribution model prediction raster
 
 ## start with a fresh workspace with no objects loaded
+library(here)
 library(raster)
 library(randomForest)
 library(RSQLite)
 library(sf)
+library(snow)
+library(parallel)
+
 removeTmpFiles(48) # clean old (>2days) Raster temporary files
-
-####
-## two lines need your attention. The one directly below (loc_scripts)
-## and about line 26 where you choose which Rdata file to use,
-
-# get paths, other settings
-# get the customized version of the predict function
-# source(paste(loc_scripts, "helper/RasterPredictMod.R", sep = "/"), local = TRUE)
 
 # load data ----
 # get the rdata file
 setwd(loc_model)
-dir.create(paste0(model_species,"/outputs/model_predictions"), recursive = T, showWarnings = F)
+dir.create(paste0(model_species,"/outputs/model_predictions"), recursive = TRUE, showWarnings = FALSE)
 setwd(paste0(model_species,"/outputs"))
 
 # load rdata
@@ -63,7 +59,7 @@ for (i in 1:length(stackOrder)) {
 names(fullL) <- stackOrder
 rm(rs)
 
-source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
+source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = FALSE)
 envStack <- stack(newL)
 
 #envStack <- stack(fullL) # if not using helper/crop_mask_rast.R
@@ -73,10 +69,11 @@ rm(fullL)
 setwd(paste0(loc_model, "/", model_species,"/outputs"))
 fileNm <- paste0("model_predictions/", model_run_name,".tif")
 
+cat("... predicting throughout study area \n")
 # use parallel processing if packages installed
 if (all(c("snow","parallel") %in% installed.packages())) {
   try({
-    beginCluster(type = "SOCK")
+    beginCluster(type = "SOCK", n=parallel:::detectCores()-3)
     outRas <- clusterR(envStack, predict, args = list(model=rf.full, type = "prob", index = 2), verbose = T)
     writeRaster(outRas, filename = fileNm, format = "GTiff", overwrite = TRUE)
   })

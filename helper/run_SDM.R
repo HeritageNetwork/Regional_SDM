@@ -103,7 +103,8 @@ run_SDM <- function(
   save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
   
   # assign objects
-  for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
+  for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]], envir = .GlobalEnv)
+  fn_args <<- fn_args #assign the list up to the global environment
   
   # check for missing packages
   req.pack <- c("RSQLite","rgdal","sp","rgeos","raster","maptools","ROCR","vcd","abind","git2r","sf",
@@ -127,20 +128,21 @@ run_SDM <- function(
   
   if (!begin_step %in% c("1","2","3")) {
     if (is.null(model_rdata)) stop("Must provide .Rdata file name if starting after step 3.")
-    load(paste0(loc_model, "/", model_species, "/outputs/rdata/", model_rdata, ".Rdata"))
+    load(paste0(loc_model, "/", model_species, "/outputs/rdata/", model_rdata))
   }
   
   # run scripts
   for (scrpt in run_steps) {
     message(paste0("Running script ", scrpt , "..."))
+    
     # reload variables
-    for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
-    
+    for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]], envir = .GlobalEnv)
     # run script
-    source(paste(loc_scripts, scrpt, sep = "/"), local = TRUE)
-    
+    source(paste(loc_scripts, scrpt, sep = "/"), local = FALSE)
+
     # clean up everything but loop objects
-    rm(list=ls()[!ls() %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args")])
+    rm(list=ls(envir = .GlobalEnv)
+       [!ls(envir = .GlobalEnv) %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args")], envir = .GlobalEnv)
     
     message(paste0("Completed script ", scrpt , "..."))
     

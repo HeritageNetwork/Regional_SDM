@@ -259,3 +259,4 @@ dbWriteTable(db, paste0(nm_bkgPts[2], "_clean"), bgSubsAtt, overwrite = TRUE)
 
 dbDisconnect(db)
 
+rm(db, do, dt, qry, tmpTableName)
