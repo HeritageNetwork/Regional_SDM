@@ -47,7 +47,7 @@ if (dat.in.db$metadata_comments != newText) {
 # get most recent data from the tracking DB for two of the rubric table fields that may vary
 # get tracking DB data from SQL Server tables 
 
-fn <- "N:/tim/mobi_tracker_connection_string_short.dsn"
+fn <- here("_data","databases", "mobi_tracker_connection_string_short.dsn")
 cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
 
 
