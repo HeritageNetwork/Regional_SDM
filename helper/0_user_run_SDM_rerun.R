@@ -25,7 +25,7 @@ library(here)
 # set wd and load function
 loc_scripts <- here()
 setwd(loc_scripts)
-source(here("helper", "run_SDM.R"))
+source(here("helper", "run_SDM.R"), local = FALSE)
 
 
 # These are variables necessary for all picked-up runs

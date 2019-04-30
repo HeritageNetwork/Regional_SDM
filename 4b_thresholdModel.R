@@ -24,7 +24,7 @@ totEOs <- length(unique(df.full$group_id)) - 1
 totPolys <- length(unique(df.full$stratum)) - 1
 
 #get minimum training presence
-allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("group_id", "stratum")])
+allVotes <- data.frame(rf.full$y, rf.full$votes/numCores, df.full[,c("group_id", "stratum")])
 allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
 
 MTP <- min(allVotesPresPts$X1)
@@ -80,7 +80,7 @@ cutList$MTPEO <- list("value" = MTPEO, "code" = "MTPEO",
 # based on quick assessment in Spring 07, set alpha to 0.01
 alph <- 0.01
 #create the prediction object for ROCR. Get pres col from votes (=named "1")
-rf.full.pred <- prediction(rf.full$votes[,"1"],df.full$pres)
+rf.full.pred <- prediction(rf.full$votes[,"1"]/numCores,df.full$pres)
 #use ROCR performance to get the f measure
 rf.full.f <- performance(rf.full.pred,"f",alpha = alph)
 #extract the data out of the S4 object, then find the cutoff that maximize the F-value.
@@ -152,11 +152,11 @@ numThresh <- length(cutList)
 allThresh <- data.frame("model_run_name" = rep(modelrun_meta_data$model_run_name, numThresh),
                         "ElemCode" = rep(ElementNames$Code, numThresh),
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
-                "cutCode" = unlist(lapply(cutList, function(x) x[2])),
-                "cutValue" = unlist(lapply(cutList, function(x) x[1])),
-                "capturedEOs" = unlist(lapply(cutList, function(x) x[3])),
-                "capturedPolys" = unlist(lapply(cutList, function(x) x[4])),
-                "capturedPts" = unlist(lapply(cutList, function(x) x[5])),
+                "cutCode" = unlist(lapply(cutList, function(x) x["code"])),
+                "cutValue" = unlist(lapply(cutList, function(x) x["value"])),
+                "capturedEOs" = unlist(lapply(cutList, function(x) x["capturedEOs"])),
+                "capturedPolys" = unlist(lapply(cutList, function(x) x["capturedPolys"])),
+                "capturedPts" = unlist(lapply(cutList, function(x) x["capturedPts"])),
                 stringsAsFactors = FALSE)
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -165,16 +165,7 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
 
-# for(i in 1:numThresh){
-#   SQLquery <- paste("INSERT INTO tblCutoffs (", 
-#                     toString(names(allThresh)),
-#                     ") VALUES (",
-#                     toString(sQuote(allThresh[i,])),
-#                     ");", sep = "")
-#   dbSendQuery(db, SQLquery)
-# }
-
-dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = T)
+dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = TRUE)
 # clean up
 options(op)
 dbDisconnect(db)

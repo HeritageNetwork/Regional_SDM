@@ -5,3 +5,16 @@ This repository is for collaboration among Heritage programs and NatureServe for
 You are currently reading the Readme file. Scripts (and other files as needed) are also part of this repository.
 
 Primary activity in 2018-2019 is for the MoBI project. 
+
+
+License
+=======
+This project is licensed under the terms of the Creative Commons Attribution-ShareAlike 4.0 International Public
+License.
+
+license:cc-by-sa-4.0
+
+See `COPYING <LICENSE.txt>` to see the full text.
+
+
+[![DOI](https://zenodo.org/badge/140332446.svg)](https://zenodo.org/badge/latestdoi/140332446)

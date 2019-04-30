@@ -3,19 +3,17 @@
 
 library(raster)
 library(sf)
-# library(rgdal)
 library(RSQLite)
-# library(maptools)
+library(snowfall)
 
 # load data, QC ----
 setwd(loc_envVars)
 
-# create a stack
-# if using TIFFs, use this line
+# get the rasters
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
 # get short names from the DB
-# first shorten names in subfolders (temporal vars). NOT FULLY TESTED, borrowed from script 3
+# first shorten names in subfolders
 raslist.short <- unlist(
   lapply(strsplit(raslist, "/"), function(x) {x[length(x)]})
 )
@@ -27,11 +25,16 @@ shrtNms <- merge(data.frame(fileName = raslist.short, fullname = raslist, string
 dbDisconnect(db)
 
 gridlist <- as.list(paste(loc_envVars,shrtNms$fullname,sep = "/"))
-nm <- substr(shrtNms$fullname,1,nchar(shrtNms$fullname) - 4) # remove .tif extension
-names(gridlist) <- nm
+names(gridlist) <- shrtNms$gridName
+
+nulls <- gridlist[is.na(names(gridlist))]
+if(length(nulls) > 0){
+  print(nulls)
+  stop("Some grids are not in DB.")
+}
 
 # check to make sure there are no names greater than 10 chars
-nmLen <- unlist(lapply(shrtNms$gridName, nchar))
+nmLen <- unlist(lapply(names(gridlist),nchar))
 max(nmLen) # if this result is greater than 10, you've got a renegade
 
 # Set working directory to the random points location
@@ -44,6 +47,18 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get MODTYPE
 SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE sp_code = '", model_species, "';")
 modType <- dbGetQuery(db, SQLQuery)$m
+
+# if modtype is both (B), flip it to A or T
+# what git branch are we on?
+branches <- system("git branch", intern = TRUE)
+activeBranch <- branches[grep("\\*", branches)]
+activeBranch <- sub("\\*", "", activeBranch)
+activeBranch <- gsub(" ", "", activeBranch)
+
+if(modType == "B"){
+  if(activeBranch == "terrestrial") modType <- "T"
+  if(activeBranch == "aquatic") modType <- "A"
+}
 
 # gridlistSub is a running list of variables to use. Uses fileName from lkpEnvVars
 SQLQuery <- paste0("SELECT gridName, fileName FROM lkpEnvVars WHERE use_",modType," = 1;")
@@ -82,12 +97,9 @@ if (!is.null(remove_vars)) {
   # remove the variables
   gridlistSub <- gridlistSub[!tolower(gridlistSub$gridName) %in% tolower(remove_vars),]
 }
-# remove duplicates
+# remove duplicates, then subset
 gridlistSub <- gridlistSub[!duplicated(gridlistSub),]
-
-# get just names of grids (removes folder for temporal vars)
-justTheNames <- unlist(lapply(strsplit(names(gridlist), "/", fixed = TRUE), FUN = function(x) {x[length(x)]}))
-fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub$fileName)]
+fullL <- gridlist[names(gridlist) %in% tolower(gridlistSub$gridName)]
 
 # Could use this script here crop/mask rasters
 #source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
@@ -95,13 +107,27 @@ fullL <- gridlist[tolower(justTheNames) %in% tolower(gridlistSub$fileName)]
 
 # make grid stack with subset
 envStack <- stack(fullL)
-rm(fullL, justTheNames, gridlistSub, modType)
+rm(fullL, gridlistSub, modType, branches, activeBranch)
 
 # extract raster data to points ----
-##  Bilinear interpolation is a *huge* memory hog. 
-##  Do it all as 'simple' 
 
-points_attributed <- extract(envStack, shpf, method="simple", sp=TRUE)
+# Extract values to a data frame - multicore approach using snowfall
+# First, convert raster stack to list of single raster layers
+s.list <- unstack(envStack)
+names(s.list) <- names(envStack)
+# Now, create a R cluster using all the machine cores minus one
+sfInit(parallel=TRUE, cpus=parallel:::detectCores()-3)
+# Load the required packages inside the cluster
+sfLibrary(raster)
+sfLibrary(sf)
+# Run parallelized 'extract' function and stop cluster
+e.df <- sfSapply(s.list, extract, y=shpf, method = "simple")
+sfStop()
+
+points_attributed <- st_sf(cbind(data.frame(shpf), data.frame(e.df)))
+
+# method without using snowfall
+#points_attributed <- extract(envStack, shpf, method="simple", sp=TRUE)
 
 # temporal variables data handling
 pa <- points_attributed
@@ -136,19 +162,13 @@ if (length(tv) > 0) {
 }
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
 
-# re-name table columns from filename to shrtNms$gridName
-shrtNms$fileName <- gsub(".tif$", "", shrtNms$fileName)
-for (n in 1:length(names(points_attributed))) {
-  if (names(points_attributed)[n] %in% shrtNms$fileName) {
-    names(points_attributed)[n] <- shrtNms$gridName[shrtNms$fileName == names(points_attributed)[n]][1]
-  }
-}
-
 # write it out to the att db
 dbName <- paste(baseName, "_att.sqlite", sep="")
 db <- dbConnect(SQLite(), paste0("model_input/",dbName))
-att_dat <- points_attributed@data
-dbWriteTable(db, paste0(baseName, "_att"), att_dat)
+att_dat <- points_attributed
+st_geometry(att_dat) <- NULL
+#att_dat <- points_attributed@data
+dbWriteTable(db, paste0(baseName, "_att"), att_dat, overwrite = TRUE)
 dbDisconnect(db)
-rm(db)
+rm(db, SQLQuery)
 

@@ -11,7 +11,10 @@ library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
 library(foreign) #for reading dbf files
 library(randomForest)
-source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = T) # generates modelrun_meta_data
+library(iterators)
+library(doParallel)
+
+source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = FALSE) # generates modelrun_meta_data
 
 setwd(loc_model)
 dir.create(paste0(model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
@@ -28,14 +31,18 @@ df.in <- dbReadTable(db, tableName)
 tableName <- paste0(nm_bkgPts[2], "_clean")
 df.abs <- dbReadTable(db, tableName)
 dbDisconnect(db)
+rm(db, dbName, tableName)
 
-# write model input data to database before any other changes made
+# set the seed before validation loops
+set.seed(seed)
+
+# connect to DB ..
 db <- dbConnect(SQLite(),dbname=nm_db_file)
-
 # get species info
 SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id, g_rank, rounded_g_rank FROM lkpSpecies WHERE sp_code = '", model_species,"';", sep="")
 ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
 
+# write model input data to database before any other changes made
 tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.character(Sys.time()),
                              feat_count = length(unique(df.in$stratum)), 
                              feat_grp_count = length(unique(df.in$group_id)), 
@@ -44,13 +51,32 @@ tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.c
 dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, "';")) # remove any previously prepped dataset entry
 dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
 envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVars;")$g
+envvar_list <- tolower(envvar_list)
 
 #also get correlated env var information
 SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
 corrdEVs <- dbGetQuery(db, statement = SQLquery)
 
 dbDisconnect(db)
-rm(db)
+rm(db, SQLquery)
+
+# are we using the 330 m raster set? if so, rename df.abs
+# all 330m raster names begin with "z3"
+if(length(grep("z3",names(df.in))) > 0){
+  db <- dbConnect(SQLite(),dbname=nm_db_file)
+  sql <- "SELECT names_30m, names_330m from mapEnvVarDifferentResolutions;"
+  envarNames <- dbGetQuery(db, statement = sql, stringsAsFactors = FALSE) 
+  envarNames <- data.frame(sapply(envarNames, FUN = function(x) tolower(x)), stringsAsFactors = FALSE)
+  names(df.abs) <- tolower(names(df.abs))
+  namesDF <- data.frame(absNames = names(df.abs), stringsAsFactors = FALSE)
+  namesDF <- merge(namesDF, envarNames, by.x = "absNames", by.y = "names_30m", all.x = TRUE)
+  namesDF$names_330m[is.na(namesDF$names_330m)] <- namesDF$absNames[is.na(namesDF$names_330m)]
+  # order them, then rename them
+  df.abs <- df.abs[,namesDF$absNames]
+  names(df.abs) <- namesDF$names_330m
+  dbDisconnect(db)
+  rm(db, sql, envarNames, namesDF)
+  }
 
 # get an original list of env-vars for later writing to tblVarsUsed
 envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
@@ -74,7 +100,7 @@ names(df.abs) <- tolower(names(df.abs))
 raslist <- list.files(path = loc_envVars, pattern = ".tif$", recursive = TRUE)
 
 # get short names from the DB
-# first shorten names in subfolders (temporal vars). NOT FULLY TESTED
+# first shorten names in subfolders (temporal vars).
 raslist.short <- unique(unlist(
   lapply(strsplit(raslist, "/"), function(x) {x[length(x)]})
 ))
@@ -99,7 +125,7 @@ dtGrids <- dbGetQuery(db, statement = SQLquery)
 # clean up
 #options(op)
 dbDisconnect(db)
-rm(db)
+rm(db, SQLQuery, SQLquery, shrtNms)
 
 # Remove irrelevant distance-to grids ----
 # check if pres points are VERY far away from any of the dist-to grids
@@ -114,11 +140,11 @@ dtRas.min <- apply(as.data.frame(df.in[,dtRas]), 2, min)
 dtRas.sub <- dtRas.min[dtRas.min > 5000]
 rasnames <- rasnames[!rasnames %in% names(dtRas.sub)]
 
+rm(dtRas, dtRas.min, dtRas.sub)
+
 # clean up, merge data sets -----
 # this is the full list of fields, arranged appropriately
 colList <- c("species_cd","group_id","pres","stratum", "ra", rasnames)
-
-####c("UID", "GROUP_ID", "SPECIES_CD", "RA", "OBSDATE")
 
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
@@ -160,40 +186,83 @@ EObySS$sampSize[EObySS$group_id == "pseu-a"] <- sum(EObySS[!EObySS$group_id == "
 
 sampSizeVec <- EObySS$sampSize
 names(sampSizeVec) <- as.character(EObySS$group_id)
+rm(EObySS, EObyRA)
+
 # reset sample sizes to number of points, when it is smaller than desired sample size
 # This is only relevant when complete.cases may have removed some points from an already-small set of points
 totPts <- table(df.full$group_id)
 for (i in names(sampSizeVec)) if (sampSizeVec[i] > totPts[i]) sampSizeVec[i] <- totPts[i]
+rm(totPts)
 
 ##
 # tune mtry ----
+#subset df to ten times pres for getting mtry  ## to increase speed
+rowCounts <- table(df.full$pres)
+if(rowCounts["0"] > (10 * rowCounts["1"])){
+  tunePres <- df.full[df.full$pres == 1, ]
+  tuneAbs <- df.full[df.full$pres == 0, ]
+  tuneAbs <- tuneAbs[sample(nrow(tuneAbs), nrow(tunePres)* 10),]
+  df.tune <- rbind(tunePres, tuneAbs)
+  rm(tuneAbs, tunePres)
+} else {
+  df.tune <- df.full
+}
 # run through mtry twice
-x <- tuneRF(df.full[,indVarCols],
-             y=df.full[,depVarCol],
+x <- tuneRF(df.tune[,indVarCols],
+             y=df.tune[,depVarCol],
              ntreeTry = 300, stepFactor = 2, mtryStart = 6,
             strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
-y <- tuneRF(df.full[,indVarCols],
-            y=df.full[,depVarCol],
+y <- tuneRF(df.tune[,indVarCols],
+            y=df.tune[,depVarCol],
             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
             strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
-rm(x,y)
+rm(x,y, df.tune, rowCounts, newTry)
 
-##
+## old way if speed is not critical
+# x <- tuneRF(df.full[,indVarCols],
+#             y=df.full[,depVarCol],
+#             ntreeTry = 300, stepFactor = 2, mtryStart = 6,
+#             strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
+# 
+# newTry <- x[x[,2] == min(x[,2]),1]
+# 
+# y <- tuneRF(df.full[,indVarCols],
+#             y=df.full[,depVarCol],
+#             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
+#             strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
+# 
+# mtry <- max(y[y[,2] == min(y[,2]),1])
+# rm(x,y, newTry)
+
+###
 # Remove the least important env vars ----
 ##
 
 ntrees <- 1000
-rf.find.envars <- randomForest(df.full[,indVarCols],
-                        y=df.full[,depVarCol],
-                        importance=TRUE,
-                        ntree=ntrees,
-                        mtry=mtry,
-                        strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
+numCores <- 10        
+
+# do all randomForest calls in parallel, starting with this one
+cl <- makeCluster(numCores)   
+registerDoParallel(cl)
+
+treeSubs <- ntrees/numCores
+
+rf.find.envars <- foreach(ntree = rep(treeSubs,numCores), .combine = randomForest::combine, 
+                   .packages = 'randomForest', .multicombine = TRUE) %dopar% {
+                     randomForest(df.full[,indVarCols],
+                                  y=df.full[,depVarCol],
+                                  importance=TRUE,
+                                  ntree=ntree,
+                                  mtry=mtry,
+                                  strata = df.full[,"group_id"],
+                                  sampsize = sampSizeVec, replace = TRUE,
+                                  norm.votes = TRUE)
+                   }
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
@@ -221,6 +290,8 @@ impEnvVarCols[1:5] <- TRUE
 df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
 indVarCols <- c(6:length(names(df.full)))
+
+rm(impvals, impEnvVars, impEnvVarCols)
 
 ##
 # code above is for removing least important env vars
@@ -263,13 +334,21 @@ group$colNm <- "group_id"
 group$JackknType <- "spatial grouping"
 group$vals <- unique(df.in2$group_id)
 
-#reduce the number of trees if group$vals has more than 30 entries
+#reduce the number of trees if group$vals has more than 30 entries #commented out to be parallel with aquatic
 #this is for validation
-if(length(group$vals) > 30) {
-	ntrees <- 750
-} else {
-	ntrees <- 1000
-}
+# if(length(group$vals) > 30) {
+# 	ntrees <- 500
+# } else {
+# 	ntrees <- 750
+# }
+ntrees <- 1000
+
+# reduce the number of validation loops if more than 50. 50 is plenty!
+# randomly draw to get the validation set.
+if(length(group$vals) > 50) {
+  group$vals <- sample(group$vals, size = 50)
+  group$vals <- factor(group$vals)
+} 
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
@@ -308,9 +387,12 @@ v.rocr.pred <- vector("list",length(group$vals))
 ## then moves on to another group, cycling though all groups
 ## Validation stats in tabular form are the final product.
 #######
-      
+
+# calculate the number of trees to send to each core
+treeSubs <- ntrees/numCores
+
 if(length(group$vals)>1){
-	for(i in 1:length(group$vals)){
+  for(i in 1:length(group$vals)){
 		   # Create an object that stores the select command, to be used by subset.
 		  trSelStr <- parse(text=paste(group$colNm[1]," != '", group$vals[[i]],"'",sep=""))
 		  evSelStr <- parse(text=paste(group$colNm[1]," == '", group$vals[[i]],"'",sep=""))
@@ -332,13 +414,15 @@ if(length(group$vals)>1){
 		  # re-calc pseudo-absence samples to match input training samples
 		  ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
 		  
-		  rm(trSetBG, evSetBG)
-		  
-		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
-		                             importance=TRUE,ntree=ntrees,mtry=mtry,
-		                             strata = trSet[,group$colNm], sampsize = ssVec, replace = TRUE
-		                             )
-		  
+		  rm(trSelStr, evSelStr, trSetBG, evSetBG, TrBGsamps, BGsampSz )
+
+		  trRes[[i]] <- foreach(ntree = rep(treeSubs,numCores), .combine = randomForest::combine, 
+		                        .packages = 'randomForest', .multicombine = TRUE) %dopar%
+          		    		        randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
+          		                             importance=TRUE,mtry=mtry,ntree = ntree,
+          		                             strata = trSet[,group$colNm], sampsize = ssVec, replace = TRUE
+		  )
+
 		  # run a randomForest predict on the validation data
 		  evRes[[i]] <- predict(trRes[[i]], evSet[[i]], type="prob")
 		   # use ROCR to structure the data. Get pres col of evRes (= named "1")
@@ -369,7 +453,7 @@ if(length(group$vals)>1){
 	v.rocr.rocplot.restruct <- performance(v.rocr.pred.restruct, "tpr","fpr")
 	# send it to perf for the averaging lines that follow
 	perf <- v.rocr.rocplot.restruct
-
+  rm(v.rocr.rocplot.restruct)
 	## for infinite cutoff, assign maximal finite cutoff + mean difference
 	## between adjacent cutoff pairs  (this code is from ROCR)
 	if (length(perf@alpha.values)!=0) perf@alpha.values <-
@@ -411,18 +495,31 @@ if(length(group$vals)>1){
 	perf.avg@y.values <- list(rowMeans( data.frame( perf.avg@y.values)))
 	perf.avg@alpha.values <- list( alpha.values )
 
-	# find the best cutoff based on the averaged ROC curve
-	### TODO: customize/calculate this for each model rather than
-	### average? 
-	cutpt <- which.max(abs(perf.avg@x.values[[1]]-perf.avg@y.values[[1]]))
-	cutval <- perf.avg@alpha.values[[1]][cutpt]
-	cutX <- perf.avg@x.values[[1]][cutpt]
-	cutY <- perf.avg@y.values[[1]][cutpt]
-	cutval.rf <- c(1-cutval,cutval)
-	names(cutval.rf) <- c("0","1")
-
 	for(i in 1:length(group$vals)){
-		#apply the cutoff to the validation data
+	  ### get threshold
+	  # get MTP: minimum training presence (minimum votes recieved [probability]
+	  # for any training point)
+	  allVotesPrespts <- trRes[[i]]$votes[,"1"][trRes[[i]]$y == 1]
+	  MTP <- min(allVotesPrespts/numCores)
+    # calculations fail if MTP = 0 so if it does, fall back to maxSSS
+	  if(MTP == 0) {
+	    # max sensitivity plus specificity (maxSSS per Liu et al 2016)
+	    # create the prediction object for ROCR. Get pres col from y, prediction from votes (=named "1")
+	    pred <- prediction(trRes[[i]]$votes[,"1"],trRes[[i]]$y)
+	    sens <- performance(pred,"sens")
+	    spec <- performance(pred,"spec")
+	    sss <- data.frame(cutSens = unlist(sens@x.values),sens = unlist(sens@y.values),
+	                      cutSpec = unlist(spec@x.values), spec = unlist(spec@y.values))
+	    sss$sss <- with(sss, sens + spec)
+	    maxSSS <- sss[which.max(sss$sss),"cutSens"]/numCores
+	    cutval.rf <- c(1-maxSSS, maxSSS)
+	    names(cutval.rf) <- c("0","1")
+	  } else {
+	    cutval.rf <- c(1-MTP, MTP)
+	    names(cutval.rf) <- c("0","1")
+	  }
+
+	  #apply the cutoff to the validation data
 		v.rf.pred.cut <- predict(trRes[[i]], evSet[[i]],type="response", cutoff=cutval.rf)
 		#make the confusion matrix
 		v.y[[i]] <- table(observed = evSet[[i]][,"pres"],
@@ -506,22 +603,25 @@ if(length(group$vals)>1){
 
 # increase the number of trees for the full model
 ntrees <- 2000
+treeSubs <- ntrees/numCores
 
-# set the seed
-set.seed(seed)
-   
 ####
 #   run the full model ----
 ####
+cat("... creating full model \n")
 
-rf.full <- randomForest(df.full[,indVarCols],
-                        y=df.full[,depVarCol],
-                        importance=TRUE,
-                        ntree=ntrees,
-                        mtry=mtry,
-                        strata = df.full[,"group_id"],
-                        sampsize = sampSizeVec, replace = TRUE,
-                        norm.votes = TRUE)
+rf.full <- foreach(ntree = rep(treeSubs,numCores), .combine = randomForest::combine, 
+                    .packages = 'randomForest', .multicombine = TRUE) %dopar% {
+                        randomForest(df.full[,indVarCols],
+                              y=df.full[,depVarCol],
+                              importance=TRUE,
+                              ntree=ntree,
+                              mtry=mtry,
+                              strata = df.full[,"group_id"],
+                              sampsize = sampSizeVec, replace = TRUE,
+                              norm.votes = TRUE)
+                              }
+
 ####
 # Importance measures ----
 ####
@@ -552,24 +652,44 @@ if(length(ord) > 9){
 } else {
   pPlotListLen <- length(ord)
 }
-#set up a list to hold the plot data
-pPlots <- vector("list",pPlotListLen)
-names(pPlots) <- c(1:pPlotListLen)
-#get the top eight partial plots
-for(i in 1:pPlotListLen){
-  curvar <- names(f.imp[ord[i]])
-  pPlots[[i]] <- do.call("partialPlot", list(x = rf.full, pred.data = df.full[,indVarCols],
-                                             x.var = curvar,
-                                             which.class = 1,
-                                             plot = FALSE))
-  pPlots[[i]]$gridName <- curvar
-  pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
-  cat("finished partial plot ", i, " of ", pPlotListLen, "\n")
+
+cat("... calculating partial plots \n")
+
+### subsample, grouped by pres/abs, to speed up partial plots
+ppPres <- df.full[df.full$pres == 1, ]
+ppAbs <- df.full[df.full$pres == 0, ]
+ppPresSamp <- min(c(nrow(ppPres), 6000)) # take all pres samples, or 6000, whichever is less
+ppPresSamp <- sample(1:nrow(ppPres), size = round(ppPresSamp), replace = FALSE)
+ppPresSamp <- ppPres[ppPresSamp,]
+ppAbsSamp <- min(c(nrow(ppAbs), 6000)) # take all abs samples, or 6000, whichever is less
+ppAbsSamp <- sample(1:nrow(ppAbs), size = round(ppAbsSamp), replace = FALSE)
+ppAbsSamp <- ppAbs[ppAbsSamp,]
+
+ppPreddata <- rbind(ppPresSamp, ppAbsSamp)
+
+# run partial plots in parallel
+curvars = names(f.imp[ord])[1:pPlotListLen]
+pPlots <- foreach(i = iter(curvars), .packages = 'randomForest') %dopar% {
+                  do.call("partialPlot", list(x = rf.full, pred.data = ppPreddata[,indVarCols],
+                              x.var = i,
+                              which.class = 1,
+                              plot = FALSE))
 }
-rm(curvar)
+
+#fill in names
+names(pPlots) <- c(1:pPlotListLen)
+for(i in 1:length(pPlots)){
+  pPlots[[i]]$gridName <- curvars[[i]]
+  pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
+}
+rm(ppPres, ppAbs, ppPresSamp, ppAbsSamp, ppPreddata)
+
+stopCluster(cl)
+rm(cl)
+closeAllConnections()
 
 # save the project, return to the original working directory
-dir.create(paste0(loc_model, "/", model_species,"/outputs/rdata"), recursive = T, showWarnings = F)
+dir.create(paste0(loc_model, "/", model_species,"/outputs/rdata"), recursive = TRUE, showWarnings = FALSE)
 setwd(paste0(loc_model, "/", model_species,"/outputs"))
 
 # don't save fn args/vars
@@ -596,3 +716,16 @@ dbWriteTable(db, "tblModelResultsVarsUsed", varImpDB, append = T)
 dbDisconnect(db)
 
 message(paste0("Saved rdata file: '", model_run_name , "'."))
+
+### this isn't needed but keeping for a bit in one script in case we decide otherwise
+#serious cleanup
+# if(isNamespaceLoaded("doParallel")) unloadNamespace("doParallel")
+# if(isNamespaceLoaded("foreach")) unloadNamespace("foreach")
+# if(isNamespaceLoaded("iterators")) unloadNamespace("iterators")
+# if(isNamespaceLoaded("parallel")) unloadNamespace("parallel")
+# if(isNamespaceLoaded("RSQLite")) unloadNamespace("RSQLite")
+# if(isNamespaceLoaded("ROCR")) unloadNamespace("ROCR")
+# if(isNamespaceLoaded("vcd")) unloadNamespace("vcd")
+# if(isNamespaceLoaded("abind")) unloadNamespace("abind")
+# if(isNamespaceLoaded("foreign")) unloadNamespace("foreign")
+# if(isNamespaceLoaded("randomForest")) unloadNamespace("randomForest")
