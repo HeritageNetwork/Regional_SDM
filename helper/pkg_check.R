@@ -4,8 +4,12 @@
 pkg_list <- c("RSQLite","rgdal","sp","rgeos","raster","maptools",
               "ROCR","vcd","abind","foreign","randomForest",
               "snow", "DBI", "knitr","RColorBrewer","rasterVis","xtable",
+<<<<<<< HEAD
               "git2r","spsurvey", "here","sf","dplyr","stringi","tmap","tmaptools","OpenStreetMap",
               "snowfall", "smoothr", "tables","rJava", "tinytex")
+=======
+              "git2r","spsurvey","here","sf","dplyr","stringi","tmap","tmaptools","OpenStreetMap","odbc")
+>>>>>>> b921724... add odbc to package check
 installed <- installed.packages()
 to_inst <- pkg_list[!pkg_list %in% installed[,1]]
 
