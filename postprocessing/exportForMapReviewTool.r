@@ -27,7 +27,7 @@ library(sf)
 rm(list=ls())
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "obovretu"
+model_species <- "elliroan"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
@@ -140,9 +140,9 @@ utils::zip(paste0(gdbName,".zip"), files = zfiles)
 unlink(gdbName, recursive = TRUE)
               
 ## get range data ----
-if (modType=="A"){ # Aquatic Option - Huc10s output as part of the modle
-  hucPath <- file.path(rootPath, "outputs","model_predictions",paste0(model_run_name,"_huc10.shp"))
-  huc <- st_read(hucPath, quiet = T) 
+if (modType=="A"){ # Aquatic Option - Huc10s output as part of the model
+  hucPath <- file.path(rootPath, "outputs","model_predictions",paste0(model_run_name,"_huc10.csv"))
+  huc <- read.csv(hucPath, colClasses=c("huc10"="character"))  # st_read(hucPath, quiet = T) 
   hucList <- huc$huc10
 } else if (modType=="T"){ # Terrestrial Option - get range info from the DB (as a list of HUCs) 
   dbpath <- "N:/_TerrestrialModels/_data/databases/SDM_lookupAndTracking.sqlite"
@@ -166,3 +166,4 @@ mdOutF <- mdOutFiles[order(mdOutFiles, decreasing = TRUE)][[1]]
 shortName <- strsplit(mdOutF, split = "_")[[1]][[1]]
 file.copy(from = paste0(pdfPath,"/",mdOutF), to = paste0(shortName,".pdf"))
 
+rm()

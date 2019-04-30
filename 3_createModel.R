@@ -398,6 +398,7 @@ if(length(group$vals)>2){
 	  MTP <- min(allVotesPrespts)
 	  cutval.rf <- c(1-MTP, MTP)
 	  names(cutval.rf) <- c("0","1")
+	  print(paste0("MTP: ", MTP, " cutval.rf: ", cutval.rf))
 	  
 		#apply the cutoff to the validation data
 	  v.rf.pred.cut <- predict(trRes[[i]], evSet[[i]],type="response", cutoff=cutval.rf)

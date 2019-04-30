@@ -9,10 +9,11 @@
 
 # this script also updates the rubric table, based on information from the model run (TSS) 
 # and the tracking DB
-# this portion requires an ODBC connection (named mobi_spp_tracking) set up in the OS with the tracking DB
+# this portion requires an ODBC connection defined by the .dsn text file.
 
 library(RSQLite)
-library(RODBC)
+library(odbc)
+library(DBI)
 
 # load Rdata ----
 setwd(loc_model)
@@ -44,30 +45,42 @@ if (dat.in.db$metadata_comments != newText) {
 
 ## update Model Evaluation and Use data (rubric table) ----
 # get most recent data from the tracking DB for two of the rubric table fields that may vary
-cn <- odbcConnect("mobi_spp_tracking")
+# get tracking DB data from SQL Server tables 
+
+fn <- here("_data","databases", "mobi_tracker_connection_string_short.dsn")
+cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
+
+
+#cn <- odbcConnect("mobi_tracker")
 sql <- paste0("SELECT FinalSppList.ELEMENT_GLOBAL_ID, LocalityData.pres_dat_eval_rubric, 
               LocalityData.bison_use, LocalityData.gbif_use, LocalityData.inat_use, 
               LocalityData.other_use, LocalityData.MJD_sufficient, LocalityData.MJD_only, LocalityData.status
               FROM FinalSppList INNER JOIN LocalityData ON FinalSppList.ELEMENT_GLOBAL_ID = LocalityData.EGT_ID
               WHERE (((FinalSppList.ELEMENT_GLOBAL_ID)= ", ElementNames$EGT_ID, "));")
-localityData <- sqlQuery(cn, sql)
+localityData <- dbGetQuery(cn, sql)
 
 sql <- paste0("SELECT Reviewer.EGT_ID, Reviewer.response, Reviewer.date_completed
               FROM Reviewer
               WHERE (((Reviewer.EGT_ID)= ", ElementNames$EGT_ID, " ));")
-reviewerData <- sqlQuery(cn, sql)
-close(cn)
+reviewerData <- dbGetQuery(cn, sql)
+dbDisconnect(cn)
 rm(cn)
 
 # fill status if it is NA
 localityData[is.na(localityData$status),"status"] <- "in progress"
 
+# convert row of T/F to a vector
+localityDataUse <- c(localityData[["bison_use"]], 
+                     localityData[["gbif_use"]],
+                     localityData[["inat_use"]],
+                     localityData[["other_use"]])
+
 if(localityData$status == "complete"){
   # if complete, take scoring assessment from DB
   #1 = caution, 2 = acceptible, 3 = ideal
   dataQuality <- localityData$pres_dat_eval_rubric
-} else if(sum(localityData[,c("bison_use","gbif_use","inat_use","other_use")]) > 0) {
-  if(localityData$MJD_only == 1){
+} else if(sum(localityDataUse) > 0) {
+  if(localityData$MJD_only == TRUE){
     #this really means 'mjd_use' in the DB, not 'mjd_only'
     # if any of the BIG data are tagged for use as well as the MJD data, tag it acceptible
     dataQuality <- 2
@@ -75,8 +88,8 @@ if(localityData$status == "complete"){
     # if no MJD data, tag as caution
     dataQuality <- 1
   }
-} else if(!sum(localityData[,c("bison_use","gbif_use","inat_use","other_use")]) > 0) {
-  if(localityData$MJD_only == 1){ 
+} else if(!sum(localityDataUse) > 0) {
+  if(localityData$MJD_only == TRUE){ 
     #this really means 'mjd_use' in the DB, not 'mjd_only'
     # if only MJD data tagged to use
     dataQuality <- 3
