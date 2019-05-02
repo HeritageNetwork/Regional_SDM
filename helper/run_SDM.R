@@ -107,13 +107,23 @@ run_SDM <- function(
   fn_args <<- fn_args #assign the list up to the global environment
   
   # check for missing packages
-  req.pack <- c("RSQLite","rgdal","sp","rgeos","raster","maptools","ROCR","vcd","abind","git2r","sf",
-                "foreign","randomForest","DBI","knitr","RColorBrewer","rasterVis","xtable")
+  req.pack <- c("RSQLite","rgdal","sp","rgeos","raster","maptools",
+                "ROCR","vcd","abind","foreign","randomForest",
+                "snow", "DBI", "knitr","RColorBrewer","rasterVis","xtable",
+                "git2r","spsurvey", "here","sf","dplyr","stringi","tmap","tmaptools","OpenStreetMap",
+                "snowfall", "smoothr", "tables","rJava", "tinytex", "odbc")
   miss.pack <- req.pack[!req.pack %in% names(installed.packages()[,1])]
   if (length(miss.pack) > 0) {
     stop("Need to install the following package(s) before running this function: ", paste(miss.pack, collapse = ", "), ". Run script helper/pkg_check.R to download/update.")
   }
-  
+  # check to see if GDAL and MiKTeX are installed ... by checking to see if they are in users PATH
+  if(!grepl("OSGeo4W64", Sys.getenv("PATH"))){
+    stop("Need to add GDAL to your PATH environment, see https://github.com/HeritageNetwork/Regional_SDM/wiki/User-Customizations ")
+  }
+  if(!grepl("MiKTeX", Sys.getenv("PATH"))){
+    stop("Need to add MiKTeX to your PATH environment, see https://github.com/HeritageNetwork/Regional_SDM/wiki/User-Customizations ")
+  }
+    
   # steps to run
   all_steps <- c("1","2","3","4","4b","4c","5")
   step_names <- c("1_pointsInPolys_cleanBkgPts.R",
