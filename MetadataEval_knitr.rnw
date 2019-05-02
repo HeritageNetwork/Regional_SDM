@@ -575,6 +575,7 @@ Appendix 2. Model details for reproducibility
     \setlength{\parsep}{0pt}
   \item{All R Scripts are available at \href{https://github.com/HeritageNetwork/Regional_SDM}{github}}
   \item{The repository version (repo head) used for this run was: \Sexpr{modelrun_meta_data$repo_head}}
+  \item{The model run name was: \Sexpr{model_run_name}}
   \item{Validation metrics requiring a threshold use MTP (minimum training presence)}
   \item{R version: \Sexpr{modelrun_meta_data$r_version}}
   \item{Random seed for full randomForest model: \Sexpr{modelrun_meta_data$seed}}
