@@ -142,7 +142,7 @@ run_SDM <- function(
 
     # clean up everything but loop objects
     rm(list=ls(envir = .GlobalEnv)
-       [!ls(envir = .GlobalEnv) %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args")], envir = .GlobalEnv)
+       [!ls(envir = .GlobalEnv) %in% c("scrpt","run_steps","prompt","modelrun_meta_data","fn_args","sv","sppVec","run_SDM","loc_scripts")], envir = .GlobalEnv)
     
     message(paste0("Completed script ", scrpt , "..."))
     
