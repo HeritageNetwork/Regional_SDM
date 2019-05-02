@@ -7,7 +7,7 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "pletasup"
+model_species <- "arctdens"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -17,9 +17,9 @@ nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 # env vars location [Terrestrial-only variable]
-loc_envVars = here("_data","env_vars","raster", "ras")
+loc_envVars = here("_data","env_vars","raster")
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
-nm_bkgPts <- c(here("_data","env_vars","tabular", "background_CONUS.sqlite"), "background_pts")
+nm_bkgPts <- c(here("_data","env_vars","tabular", "background_CA.sqlite"), "background_pts")
 
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
@@ -49,7 +49,7 @@ project_blurb = "Models developed for the MoBI project are intended to inform cr
 
 # set wd and load function
 setwd(loc_scripts)
-source(here("helper", "run_SDM.R"))
+source(here("helper", "run_SDM.R"), local = FALSE)
 
 ##############
 # End step 1 #
@@ -77,7 +77,7 @@ run_SDM(
   remove_vars = remove_vars,
   #rubric_default = rubric_default,
   project_blurb = project_blurb,
-  prompt =FALSE
+  prompt = prompt
 )
 
 #############################################################################
@@ -105,7 +105,7 @@ library(here)
 rm(list=ls())
 
 # set project folder and species code for this run
-model_species <- "geumpeck"
+model_species <- "allimunz"
 loc_model <- here("_data", "species")
 
 # set wd and load function
@@ -119,7 +119,7 @@ source(here("helper", "run_SDM.R"))
   # to just run new model, begin at step 3 (see next example)
 run_SDM(
   begin_step = "3",
-  model_species = "callirus",
+  model_species = "allimunz",
   loc_model = loc_model
 )
 
@@ -131,8 +131,7 @@ run_SDM(
   begin_step = "4",
   model_species = "geumpeck",
   loc_model = loc_model,
-  model_rdata = "geumpeck_20190409_155720",
-  metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+  model_rdata = "geumpeck_20190409_155720"
 )
 
 
@@ -140,13 +139,10 @@ run_SDM(
 # example pick-up a model run at step 4c (metadata/comment update)
 # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
-  begin_step = "4c",
-  model_species = "dichhirs",
+  begin_step = "4",
+  model_species = "allimunz",
   loc_model = loc_model,
-  #rubric_default = rubric_default,
-  model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata"))),
-  model_comments = "",
-  metaData_comments = ""
+  model_rdata = max(list.files(here("_data","species",model_species,"outputs","rdata")))
 )
 
 ########## 
@@ -162,7 +158,7 @@ rm(list=ls())
 
 # for scripts 1-3, run just the following 3 lines
 
-model_species <- "pletasup"
+model_species <- "arctdens"
 
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
@@ -170,3 +166,37 @@ for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 # if debugging script 4 or later, also load the specific model output rdata file
 model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata")))
 load(here("_data","species",model_species,"outputs","rdata",paste0(model_rdata)))
+
+
+#######
+###  loop it
+######
+
+x <- list.files(path = here("_data","occurrence"), pattern = "*.shp$")
+sppVec <- sub(".shp","",x)
+
+sppVec
+
+for(sv in 1:length(sppVec))
+  {
+    run_SDM(
+      model_species = sppVec[[sv]],
+      loc_scripts = here(), 
+      nm_presFile = here("_data", "occurrence", paste0(sppVec[[sv]], ".shp")),
+      nm_db_file = here("_data", "databases", "SDM_lookupAndTracking.sqlite"), 
+      loc_model = here("_data", "species"),
+      loc_envVars = here("_data","env_vars","raster"),
+      nm_bkgPts = c(here("_data","env_vars","tabular", "background_CA.sqlite"), "background_pts"),
+      nm_HUC_file = here("_data","other_spatial","feature","HUC10.shp"),
+      nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp"), 
+      project_overview = "The following metadata describes the SDM for one species of 2,700 included in a Map of Biodiversity Importance (MoBI) in the continental U.S. developed by NatureServe and the Network of Natural Heritage Programs and funded by ESRI.",
+      model_comments = "",
+      metaData_comments = "",
+      modeller = "Tim Howard",
+      add_vars = NULL,
+      remove_vars = NULL,
+      project_blurb = "Models developed for the MoBI project are intended to inform creation of a national map of biodiversity value, and we recommend additional refinement and review before these data are used for more targeted, species-specific decision making. In particular, many MoBI models would benefit from greater consideration of species data and environmental predictor inputs, a more thorough review by species experts, and iteration to address comments received.",
+      prompt = FALSE
+    )
+  }
+

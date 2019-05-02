@@ -166,8 +166,25 @@ df.full$pres <- factor(df.full$pres)
 df.full$ra <- factor(tolower(as.character(df.full$ra)))
 df.full$species_cd <- factor(df.full$species_cd)
 
+#how many polygons do we have?
+numPys <-  nrow(table(df.in$stratum))
+#how many EOs do we have?
+numEOs <- nrow(table(df.in$group_id))
+
+#initialize the grouping list, and set up grouping variables
+#if we have fewer than 5 EOs, move forward with jackknifing by polygon, otherwise
+#jackknife by EO.
+group <- vector("list")
+group$colNm <- ifelse(numEOs < 5,"stratum","group_id")
+group$JackknType <- ifelse(numEOs < 5,"polygon","spatial grouping")
+if(numEOs < 5) {
+  group$vals <- unique(df.in$stratum)
+} else {
+  group$vals <- unique(df.in$group_id)
+}
+
 # make samp size groupings ----
-EObyRA <- unique(df.full[,c("group_id","ra")])
+EObyRA <- unique(df.full[,c(group$colNm,"ra")])
 EObyRA$sampSize[EObyRA$ra == "very high"] <- 5
 EObyRA$sampSize[EObyRA$ra == "high"] <- 4
 EObyRA$sampSize[EObyRA$ra == "medium"] <- 3
@@ -179,18 +196,18 @@ EObyRA$sampSize[EObyRA$ra == "very low"] <- 1
 # there appear to be cases where more than one 
 # RA is assigned per EO. Handle it here by 
 # taking max value
-EObySS <- aggregate(EObyRA$sampSize, by=list(EObyRA$group_id), max)
+EObySS <- aggregate(EObyRA$sampSize, by=list(EObyRA[,group$colNm]), max)
 # set the background pts to the sum of the EO samples
-names(EObySS) <- c("group_id","sampSize")
-EObySS$sampSize[EObySS$group_id == "pseu-a"] <- sum(EObySS[!EObySS$group_id == "pseu-a", "sampSize"])
+names(EObySS) <- c(group$colNm,"sampSize")
+EObySS$sampSize[EObySS[group$colNm] == "pseu-a"] <- sum(EObySS[!EObySS[group$colNm] == "pseu-a", "sampSize"])
 
 sampSizeVec <- EObySS$sampSize
-names(sampSizeVec) <- as.character(EObySS$group_id)
+names(sampSizeVec) <- as.character(EObySS[,group$colNm])
 rm(EObySS, EObyRA)
 
 # reset sample sizes to number of points, when it is smaller than desired sample size
 # This is only relevant when complete.cases may have removed some points from an already-small set of points
-totPts <- table(df.full$group_id)
+totPts <- table(df.full[,group$colNm])
 for (i in names(sampSizeVec)) if (sampSizeVec[i] > totPts[i]) sampSizeVec[i] <- totPts[i]
 rm(totPts)
 
@@ -211,14 +228,14 @@ if(rowCounts["0"] > (10 * rowCounts["1"])){
 x <- tuneRF(df.tune[,indVarCols],
              y=df.tune[,depVarCol],
              ntreeTry = 300, stepFactor = 2, mtryStart = 6,
-            strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
+            strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.tune[,indVarCols],
             y=df.tune[,depVarCol],
             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
-            strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
+            strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
 rm(x,y, df.tune, rowCounts, newTry)
@@ -227,14 +244,14 @@ rm(x,y, df.tune, rowCounts, newTry)
 # x <- tuneRF(df.full[,indVarCols],
 #             y=df.full[,depVarCol],
 #             ntreeTry = 300, stepFactor = 2, mtryStart = 6,
-#             strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
+#             strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
 # 
 # newTry <- x[x[,2] == min(x[,2]),1]
 # 
 # y <- tuneRF(df.full[,indVarCols],
 #             y=df.full[,depVarCol],
 #             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
-#             strata = df.full$group_id, sampsize = sampSizeVec, replace = TRUE)
+#             strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
 # 
 # mtry <- max(y[y[,2] == min(y[,2]),1])
 # rm(x,y, newTry)
@@ -259,7 +276,7 @@ rf.find.envars <- foreach(ntree = rep(treeSubs,numCores), .combine = randomFores
                                   importance=TRUE,
                                   ntree=ntree,
                                   mtry=mtry,
-                                  strata = df.full[,"group_id"],
+                                  strata = df.full[,group$colNm],
                                   sampsize = sampSizeVec, replace = TRUE,
                                   norm.votes = TRUE)
                    }
@@ -311,28 +328,6 @@ df.abs2$pres <- factor(df.abs2$pres)
 #reset the row names, needed for random subsetting method of df.abs2, below
 row.names(df.in2) <- 1:nrow(df.in2)
 row.names(df.abs2) <- 1:nrow(df.abs2)
-
-#how many polygons do we have?
-numPys <-  nrow(table(df.in2$stratum))
-#how many EOs do we have?
-numEOs <- nrow(table(df.in2$group_id))
-
-#initialize the grouping list, and set up grouping variables
-#if we have fewer than 10 EOs, move forward with jackknifing by polygon, otherwise
-#jackknife by EO.
-group <- vector("list")
-# group$colNm <- ifelse(numEOs < 10,"stratum","group_id")
-# group$JackknType <- ifelse(numEOs < 10,"polygon","element occurrence")
-# if(numEOs < 10) {
-# 		group$vals <- unique(df.in2$stratum)
-# } else {
-# 		group$vals <- unique(df.in2$group_id)
-# }
-## TODO: bring back by-polygon validation. SampSize needs to be able to handle this to make it possible
-# only validate by EO at this time:
-group$colNm <- "group_id"
-group$JackknType <- "spatial grouping"
-group$vals <- unique(df.in2$group_id)
 
 #reduce the number of trees if group$vals has more than 30 entries #commented out to be parallel with aquatic
 #this is for validation
@@ -407,7 +402,7 @@ if(length(group$vals)>1){
 		  trSetBG <-  df.abs2[-TrBGsamps,]  #get everything that isn't in TrBGsamps
 		   # join em, clean up
 		  trSet <- rbind(trSet, trSetBG)
-		  trSet$group_id <- factor(trSet$group_id)
+		  trSet[,group$colNm] <- factor(trSet[,group$colNm])
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
 		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
@@ -617,7 +612,7 @@ rf.full <- foreach(ntree = rep(treeSubs,numCores), .combine = randomForest::comb
                               importance=TRUE,
                               ntree=ntree,
                               mtry=mtry,
-                              strata = df.full[,"group_id"],
+                              strata = df.full[,group$colNm],
                               sampsize = sampSizeVec, replace = TRUE,
                               norm.votes = TRUE)
                               }
