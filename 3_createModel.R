@@ -78,9 +78,6 @@ if(length(grep("z3",names(df.in))) > 0){
   rm(db, sql, envarNames, namesDF)
   }
 
-# get an original list of env-vars for later writing to tblVarsUsed
-envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
-
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date")]),]  # to ensure missing dates are not excluding records
 df.abs <- df.abs[complete.cases(df.abs),]
@@ -95,6 +92,9 @@ df.abs <- cbind(df.abs, GROUP_ID="pseu-a",
 # lower case column names
 names(df.in) <- tolower(names(df.in))
 names(df.abs) <- tolower(names(df.abs))
+
+# get an original list of env-vars for later writing to tblVarsUsed
+envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
 
 # get a list of env vars from the folder used to create the raster stack
 raslist <- list.files(path = loc_envVars, pattern = ".tif$", recursive = TRUE)
