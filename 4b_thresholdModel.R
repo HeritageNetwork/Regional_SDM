@@ -120,14 +120,12 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 # collate and write to DB ----
 
 # load the prediction vector, for calculating MRV
-results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T)
+#results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T)
 
 # MRV (on full model predictions)
 ###pres.comid <- df.full$comid[df.full$pres==1]
 ###mrv <- min(results_shape$prbblty[results_shape$comid %in% pres.comid], na.rm = T)
 ##cutList$MRV <- list("value" = mrv, "code" = "MRV", "capturedPts" = length(pres.comid))
-
-
 
 # number of thresholds to write to the db
 numThresh <- length(cutList)
@@ -153,9 +151,10 @@ dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = T)
 options(op)
 dbDisconnect(db)
 
+# write the thresholds to the line shapefile
+results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T)
 # THE next lines are for creating threshold column(s) in the shapefile
-# add columns for all thresholds
-for (t in allThresh$cutCode) {
+for (t in allThresh$cutCode) { # add columns for all thresholds
   threshold <- as.numeric(allThresh$cutValue[allThresh$cutCode == t])
   if (!is.na(threshold)) {
     # reclassify the vector based on the threshold into binary 0/1
@@ -163,9 +162,23 @@ for (t in allThresh$cutCode) {
     results_shape[,t] <- ifelse(results_shape$prbblty < threshold, 0, 1)
   }
 }
+st_write(results_shape, paste0("model_predictions/",modelrun_meta_data$model_run_name, "_results.shp"), delete_layer = T) #write out shapefile
 
-#write outshapefile
-st_write(results_shape, paste0("model_predictions/",modelrun_meta_data$model_run_name, "_results.shp"), delete_layer = T)
+# write the thresholds to the aqua polys shapefile
+results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"), quiet = T)
+# THE next lines are for creating threshold column(s) in the shapefile  
+for (t in allThresh$cutCode) { # add columns for all thresholds
+  threshold <- as.numeric(allThresh$cutValue[allThresh$cutCode == t])
+  if (!is.na(threshold)) {
+    # reclassify the vector based on the threshold into binary 0/1
+    results_shape[,t] <- NA
+    results_shape[,t] <- ifelse(results_shape$prbblty < threshold, 0, 1)
+  }
+}
+st_write(results_shape, paste0("model_predictions/",modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"), delete_layer = T) #write out shapefile
+
+
+
 
 #clean up
 rm(results_shape)
