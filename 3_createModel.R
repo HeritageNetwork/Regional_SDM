@@ -225,36 +225,44 @@ if(rowCounts["0"] > (10 * rowCounts["1"])){
   df.tune <- df.full
 }
 # run through mtry twice
-x <- tuneRF(df.tune[,indVarCols],
+# very small numbers of polys can make a perfect prediction, especially
+# when subsetted like above. If error (prediction error == 0) results from 
+# subsetting, catch error and try tuning with full set
+mtry <- tryCatch(
+  {
+  x <- tuneRF(df.tune[,indVarCols],
              y=df.tune[,depVarCol],
              ntreeTry = 300, stepFactor = 2, mtryStart = 6,
             strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
-
-newTry <- x[x[,2] == min(x[,2]),1]
-
-y <- tuneRF(df.tune[,indVarCols],
-            y=df.tune[,depVarCol],
-            ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
-            strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
-
-mtry <- max(y[y[,2] == min(y[,2]),1])
-rm(x,y, df.tune, rowCounts, newTry)
-
-## old way if speed is not critical
-# x <- tuneRF(df.full[,indVarCols],
-#             y=df.full[,depVarCol],
-#             ntreeTry = 300, stepFactor = 2, mtryStart = 6,
-#             strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
-# 
-# newTry <- x[x[,2] == min(x[,2]),1]
-# 
-# y <- tuneRF(df.full[,indVarCols],
-#             y=df.full[,depVarCol],
-#             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
-#             strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
-# 
-# mtry <- max(y[y[,2] == min(y[,2]),1])
-# rm(x,y, newTry)
+  newTry <- x[x[,2] == min(x[,2]),1]
+  y <- tuneRF(df.tune[,indVarCols],
+              y=df.tune[,depVarCol],
+              ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
+              strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
+  
+  mtry <- max(y[y[,2] == min(y[,2]),1])
+  rm(x,y, df.tune, newTry)
+  mtry
+  }, 
+  error=function(cond) {
+    message("Can't tune with subset, using full set.")
+    df.tune <- df.full
+    x <- tuneRF(df.tune[,indVarCols],
+                y=df.tune[,depVarCol],
+                ntreeTry = 300, stepFactor = 2, mtryStart = 6,
+                strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
+    newTry <- x[x[,2] == min(x[,2]),1]
+    y <- tuneRF(df.tune[,indVarCols],
+                y=df.tune[,depVarCol],
+                ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
+                strata = df.full[,group$colNm], sampsize = sampSizeVec, replace = TRUE)
+    
+    mtry <- max(y[y[,2] == min(y[,2]),1])
+    rm(x,y, df.tune, newTry)
+    mtry
+  }
+)
+rm(rowCounts)
 
 ###
 # Remove the least important env vars ----
