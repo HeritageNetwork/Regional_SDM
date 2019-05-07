@@ -56,20 +56,40 @@ try(shapef <- st_sf(shapef1[c("comid", "huc12", "wacomid","strord")], geometry =
 
 # join probability to shapefile
 shapef <- st_zm(merge(shapef, results_join_table, by = "comid", all.x = F))
-
 # write the shapefile
 st_write(shapef, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), delete_layer = T)
 
-###
+
+# assign probabilities to the waterbody and NHD area polygons
+if (!is.null(nm_aquaArea)) {
+  wacomid <- as.numeric(unique(as.character(shapef$wacomid)))
+  wacomid <- wacomid[!is.na(wacomid)]
+  if (length(wacomid) > 0) { # on create the waterbodies if some are present
+    db <- dbConnect(SQLite(),dbname=nm_aquaArea[1])
+    SQLQuery <- paste0("SELECT * FROM ",nm_aquaArea[2]," WHERE COMID IN ('", paste(wacomid, collapse = "','"),"')") 
+    shapef2 <- dbGetQuery(db, SQLQuery) # load the waterbodies from the DB
+    names(shapef2) <- tolower(names(shapef2))
+    SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_aquaArea[2], "';") 
+    proj4 <- dbGetQuery(db, SQLQuery)$p  
+    # get probability value for aqua area polygons by mean value of reaches in the area
+    aqua.pred <- do.call(data.frame, aggregate(shapef$prbblty, by=list(shapef$wacomid), FUN=function(x) c(mn=mean(x, na.rm=TRUE), n=length(x))))
+    colnames(aqua.pred) <- c("comid","prbblty","count")
+    shapef2 <- merge(shapef2, aqua.pred, by="comid")
+    
+    aquaPolys <- st_sf(shapef2[c("comid","prbblty")], geometry=st_as_sfc(shapef2$wkt), crs = proj4)
+    st_write(aquaPolys, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"), delete_layer = T)
+  } else {
+    nm_aquaArea <- NULL
+  }
+}
+
+
 # load the HUC12s from the database to make a project area boundary
 db <- dbConnect(SQLite(),dbname=nm_huc12[1])
 SQLQuery <- paste0("SELECT * FROM ",nm_huc12[2], " WHERE ","substr(HUC12,1,",huc_level,") IN ('", paste(HUCsubset, collapse = "','"),"');")
 shapef2 <- dbGetQuery(db, SQLQuery)
 names(shapef2) <- tolower(names(shapef2))
-
 shapeh <- st_sf(shapef2[c("huc12")], geometry=st_as_sfc(shapef2$wkt), crs=proj4)
-#try(shapeh <- st_sf(shapef2[c("huc12")], geometry=st_as_sfc(shapef2$wkt), crs=proj4), silent=T)
-#shapeh <- st_buffer(shapeh, 0) # zero-width buffer to deal with random geometry errors
 shapehuc <- shapeh # make a copy to generate the huc10s for the review tool.  See below.
 shapeh <- st_union(shapeh) # dissolve the polygons
 st_write(shapeh, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_modelrange.shp"), delete_layer=T)
