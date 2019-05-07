@@ -422,7 +422,7 @@ mtype <- 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 basetiles <- read_osm(bbox, type = mtype, ext = 1.1)
 # plot it
 qtm(basetiles) + 
-  tm_shape(results_shape, name="modeled suitability") + # stream linework
+  tm_shape(results_shape, name="modeled suitability", simplify = 0.5) + # stream linework
     tm_lines(col="prbblty", palette=clrs, labels=c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability"),
              title.col = "modeled suitability") +     
   tm_shape(aquaPolys) + # waterbodies and NHD polys

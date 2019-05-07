@@ -21,6 +21,7 @@ library(tables)
 library(tmap)
 library(tmaptools)
 library(OpenStreetMap)
+library(rmapshaper)
 
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
