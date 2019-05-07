@@ -38,25 +38,8 @@ results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_r
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
 studyAreaExtent <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_modelrange.shp")), quiet = T)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
+aquaPolys <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_results_aquaPolys.shp")), quiet = T)
 
-
-if (!is.null(nm_aquaArea)) {
-  wacomid <- as.numeric(unique(as.character(results_shape$wacomid)))
-  wacomid <- wacomid[!is.na(wacomid)]
-  if (length(wacomid) > 0) { # on create the waterbodies if some are present
-    db <- dbConnect(SQLite(),dbname=nm_aquaArea[1])
-    SQLQuery <- paste0("SELECT * FROM ",nm_aquaArea[2]," WHERE COMID IN ('", paste(wacomid, collapse = "','"),"')") 
-    shapef2 <- dbGetQuery(db, SQLQuery) # load the waterbodies from the DB
-    names(shapef2) <- tolower(names(shapef2))
-    SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_aquaArea[2], "';") 
-    proj4 <- dbGetQuery(db, SQLQuery)$p  
-    aquaPolys <- st_sf(shapef2[c("comid")], geometry=st_as_sfc(shapef2$wkt), crs = proj4)
-    #try(shapef <- st_sf(shapef1[c("comid", "huc12", "wacomid","strord")], geometry = st_as_sfc(shapef1$wkt), crs = proj4), silent = T)
-    st_write(aquaPolys, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"), delete_layer = T)
-  } else {
-    nm_aquaArea <- NULL
-  }
-}
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")

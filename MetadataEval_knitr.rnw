@@ -407,13 +407,6 @@ if(studyAreaHeight < 889000){
 # could use dissolved range here
 # plot(st_transform(studyAreaExtent$geometry, st_crs(results_shape)), col = NA, border = NA, axes = TRUE)
 
-if (!is.null(nm_aquaArea)) {
-# plot aqua area polygons by mean value of reaches in area
-  aqua.pred <- do.call(data.frame, aggregate(results_shape$prbblty, by=list(results_shape$wacomid), FUN=function(x) c(mn=mean(x, na.rm=TRUE), n=length(x))))
-  colnames(aqua.pred) <- c("comid","pred","count")
-  area.wb.pred <- merge(aquaPolys, aqua.pred, by = "comid")
-}
-
 #tmap_options(max.raster = c("plot" = 300000, "view" = 100000)) ## this may not be important for vectors
 tmap_mode("plot")
 ###get the basemap
@@ -432,8 +425,8 @@ qtm(basetiles) +
   tm_shape(results_shape, name="modeled suitability") + # stream linework
     tm_lines(col="prbblty", palette=clrs, labels=c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability"),
              title.col = "modeled suitability") +     
-  tm_shape(area.wb.pred) + # waterbodies and NHD polys
-    tm_fill(col="pred", palette=clrs, legend.show = FALSE) + 
+  tm_shape(aquaPolys) + # waterbodies and NHD polys
+    tm_fill(col="prbblty", palette=clrs, legend.show = FALSE) + 
   tm_shape(referenceBoundaries) +
     tm_borders(col = "grey", lwd = 1) + 
   tm_shape(studyAreaExtent) + 
