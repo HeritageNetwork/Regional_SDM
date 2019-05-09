@@ -33,24 +33,26 @@ rm(list=ls())
 
 #Splits out character vector of cutecodes fo complete models *Finished*
 #Scans for models that have produced the full metadata pdf (finished script 5)
-finished<-unique(unlist(sapply(grep("2019",list.files(path=here("_data","species"),pattern=".pdf",recursive = TRUE),value=TRUE),function(x) strsplit(x,"/")[[1]][[1]],USE.NAMES = FALSE)))
+finished <- unique(unlist(sapply(grep("2019",list.files(path=here("_data","species"),pattern=".pdf",recursive = TRUE),value=TRUE),function(x) strsplit(x,"/")[[1]][[1]],USE.NAMES = FALSE)))
 
 #Splits out character vector of cutecodes for species that are finished and already packaged for the model review tool
 #Specifically checks for the existence of the metadata pdf inside a model_review_output folder
-packaged<-unique(unlist(sapply(grep("model_review_output",list.files(path=here("_data","species"),pattern=".pdf",recursive = TRUE),value=TRUE),function(x) strsplit(x,"/")[[1]][[1]],USE.NAMES = FALSE)))
+packaged <- unique(unlist(sapply(grep("model_review_output",list.files(path=here("_data","species"),pattern=".pdf",recursive = TRUE),value=TRUE),function(x) strsplit(x,"/")[[1]][[1]],USE.NAMES = FALSE)))
 
 #Selects cutecodes for models that are finished but not yet exported for review
-not_yet_exported<-setdiff(finished,packaged)
+not_yet_exported <- setdiff(finished,packaged)
 not_yet_exported
 ##If there are models in the list you do not want to export, remove them by adding their cutecodes to "exclude_these"
+
 exclude_these=c("alashete", "alasvari", "ellichip", "epioobli","fuscburk","hamiaust","lampcari","lasmalab","margmono","pleucoll") #Delete codes in this vector when they are ready to be packaged
 
-not_yet_exported<-not_yet_exported[!not_yet_exported %in% exclude_these]
+
+not_yet_exported <- not_yet_exported[!not_yet_exported %in% exclude_these]
 not_yet_exported ##These are the final set of models that will be packaged up
 length(not_yet_exported)
 
 ####For manual use- to run one at a time UNCOMMENT this line and add cutecode(s) of the species interested ####
-#not_yet_exported<-c("cutecode")
+#not_yet_exported<-c("chrocumb")
 
 ###Final step sends the finals to the model_review_staging folder
 ##Assumes the model_review_staging folder is in the parent directory Lines 204 +206
@@ -58,7 +60,6 @@ length(not_yet_exported)
 
 ####Run the packaging tool for all models in your vector####
 for (j in 1:length(not_yet_exported)){
-  # change the model species here
   print (paste0("Starting Model Review Tool export for model ",j," of ",length(not_yet_exported)," : ",not_yet_exported[j]))
   model_species <- not_yet_exported[j]
   load(here("_data","species",model_species,"runSDM_paths.Rdata"))
@@ -75,7 +76,8 @@ for (j in 1:length(not_yet_exported)){
   
   # select the threshold type
   threshold_Aqua <- "TenPctile"
-  threshold_Terr <- "MTPEO"
+  threshold_Terr_a <- "MTPEO"
+  threshold_Terr_b <- "maxSSS"
   
   # Get the model type from the sqlite
   db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -108,9 +110,9 @@ for (j in 1:length(not_yet_exported)){
     modelLine <- modelLine[,"cutecode"] 
   } else if (modType=="T"){ # Terrestrial Option - 
     # get cutvalue for MTP by group
-    cutval <- threshInfo[threshInfo$cutCode == "MTPEO","cutValue"]
-    if(cutval == 0){
-      cutval <- threshInfo[threshInfo$cutCode == "maxSSS","cutValue"]
+    cutval <- threshInfo[threshInfo$cutCode == threshold_Terr_a,"cutValue"]
+    if(cutval == 0 | cutval == 1){
+      cutval <- threshInfo[threshInfo$cutCode == threshold_Terr_b,"cutValue"]
     }
     #reclassify the raster and create feature class ----
     breaks <- c(0,cutval,1)
@@ -174,8 +176,8 @@ for (j in 1:length(not_yet_exported)){
   
   ## get range data ----
   if (modType=="A"){ # Aquatic Option - Huc10s output as part of the modle
-    hucPath <- file.path(rootPath, "outputs","model_predictions",paste0(model_run_name,"_modelrange.shp"))
-    huc <- st_read(hucPath, quiet = T) 
+    hucPath <- file.path(rootPath, "outputs","model_predictions",paste0(model_run_name,"_huc10.csv"))
+    huc <- read.csv(hucPath, stringsAsFactors=FALSE, colClasses = "character")
     hucList <- huc$huc10
   } else if (modType=="T"){ # Terrestrial Option - get range info from the DB (as a list of HUCs) 
     dbpath <- here("_data","databases", "SDM_lookupAndTracking.sqlite")
@@ -201,9 +203,9 @@ for (j in 1:length(not_yet_exported)){
   
   ## Create cutecode named folder in F://model_review_staging/ and copy model_review_output files there
   if (modType=="A"){
-    staging_path<-file.path(here(),"model_review_staging","aquatic")
+    staging_path <- file.path(here(),"model_review_staging","aquatic")
   }else if (modType=="T"){
-    staging_path<-file.path(here(),"model_review_staging","terrestrial")
+    staging_path <- file.path(here(),"model_review_staging","terrestrial")
   }
   
   spec_stage_path <- file.path(staging_path, model_species)
@@ -211,6 +213,16 @@ for (j in 1:length(not_yet_exported)){
   stagingFiles<-list.files(path=outpath)
   file.copy(stagingFiles,spec_stage_path,overwrite=TRUE)
   
+  ## update the mobi tracking db
+  fn <- here("_data","databases", "mobi_tracker_connection_string_short.dsn")
+  cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
+  commentString <- paste(modelrun_meta_data$model_run_name, "prepped for review tool on", Sys.Date())
+  sql <- paste0("UPDATE SpeciesWorkFlow SET modeled = 1, modeled_com = '", 
+                commentString, 
+                "' WHERE EGT_ID = ", ElementNames$EGT_ID, ";")
+  dbExecute(cn, sql)
+  dbDisconnect(cn)
+  rm(cn)
+
   print (paste0("Export complete for ",j," of ",length(not_yet_exported)," : ",not_yet_exported[j]))
-  
 }
