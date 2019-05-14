@@ -52,7 +52,7 @@ not_yet_exported ##These are the final set of models that will be packaged up
 length(not_yet_exported)
 
 ####For manual use- to run one at a time UNCOMMENT this line and add cutecode(s) of the species interested ####
-#not_yet_exported<-c("chrocumb")
+#not_yet_exported<-c("pseugorz")
 
 ###Final step sends the finals to the model_review_staging folder
 ##Assumes the model_review_staging folder is in the parent directory Lines 204 +206
