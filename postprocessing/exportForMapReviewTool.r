@@ -43,9 +43,7 @@ packaged <- unique(unlist(sapply(grep("model_review_output",list.files(path=here
 not_yet_exported <- setdiff(finished,packaged)
 not_yet_exported
 ##If there are models in the list you do not want to export, remove them by adding their cutecodes to "exclude_these"
-
 exclude_these=c("alashete", "alasvari", "ellichip", "epioobli","fuscburk","hamiaust","lampcari","lasmalab","margmono","pleucoll") #Delete codes in this vector when they are ready to be packaged
-
 
 not_yet_exported <- not_yet_exported[!not_yet_exported %in% exclude_these]
 not_yet_exported ##These are the final set of models that will be packaged up
@@ -77,7 +75,7 @@ for (j in 1:length(not_yet_exported)){
   # select the threshold type
   threshold_Aqua <- "TenPctile"
   threshold_Terr_a <- "MTPEO"
-  threshold_Terr_b <- "maxSSS"
+  threshold_Terr_b <- "TenPctile"
   
   # Get the model type from the sqlite
   db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -97,31 +95,66 @@ for (j in 1:length(not_yet_exported)){
   }
   
   # get threshold information
-  db <- dbConnect(SQLite(),dbname=nm_db_file)
-  sql <- paste0("select model_run_name, ElemCode, cutCode, cutValue
+  sql <- paste0("select model_run_name, ElemCode, cutCode, cutValue, capturedPts 
                 from tblModelResultsCutoffs where model_run_name = '", 
                 model_run_name, "';")
   threshInfo <- dbGetQuery(db, statement = sql)
+  
+  # table storing input data seems to have different date stamp, need to use only
+  # cutecode_date, instead of cutecode_date_time
+  # TODO: if multiples, grab the most recent by date-time, not the largest count
+  mrn <- strsplit(model_run_name, "_")[[1]]
+  mrn <- paste(mrn[[1]], mrn[[2]], sep = "_")
+  sql <- paste0("select obs_count from tblModelInputs where table_code LIKE '",
+                  mrn, "%';")
+  inputPts <- dbGetQuery(db, statement = sql)
+  inPts <- max(inputPts$obs_count)
+  
+  dbDisconnect(db)
+  rm(db, mrn, sql, inputPts)
   
   if (modType=="A"){ # Aquatic Option -
     # delete followlines that are not above the threshold
     modelLine <- shp[which(shp[[threshold_Aqua]]==1),]  
     modelLine$cutecode <- model_species
     modelLine <- modelLine[,"cutecode"] 
+    threshUsed <- threshold_Aqua
+    cutval <- threshInfo[threshInfo$cutCode == threshUsed,"cutValue"]
+    threshComm <- paste0("Aquatic model, using ",
+                         threshUsed, " as threshold.")
   } else if (modType=="T"){ # Terrestrial Option - 
-    # get cutvalue for MTP by group
-    cutval <- threshInfo[threshInfo$cutCode == threshold_Terr_a,"cutValue"]
-    if(cutval == 0 | cutval == 1){
-      cutval <- threshInfo[threshInfo$cutCode == threshold_Terr_b,"cutValue"]
+    # proportion of points captured by MTP by group
+    propPts <- threshInfo[threshInfo$cutCode == "MTPEO","capturedPts"]/inPts
+    # data show bimodal distribution with 0.4 at the approximate 
+    # valley. Lower capture rate suggests very high site specificity which 
+    # will in turn show very low prediction extent (high underpredict) when 
+    # using mtp by group
+    if(propPts <= 0.4){
+      threshUsed <- threshold_Terr_b
+      cutval <- threshInfo[threshInfo$cutCode == threshUsed,"cutValue"]
+      threshComm <- paste0("Model has high site specificity (MTP by group has very low prediction rate), using ",
+                           threshUsed, " as threshold.")
+    } else {
+      threshUsed <- threshold_Terr_a
+      cutval <- threshInfo[threshInfo$cutCode == threshUsed,"cutValue"]
+      threshComm <- paste0("Model has broad site specificity (MTP by group has high prediction rate), using ",
+                           threshUsed, " as threshold.")
+      # this is an old workaround, but perhaps still possible, so leaving in for now
+      if(cutval == 0 | cutval == 1){
+        threshUsed <- threshold_Terr_b
+        cutval <- threshInfo[threshInfo$cutCode == threshUsed,"cutValue"]
+        threshComm <- paste0("MTP by group thresholds to 0 or 1, using ",
+                             threshUsed, " as threshold.")
+      }  
     }
     #reclassify the raster and create feature class ----
-    breaks <- c(0,cutval,1)
-    rascut <- cut(ras, breaks = breaks)
-    # convert raster to polys
-    modelPoly <- rasterToPolygons(rascut, fun = function(x){x==2}, dissolve = TRUE)
-    # add cutecode as attribute, remove all other columns
-    modelPoly$cutecode <- model_species
-    modelPoly <- modelPoly[,"cutecode"]
+      breaks <- c(0,cutval,1)
+      rascut <- cut(ras, breaks = breaks)
+      # convert raster to polys
+      modelPoly <- rasterToPolygons(rascut, fun = function(x){x==2}, dissolve = TRUE)
+      # add cutecode as attribute, remove all other columns
+      modelPoly$cutecode <- model_species
+      modelPoly <- modelPoly[,"cutecode"]
   } else {
     print("Model is not of the Terrestrial or Aquatic Type")
   }
@@ -144,9 +177,9 @@ for (j in 1:length(not_yet_exported)){
   
   if (modType=="A"){ # Aquatic Option -
     # write the results
-    arc.write(paste0(gdbName,"/",model_species,"_TenPctile"), modelLine)
+    arc.write(paste0(gdbName,"/",model_species,"_", threshold_Aqua), modelLine)
   } else if (modType=="T"){ # Terrestrial Option - 
-    arc.write(paste0(gdbName,"/",model_species,"_mtpg"), modelPoly)
+    arc.write(paste0(gdbName,"/",model_species,"_",threshUsed), modelPoly)
   }  
   
   #use_python("C:/Users/Tim/AppData/Local/Esri/conda/envs/timsarcproclone")
@@ -175,7 +208,7 @@ for (j in 1:length(not_yet_exported)){
   unlink(gdbName, recursive = TRUE)
   
   ## get range data ----
-  if (modType=="A"){ # Aquatic Option - Huc10s output as part of the modle
+  if (modType=="A"){ # Aquatic Option - Huc10s output as part of the model
     hucPath <- file.path(rootPath, "outputs","model_predictions",paste0(model_run_name,"_huc10.csv"))
     huc <- read.csv(hucPath, stringsAsFactors=FALSE, colClasses = "character")
     hucList <- huc$huc10
@@ -201,11 +234,12 @@ for (j in 1:length(not_yet_exported)){
   shortName <- strsplit(mdOutF, split = "_")[[1]][[1]]
   file.copy(from = paste0(pdfPath,"/",mdOutF), to = paste0(shortName,".pdf"))
   
-  ## Create cutecode named folder in F://model_review_staging/ and copy model_review_output files there
+  ## Create cutecode named folder in upload staging area and copy model_review_output files there
+  # use substr to get the root drive letter (F: or N:, etc)
   if (modType=="A"){
-    staging_path <- file.path(here(),"model_review_staging","aquatic")
+    staging_path <- file.path(substr(here(), 1, 2),"model_review_staging","upload_staging","aquatic")
   }else if (modType=="T"){
-    staging_path <- file.path(here(),"model_review_staging","terrestrial")
+    staging_path <- file.path(substr(here(), 1, 2),"model_review_staging","upload_staging","terrestrial")
   }
   
   spec_stage_path <- file.path(staging_path, model_species)
@@ -213,7 +247,13 @@ for (j in 1:length(not_yet_exported)){
   stagingFiles<-list.files(path=outpath)
   file.copy(stagingFiles,spec_stage_path,overwrite=TRUE)
   
-  ## update the mobi tracking db
+  #Delete raster in temp folder
+  temp_path="D:\\R_tmp"
+  search=paste0("*r_tmp*",Sys.Date(),"*.gr*")
+  delShp <- list.files(path = temp_path, pattern = glob2rx(search))
+  try(file.remove(paste0(temp_path,"/",delShp)))
+  
+  ## update the mobi tracking db in two places
   fn <- here("_data","databases", "mobi_tracker_connection_string_short.dsn")
   cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
   commentString <- paste(modelrun_meta_data$model_run_name, "prepped for review tool on", Sys.Date())
@@ -221,6 +261,19 @@ for (j in 1:length(not_yet_exported)){
                 commentString, 
                 "' WHERE EGT_ID = ", ElementNames$EGT_ID, ";")
   dbExecute(cn, sql)
+  
+  sql <- paste0("INSERT INTO ReviewToolUpload ",
+                "(EGT_ID, cutecode, model_run_name, package_date, threshold_chosen, threshold_value, threshold_comments) ",
+                "VALUES ( '" , 
+                ElementNames$EGT_ID, "', '",
+                model_species, "', '",
+                model_run_name, "', '",
+                as.character(Sys.time()), "', '",
+                threshUsed, "', ",
+                cutval, ", '",
+                threshComm, "');")
+  dbExecute(cn, sql)
+  
   dbDisconnect(cn)
   rm(cn)
 
