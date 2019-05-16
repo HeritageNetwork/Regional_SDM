@@ -143,10 +143,15 @@ allThresh <- data.frame("model_run_name" = rep(modelrun_meta_data$model_run_name
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
+
+# add a check to see if the data is populated and skip writing to the table if there are any rows for the model run name.
 dbcheck <- dbGetQuery(db, paste0("SELECT cutCode c FROM tblModelResultsCutoffs WHERE model_run_name = '",
                                  modelrun_meta_data$model_run_name,"';"))$c
+if(length(dbcheck)==0){
+  dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = T)  
+}
 
-dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = T)
+
 # clean up
 options(op)
 dbDisconnect(db)
