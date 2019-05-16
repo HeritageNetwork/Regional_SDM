@@ -21,10 +21,14 @@ library(raster)
 library(here)
 library(RSQLite)
 library(rgdal)
-#library(reticulate)
+#library(reticulate) # for direct python calls (alternative to arcgisbinding)
 library(RSQLite)
 library(arcgisbinding)
 library(sf)
+library(stars)
+
+# arcgisbinding requirement ... 
+arc.check_product()
 
 # load in the data from the species run
 rm(list=ls())
@@ -89,7 +93,8 @@ for (j in 1:length(not_yet_exported)){
   } else if (modType=="T"){ # Terrestrial Option 
     # load the raster from the latest model run
     rasPath <- file.path(rootPath, "outputs","model_predictions",paste0(model_run_name,".tif"))
-    ras <- raster(rasPath) 
+    #ras <- raster(rasPath)
+    ras <- read_stars(rasPath) 
   } else {
     print("Model is not of the Terrestrial or Aquatic Type")
   }
@@ -148,10 +153,9 @@ for (j in 1:length(not_yet_exported)){
       }  
     }
     #reclassify the raster and create feature class ----
-      breaks <- c(0,cutval,1)
-      rascut <- cut(ras, breaks = breaks)
-      # convert raster to polys
-      modelPoly <- rasterToPolygons(rascut, fun = function(x){x==2}, dissolve = TRUE)
+      ras[[1]][ras[[1]] < cutval] <- NA
+      ras[[1]][!is.na(ras[[1]])] <- 1
+      modelPoly <- st_as_sf(ras, as_points = FALSE, merge = TRUE)
       # add cutecode as attribute, remove all other columns
       modelPoly$cutecode <- model_species
       modelPoly <- modelPoly[,"cutecode"]
@@ -159,11 +163,7 @@ for (j in 1:length(not_yet_exported)){
     print("Model is not of the Terrestrial or Aquatic Type")
   }
   
-  #writeOGR(obj=modelPoly, dsn=outpath, layer="modelPoly", driver="ESRI Shapefile")
-  #inShp <- paste0(outpath, "/modelPoly.shp")
-  
   # use bridge to write out file gdb
-  arc.check_product()
   # copy over a blank gdb as the bridge can't create them by itself. I would store this in some other directory
   templateGDB <- here("_data","other_spatial","feature","template_db_predictedhabitat-poly.gdb")
   templateFiles <- list.files(templateGDB)
