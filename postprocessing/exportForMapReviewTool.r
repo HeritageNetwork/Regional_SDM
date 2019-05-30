@@ -155,6 +155,12 @@ for (j in 1:length(not_yet_exported)){
     #reclassify the raster and create feature class ----
       ras[[1]][ras[[1]] < cutval] <- NA
       ras[[1]][!is.na(ras[[1]])] <- 1
+      # write out the raster, right here!
+      # hmm, this works but NoData cells are "nan" in arc which might be funky. Might be better way?
+      # not ready for prime time yet
+      #cutRasName <- file.path(rootPath, "outputs","model_predictions", paste0(model_run_name, "_", threshUsed, ".tif"))
+      #st_write(ras, cutRasName)
+      
       modelPoly <- st_as_sf(ras, as_points = FALSE, merge = TRUE)
       # add cutecode as attribute, remove all other columns
       modelPoly$cutecode <- model_species
@@ -256,16 +262,24 @@ for (j in 1:length(not_yet_exported)){
   ## update the mobi tracking db in two places
   fn <- here("_data","databases", "mobi_tracker_connection_string_short.dsn")
   cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
+  # get model cycle we are on
+  sql <- paste0("select ID, model_cycle from ModelCycle where ",
+      "model_cycle = (select max(model_cycle) from ModelCycle where EGT_ID = ", ElementNames$EGT_ID, " ) AND ", 
+        "EGT_ID = ", ElementNames$EGT_ID,";")
+  model_cycle <- dbGetQuery(cn, sql)
+  names(model_cycle) <- c("model_cycle_id","model_cycle")
+  
   commentString <- paste(modelrun_meta_data$model_run_name, "prepped for review tool on", Sys.Date())
   sql <- paste0("UPDATE SpeciesWorkFlow SET modeled = 1, modeled_com = '", 
                 commentString, 
-                "' WHERE EGT_ID = ", ElementNames$EGT_ID, ";")
+                "' WHERE EGT_ID = ", ElementNames$EGT_ID, " AND model_cycle_id = ", model_cycle$model_cycle_id, ";")
   dbExecute(cn, sql)
   
   sql <- paste0("INSERT INTO ReviewToolUpload ",
-                "(EGT_ID, cutecode, model_run_name, package_date, threshold_chosen, threshold_value, threshold_comments) ",
+                "(EGT_ID, model_cycle_id, cutecode, model_run_name, package_date, threshold_chosen, threshold_value, threshold_comments) ",
                 "VALUES ( '" , 
-                ElementNames$EGT_ID, "', '",
+                ElementNames$EGT_ID, "', ",
+                model_cycle$model_cycle_id, ", '",
                 model_species, "', '",
                 model_run_name, "', '",
                 as.character(Sys.time()), "', '",
