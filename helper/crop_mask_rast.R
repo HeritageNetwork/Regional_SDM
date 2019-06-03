@@ -2,12 +2,13 @@ library(sf)
 library(raster)
 library(snow)
 library(smoothr) 
-#library(fasterize) # if using raster method for cropping instead of calling gdalwarp
+library(fasterize) # if using raster method for cropping instead of calling gdalwarp
 
 # needs raster list (fullL), loc_envVars, model_species
 
+# get range info ----
 # has the range already been created? If so, don't waste time re-creating
-allRanges_fn <- paste0(loc_scripts, "/_data/other_spatial/feature/","Terrestrial_Ranges_dis_clip.shp")
+allRanges_fn <- paste0(loc_scripts, "/_data/other_spatial/feature/","Ranges_dissolved.gdb")
 if(file.exists(allRanges_fn)) {
   allRanges <- st_read(allRanges_fn)
   targRange <- allRanges[allRanges$EGT_ID == ElementNames$EGT_ID,]
@@ -61,10 +62,7 @@ st_write(rangeClipped, delete_dsn = TRUE,
          here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
 
   
-########################################
-# hucRange <- st_zm(st_read(nm_studyAreaExtent,quiet = T)) #DNB TESTING ONLY
-
-# crop/mask rasters to a temp directory 
+## crop/mask rasters to a temp directory ----
 
 # delete temp rasts folder, create new
 temp <- paste0(options("rasterTmpDir")[1], "/", modelrun_meta_data$model_run_name)
@@ -81,25 +79,22 @@ rtemp <- raster(paste0(loc_envVars,"/",fullL[[1]]))
 
 # clipping/masking boundary
 rng <- st_transform(rangeClipped, crs = as.character(rtemp@crs))
-#rm(rtemp)
 rng <- st_sf(geometry = st_cast(st_union(rng), "POLYGON"))
 rng$id <- 1:length(rng$geometry)
 ext <- st_bbox(rng)
 
-# write shapes
-clipshp <- paste0(temp, "/", "clipshp.shp")
-st_write(rng, dsn = temp, layer = "clipshp.shp", driver="ESRI Shapefile", delete_layer = TRUE, quiet = TRUE)
+# create and write the raster mask
+clipRas <- paste0(temp, "/", "clipRas.tif")
+rasExtent <- raster::crop(rtemp, extent(as(rng, "Spatial")))
+cropRas <- fasterize(rng, rasExtent)
+writeRaster(cropRas, clipRas, options="COMPRESS=NONE")
 
-# if using raster crop methods, not gdalwarp ...
-# convert clipping shape to raster for faster cropping
-#rasExtent <- raster::crop(rtemp, extent(as(rng, "Spatial")))
-#cropRas <- fasterize(rng, rasExtent)
+rm(rtemp, rng)
 
+message("Spawning clusters for cropping")
 # # cluster process rasters
-cl <- snow::makeCluster(parallel::detectCores() - 3, type = "SOCK")
-#snow::clusterExport(cl, list("temp", "cropRas"), envir = environment())
-snow::clusterExport(cl, list("temp", "ext", "clipshp"), envir = environment())
-snow::clusterExport(cl, list("loc_envVars"), envir = environment())
+cl <- snow::makeCluster(parallel::detectCores() - 10, type = "SOCK")
+snow::clusterExport(cl, list("temp", "clipRas", "loc_envVars"), envir = environment())
 
 message("Creating raster subsets for species for ", length(fullL) , " environmental variables...")
 newL <- snow::parLapply(cl, x = fullL, fun = function(path) {
@@ -110,12 +105,13 @@ newL <- snow::parLapply(cl, x = fullL, fun = function(path) {
     dir.create(paste0(temp, "/", subdir), showWarnings = FALSE, recursive = TRUE)
   }
   nnm <- paste0(temp, "/", subnm)
-  #ras <- raster::raster(path) # read the raster
-  #rasAtExtent <- raster::crop(ras, raster::extent(cropRas)) # crop extent to same as mask ras
-  #outRas <- raster::mask(rasAtExtent, cropRas, filename = nnm) # mask it
-  # crop w/clip using gdalwarp
-  call <- paste0("gdalwarp -te ", paste(ext, collapse = " "), " -cutline ", clipshp, " ", path, " ", nnm, " -overwrite -q")
-  system(call)
+
+  ## with fasterize and raster
+  ras <- raster::raster(path) # read the raster
+  cropRas <- raster::raster(clipRas) # read the crop raster
+  rasAtExtent <- raster::crop(ras, raster::extent(cropRas)) # crop extent to same as mask ras
+  outRas <- raster::mask(rasAtExtent, cropRas, filename = nnm, options="COMPRESS=NONE") # mask it
+
   return(nnm)
 })
 stopCluster(cl)
