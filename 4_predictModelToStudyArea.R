@@ -73,8 +73,8 @@ cat("... predicting throughout study area \n")
 # use parallel processing if packages installed
 if (all(c("snow","parallel") %in% installed.packages())) {
   try({
-    beginCluster(type = "SOCK", n=parallel:::detectCores()-3)
-    outRas <- clusterR(envStack, predict, args = list(model=rf.full, type = "prob", index = 2), verbose = T)
+    beginCluster(type = "SOCK", n=parallel:::detectCores()-10)
+    outRas <- clusterR(envStack, predict, args = list(model=rf.full, type = "prob", index = 2), verbose = TRUE)
     writeRaster(outRas, filename = fileNm, format = "GTiff", overwrite = TRUE)
   })
   try(endCluster())
