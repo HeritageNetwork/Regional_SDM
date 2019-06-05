@@ -98,6 +98,13 @@ st_write(shapeh, paste0("model_predictions/", modelrun_meta_data$model_run_name,
 shapehuc$huc10 <- substring(shapehuc$huc12,1,10)
 listHUC10 <- as.data.frame(unique(shapehuc$huc10))
 names(listHUC10)[names(listHUC10) == 'unique(shapehuc$huc10)'] <- 'huc10'
+
+# huc10 fix
+fixhuc10 <- read.csv(here("_data","env_vars","tabular","hucfix_table.csv"), stringsAsFactors=FALSE, colClasses=c("character")) 
+listHUC10 <- merge(listHUC10, fixhuc10, by.x="huc10", by.y="h10old")
+listHUC10 <- listHUC10[c("h10new")]
+names(listHUC10) <- "huc10"
+
 write.csv(listHUC10, paste0("model_predictions/", modelrun_meta_data$model_run_name, "_huc10.csv"), row.names=FALSE)
 
 dbDisconnect(db)
