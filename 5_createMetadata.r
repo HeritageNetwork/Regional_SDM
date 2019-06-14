@@ -39,7 +39,14 @@ results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_r
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
 studyAreaExtent <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_modelrange.shp")), quiet = T)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
-aquaPolys <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_results_aquaPolys.shp")), quiet = T)
+
+if(exists(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"))){
+  aquaPolys <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_results_aquaPolys.shp")), quiet = T)
+} else {
+  cat("No aquatic polygon shapefile...")
+}
+
+
 
 
 ## Get Program and Data Sources info ----
@@ -177,4 +184,3 @@ if (file.exists(paste(model_run_name, ".pdf",sep=""))){
 ## clean up ----
 dbDisconnect(db)
 options(op)
-
