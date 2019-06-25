@@ -36,11 +36,16 @@ load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 # get reach data for the map
 results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T) # shapefile results for mapping
 
+# simplfy the aquatic lines
+# library(smoothr)
+# results_shape1 <- as(results_shape, 'Spatial') # st_simplify(results_shape)
+# results_shape1a <- gSimplify(results_shape1,tol = 0.05)
+
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
 studyAreaExtent <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_modelrange.shp")), quiet = T)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
 
-if(exists(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"))){
+if(file.exists(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"))){
   aquaPolys <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_results_aquaPolys.shp")), quiet = T)
 } else {
   cat("No aquatic polygon shapefile...")

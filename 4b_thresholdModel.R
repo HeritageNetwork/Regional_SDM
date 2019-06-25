@@ -170,8 +170,7 @@ for (t in allThresh$cutCode) { # add columns for all thresholds
 st_write(results_shape, paste0("model_predictions/",modelrun_meta_data$model_run_name, "_results.shp"), delete_layer = T) #write out shapefile
 
 # write the thresholds to the aqua polys shapefile
-
-if(exists(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"))){
+if(file.exists(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"))){
   results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"), quiet = T)
   # THE next lines are for creating threshold column(s) in the shapefile  
   for (t in allThresh$cutCode) { # add columns for all thresholds
@@ -184,12 +183,8 @@ if(exists(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_resu
   }
   st_write(results_shape, paste0("model_predictions/",modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"), delete_layer = T) #write out shapefile 
 } else {
-  cat("No aquatic polygon shapefile, skipping tresholding it.")
+  cat("No aquatic polygon shapefile, skipping tresholding it.\n")
 }
-
-
-
-
 
 
 #clean up

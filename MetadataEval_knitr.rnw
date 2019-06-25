@@ -425,7 +425,7 @@ qtm(basetiles) +
   tm_shape(results_shape, name="modeled suitability") + # stream linework #, simplify = 0.5
     tm_lines(col="prbblty", palette=clrs, labels=c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability"),
              title.col = "modeled suitability") +     
-  if(exists("aquaPolys")) tm_shape(aquaPolys) + tm_fill(col="prbblty", palette=clrs, legend.show = FALSE) +     
+  if(file.exists("aquaPolys")) tm_shape(aquaPolys) + tm_fill(col="prbblty", palette=clrs, legend.show = FALSE) +     
   tm_shape(referenceBoundaries) +
     tm_borders(col = "grey", lwd = 1) + 
   tm_shape(studyAreaExtent) + 
