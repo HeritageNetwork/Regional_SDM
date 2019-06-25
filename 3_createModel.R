@@ -129,11 +129,12 @@ df.full$pres <- factor(df.full$pres)
 df.full$huc12 <- factor(tolower(as.character(df.full$huc12)))
 df.full$species_cd <- factor(df.full$species_cd)
 
-# make sampSizeVec using assigned stratum
-#sampSizeVec <- table(df.full$stratum) # CHANGE THIS?? (sample sizes by HUC12? would need to change pseu-abs record values in that case)
-#sampSizeVec["pseu-a"] <- sum(sampSizeVec) - sampSizeVec["pseu-a"]  # set samples of absences equal to total presences
+# # make sampSizeVec using assigned stratum
+# sampSizeVec <- table(df.full$stratum) # CHANGE THIS?? (sample sizes by HUC12? would need to change pseu-abs record values in that case)
+# sampSizeVec["pseu-a"] <- sum(sampSizeVec) - sampSizeVec["pseu-a"]  # set samples of absences equal to total presences
+# sampSizeVec <- as.factor(sampSizeVec)
 
-# make sampSizeVec using 75% of presences, same number of PAs
+#make sampSizeVec using 75% of presences, same number of PAs
 npres <- floor(sum(df.full$pres==1) * 0.75)
 sampSizeVec <- c(npres, npres)
 names(sampSizeVec) <- c("0", "1")
@@ -143,9 +144,9 @@ rm(npres)
 # tune mtry ----
 # run through mtry twice
 x <- tuneRF(df.full[,indVarCols],
-             y=df.full[,depVarCol],
-             ntreeTry = 300, stepFactor = 2, mtryStart = 6,
-            strata = df.full[,depVarCol], replace = TRUE, sampsize = sampSizeVec)
+            y=df.full[,depVarCol],
+            ntreeTry=300, stepFactor=2, mtryStart=6,
+            strata=df.full[,depVarCol], replace=TRUE, sampsize=sampSizeVec)
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
@@ -279,7 +280,18 @@ if(length(group$vals)>2){
 		  trSet <- do.call("subset",list(df.in2, trSelStr))
 		  evSet[[i]] <- do.call("subset",list(df.in2, evSelStr))
 		   # use sample to grab a random subset from the background points
-		  BGsampSz <- nrow(evSet[[i]]) * 10
+		  
+		  # another bandaid similar to below
+		  BGsampSz <- nrow(evSet[[i]]) * 2 # this was initially set to 10, but in many cases there aren't enough, so we moved it down to 2.
+		  # 
+		  # nabs1 <- nrow(df.abs2) # bandaid to fix an issue where the requested bg set is bigger than the absences available.
+		  # if(nabs1>BGsampSz){
+		  #   BGsampSz <- BGsampSz
+		  # } else {
+		  #   BGsampSz <- floor(nrow(df.abs2))
+		  # }		  
+		  # 
+		 
 		  evSetBG <- df.abs2[sample(nrow(df.abs2), BGsampSz , replace = FALSE, prob = NULL),]
 		   # get the other portion for the training set
 		  TrBGsamps <- attr(evSetBG, "row.names") #get row.names as integers
@@ -296,9 +308,14 @@ if(length(group$vals)>2){
 		  
 		  # make sampSizeVec using 75% of presences, and same number of absences
 		  npres <- floor(sum(trSet$pres==1) * 0.75)
-		  ssVec <- c(npres, npres)
+		  nabs <- nrow(trSetBG) # bandaid to fix an issue where the requested bg set is bigger than the absences available.
+		  if(nabs>npres){
+		    ssVec <- c(npres, npres)
+		  } else {
+		    ssVec <- c(nabs, npres)
+		  }
 		  names(ssVec) <- c("0", "1")
-		  rm(npres)
+		  rm(npres, nabs)
   
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
 		                             importance=TRUE,ntree=ntrees,mtry=mtry,
@@ -396,9 +413,27 @@ if(length(group$vals)>2){
 	  # for any training point)
 	  allVotesPrespts <- trRes[[i]]$votes[,"1"][trRes[[i]]$y == 1]
 	  MTP <- min(allVotesPrespts)
-	  cutval.rf <- c(1-MTP, MTP)
-	  names(cutval.rf) <- c("0","1")
-	  print(paste0("MTP: ", MTP, " cutval.rf: ", cutval.rf))
+	  # cutval.rf <- c(1-MTP, MTP)
+	  # names(cutval.rf) <- c("0","1")
+	  # print(paste0("MTP: ", MTP, " cutval.rf: ", cutval.rf))
+	  # calculations fail if MTP = 0 so if it does, fall back to maxSSS
+	  if(MTP == 0) {
+	    # max sensitivity plus specificity (maxSSS per Liu et al 2016)
+	    # create the prediction object for ROCR. Get pres col from y, prediction from votes (=named "1")
+	    pred <- prediction(trRes[[i]]$votes[,"1"],trRes[[i]]$y)
+	    sens <- performance(pred,"sens")
+	    spec <- performance(pred,"spec")
+	    sss <- data.frame(cutSens = unlist(sens@x.values),sens = unlist(sens@y.values),
+	                      cutSpec = unlist(spec@x.values), spec = unlist(spec@y.values))
+	    sss$sss <- with(sss, sens + spec)
+	    maxSSS <- sss[which.max(sss$sss),"cutSens"]#/numCores
+	    cutval.rf <- c(1-maxSSS, maxSSS)
+	    names(cutval.rf) <- c("0","1")
+	  } else {
+	    cutval.rf <- c(1-MTP, MTP)
+	    names(cutval.rf) <- c("0","1")
+	  }
+	  
 	  
 		#apply the cutoff to the validation data
 	  v.rf.pred.cut <- predict(trRes[[i]], evSet[[i]],type="response", cutoff=cutval.rf)
