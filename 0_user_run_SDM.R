@@ -8,8 +8,7 @@ rm(list=ls())
 # set project folder, db, species code, and species reaches filename for this run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "lasmhols" #lemirimo 
-
+model_species <- "procpict" #pletcyph
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -17,7 +16,7 @@ loc_model <- here("_data", "species")
 # Modeling database
 nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
-nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv"))
+nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv")) 
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature","US_States.shp") # background grey reference lines in map
 
@@ -25,7 +24,7 @@ nm_refBoundaries = here("_data","other_spatial","feature","US_States.shp") # bac
 project_overview = "The following metadata describes the SDM for one species of 2,700 included in a Map of Biodiversity Irreplaceability (MoBI) in the continental U.S. developed by NatureServe and the Network of Natural Heritage Programs and funded by ESRI."
 
 # model comment in database
-model_comments = "2km sep distance"
+model_comments = ""
 # comment printed in PDF metadata
 metaData_comments = ""
 # your name
@@ -96,84 +95,79 @@ run_SDM(
 
 # If picking up from a previously started run, always
 # provide the begin_step, model_species, and loc_model.
-# When starting at script #4 or later, also provide the name of the 
-# model rdata file to 'model_rdata'. 
-# You can also include any other arguments that you wish to change from 
-# the previous run (e.g., model_comments or metaData_comments).
+# # When starting at script #4 or later, also provide the name of the 
+# # model rdata file to 'model_rdata'. 
+# # You can also include any other arguments that you wish to change from 
+# # the previous run (e.g., model_comments or metaData_comments).
+# # 
+# # Note that you can manually update the scripts, if desired. 
+# # The scripts will automatically be accessed from 'loc_scripts' (if provided) 
 # 
-# Note that you can manually update the scripts, if desired. 
-# The scripts will automatically be accessed from 'loc_scripts' (if provided) 
-
-# or the location that was specified for the original model run. 
-library(here)
-rm(list=ls())
-
-# set project folder and species code for this run
-model_species <- "uttepeni"
-loc_model <- here("_data", "species")
+# # or the location that was specified for the original model run.
+# library(here)
+# rm(list=ls())
+# # 
+# # # set project folder and species code for this run
+# model_species <- "eurynana"
+# loc_model <- here("_data", "species")
 
 # set wd and load function
-loc_scripts <- here()
-setwd(loc_scripts)
-source(here("helper", "run_SDM.R"))
-
-# example pick-up a model run at step 2 (same presence/bkgd data, new model with different variables)
-  # need to provide an input tableCode to nm_presFile 
-  # to add/remove variables, begin at step 2
-  # to just run new model, begin at step 3 (see next example)
-run_SDM(
-  begin_step = "3",
-  model_species = "fuscburk",
-  loc_model = loc_model,
-  nm_presFile = "fuscburk_20190207_221919_prepped"
-  #model_comments = "Testing out model with removed variables.",
-  #remove_vars = "cbnfws"
-)
-
-
-
-
-# example pick-up a model run at step 5 (metadata create)
+# loc_scripts <- here()
+# setwd(loc_scripts)
+# source(here("helper", "run_SDM.R"))
+# # 
+# # example pick-up a model run at step 2 (same presence/bkgd data, new model with different variables)
+#   # need to provide an input tableCode to nm_presFile 
+#   # to add/remove variables, begin at step 2
+#   # to just run new model, begin at step 3 (see next example)
+# run_SDM(
+#   begin_step = "3",
+#   model_species = "fuscburk",
+#   loc_model = loc_model,
+#   nm_presFile = "fuscburk_20190207_221919_prepped"
+#   #model_comments = "Testing out model with removed variables.",
+#   #remove_vars = "cbnfws"
+# )
+# 
+# # # example pick-up a model run at step 5 (metadata create)
   # if starting at step 4 or later, must provide model run name to model_rdata
-run_SDM(
-  begin_step = "4",
-  model_species = "pleucoll",
-  loc_model = loc_model,
-  model_rdata = "pleucoll_20190207_142005"
+# run_SDM(
+#   begin_step = "5",
+#   model_species = "eurynana",
+#   loc_model = loc_model,
+#   model_rdata = "eurynana_20190619_163955"
   #metaData_comments = "This is an updated comment that will appear in the metadata PDF."
-)
-
-
-
-# example pick-up a model run at step 4c (metadata/comment update)
-# if starting at step 4 or later, must provide model run name to model_rdata
-run_SDM(
-  begin_step = "4c",
-  model_species = "chrocumb",
-  loc_model = loc_model,
-  #rubric_default = rubric_default,
-  model_rdata = "chrocumb_20190108_143402",
-  model_comments = "Testing out model model comments.",
-  metaData_comments = "This is an updated comment that will appear in the metadata PDF."
-)
-
-########## 
-##########
-##########
-
-# TESTING / DEBUGGING ONLY
+# )
+# 
+# # example pick-up a model run at step 4c (metadata/comment update)
+# # if starting at step 4 or later, must provide model run name to model_rdata
+# run_SDM(
+#   begin_step = "4c",
+#   model_species = "chrocumb",
+#   loc_model = loc_model,
+#   #rubric_default = rubric_default,
+#   model_rdata = "chrocumb_20190108_143402",
+#   model_comments = "Testing out model model comments.",
+#   metaData_comments = "This is an updated comment that will appear in the metadata PDF."
+# )
+# 
+# ########## 
+# ##########
+# ##########
+#
+#TESTING / DEBUGGING ONLY
 library(here)
 rm(list=ls())
 # Use the lines below for debugging (running line by line) for a certain script
-# This loads the variables used in previous model run for the species, 
+# This loads the variables used in previous model run for the species,
 # so you need to have executed run_SDM in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "stroradi"
+model_species <- "procpict"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
-# if debugging script 4 or later, also load the specific model output rdata file
+# # if debugging script 4 or later, also load the specific model output rdata file
 model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata")))
 load(here("_data","species",model_species,"outputs","rdata",paste0(model_rdata)))
 

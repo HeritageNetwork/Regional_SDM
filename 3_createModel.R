@@ -10,6 +10,7 @@ library(ROCR)    #for ROC plots and stats
 library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
 library(randomForest)
+
 source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = T) # generates modelrun_meta_data
 
 setwd(loc_model)
@@ -108,7 +109,7 @@ colList <- c("species_cd","group_id","pres","stratum","comid", "huc12", envvar_l
 
 # if colList gets modified, 
 # also modify the locations for the independent and dependent variables, here
-depVarCol <- 3 # 'pres'
+depVarCol <- 3 # 'pres'   
 indVarCols <- c(7:length(colList)) 
 
 #re-arrange
@@ -130,15 +131,21 @@ df.full$huc12 <- factor(tolower(as.character(df.full$huc12)))
 df.full$species_cd <- factor(df.full$species_cd)
 
 # # make sampSizeVec using assigned stratum
-# sampSizeVec <- table(df.full$stratum) # CHANGE THIS?? (sample sizes by HUC12? would need to change pseu-abs record values in that case)
-# sampSizeVec["pseu-a"] <- sum(sampSizeVec) - sampSizeVec["pseu-a"]  # set samples of absences equal to total presences
+sampSizeVec <- table(df.full$stratum) # CHANGE THIS?? (sample sizes by HUC12? would need to change pseu-abs record values in that case)
+# temp code to reduce the number in the low RAs
+tempnames <- names(sampSizeVec)
+sampSizeVec[5] <- sampSizeVec[5] / 10
+sampSizeVec <- as.integer(sampSizeVec)
+names(sampSizeVec) <- tempnames
+# replace the above
+sampSizeVec["pseu-a"] <- sum(sampSizeVec) - sampSizeVec["pseu-a"]  # set samples of absences equal to total presences
 # sampSizeVec <- as.factor(sampSizeVec)
 
-#make sampSizeVec using 75% of presences, same number of PAs
-npres <- floor(sum(df.full$pres==1) * 0.75)
-sampSizeVec <- c(npres, npres)
-names(sampSizeVec) <- c("0", "1")
-rm(npres)
+# #make sampSizeVec using 75% of presences, same number of PAs
+# npres <- floor(sum(df.full$pres==1) * 0.75)
+# sampSizeVec <- c(npres, npres)
+# names(sampSizeVec) <- c("0", "1")
+# rm(npres)
 
 ##
 # tune mtry ----
@@ -146,14 +153,14 @@ rm(npres)
 x <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
             ntreeTry=300, stepFactor=2, mtryStart=6,
-            strata=df.full[,depVarCol], replace=TRUE, sampsize=sampSizeVec)
+            strata=df.full[,"stratum"], replace=TRUE, sampsize=sampSizeVec)
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
-            strata = df.full[,depVarCol], replace = TRUE, sampsize = sampSizeVec)
+            strata = df.full[,"stratum"], replace = TRUE, sampsize = sampSizeVec)
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
 rm(x,y)
@@ -168,7 +175,7 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
                         importance=TRUE,
                         ntree=ntrees,
                         mtry=mtry,
-                        strata = df.full[,depVarCol], replace = TRUE, sampsize = sampSizeVec) 
+                        strata = df.full[,"stratum"], replace = TRUE, sampsize = sampSizeVec) 
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
@@ -279,54 +286,32 @@ if(length(group$vals)>2){
 		   # apply the subset. do.call is needed so selStr can be evaluated correctly
 		  trSet <- do.call("subset",list(df.in2, trSelStr))
 		  evSet[[i]] <- do.call("subset",list(df.in2, evSelStr))
-		   # use sample to grab a random subset from the background points
-		  
-		  # another bandaid similar to below
-		  BGsampSz <- nrow(evSet[[i]]) * 2 # this was initially set to 10, but in many cases there aren't enough, so we moved it down to 2.
-		  # 
-		  # nabs1 <- nrow(df.abs2) # bandaid to fix an issue where the requested bg set is bigger than the absences available.
-		  # if(nabs1>BGsampSz){
-		  #   BGsampSz <- BGsampSz
-		  # } else {
-		  #   BGsampSz <- floor(nrow(df.abs2))
-		  # }		  
-		  # 
-		 
-		  evSetBG <- df.abs2[sample(nrow(df.abs2), BGsampSz , replace = FALSE, prob = NULL),]
-		   # get the other portion for the training set
+	   # use sample to grab a random subset from the background points
+		  BGsampSz <- nrow(evSet[[i]]) #* 2 # this was initially set to 10, but in many cases there aren't enough, so we moved it down to 2.
+		  evSetBG <- df.abs2[sample(nrow(df.abs2), BGsampSz, replace=FALSE, prob=NULL),]
+		  # get the other portion for the training set
 		  TrBGsamps <- attr(evSetBG, "row.names") #get row.names as integers
 		  trSetBG <-  df.abs2[-TrBGsamps,]  #get everything that isn't in TrBGsamps
-		   # join em, clean up
+		  # join em, clean up
 		  trSet <- rbind(trSet, trSetBG)
-		  trSet$stratum <- factor(trSet$stratum)
+		  trSet[,group$colNm] <- factor(trSet[,group$colNm])
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
 		  # pseu-a is resized to match training sample (originally was not)
-		  #ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
-		  #ssVec["pseu-a"] <- sum(ssVec) - ssVec["pseu-a"]
-		  #rm(trSetBG, evSetBG)
+		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
+		  ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
+		  rm(trSelStr, evSelStr, trSetBG, evSetBG, TrBGsamps, BGsampSz )
 		  
-		  # make sampSizeVec using 75% of presences, and same number of absences
-		  npres <- floor(sum(trSet$pres==1) * 0.75)
-		  nabs <- nrow(trSetBG) # bandaid to fix an issue where the requested bg set is bigger than the absences available.
-		  if(nabs>npres){
-		    ssVec <- c(npres, npres)
-		  } else {
-		    ssVec <- c(nabs, npres)
-		  }
-		  names(ssVec) <- c("0", "1")
-		  rm(npres, nabs)
-  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
 		                             importance=TRUE,ntree=ntrees,mtry=mtry,
-		                             # strata = trSet[,group$colNm], replace = TRUE, sampsize = ssVec
-		                             strata = trSet[,depVarCol], replace = TRUE, sampsize = ssVec
+		                             strata = trSet[,group$colNm], replace = TRUE, sampsize = ssVec
+		                             #strata = trSet[,depVarCol], replace = TRUE, sampsize = ssVec
 		                             )
 		  
 		  # run a randomForest predict on the validation data
 		  evRes[[i]] <- predict(trRes[[i]], evSet[[i]], type="prob")
 		   # use ROCR to structure the data. Get pres col of evRes (= named "1")
-		  v.rocr.pred[[i]] <- prediction(evRes[[i]][,"1"],evSet[[i]]$pres)
+		  v.rocr.pred[[i]] <- prediction(evRes[[i]][,"1"],evSet[[i]]$pres) #
 		   # extract the auc for metadata reporting
 		  v.rocr.auc[[i]] <- performance(v.rocr.pred[[i]], "auc")@y.values[[1]]
 			cat("finished run", i, "of", length(group$vals), "\n")
@@ -396,27 +381,11 @@ if(length(group$vals)>2){
 	perf.avg@alpha.values <- list( alpha.values )
 
 	for(i in 1:length(group$vals)){
-	  # get threshold
-	  # max sensitivity plus specificity (maxSSS per Liu et al 2016)
-	  # create the prediction object for ROCR. Get pres col from votes (=named "1")
-	  # <- prediction(trRes[[i]]$votes[,"1"],trRes[[i]]$y)
-	  #sens <- performance(pred,"sens")
-	  #spec <- performance(pred,"spec")
-	  #sss <- data.frame(cutSens = unlist(sens@x.values),sens = unlist(sens@y.values),
-	  #                          cutSpec = unlist(spec@x.values), spec = unlist(spec@y.values))
-	  #sss$sss <- with(sss, sens + spec)
-	  #maxSSS <- sss[which.max(sss$sss),"cutSens"]
-    #cutval.rf <- c(maxSSS, 1-maxSSS)
-	  # names(cutval.rf) <- c("0","1")
-	  
 	  # get MTP: minimum training presence (minimum votes recieved [probability]
 	  # for any training point)
 	  allVotesPrespts <- trRes[[i]]$votes[,"1"][trRes[[i]]$y == 1]
 	  MTP <- min(allVotesPrespts)
-	  # cutval.rf <- c(1-MTP, MTP)
-	  # names(cutval.rf) <- c("0","1")
-	  # print(paste0("MTP: ", MTP, " cutval.rf: ", cutval.rf))
-	  # calculations fail if MTP = 0 so if it does, fall back to maxSSS
+
 	  if(MTP == 0) {
 	    # max sensitivity plus specificity (maxSSS per Liu et al 2016)
 	    # create the prediction object for ROCR. Get pres col from y, prediction from votes (=named "1")
@@ -433,8 +402,7 @@ if(length(group$vals)>2){
 	    cutval.rf <- c(1-MTP, MTP)
 	    names(cutval.rf) <- c("0","1")
 	  }
-	  
-	  
+
 		#apply the cutoff to the validation data
 	  v.rf.pred.cut <- predict(trRes[[i]], evSet[[i]],type="response", cutoff=cutval.rf)
 		#make the confusion matrix
