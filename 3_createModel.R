@@ -54,17 +54,25 @@ rm(db)
 # get an original list of env-vars for later writing to tblVarsUsed
 envvar_list <- names(df.abs)[names(df.abs) %in% envvar_list] # gets a list of environmental variables
 
-# go through the envar columns and drop any that have NA values
-### a <- df.in[colSums(is.na(df.in[colnames(df.in) %in% envvar_list])) > 0]
+# strip columns with -9999  ##tgh## just a few cols. This may not be needed eventually, but needed now...
+del_a_Cols <- colSums(df.abs==-9999, na.rm = TRUE)
+del_a_Cols <- del_a_Cols[del_a_Cols>0]
+del_p_Cols <- colSums(df.in==-9999, na.rm = TRUE)
+del_p_Cols <- del_p_Cols[del_p_Cols>0]
+delCols <- unique(c(names(del_a_Cols), names(del_p_Cols)))
+
+df.abs <- df.abs[,!(names(df.abs) %in% delCols)]
+df.in <- df.in[,!(names(df.in) %in% delCols)]
 
 #make sure we don't have any NAs
 df.in <- df.in[complete.cases(df.in[,!names(df.in) %in% c("obsdate","date","wacomid")]),]  # to ensure missing dates are not excluding records
+df.abs <- df.abs[complete.cases(df.abs),]  # to ensure missing dates are not excluding records
 
 # align data sets, QC ----
 # add some fields to each
-df.in <- cbind(df.in, pres=1)
+df.in <- cbind(df.in, pres=1, stratum=df.in$huc12)
 df.abs$stratum <- "pseu-a"
-df.abs <- cbind(df.abs, group_id="pseu-a", pres=0, SPECIES_CD="background")
+df.abs <- cbind(df.abs, group_id="pseu-a", pres=0, stratum="pseu-a", SPECIES_CD="background")
 
 # lower case column names
 names(df.in) <- tolower(names(df.in))
@@ -98,19 +106,13 @@ dbDisconnect(db)
 rm(db)
 
 # clean up, merge data sets -----
-df.in$scomname <- NULL  # not in df.abs --> causing issues on the rearrange below
-
-# add a 'stratum' column to df.in for jackknife procedure [MAKE SURE TO ASSIGN DESIRED COLUMN HERE]
-df.in$stratum <- as.character(df.in$group_id) # group_id used for model stratification
-
 # this is the full list of fields, arranged appropriately
-colList <- c("species_cd","group_id","pres","stratum","comid", "huc12", envvar_list)
-#colList <- names(df.in)
+colList <- c("species_cd","group_id","pres","stratum", "comid", "huc12", envvar_list)
 
-# if colList gets modified, 
-# also modify the locations for the independent and dependent variables, here
-depVarCol <- 3 # 'pres'   
-indVarCols <- c(7:length(colList)) 
+# assign and calculate where the dependent and independent vars are
+depVarCol <- "pres"
+indVarStart <- length(colList) - length(envvar_list) + 1
+indVarCols <- c(indVarStart:length(colList)) 
 
 #re-arrange
 df.in <- df.in[,colList]
@@ -120,32 +122,38 @@ df.abs <- df.abs[,colList]
 df.abs <- df.abs[complete.cases(df.abs),]
 
 # row bind the pseudo-absences with the presence points
-df.abs$group_id <- factor(df.abs$group_id)
+df.abs$group_id <- as.character(df.abs$group_id)
+df.in$group_id <- as.character(df.in$group_id)
 df.full <- rbind(df.in, df.abs)
 
 # reset these factors
-df.full$stratum <- factor(df.full$stratum) # this is set below, just resetting and maintaining the column order
 df.full$group_id <- factor(df.full$group_id)
 df.full$pres <- factor(df.full$pres)
-df.full$huc12 <- factor(tolower(as.character(df.full$huc12)))
+df.full$huc12 <- factor(df.full$huc12)
 df.full$species_cd <- factor(df.full$species_cd)
 
-# # make sampSizeVec using assigned stratum
-sampSizeVec <- table(df.full$stratum) # CHANGE THIS?? (sample sizes by HUC12? would need to change pseu-abs record values in that case)
-# temp code to reduce the number in the low RAs
-tempnames <- names(sampSizeVec)
-sampSizeVec[5] <- sampSizeVec[5] / 10
-sampSizeVec <- as.integer(sampSizeVec)
-names(sampSizeVec) <- tempnames
-# replace the above
-sampSizeVec["pseu-a"] <- sum(sampSizeVec) - sampSizeVec["pseu-a"]  # set samples of absences equal to total presences
-# sampSizeVec <- as.factor(sampSizeVec)
+# how many HUCs?
+numHucs <- length(unique(df.in$stratum))
+# how many groups based on stream grouping methods
+numGps <- length(unique(df.in$group_id))
 
-# #make sampSizeVec using 75% of presences, same number of PAs
-# npres <- floor(sum(df.full$pres==1) * 0.75)
-# sampSizeVec <- c(npres, npres)
-# names(sampSizeVec) <- c("0", "1")
-# rm(npres)
+#initialize the grouping list, and set up grouping variables
+group <- vector("list")
+if(numHucs < 5){
+  group$colNm <- "group_id"
+  group$JackknType <- "adjacent presence reach groups"
+  group$vals <- unique(df.in$group_id)
+} else {
+  group$colNm <- "stratum"
+  group$JackknType <- "HUC 12 groups"
+  group$vals <- unique(df.in$stratum)
+}
+
+
+
+# # make sampSizeVec using assigned stratum
+sampSizeVec <- table(df.full[,group$colNm]) 
+sampSizeVec["pseu-a"] <- sum(sampSizeVec) - sampSizeVec["pseu-a"]  # set samples of absences equal to total presences
 
 ##
 # tune mtry ----
@@ -153,14 +161,14 @@ sampSizeVec["pseu-a"] <- sum(sampSizeVec) - sampSizeVec["pseu-a"]  # set samples
 x <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
             ntreeTry=300, stepFactor=2, mtryStart=6,
-            strata=df.full[,"stratum"], replace=TRUE, sampsize=sampSizeVec)
+            strata=df.full[,group$colNm], replace=TRUE, sampsize=sampSizeVec)
 
 newTry <- x[x[,2] == min(x[,2]),1]
 
 y <- tuneRF(df.full[,indVarCols],
             y=df.full[,depVarCol],
             ntreeTry = 300, stepFactor = 1.5, mtryStart = max(newTry),
-            strata = df.full[,"stratum"], replace = TRUE, sampsize = sampSizeVec)
+            strata = df.full[,group$colNm], replace = TRUE, sampsize = sampSizeVec)
 
 mtry <- max(y[y[,2] == min(y[,2]),1])
 rm(x,y)
@@ -175,7 +183,7 @@ rf.find.envars <- randomForest(df.full[,indVarCols],
                         importance=TRUE,
                         ntree=ntrees,
                         mtry=mtry,
-                        strata = df.full[,"stratum"], replace = TRUE, sampsize = sampSizeVec) 
+                        strata = df.full[,group$colNm], replace = TRUE, sampsize = sampSizeVec) 
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
@@ -212,25 +220,16 @@ indVarCols <- c(7:length(names(df.full))) # get index of env. var. columns (colu
 #now that entire set is cleaned up, split back out to use any of the three DFs below
 df.in2 <- subset(df.full,pres == "1")
 df.abs2 <- subset(df.full, pres == "0")
-df.in2$stratum <- factor(df.in2$stratum)
-df.abs2$stratum <- factor(df.abs2$stratum)
-df.in2$huc12 <- factor(df.in2$huc12) 
-df.abs2$huc12 <- factor(df.abs2$huc12)
-df.in2$pres <- factor(df.in2$pres)
-df.abs2$pres <- factor(df.abs2$pres)
+# df.in2$stratum <- factor(df.in2$stratum)
+# df.abs2$stratum <- factor(df.abs2$stratum)
+# df.in2$huc12 <- factor(df.in2$huc12) 
+# df.abs2$huc12 <- factor(df.abs2$huc12)
+# df.in2$pres <- factor(df.in2$pres)
+# df.abs2$pres <- factor(df.abs2$pres)
 
 #reset the row names, needed for random subsetting method of df.abs2, below
 row.names(df.in2) <- 1:nrow(df.in2)
 row.names(df.abs2) <- 1:nrow(df.abs2)
-
-#how many groups do we have?
-numEOs <- length(unique(factor(df.in2$group_id)))
-
-#initialize the grouping list, and set up grouping variables
-group <- vector("list")
-group$colNm <- "stratum"
-group$JackknType <- "adjacent presence reach groups" # CHANGE THIS IF STRATUM CHANGES
-group$vals <- unique(df.in2$stratum)
 
 #reduce the number of trees if group$vals has more than 30 entries (removed from Aquatic for now; fixed to 1000)
 #this is for validation
@@ -297,15 +296,14 @@ if(length(group$vals)>2){
 		  trSet[,group$colNm] <- factor(trSet[,group$colNm])
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
-		  # pseu-a is resized to match training sample (originally was not)
+		  # set samples to only those groups that remain
 		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
-		  ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
+		  #ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
 		  rm(trSelStr, evSelStr, trSetBG, evSetBG, TrBGsamps, BGsampSz )
 		  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
 		                             importance=TRUE,ntree=ntrees,mtry=mtry,
 		                             strata = trSet[,group$colNm], replace = TRUE, sampsize = ssVec
-		                             #strata = trSet[,depVarCol], replace = TRUE, sampsize = ssVec
 		                             )
 		  
 		  # run a randomForest predict on the validation data
@@ -383,8 +381,8 @@ if(length(group$vals)>2){
 	for(i in 1:length(group$vals)){
 	  # get MTP: minimum training presence (minimum votes recieved [probability]
 	  # for any training point)
-	  allVotesPrespts <- trRes[[i]]$votes[,"1"][trRes[[i]]$y == 1]
-	  MTP <- min(allVotesPrespts)
+	  allVotesPrespts <- trRes[[i]]$votes[,"1"][trRes[[i]]$y==1]
+	  MTP <- min(allVotesPrespts, na.rm = TRUE)
 
 	  if(MTP == 0) {
 	    # max sensitivity plus specificity (maxSSS per Liu et al 2016)
@@ -497,7 +495,7 @@ rf.full <- randomForest(df.full[,indVarCols],
                         importance=TRUE,
                         ntree=ntrees,
                         mtry=mtry,
-                        strata = df.full[,depVarCol],
+                        strata = df.full[,group$colNm],
                         sampsize = sampSizeVec, replace = TRUE,
                         norm.votes = TRUE)
 ####
