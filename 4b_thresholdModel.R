@@ -17,9 +17,12 @@ load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 cutList <- list()
 
 #get minimum training presence
-allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("group_id", "stratum")])
-allVotesPresPts <- allVotes[allVotes$rf.full.y==1,]
-# na.rm = TRUE for testing
+#allVotes <- data.frame(rf.full$y, rf.full$votes, df.full[,c("group_id", "stratum")])
+allVotes <- data.frame(y = rf.full$y, rf.full$votes, group_id = df.full[,group$colNm])
+allVotesPresPts <- allVotes[allVotes$y==1,]
+# edge cases, remove NaN from allvotesPresPts
+allVotesPresPts <- allVotesPresPts[complete.cases(allVotesPresPts),]
+
 MTP <- min(allVotesPresPts$X1, na.rm = FALSE)
 capturedEOs <- length(unique(allVotesPresPts$group_id))  
 ###capturedPolys <- length(unique(allVotesPresPts$stratum))
@@ -41,7 +44,7 @@ cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
                     "capturedPts" = capturedPts)
 
 # get MTPG (by group)
-MTPG <- min(aggregate(allVotesPresPts$X1, by=list(allVotesPresPts$stratum), FUN = max)$x)
+MTPG <- min(aggregate(allVotesPresPts$X1, by=list(allVotesPresPts$group_id), FUN = max)$x)
 MTPGPts <- allVotesPresPts[allVotesPresPts$X1 >= MTPG,]
 capturedEOs <- length(unique(allVotesPresPts$group_id))
 capturedPts <- nrow(MTPGPts)
