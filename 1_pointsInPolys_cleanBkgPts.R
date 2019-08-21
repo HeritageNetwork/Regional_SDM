@@ -167,7 +167,7 @@ shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), c
 # find presence and presence-adjacent reaches by intersection
 bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = TRUE)
 bkgd.int <- unlist(lapply(bkgd.int, FUN = function(x) length(x)>0))
-if (TRUE %in% bkgd.int) bkgd.geom <- shapef[!bkgd.int2,] else bkgd.geom <- shapef
+if (TRUE %in% bkgd.int) bkgd.geom <- shapef[!bkgd.int,] else bkgd.geom <- shapef
 
 # reduce the number of bkg records if huge
 # use the greater of 20 * pres records or 50,000
