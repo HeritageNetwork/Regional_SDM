@@ -169,12 +169,12 @@ bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = TRUE)
 bkgd.int <- unlist(lapply(bkgd.int, FUN = function(x) length(x)>0))
 if (TRUE %in% bkgd.int) bkgd.geom <- shapef[!bkgd.int2,] else bkgd.geom <- shapef
 
-
-#### this is too aribitrary and needs to be larger for some data sets. 
-# remove here; tweak size in script 3
-# if (length(bkgd.geom$geometry) > 3000) { 
-#   bkgd.geom <- bkgd.geom[sort(sample(as.numeric(row.names(bkgd.geom)), size = 3000, replace = F)),]
-# }
+# reduce the number of bkg records if huge
+# use the greater of 20 * pres records or 50,000
+bkgTarg <- max(nrow(pres.geom) * 20, 50000)
+if(nrow(bkgd.geom) > bkgTarg){
+  bkgd.geom <- bkgd.geom[sample(nrow(bkgd.geom), size = bkgTarg, replace = FALSE),]
+}
 
 # write species reach data
 st_write(pres.geom,paste("presence/", baseName,"_prepped.shp",sep=""))
