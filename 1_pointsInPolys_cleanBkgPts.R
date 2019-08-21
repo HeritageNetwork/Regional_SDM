@@ -25,8 +25,8 @@ library(stringr)
 
 # set the working directory to the location of the csv of species by reaches
 setwd(loc_model)
-dir.create(paste0(model_species,"/inputs/presence"), recursive = T, showWarnings = F)
-dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
+dir.create(paste0(model_species,"/inputs/presence"), recursive = TRUE, showWarnings = FALSE)
+dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = FALSE)
 setwd(paste0(loc_model,"/",model_species,"/inputs"))
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
@@ -125,7 +125,7 @@ pres.geom <- merge(shapef, presReaches, by = "comid")
 
 # define project background
 # subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
-presHUCs <- pres.geom$huc12
+presHUCs <- unique(pres.geom$huc12)
 
 # test at what level HUCS are the same, and choose that level to run the predictions at.  
 # For example, if all know occurences are within the same HUC6, then the study area will be clipped to that HUC6. 
@@ -165,11 +165,16 @@ proj4 <- dbGetQuery(dbEV, SQLQuery)$p
 shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
 
 # find presence and presence-adjacent reaches by intersection
-bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = F)
-bkgd.geom <- shapef[!apply(bkgd.int, 1, FUN = any),]
-if (length(bkgd.geom$geometry) > 3000) { 
-  bkgd.geom <- bkgd.geom[sort(sample(as.numeric(row.names(bkgd.geom)), size = 3000, replace = F)),]
-}
+bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = TRUE)
+bkgd.int <- unlist(lapply(bkgd.int, FUN = function(x) length(x)>0))
+if (TRUE %in% bkgd.int) bkgd.geom <- shapef[!bkgd.int2,] else bkgd.geom <- shapef
+
+
+#### this is too aribitrary and needs to be larger for some data sets. 
+# remove here; tweak size in script 3
+# if (length(bkgd.geom$geometry) > 3000) { 
+#   bkgd.geom <- bkgd.geom[sort(sample(as.numeric(row.names(bkgd.geom)), size = 3000, replace = F)),]
+# }
 
 # write species reach data
 st_write(pres.geom,paste("presence/", baseName,"_prepped.shp",sep=""))
