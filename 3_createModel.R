@@ -317,10 +317,28 @@ if(length(group$vals)>2){
 		  #ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
 		  
 		  # Trap for the rare edge case where all groups in the training set have just one record
-		  # If that happens, no presence records ever end up in OOB pool, resulting in errors later on.
-		  # In this edge case, double the presence records
-		  if(! FALSE %in% ssVec[!names(ssVec) == 'pseu-a'] == 1){
-		    trSet <- rbind(trSet, trSet)
+		  # If that happens, no presence records ever end up in the OOB pool, resulting in errors later on.
+		  # In this edge case, group up
+		  # this should probably get moved outside the validation loop, the main reasons:
+		  #  now some validation runs may be equivalent (from lumping)
+		  #  groups with single records (and using sampsize on the group) means those records never go into OOB sample
+		  unqGps <- as.character(unique(trSet$group_id))
+		  if(length(unqGps) == length(trSet$group_id)){
+		    # group up the training set. Group all into one group if three or less. 
+		    if(length(unqGps) < 4 ){
+		      trSet$group_id <- unqGps[[1]]
+		      names(ssVec) <- c(as.character(trSet$group_id), "pseu-a")
+		      new_ssVec <- tapply(ssVec, ssVec, first)
+		      names(new_ssVec) <- c(unqGps[[1]], "pseu-a")
+		      ssVec <- new_ssVec
+		    } else {
+		      # group into two groups if four or more
+		      trSet$group_id <- unqGps[c(1,2)] # take advantage of recycling
+		      names(ssVec) <- c(as.character(trSet$group_id), "pseu-a")
+		      new_ssVec <- tapply(ssVec, names(ssVec), first)
+		      names(new_ssVec) <- c(unqGps[c(1,2)], "pseu-a")
+		      ssVec <- new_ssVec
+		    }
 		  }
 
 		  # join em, clean up
@@ -427,6 +445,7 @@ if(length(group$vals)>2){
 	    cutval.rf <- c(1-maxSSS, maxSSS)
 	    names(cutval.rf) <- c("0","1")
 	  } else if(MTP == 1) {
+	    cat("MTP == 1 in validation loop \n")
 	    newCut <- 0.99
 	    cutval.rf <- c(1-newCut, newCut)
 	    names(cutval.rf) <- c("0","1")
@@ -511,7 +530,7 @@ if(length(group$vals)>2){
 							 SEM=c(Kappa.w.summ$sem, Kappa.unw.summ$sem,auc.summ$sem,
 									tss.summ$sem, OvAc.summ$sem, specif.summ$sem,
 									sensit.summ$sem))
-	summ.table
+	print(summ.table)
 } else {
 	cat("Less than 3 stratum, can't do validation", "\n")
 	cutval <- NA
