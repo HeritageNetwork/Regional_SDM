@@ -118,6 +118,35 @@ indVarCols <- c(indVarStart:length(colList))
 df.in <- df.in[,colList]
 df.abs <- df.abs[,colList]
 
+# how many HUCs?
+numHuc12 <- length(unique(df.in$stratum))
+numHuc10 <- length(unique(substr(df.in$huc12,1,10)))
+numHuc8 <- length(unique(substr(df.in$huc12,1,8)))
+# how many groups based on stream grouping methods
+numGps <- length(unique(df.in$group_id))
+
+#initialize the grouping list, and set up grouping variables
+group <- vector("list")
+if(numHuc12 < 5){
+  group$colNm <- "group_id"
+  group$JackknType <- "adjacent presence reach groups"
+  group$vals <- unique(df.in$group_id)
+} else if(numHuc12 < 100) {
+  group$colNm <- "stratum"
+  group$JackknType <- "HUC 12 groups"
+  group$vals <- unique(df.in$stratum)
+} else if(numHuc10 < 100) {
+  df.in$stratum <- substr(df.in$huc12,1,10)
+  group$colNm <- "stratum"
+  group$JackknType <- "HUC 10 groups"
+  group$vals <- unique(df.in$stratum)
+} else  {
+  df.in$stratum <- substr(df.in$huc12,1,8)
+  group$colNm <- "stratum"
+  group$JackknType <- "HUC 8 groups"
+  group$vals <- unique(df.in$stratum)
+}
+
 # now remove absence rows with NAs
 df.abs <- df.abs[complete.cases(df.abs),]
 
@@ -131,25 +160,7 @@ df.full$group_id <- factor(df.full$group_id)
 df.full$pres <- factor(df.full$pres)
 df.full$huc12 <- factor(df.full$huc12)
 df.full$species_cd <- factor(df.full$species_cd)
-
-# how many HUCs?
-numHucs <- length(unique(df.in$stratum))
-# how many groups based on stream grouping methods
-numGps <- length(unique(df.in$group_id))
-
-#initialize the grouping list, and set up grouping variables
-group <- vector("list")
-if(numHucs < 5){
-  group$colNm <- "group_id"
-  group$JackknType <- "adjacent presence reach groups"
-  group$vals <- unique(df.in$group_id)
-} else {
-  group$colNm <- "stratum"
-  group$JackknType <- "HUC 12 groups"
-  group$vals <- unique(df.in$stratum)
-}
-
-
+df.full$stratum <- factor(df.full$stratum)
 
 # # make sampSizeVec using assigned stratum
 sampSizeVec <- table(df.full[,group$colNm]) 
@@ -176,7 +187,7 @@ rm(x,y)
 ##
 # Remove the least important env vars ----
 ##
-
+print("Removing least important predictors")
 ntrees <- 1000
 rf.find.envars <- randomForest(df.full[,indVarCols],
                         y=df.full[,depVarCol],
@@ -239,6 +250,16 @@ row.names(df.abs2) <- 1:nrow(df.abs2)
 #	ntrees <- 1000
 #}
 
+
+# reduce the number of validation loops for this trial
+# randomly draw to get the validation set.
+if(length(group$vals) > 20) {
+  group$vals <- sample(group$vals, size = 20)
+  group$vals <- factor(group$vals)
+} 
+
+
+
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
    names(trRes) <- group$vals[]
@@ -282,23 +303,32 @@ if(length(group$vals)>2){
 		   # Create an object that stores the select command, to be used by subset.
 		  trSelStr <- parse(text=paste(group$colNm[1]," != '", group$vals[[i]],"'",sep=""))
 		  evSelStr <- parse(text=paste(group$colNm[1]," == '", group$vals[[i]],"'",sep=""))
-		   # apply the subset. do.call is needed so selStr can be evaluated correctly
+		  # apply the subset. do.call is needed so selStr can be evaluated correctly
 		  trSet <- do.call("subset",list(df.in2, trSelStr))
 		  evSet[[i]] <- do.call("subset",list(df.in2, evSelStr))
-	   # use sample to grab a random subset from the background points
-		  BGsampSz <- nrow(evSet[[i]]) #* 2 # this was initially set to 10, but in many cases there aren't enough, so we moved it down to 2.
+	    # use sample to grab a random subset from the background points
+		  BGsampSz <- nrow(evSet[[i]]) * 10 #* 2 # this was initially set to 10, but in many cases there aren't enough, so we moved it down to 2.
 		  evSetBG <- df.abs2[sample(nrow(df.abs2), BGsampSz, replace=FALSE, prob=NULL),]
 		  # get the other portion for the training set
 		  TrBGsamps <- attr(evSetBG, "row.names") #get row.names as integers
 		  trSetBG <-  df.abs2[-TrBGsamps,]  #get everything that isn't in TrBGsamps
+		  # set samples to only those groups that remain
+		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
+		  #ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
+		  
+		  # Trap for the rare edge case where all groups in the training set have just one record
+		  # If that happens, no presence records ever end up in OOB pool, resulting in errors later on.
+		  # In this edge case, double the presence records
+		  if(! FALSE %in% ssVec[!names(ssVec) == 'pseu-a'] == 1){
+		    trSet <- rbind(trSet, trSet)
+		  }
+
 		  # join em, clean up
 		  trSet <- rbind(trSet, trSetBG)
 		  trSet[,group$colNm] <- factor(trSet[,group$colNm])
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
-		  # set samples to only those groups that remain
-		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
-		  #ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
+		  
 		  rm(trSelStr, evSelStr, trSetBG, evSetBG, TrBGsamps, BGsampSz )
 		  
 		  trRes[[i]] <- randomForest(trSet[,indVarCols],y=trSet[,depVarCol],
@@ -396,7 +426,11 @@ if(length(group$vals)>2){
 	    maxSSS <- sss[which.max(sss$sss),"cutSens"]#/numCores
 	    cutval.rf <- c(1-maxSSS, maxSSS)
 	    names(cutval.rf) <- c("0","1")
-	  } else {
+	  } else if(MTP == 1) {
+	    newCut <- 0.99
+	    cutval.rf <- c(1-newCut, newCut)
+	    names(cutval.rf) <- c("0","1")
+    } else {
 	    cutval.rf <- c(1-MTP, MTP)
 	    names(cutval.rf) <- c("0","1")
 	  }
