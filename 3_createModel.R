@@ -217,11 +217,11 @@ subsetNumberofEnvars <- length(impEnvVars)
 rm(y)
 # which columns are these, then flip the non-envars to TRUE
 impEnvVarCols <- names(df.full) %in% names(impEnvVars)
-impEnvVarCols[1:6] <- TRUE  # first 6 columns are fixed attributes, not env. vars
+impEnvVarCols[1:(indVarStart-1)] <- TRUE  # use indVarStart to define where the non-env vars are
 # subset!
 df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
-indVarCols <- c(7:length(names(df.full))) # get index of env. var. columns (columns 7+)
+indVarCols <- c(indVarStart:length(names(df.full))) # get index of env. var. columns (columns 7+)
 
 ##
 # code above is for removing least important env vars
@@ -249,16 +249,6 @@ row.names(df.abs2) <- 1:nrow(df.abs2)
 #} else {
 #	ntrees <- 1000
 #}
-
-
-# reduce the number of validation loops for this trial
-# randomly draw to get the validation set.
-if(length(group$vals) > 20) {
-  group$vals <- sample(group$vals, size = 20)
-  group$vals <- factor(group$vals)
-} 
-
-
 
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
