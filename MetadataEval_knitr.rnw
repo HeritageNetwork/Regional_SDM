@@ -102,7 +102,7 @@ cat("Groups = ", group$JackknType,";", sep = "")
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
 	summ.table <- data.frame(Name=c("Presence reaches","Reach groups","Background reaches"), #note how many reach groups (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
-                         Number=c(nrow(subset(df.full, pres == 1)),length(unique(df.in2$stratum)),nrow(subset(df.full, pres == 0))
+                         Number=c(nrow(subset(df.full, pres == 1)),length(group$vals),nrow(subset(df.full, pres == 0))
                          ))
   print(xtable(summ.table),
              floating = FALSE, include.rownames=FALSE)
