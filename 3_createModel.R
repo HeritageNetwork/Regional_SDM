@@ -147,6 +147,47 @@ if(numHuc12 < 5){
   group$vals <- unique(df.in$stratum)
 }
 
+## groups with only one record (reach) in them are problematic
+## in that they'll never be chosen as out-of-bag (OOB) samples
+## because we are forcing sampling by group. If all groups in a subset from one of the validation loops
+## have one record each, then the script will error out. (prediction is NaN)
+## solution: lump up any group that has only one record
+df.in[,group$colNm] <- as.character(df.in[,group$colNm])
+groupCount <- table(df.in[,group$colNm])
+if(1 %in% groupCount) {
+  gpsWithOne <- groupCount[groupCount == 1]
+  #merge into groups of two or three (if uneven)
+  isEven <- length(gpsWithOne) %% 2 == 0
+  if(length(gpsWithOne) == 1){
+    #if only one group has a singleton reach, merge it with its neighbor
+    mergeGroup <- names(gpsWithOne)
+    mergeLocation <- grep(mergeGroup, df.in2$group_id) - 1
+    if(mergeLocation == 0) mergeLocation <- 2
+    targetGroup <- df.in2[,group$colNm][mergeLocation]
+    df.in[df.in[,group$colNm] == mergeGroup,group$colNm] <- targetGroup
+    rm(mergeGroup, mergeLocation, targetGroup)
+  } else if (isEven){
+    targetGroups <- names(gpsWithOne)[c(1:length(gpsWithOne))[c(1:length(gpsWithOne)) %% 2 == 1]]
+    mergeGroups <- names(gpsWithOne)[c(1:length(gpsWithOne))[c(1:length(gpsWithOne)) %% 2 == 0]]
+    df.in[df.in[,group$colNm] %in% as.character(mergeGroups),group$colNm] <- targetGroups      
+    rm(mergeGroups, targetGroups)
+  } else {
+    # last singleton needs to merge to final group
+    targetGroups <- names(gpsWithOne)[c(1:length(gpsWithOne))[c(1:length(gpsWithOne)) %% 2 == 1]]
+    mergeGroups <- names(gpsWithOne)[c(1:length(gpsWithOne))[c(1:length(gpsWithOne)) %% 2 == 0]]
+    lastSingleton <- targetGroups[[length(targetGroups)]]
+    lastGroup <- targetGroups[[length(targetGroups)-1]]
+    targetGroups <- targetGroups[-length(targetGroups)]
+    df.in[df.in[,group$colNm] %in% as.character(mergeGroups),group$colNm] <- targetGroups
+    df.in[df.in[,group$colNm] %in% as.character(lastSingleton),group$colNm] <- lastGroup
+    rm(mergeGroups, targetGroups, lastSingleton, lastGroup)
+  }
+  rm(gpsWithOne, isEven)
+}
+rm(groupCount)
+# reset group values, needed if we dipped into the above if statement, else harmless
+group$vals <- unique(df.in[,group$colNm])
+
 # now remove absence rows with NAs
 df.abs <- df.abs[complete.cases(df.abs),]
 
@@ -242,14 +283,6 @@ df.abs2 <- subset(df.full, pres == "0")
 row.names(df.in2) <- 1:nrow(df.in2)
 row.names(df.abs2) <- 1:nrow(df.abs2)
 
-#reduce the number of trees if group$vals has more than 30 entries (removed from Aquatic for now; fixed to 1000)
-#this is for validation
-#if(length(group$vals) > 30) {
-#	ntrees <- 750
-#} else {
-#	ntrees <- 1000
-#}
-
 ##initialize the Results vectors for output from the jackknife runs
 trRes <- vector("list",length(group$vals))
    names(trRes) <- group$vals[]
@@ -288,7 +321,7 @@ v.rocr.pred <- vector("list",length(group$vals))
 ## Validation stats in tabular form are the final product.
 #######
       
-if(length(group$vals)>2){
+if(length(group$vals)>1){
 	for(i in 1:length(group$vals)){
 		   # Create an object that stores the select command, to be used by subset.
 		  trSelStr <- parse(text=paste(group$colNm[1]," != '", group$vals[[i]],"'",sep=""))
@@ -306,31 +339,6 @@ if(length(group$vals)>2){
 		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
 		  #ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
 		  
-		  # Trap for the rare edge case where all groups in the training set have just one record
-		  # If that happens, no presence records ever end up in the OOB pool, resulting in errors later on.
-		  # In this edge case, group up
-		  # this should probably get moved outside the validation loop, the main reasons:
-		  #  now some validation runs may be equivalent (from lumping)
-		  #  groups with single records (and using sampsize on the group) means those records never go into OOB sample
-		  unqGps <- as.character(unique(trSet$group_id))
-		  if(length(unqGps) == length(trSet$group_id)){
-		    # group up the training set. Group all into one group if three or less. 
-		    if(length(unqGps) < 4 ){
-		      trSet$group_id <- unqGps[[1]]
-		      names(ssVec) <- c(as.character(trSet$group_id), "pseu-a")
-		      new_ssVec <- tapply(ssVec, ssVec, first)
-		      names(new_ssVec) <- c(unqGps[[1]], "pseu-a")
-		      ssVec <- new_ssVec
-		    } else {
-		      # group into two groups if four or more
-		      trSet$group_id <- unqGps[c(1,2)] # take advantage of recycling
-		      names(ssVec) <- c(as.character(trSet$group_id), "pseu-a")
-		      new_ssVec <- tapply(ssVec, names(ssVec), first)
-		      names(new_ssVec) <- c(unqGps[c(1,2)], "pseu-a")
-		      ssVec <- new_ssVec
-		    }
-		  }
-
 		  # join em, clean up
 		  trSet <- rbind(trSet, trSetBG)
 		  trSet[,group$colNm] <- factor(trSet[,group$colNm])
