@@ -8,7 +8,7 @@ rm(list=ls())
 # set project folder, db, species code, and species reaches filename for this run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "procpict" #pletcyph
+model_species <- "ellilanc" #pletcyph
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -17,6 +17,8 @@ loc_model <- here("_data", "species")
 nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".csv")) 
+# predetermined range boundary shapefile
+nm_rangeFile <- here("_data", "occurrence", paste0(model_species, "_range.shp")) 
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature","US_States.shp") # background grey reference lines in map
 
@@ -66,6 +68,7 @@ run_SDM(
   model_species = model_species, # species code in DB; new folder to create in loc_model if not existing
   loc_scripts = loc_scripts, 
   nm_presFile = nm_presFile,
+  nm_rangeFile = nm_rangeFile,
   nm_db_file = nm_db_file, 
   loc_model = loc_model,
   nm_bkg = nm_bkg,
@@ -163,7 +166,7 @@ rm(list=ls())
 # so you need to have executed run_SDM in step 2 first.
 
 # for scripts 1-3, run just the following 3 lines
-model_species <- "procpict"
+model_species <- "ellilanc"
 load(here("_data","species",model_species,"runSDM_paths.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
