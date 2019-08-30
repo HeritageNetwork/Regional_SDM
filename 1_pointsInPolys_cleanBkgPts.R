@@ -153,32 +153,13 @@ if(file.exists(nm_rangeFile)){
   } else {
     huc_level <- 4 # changed from 2 to try to narrow up the prediction area
   }
-  fn_args$huc_level <- huc_level
-  save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
   message("Using huc_level of ", huc_level , "...") 
 }
 
+fn_args$huc_level <- huc_level
+fn_args$presHUCs <- presHUCs
+save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
 
-# test at what level HUCS are the same, and choose that level to run the predictions at.  
-# For example, if all know occurences are within the same HUC6, then the study area will be clipped to that HUC6. 
-# If they are not same at any level, then the model will be run at the full extant of the predictor layer.  
-# THis is used to define the project background below.
-# if (is.null(huc_level)) {
-#   if(length(unique(substr(presHUCs,1,8)))==1){
-#     huc_level <- 8
-#   } else if(length(unique(substr(presHUCs,1,6)))==1){
-#     huc_level <- 6  
-#   } else if(length(unique(substr(presHUCs,1,4)))==1){
-#     huc_level <- 4  
-#   } else if(length(unique(substr(presHUCs,1,2)))==1){
-#     huc_level <- 2 
-#   } else {
-#     huc_level <- 4 # changed from 2 to try to narrow up the prediction area
-#   }
-#   fn_args$huc_level <- huc_level
-#   save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
-# }
-# message("Using huc_level of ", huc_level , "...")
 
 # create background geom based on HUCsubset
 dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
@@ -195,7 +176,6 @@ names(shapef) <- tolower(names(shapef))
 SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_bkg[2], "';") 
 proj4 <- dbGetQuery(dbEV, SQLQuery)$p
 shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
-#shapef <- st_zm(shapef)
 
 
 # find presence and presence-adjacent reaches by intersection
