@@ -102,7 +102,7 @@ cat("Groups = ", group$JackknType,";", sep = "")
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
 	summ.table <- data.frame(Name=c("Presence reaches","Reach groups","Background reaches"), #note how many reach groups (replace poly and EOs, keep EOs/observations?, # length( unique(df.in2$huc12))))
-                         Number=c(nrow(subset(df.full, pres == 1)),length(unique(df.in2$stratum)),nrow(subset(df.full, pres == 0))
+                         Number=c(nrow(subset(df.full, pres == 1)),length(group$vals),nrow(subset(df.full, pres == 0))
                          ))
   print(xtable(summ.table),
              floating = FALSE, include.rownames=FALSE)
@@ -316,7 +316,7 @@ Species distribution model outputs display the probability (0-1) of a location (
 \noindent
 \begin{minipage}{\linewidth} %keep table header with table
 \small
-Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\endNoHyper} calculated from the final model. The Value column reports the threshold; Groups indicates the percentage (number in brackets) of groups within which at least one point was predicted as suitable habitat; Pct indicates the percentage of presence reaches predicted having suitable habitat. Total numbers of presence reaches and contiguous presence reach groups used in the final model are reported in Table 1.
+Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\endNoHyper} calculated from the final model. The Value column reports the threshold; Groups indicates the percentage (number in brackets) of groups within which at least one reach was predicted as suitable habitat; Pct indicates the percentage of presence reaches predicted having suitable habitat. Total numbers of presence reaches and contiguous presence reach groups used in the final model are reported in Table 1.
 
 \smallskip
 \begin{center}
@@ -423,13 +423,13 @@ basetiles <- read_osm(bbox, type = mtype, ext = 1.1)
 # plot it
 qtm(basetiles) + 
   tm_shape(results_shape, name="modeled suitability") + # stream linework #, simplify = 0.5
-    tm_lines(col="prbblty", palette=clrs, labels=c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability"),
-             title.col = "modeled suitability") +     
-  if(file.exists("aquaPolys")) tm_shape(aquaPolys) + tm_fill(col="prbblty", palette=clrs, legend.show = FALSE) +     
+    tm_lines(col="prbblty", palette=clrs, labels=c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability"), title.col = "modeled suitability") + {
+      if(file.exists("aquaPolys")) tm_shape(aquaPolys) + tm_fill(col="prbblty", palette=clrs, legend.show = FALSE) 
+  } +
   tm_shape(referenceBoundaries) +
-    tm_borders(col = "grey", lwd = 1) + 
+  tm_borders(col = "grey", lwd = 1) +
   tm_shape(studyAreaExtent) + 
-    tm_borders(col = "red", lwd = 2) +
+  tm_borders(col="red", lwd=2, alpha=1) +
   tm_compass(north = 0, type = "arrow", position = c("left","bottom")) + 
   tm_scale_bar() +
   tm_layout(outer.margins=c(0,0,0,0))

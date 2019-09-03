@@ -21,7 +21,7 @@ library(tables)
 library(tmap)
 library(tmaptools)
 library(OpenStreetMap)
-library(rmapshaper)
+#library(rmapshaper)
 
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
@@ -107,8 +107,7 @@ sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue", "capturedEOs", "capturedPts", "cutDescription")]
 names(sdm.thresh.table) <- c("Threshold", "Value", "Groups", "Pct","Description")
 sdm.thresh.table$Description <- gsub("points", "reaches", sdm.thresh.table$Description, fixed=TRUE) # hack to change points -> reaches
-sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/numEOs*100, 1), "(",sdm.thresh.table$Groups, ")", sep="")
-#sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),  "(",sdm.thresh.table$Polys, ")", sep="")
+sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/length(group$vals)*100, 1), "(",sdm.thresh.table$Groups, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),  sep="")
 
