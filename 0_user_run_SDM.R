@@ -8,7 +8,7 @@ rm(list=ls())
 # set project folder, db, species code, and species reaches filename for this run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "procpict" #pletcyph
+model_species <- "ellilanc" #pletcyph
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -24,7 +24,7 @@ nm_refBoundaries = here("_data","other_spatial","feature","US_States.shp") # bac
 project_overview = "The following metadata describes the SDM for one species of 2,700 included in a Map of Biodiversity Irreplaceability (MoBI) in the continental U.S. developed by NatureServe and the Network of Natural Heritage Programs and funded by ESRI."
 
 # model comment in database
-model_comments = ""
+model_comments = "second try at Tim's base settings for grouping, changed to 75"
 # comment printed in PDF metadata
 metaData_comments = ""
 # your name
