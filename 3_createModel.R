@@ -163,7 +163,7 @@ if(1 %in% groupCount) {
     mergeGroup <- names(gpsWithOne)
     mergeLocation <- grep(mergeGroup, df.in2$group_id) - 1
     if(mergeLocation == 0) mergeLocation <- 2
-    targetGroup <- df.in2[,group$colNm][mergeLocation]
+    targetGroup <- df.in[,group$colNm][mergeLocation]
     df.in[df.in[,group$colNm] == mergeGroup,group$colNm] <- targetGroup
     rm(mergeGroup, mergeLocation, targetGroup)
   } else if (isEven){
