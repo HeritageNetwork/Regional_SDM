@@ -161,7 +161,7 @@ if(1 %in% groupCount) {
   if(length(gpsWithOne) == 1){
     #if only one group has a singleton reach, merge it with its neighbor
     mergeGroup <- names(gpsWithOne)
-    mergeLocation <- grep(mergeGroup, df.in2$group_id) - 1
+    mergeLocation <- grep(mergeGroup, df.in$group_id) - 1
     if(mergeLocation == 0) mergeLocation <- 2
     targetGroup <- df.in[,group$colNm][mergeLocation]
     df.in[df.in[,group$colNm] == mergeGroup,group$colNm] <- targetGroup
