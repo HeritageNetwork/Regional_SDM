@@ -18,8 +18,8 @@ setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 # load the environmental variables -- analogous to the development of the raster stack in the terr models
-presHUC <- stringr::str_pad(as.character(df.full$huc12[df.full$pres==1]), 12, pad = 0)
-HUCsubset <- unique(substr(presHUC, 1, huc_level)) # subset to number of huc digits
+presHUC <- fn_args$presHUCs  #stringr::str_pad(as.character(df.full$huc12[df.full$pres==1]), 12, pad = 0)
+HUCsubset <- unique(substr(presHUC, 1, fn_args$huc_level)) # subset to number of huc digits
 
 # SQLite database integration for Env Vars
 dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])

@@ -131,11 +131,11 @@ if(numHuc12 < 5){
   group$colNm <- "group_id"
   group$JackknType <- "adjacent presence reach groups"
   group$vals <- unique(df.in$group_id)
-} else if(numHuc12 < 100) {
+} else if(numHuc12 < 75) {
   group$colNm <- "stratum"
   group$JackknType <- "HUC 12 groups"
   group$vals <- unique(df.in$stratum)
-} else if(numHuc10 < 100) {
+} else if(numHuc10 < 75) {
   df.in$stratum <- substr(df.in$huc12,1,10)
   group$colNm <- "stratum"
   group$JackknType <- "HUC 10 groups"
