@@ -25,7 +25,7 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric,calc}
 
-\newcommand\score[2]{
+\newcommand\starscore[2]{
 \pgfmathsetmacro\pgfxa{#1+1}
 \tikzstyle{scorestars}=[star, star points=5, star point ratio=2.25, draw,inner sep=0.15em,anchor=outer point 3]
 \begin{tikzpicture}[baseline]
@@ -355,17 +355,27 @@ Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\end
 \noindent
 \textbf{Model Evaluation and Intended Use} \\\\
 All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 {\protect\NoHyper\cite{SofaerEtAl2019}\protect\endNoHyper}. \Sexpr{as.character(project_blurb)}
-\\
+
+\bigskip
 \underline{Expert Review}\\
-The following is a summary of the reviews by NatureServe Network biologists received to date. Something somethng about 4/5 star reviews versus 3 star, versus 1-2 stars.
+The following is a summary of the reviews by NatureServe Network biologists received to date. Biologists assigned an overall score to the model (1 = poorest performance; 5 = highest performance) and also had an opportunity to make specific suggestions related to modeling extent. Summaries of overall scores are reported here. 
 \begin{table}[H]
  \small
   \centering
-  \begin{tabular}{p{5cm}p{3cm}p{5cm}}
-  Star Rating & Reviewing States & Notes \\
-  \hline
-  \score{4.4}{5} based on X reviews & PA, NY, VA & Some Notes \\
-  \hline
+  %\begin{tabular}{p{4cm}p{2cm}p{2cm}p{2cm}p{2cm}}
+  \begin{tabular}{c c c c c }
+  Mean Star Rating 
+    & Number of reviews 
+    & Max rating 
+    & Min rating
+    & Median rating
+\\ \hline
+  \starscore{\Sexpr{meanRating}}{5}(\Sexpr{meanRating}) 
+    & \Sexpr{numReviewers} 
+    & \Sexpr{maxRating}
+    & \Sexpr{minRating}
+    & \Sexpr{medianRating}
+\\ \hline
 \end{tabular}
 \end{table}  
 \smallskip

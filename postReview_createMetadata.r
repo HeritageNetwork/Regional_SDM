@@ -127,14 +127,6 @@ grank_desc <- dbGetQuery(db, SQLquery)
 NSurl <- paste("http://explorer.natureserve.org/servlet/NatureServe?searchName=",gsub(" ", "+", ElementNames[[1]], fixed=TRUE), sep="")
 
 ## get Model Evaluation and Use data ----
-SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, interative, spdata_dataqualNotes, spdata_absNotes, spdata_evalNotes, envvar_relevanceNotes, envvar_alignNotes, process_algoNotes, process_sensNotes, process_rigorNotes, process_performNotes, process_reviewNotes, products_mappedNotes, products_supportNotes, products_repoNotes, interativeNotes ", 
-                  "FROM lkpSpeciesRubric ", 
-                  "WHERE sp_code ='", model_species, "'; ", sep="")
-sdm.modeluse <- dbGetQuery(db, statement = SQLquery)
-sdm.modeluse[is.na(sdm.modeluse)] <- " "
-sdm.modeluse[sdm.modeluse=="I"] <- "\\cellcolor[HTML]{9AFF99} Ideal"
-sdm.modeluse[sdm.modeluse=="A"] <- "\\cellcolor[HTML]{FFFFC7} Acceptable"
-sdm.modeluse[sdm.modeluse=="C"] <- "\\cellcolor[HTML]{FD6864} Interpret with Caution"
 
 ## Get env. var lookup table ----
 SQLquery <- paste0("SELECT gridName g from tblModelResultsVarsUsed where model_run_name = '",
@@ -163,10 +155,62 @@ for (l in 1:length(sdm.var.info$`Variable Description`)) {
 # put descriptions in parboxes for multiple lines
 sdm.var.info$`Variable Description` <- paste0("\\parbox{20cm}{",sdm.var.info$`Variable Description`,"}")
 
+
+# model review data from Tracking DB
+fn <- here("_data","databases", "mobi_tracker_connection_string_short.dsn")
+cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
+
+sql <- paste0("SELECT UserID, rating, comment
+              FROM ModelReviewToolOverallFeedback
+              WHERE (((ModelReviewToolOverallFeedback.cutecode)= '", ElementNames$Code, "' ));")
+reviewData <- dbGetQuery(cn, sql)
+
+# get info about revisions:
+  # if on a cycle greater than 1 (but not a 'both' species with a cycle of 2), then count as revised
+  # if HUCs are getting been removed, count as revised
+
+
+dbDisconnect(cn)
+rm(cn)
+
+meanRating <- mean(reviewData$rating)
+minRating <- min(reviewData$rating)
+maxRating <- max(reviewData$rating)
+medianRating <- median(reviewData$rating)
+numReviewers <- nrow(reviewData)
+numReviewersPhrase <- ifelse(numReviewers == 0, "",
+                             ifelse(numReviewers == 1, paste0(" (",numReviewers," reviewer)"),
+                             paste0(" (",numReviewers," reviewers)")))
+
+anotherNumReviewersPhrase <- ifelse(numReviewers == 0, "",
+                             ifelse(numReviewers == 1, paste0("Based on ",numReviewers," review."),
+                                    paste0("Based on ",numReviewers," reviewers")))
+
+revMatrix <- data.frame(
+                        "rAttribute" = c("C", "Cr","A","I"),
+                        "rComments" = c(
+                  "Model was not reviewed by regional, taxonomic experts.",
+                  paste0("Model review indicates possible issues with this model.",numReviewersPhrase), 
+                  paste0("Model was reviewed by regional, taxonomic experts.",numReviewersPhrase),
+                  paste0("Model reviewed by regional, taxonomic experts with high marks.",numReviewersPhrase)
+                          ))
+revAtt <- ifelse(nrow(reviewData) == 0 , "C", 
+                 ifelse(meanRating < 2.5, "Cr",
+                        ifelse(meanRating < 3.5, "A", "I")))
+revUpdate <- revMatrix[match(revAtt, revMatrix$rAttribute),]
+
+sdm.modeluse$process_review <- as.character(revUpdate$rAttribute)
+sdm.modeluse$process_reviewNotes <- as.character(revUpdate$rComments)
+
+
+sdm.modeluse[is.na(sdm.modeluse)] <- " "
+sdm.modeluse[sdm.modeluse=="I"] <- "\\cellcolor[HTML]{9AFF99} Ideal"
+sdm.modeluse[sdm.modeluse=="A"] <- "\\cellcolor[HTML]{FFFFC7} Acceptable"
+sdm.modeluse[sdm.modeluse=="C"] <- "\\cellcolor[HTML]{FD6864} Interpret with Caution"
+
 # fix greater than and less than symbol in rubric table
 sdm.modeluse$process_performNotes <- gsub(">=","$\\\\geq$", sdm.modeluse$process_performNotes)
 sdm.modeluse$process_performNotes <- gsub("<","$<$ ", sdm.modeluse$process_performNotes)
-
 
 ## Run knitr and create metadata ----
 
@@ -181,8 +225,8 @@ sdm.modeluse$process_performNotes <- gsub("<","$<$ ", sdm.modeluse$process_perfo
 setwd("metadata")
 # knit2pdf errors for some reason...just knit then call directly
 #knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr_postReview.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+#knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+knit2pdf(paste(loc_scripts,"postReview_MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
 #call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
 # call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex") # this stops execution if there is an error. Not really necessary
 #system(call)
