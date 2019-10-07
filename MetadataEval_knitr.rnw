@@ -551,8 +551,8 @@ NatureServe and Heritage Network Partners. \Sexpr{format(Sys.Date(), "%Y")}. Spe
 \pagebreak
 \noindent
 
-\begin{table}
-\caption{Appendix 1. Descriptions for environmental variables included in model.}
+Appendix 1. Descriptions for environmental variables included in model.
+\begin{table}[H]
 \resizebox{\textwidth}{!}{
 <<tableFour, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
