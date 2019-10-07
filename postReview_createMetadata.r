@@ -168,32 +168,46 @@ reviewData <- dbGetQuery(cn, sql)
 # get info about revisions:
   # if on a cycle greater than 1 (but not a 'both' species with a cycle of 2), then count as revised
   # if HUCs are getting been removed, count as revised
-
-
 dbDisconnect(cn)
 rm(cn)
 
-meanRating <- mean(reviewData$rating)
-minRating <- min(reviewData$rating)
-maxRating <- max(reviewData$rating)
-medianRating <- median(reviewData$rating)
 numReviewers <- nrow(reviewData)
-numReviewersPhrase <- ifelse(numReviewers == 0, "",
-                             ifelse(numReviewers == 1, paste0(" (",numReviewers," reviewer)"),
-                             paste0(" (",numReviewers," reviewers)")))
+if(numReviewers == 0){
+  numReviewersPhrase = ""
+  meanRating <- "-"
+  minRating <- "-"
+  maxRating <- "-"
+  medianRating <- "-"
+} else if (numReviewers == 1){
+  numReviewersPhrase <- paste0(" (",numReviewers," reviewer)")
+  meanRating <- reviewData$rating
+  minRating <- "-"
+  maxRating <- "-"
+  medianRating <- "-"
+  revMatrix <- data.frame(
+    "rAttribute" = c("C", "Cr","A","I"),
+    "rComments" = c(
+      "Model was not reviewed by regional, taxonomic experts.",
+      paste0("Model review indicates possible issues with this model.",numReviewersPhrase), 
+      paste0("Model was reviewed by a regional, taxonomic expert.",numReviewersPhrase),
+      paste0("Model reviewed by a regional, taxonomic expert and given high marks.",numReviewersPhrase)
+    ))
+} else {
+  numReviewersPhrase <- paste0(" (",numReviewers," reviewers)")
+  meanRating <- mean(reviewData$rating)
+  minRating <- min(reviewData$rating)
+  maxRating <- max(reviewData$rating)
+  medianRating <- median(reviewData$rating)
+  revMatrix <- data.frame(
+    "rAttribute" = c("C", "Cr","A","I"),
+    "rComments" = c(
+      "Model was not reviewed by regional, taxonomic experts.",
+      paste0("Model review indicates possible issues with this model.",numReviewersPhrase), 
+      paste0("Model was reviewed by regional, taxonomic experts.",numReviewersPhrase),
+      paste0("Model reviewed by regional, taxonomic experts and given high marks.",numReviewersPhrase)
+    ))
+}
 
-anotherNumReviewersPhrase <- ifelse(numReviewers == 0, "",
-                             ifelse(numReviewers == 1, paste0("Based on ",numReviewers," review."),
-                                    paste0("Based on ",numReviewers," reviewers")))
-
-revMatrix <- data.frame(
-                        "rAttribute" = c("C", "Cr","A","I"),
-                        "rComments" = c(
-                  "Model was not reviewed by regional, taxonomic experts.",
-                  paste0("Model review indicates possible issues with this model.",numReviewersPhrase), 
-                  paste0("Model was reviewed by regional, taxonomic experts.",numReviewersPhrase),
-                  paste0("Model reviewed by regional, taxonomic experts with high marks.",numReviewersPhrase)
-                          ))
 revAtt <- ifelse(nrow(reviewData) == 0 , "C", 
                  ifelse(meanRating < 2.5, "Cr",
                         ifelse(meanRating < 3.5, "A", "I")))
