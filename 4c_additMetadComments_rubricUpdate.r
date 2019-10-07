@@ -61,6 +61,15 @@ sql <- paste0("SELECT Reviewer.EGT_ID, Reviewer.response, Reviewer.date_complete
               FROM Reviewer
               WHERE (((Reviewer.EGT_ID)= ", ElementNames$EGT_ID, " ));")
 reviewerData <- dbGetQuery(cn, sql)
+
+sql <- paste0("SELECT FinalSppList.Scientific_Name, FinalSppList.Common_Name, FinalSppList.ELEMENT_GLOBAL_ID, ",
+        "ModelCycle.EGT_ID, ModelCycle.model_cycle, SpeciesWorkFlow.cutecode, SpeciesWorkFlow.model_type, ",
+        "SpeciesWorkFlow.modeled, SpeciesWorkFlow.alternate_method, SpeciesWorkFlow.existing_model ",
+        "FROM (FinalSppList INNER JOIN ModelCycle ON FinalSppList.ID = ModelCycle.final_spp_list_ID) ",
+        "INNER JOIN SpeciesWorkFlow ON ModelCycle.ID = SpeciesWorkFlow.model_cycle_ID ",
+        "WHERE (((FinalSppList.ELEMENT_GLOBAL_ID)= ", ElementNames$EGT_ID, "));")
+modelCycleData <- dbGetQuery(cn, sql)
+
 dbDisconnect(cn)
 rm(cn)
 
@@ -126,6 +135,27 @@ revAtt <- ifelse(sum(reviewerData$response) > 0 , "A", "C")
 revUpdate <- revMatrix[match(revAtt, revMatrix$rAttribute),]
 sql <- paste0("update lkpSpeciesRubric set process_review = '", revUpdate$rAttribute, 
               "', process_reviewNotes = '", revUpdate$rComments, 
+              "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
+dbExecute(db, statement = sql)
+## iterative
+iterMatrix <- data.frame("iAttribute" = c("C","A"),
+                          "iComments" = c("Model not re-run with new or modified data.",
+                                          "Model was re-run with new or modified data."))
+nCycles <- nrow(modelCycleData)
+maxCycle <- max(modelCycleData$model_cycle)
+if(nCycles > 1){
+  if(nCycles == 2 & "Both" %in% modelCycleData$model_type){
+    iterAtt <- "C"
+  } else if(TRUE %in% modelCycleData[modelCycleData$model_cycle == maxCycle, c("alternate_method","existing_model")]){
+    iterAtt <- "C"
+  } else {
+    iterAtt <- "A"
+  }
+}
+
+iterUpdate <- iterMatrix[match(iterAtt, iterMatrix$iAttribute),]
+sql <- paste0("update lkpSpeciesRubric set interative = '", iterUpdate$iAttribute, 
+              "', interativeNotes = '", iterUpdate$iComments, 
               "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
 dbExecute(db, statement = sql)
 
