@@ -354,11 +354,11 @@ Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\end
 \bigskip
 \noindent
 \textbf{Model Evaluation and Intended Use} \\\\
-All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 {\protect\NoHyper\cite{SofaerEtAl2019}\protect\endNoHyper}. \Sexpr{as.character(project_blurb)}
+All SDMs are sensitive to data inputs and methodological choices. Table 4 summarizes ratings by reviewers of the model output. Table 5 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 {\protect\NoHyper\cite{SofaerEtAl2019}\protect\endNoHyper}. \Sexpr{as.character(project_blurb)}
 
 \bigskip
-\underline{Expert Review}\\
-The following is a summary of the reviews by NatureServe Network biologists received to date. Biologists assigned an overall score to the model (1 = poorest performance; 5 = highest performance) and also had an opportunity to make specific suggestions related to modeling extent. Summaries of overall scores are reported here. 
+
+\noindent Table 4. Expert review results. The following is a summary of the reviews by NatureServe Network biologists received to date. Biologists assigned an overall score to the model (1 = poorest performance; 5 = highest performance) and also had an opportunity to make specific suggestions related to modeling extent. Summaries of overall scores are reported here. 
 \begin{table}[H]
  \small
   \centering
@@ -382,7 +382,7 @@ The following is a summary of the reviews by NatureServe Network biologists rece
 \pagebreak
 
 
-\noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or interpret with caution.
+\noindent Table 5. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or interpret with caution.
 \normalsize
 \begin{table}[H]
 \small
@@ -597,8 +597,8 @@ NatureServe and Heritage Network Partners. \Sexpr{format(Sys.Date(), "%Y")}. Spe
 \pagebreak
 \noindent
 
-\begin{table}
-\caption{Appendix 1. Descriptions for environmental variables included in model.}
+Appendix 1. Descriptions for environmental variables included in model.
+\begin{table}[H]
 \resizebox{\textwidth}{!}{
 <<tableFour, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
@@ -615,7 +615,6 @@ print(xtable(sdm.var.info, label = NULL),
 \medskip
 
 Appendix 2. Model details for reproducibility
-
 \begin{itemize}
     \setlength{\itemsep}{0pt}
     \setlength{\parskip}{0pt}
