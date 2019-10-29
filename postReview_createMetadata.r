@@ -187,7 +187,7 @@ if(numReviewers == 0){
   revMatrix <- data.frame(
     "rAttribute" = c("C", "Cr","A","I"),
     "rComments" = c(
-      "Model was not reviewed by regional, taxonomic experts.",
+      "Model was not reviewed by a regional, taxonomic expert.",
       paste0("Model review indicates possible issues with this model.",numReviewersPhrase), 
       paste0("Model was reviewed by a regional, taxonomic expert.",numReviewersPhrase),
       paste0("Model reviewed by a regional, taxonomic expert and given high marks.",numReviewersPhrase)
