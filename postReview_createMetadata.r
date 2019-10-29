@@ -25,30 +25,29 @@ library(OpenStreetMap)
 
 
 ### find and load model data ----
-## three lines need your attention. The one directly below (loc_scripts),
-## about line 35 where you choose which Rdata file to use,
-## and about line 46 where you choose which record to use
 
-### temp debugging
-loc_model <- "G:/tim/_Regional_SDM/_data/species"
-loc_envVars <- gsub("F:","G:",loc_envVars)
-loc_scripts <- "G:/tim/_Regional_SDM"
-nm_refBoundaries <- gsub("F:","G:",nm_refBoundaries)
-nm_db_file <- gsub("F:","G:",nm_db_file)
-####
+#setwd(loc_model)
+#dir.create(paste0(model_species,"/outputs/metadata"), recursive = TRUE, showWarnings = FALSE)
+dir.create(file.path(loc_model, "/outputs/metadata"), recursive = TRUE, showWarnings = FALSE)
+#setwd(paste0(model_species,"/outputs"))
 
-setwd(loc_model)
-dir.create(paste0(model_species,"/outputs/metadata"), recursive = T, showWarnings = F)
-setwd(paste0(model_species,"/outputs"))
-load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
+model_run_name <- modelrun_meta_data$model_run_name
+load(file.path(loc_model, "outputs","rdata",paste0(model_run_name,".RData")))
+
+# rdatfiles <- list.files(file.path(loc_model, "outputs","rdata"), pattern = ".Rdata")
+# rdatfile <- rdatfiles[[length(rdatfiles)]]
+# load(file.path(loc_model, "outputs","rdata",rdatfile))
+# model_run_name <- strsplit(rdatfile, split = "\\.")[[1]][[1]]
 
 # get background poly data for the map (study area, reference boundaries)
-studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)
-referenceBoundaries <- st_read(nm_refBoundaries, quiet = T) # name of state boundaries file
+studyAreaExtent <- st_read(file.path(loc_model,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)
+referenceBoundaries <- st_read(nm_refBoundaries, quiet = TRUE) # name of state boundaries file
 
-r <- dir(path = "model_predictions", pattern = ".tif$",full.names=FALSE)
+r <- list.files(path = file.path(loc_model,"outputs","model_predictions"), 
+                pattern = ".tif$",
+                full.names=FALSE)
 fileName <- r[gsub(".tif", "", r) == model_run_name]
-ras <- raster(paste0("model_predictions/", fileName))
+ras <- raster(file.path(loc_model,"outputs","model_predictions", fileName))
 
 # project to match raster, just in case
 studyAreaExtent <- st_transform(studyAreaExtent, as.character(ras@crs))
@@ -194,7 +193,7 @@ if(numReviewers == 0){
     ))
 } else {
   numReviewersPhrase <- paste0(" (",numReviewers," reviewers)")
-  meanRating <- mean(reviewData$rating)
+  meanRating <- round(mean(reviewData$rating), digits = 1)
   minRating <- min(reviewData$rating)
   maxRating <- max(reviewData$rating)
   medianRating <- median(reviewData$rating)
@@ -234,38 +233,31 @@ sdm.modeluse$process_performNotes <- gsub("<","$<$ ", sdm.modeluse$process_perfo
 
 ## Run knitr and create metadata ----
 
-# writing to the same folder as a grid might cause problems.
-# if errors check that first
-#   more explanation: tex looks for and uses aux files, which are also used
-#   by esri. If there's a non-tex aux file, knitr bails. 
-
-# Also, might need to run this twice. First time through tex builds the reference
+# might need to run this twice. First time through tex builds the reference
 # list, second time through it can then number the refs in the doc.
+setwd(file.path(loc_model, "outputs","metadata"))
+#copy the logo locally [spent way too long getting latex to read from G:]
+dir.create("figure", showWarnings = FALSE)
+file.copy(paste0(loc_scripts,"/NatureServeLogo.png"), "figure/NatureServeLogo.png")
 
-setwd("metadata")
-# knit2pdf errors for some reason...just knit then call directly
-#knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-#knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-knit2pdf(paste(loc_scripts,"postReview_MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-#call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
-# call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex") # this stops execution if there is an error. Not really necessary
-#system(call)
-#system(call) # 2nd run to apply citation numbers
-
+knit2pdf(file.path(loc_scripts,"postReview_MetadataEval_knitr.rnw"), 
+         output=paste0(model_run_name, "_metadata.tex"))
 
 # delete .txt, .log etc if pdf is created successfully.
-fn_ext <- c(".log",".aux",".out")
-if (file.exists(paste(model_run_name, ".pdf",sep=""))){
-  #setInternet2(TRUE)
-  #download.file(fileURL ,destfile,method="auto")
-  for(i in 1:NROW(fn_ext)){
+fn_ext <- c(".log",".aux",".out",".tex")
+fn_ext <- paste0("_metadata", fn_ext)
+if (file.exists(paste(model_run_name, "_metadata.pdf",sep=""))){
+  for(i in 1:length(fn_ext)){
     fn <- paste(model_run_name, fn_ext[i],sep="")
     if (file.exists(fn)){ 
       file.remove(fn)
     }
   }
 }
+# delete the figure folder
+unlink("figure", recursive = TRUE)
 
+setwd(loc_scripts)
 
 ## clean up ----
 dbDisconnect(db)

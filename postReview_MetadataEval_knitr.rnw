@@ -541,7 +541,7 @@ This model was built using a methodology developed through collaboration among t
 \setlength{\fboxsep}{5pt}
 \fbox{
 \begin{minipage}[c]{0.2\linewidth}
-\includegraphics[width=1.0\linewidth]{../../../../../NatureServeLogo}%png logo file at repository root
+\includegraphics[width=1.0\linewidth]{figure/NatureServeLogo}%png logo file at repository root
 \end{minipage}%
 \begin{minipage}[c]{0.75\linewidth}
 Please cite this document and its associated SDM as: \\
