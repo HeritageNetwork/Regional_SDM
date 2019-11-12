@@ -53,7 +53,7 @@ if(!exists("rangeClipped")){
 }
 
 #check if shape is valid
-if(!st_is_valid(rangeClipped)){
+if(FALSE %in% st_is_valid(rangeClipped)){
   # st_make_valid not available to this install
   rangeClipped <- st_buffer(rangeClipped, 0)
 }
@@ -108,9 +108,10 @@ newL <- snow::parLapply(cl, x = fullL, fun = function(path) {
 
   ## with fasterize and raster
   ras <- raster::raster(path) # read the raster
+  dtp <- raster::dataType(ras) # get data type, some crops are setting large values to NA
   cropRas <- raster::raster(clipRas) # read the crop raster
-  rasAtExtent <- raster::crop(ras, raster::extent(cropRas)) # crop extent to same as mask ras
-  outRas <- raster::mask(rasAtExtent, cropRas, filename = nnm, options="COMPRESS=NONE") # mask it
+  rasAtExtent <- raster::crop(ras, raster::extent(cropRas), datatype = dtp) # crop extent to same as mask ras
+  outRas <- raster::mask(rasAtExtent, cropRas, filename = nnm, options="COMPRESS=NONE", datatype = dtp) # mask it
 
   return(nnm)
 })
