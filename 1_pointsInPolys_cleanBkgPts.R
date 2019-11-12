@@ -21,14 +21,14 @@ library(dplyr)
 setwd(loc_model)
 
 # set up folder system for inputs
-dir.create(paste0(model_species,"/inputs/presence"), recursive = T, showWarnings = F)
-dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
+dir.create(paste0(model_species,"/inputs/presence"), recursive = TRUE, showWarnings = FALSE)
+dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = FALSE)
 
 # setwd(paste0(loc_model,"/",model_species,"/inputs/presence"))
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
-presPolys <- st_zm(st_read(nm_presFile, quiet = T))
+presPolys <- st_zm(st_read(nm_presFile, quiet = TRUE))
 
 #check for proper column names. If no error from next code block, then good to go
 #presPolys$RA <- presPolys$SFRACalc
