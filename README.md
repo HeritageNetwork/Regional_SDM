@@ -6,6 +6,7 @@ You are currently reading the Readme file. Scripts (and other files as needed) a
 
 Primary activity in 2018-2019 is for the MoBI project. 
 
+Note that most development activity is currently occuring on the two branches: Aquatic and Terrestrial. This master branch is currently behind. Choose one of these branches if you wish to use these scripts. The ultimate vision is to merge the branches back up to master. 
 
 License
 =======
