@@ -8,6 +8,8 @@
         # - the chosen date threshold
         # - appropriate precision/accuracy
         # - appropriate type for appropriate species (e.g. only polys for G1, G2 if enough of them)
+      # point layer needs OBSDATE SPECIES_CD, and, ideally Accuracy fields. 
+      # poly layer needs OBSDATE SPECIES_CD, RA, Group_id
 
 library(sf)
 library(dplyr)
@@ -24,8 +26,9 @@ crs_aea <- st_crs(x)
 path <- paste0(loc_scripts,"/_data/occurrence")
 setwd(path)
 
-cutecode <- "dichhirs"
-
+cutecode <- "linuallr"
+desiredCols <- c("SPECIES_CD","OBSDATE", "Accuracy")
+desiredPolyCols <- c("SPECIES_CD","OBSDATE","GROUP_ID","UID","RA")
 
 # initialize in case repeatedly running
 havePolyData <- FALSE
@@ -33,91 +36,122 @@ havePointData <- FALSE
 
 
 # check for poly data
-eo_name <- paste0(cutecode, ".shp")
+pol_name <- paste0(cutecode, ".shp")
 
-if(file.exists(eo_name)){
-  eo <- st_read(eo_name, stringsAsFactors = FALSE)
-  eo_dat <- st_transform(eo, crs_aea)
-  if(nrow(eo_dat) > 0 ){
+if(file.exists(pol_name)){
+  pol <- st_read(pol_name, stringsAsFactors = FALSE)
+  pol_dat <- st_transform(pol, crs_aea)
+  if(nrow(pol_dat) > 0 ){
     havePolyData <- TRUE  
   }
+  geomName <- names(pol_dat)[length(names(pol_dat))]
+  pol_dat <- pol_dat[,c(desiredPolyCols,geomName)]
 }
 
 # check for point data
-obd_name <- paste0(cutecode, "_pt.shp")
+pt_name <- paste0(cutecode, "_pt.shp")
 
-if(file.exists(obd_name)){
-  obd <- st_read(obd_name, stringsAsFactors = FALSE)
-  pt_dat <- st_transform(obd, crs_aea)
+if(file.exists(pt_name)){
+  pt <- st_read(pt_name, stringsAsFactors = FALSE)
+  pt_dat <- st_transform(pt, crs_aea)
   if(nrow(pt_dat) > 0 ){
     havePointData <- TRUE  
   }
+  # reduce to desired cols
+  geomName <- names(pol_dat)[length(names(pol_dat))]
+  pt_dat <- pt_dat[,c(desiredCols,geomName)]
 }
 
 # process data given three options: points and polys, points only, polys only
 if(havePointData){
   # double check units
   #st_crs(pt_dat)$units 
-  # Buffer by those units (m), merge them
-  dat_buff1km <- st_buffer(pt_dat, 1000)
-  grps <- st_union(dat_buff1km, by_feature = FALSE)
-  
-  # convert to single-part, add attribute table
-  grps = st_cast(grps, "POLYGON")
-  df <- data.frame("grp_id" = c(1:length(grps)))
-  grps <- st_set_geometry(df, grps)
-  
-  # attribute points with group ID
-  dat_grps <- suppressWarnings(st_intersection(pt_dat, grps))
-  table(dat_grps$grp_id)
-  
-  # finally, convert to 'eo' or level polys, by buffering by smaller distance
+
+  # convert pts to polys
   # assume that actual point may have some accuracy issues so 
   # make large enough to include closest adjacent cells
-  dat_eo <- st_buffer(dat_grps, 90)
+  #dat_eo <- st_buffer(dat_grps, 90)
+  # use Accuracy column to buffer
+  ptd_pol <- st_buffer(pt_dat, dist = pt_dat$Accuracy)
   # merge overlapping polys
-  eos <- st_union(dat_eo, by_feature = FALSE)
+  ptd_pol_m <- st_union(ptd_pol, by_feature = FALSE)
   # convert to single-part, add attribute table
-  eos = st_cast(eos, "POLYGON")
-  eodf <- data.frame("eo_id" = c(1:length(eos)))
-  eos <- st_set_geometry(eodf, eos)
+  ptd_pol_m = st_cast(ptd_pol_m, "POLYGON")
+  ptd_df <- data.frame("pol_id" = c(1:length(ptd_pol_m)))
+  ptd_pol_m <- st_set_geometry(ptd_df, ptd_pol_m)
   
-  # get back groups AND date (using the most recent obs date for each EO)
-  eos_dat <- st_join(eos, dat_eo, join = st_intersects, left = TRUE)
+  # get back date (using the most recent obs date for each polygon)
+  ptp_j <- st_join(ptd_pol_m, ptd_pol[,c("OBSDATE","SPECIES_CD")], join = st_intersects, left = TRUE)
+  ptp_a <- aggregate(ptp_j, by = list(ptp_j$pol_id), FUN = function(x){ max(x)})
+  geomName <- names(ptp_a)[length(names(ptp_a))]
+  ptp <- ptp_a[,c("pol_id","OBSDATE","SPECIES_CD",geomName)]
+  ptp <- cbind(ptp, RA = "very high")
   
-  eos_dat$RA <- "medium"
+  # Buffer by those units (m) to get group based on separation distance ("EO"), merge them
+  # 500 meter default (means 1km sep distance)
+  pt_buff1km <- st_buffer(ptp, 500)
+  pt_grps <- st_union(pt_buff1km, by_feature = FALSE)
   
-  eos_grp <- aggregate(eos_dat[,"OBSDATE"], 
-                       by = list(eos_dat$SPECIES_CD, eos_dat$grp_id, eos_dat$eo_id, eos_dat$RA),
-                       FUN = function(x){ max(x)}
-  )
-  geomName <- names(eos_grp)[length(names(eos_grp))]
-  names(eos_grp) <- c("SPECIES_CD","GROUP_ID","UID","RA","OBSDATE",geomName)
+  # convert to single-part, add attribute table
+  pt_grps = st_cast(pt_grps, "POLYGON")
+  ptdf <- data.frame("grp_id" = c(1:length(pt_grps)))
+  pt_grps <- st_set_geometry(ptdf, pt_grps)
+  
+  # attribute points with group ID
+  ptd_grps <- suppressWarnings(st_intersection(ptp, pt_grps))
+  table(ptd_grps$grp_id)
+
+  geomName <- names(ptd_grps)[length(names(ptd_grps))]
+  names(ptd_grps) <- c("UID","OBSDATE","SPECIES_CD","RA", "GROUP_ID",geomName)
   
   if(havePolyData){
     ## have point and poly data
     #join it with the polys shpfile
     # get the max value for group ID; UID
-    max_gpid <- max(eo_dat$GROUP_ID)
-    max_uid <- max(eo_dat$UID)
+    max_gpid <- max(ptd_grps$GROUP_ID)
+    max_uid <- max(ptd_grps$UID)
     
     # extend values in the point dataset to make everything unique
-    eos_grp$UID <- eos_grp$UID + max_uid
-    eos_grp$GROUP_ID <- eos_grp$GROUP_ID + max_gpid
+    pol_dat$UID <- pol_dat$UID + max_uid
+    pol_dat$GROUP_ID <- pol_dat$GROUP_ID + max_gpid
     
-    # subset eo_dat, then merge the two
-    geomName <- names(eo_dat)[length(names(eo_dat))]
-    eo_dat <- eo_dat[,c("SPECIES_CD","GROUP_ID","UID","RA","OBSDATE",geomName)]
+    # merge the pt and poly data sets
+    dat_all <- rbind(pol_dat, ptd_grps)
     
-    eo_dat_all <- rbind(eo_dat, eos_grp)
+    # remove overlapping polygons by merging
+    dat_all_m <- st_union(dat_all, by_feature = FALSE)
+    # convert to single-part, add attribute table
+    dat_all_sp = st_cast(dat_all_m, "POLYGON")
+    dadf <- data.frame("poly_id" = c(1:length(dat_all_sp)))
+    dat_all_sp <- st_set_geometry(dadf, dat_all_sp)
     
+    # TODO: polys could have custom group designations (not based on a standard sep distance)
+    # stick with 1km sep distance for now (500 m buff)
+    py_buff1km <- st_buffer(dat_all_sp, 500)
+    py_grps <- st_union(py_buff1km, by_feature = FALSE)
+    
+    # convert to single-part, add attribute table
+    py_grps = st_cast(py_grps, "POLYGON")
+    pydf <- data.frame("grp_id" = c(1:length(py_grps)))
+    py_grps <- st_set_geometry(pydf, py_grps)
+    
+    # attribute original polys with group ID
+    py_grps <- suppressWarnings(st_intersection(py_grps, dat_all_sp))
+    table(py_grps$grp_id)
+    
+    # get back date (using the most recent obs date for each polygon)
+    pyp_j <- st_join(py_grps, dat_all[,c("OBSDATE","SPECIES_CD","RA")], join = st_intersects, left = TRUE)
+    pyp_a <- aggregate(pyp_j, by = list(pyp_j$poly_id), FUN = function(x){ max(x)})
+    geomName <- names(pyp_a)[length(names(pyp_a))]
+    pyp <- pyp_a[,c("poly_id","grp_id", "OBSDATE","SPECIES_CD","RA",geomName)]
+
     # move the existing (point and poly) files to the pre-processed folder
     filesToMove <- list.files(pattern = cutecode)
     file.rename(from = filesToMove, to = paste0("pre-processed/",filesToMove))
     
     # write out the merged, all-poly shapefile
     fullnm <- paste0(cutecode,".shp")
-    st_write(eo_dat_all, fullnm)
+    st_write(pyp, fullnm)
     
   } else {
     ## have point data only
@@ -127,7 +161,7 @@ if(havePointData){
     
     # write out the merged, all-poly shapefile
     fullnm <- paste0(cutecode,".shp")
-    st_write(eos_grp, fullnm)
+    st_write(ptd_grps, fullnm)
   }
 } else {
   ## have poly data only 
