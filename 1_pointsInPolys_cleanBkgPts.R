@@ -102,6 +102,14 @@ names(shp_expl$geometry) <- NULL # temp fix until sf patches error
 nm.PyFile <- paste(loc_model, model_species,"inputs/presence",paste0(baseName, "_expl.shp"), sep = "/")
 st_write(shp_expl, nm.PyFile, driver="ESRI Shapefile", delete_layer = TRUE)
 
+# also write to geopackage to get into the habit. At this point (Mar 2020),
+# some custom projections don't write properly (https://github.com/r-spatial/sf/issues/1293), 
+# so transform to WGS84 first
+shp_expl_wgs84 <- st_transform(shp_expl, 4326)
+nm.pylyr <- paste0(baseName, "_expl")
+nm.gpkg <- file.path(loc_model, model_species,"inputs","presence",paste0(baseName, ".gpkg"))
+st_write(shp_expl_wgs84, dsn = nm.gpkg, layer = nm.pylyr, delete_layer = TRUE)
+
 ####
 ####  Placing random points within each sample unit (polygon/EO) ----
 ####
@@ -157,17 +165,7 @@ if(nrow(polysWithNoPoints) > 0){
 rndid <- with(ranPts.joined, ave(expl_id, stratum, FUN=function(x) {sample.int(length(x))}))
 ranPts.joined2 <- ranPts.joined[rndid <= ranPts.joined$finalSampNum,]
 
-# get actual finalSampNum
-#ranPts.joined2 <- ranPts.joined[0,]
-# #### this is slow! ####
-# for (ex in 1:length(shp_expl$geometry)) {
-#   s1 <- shp_expl[ex,]
-#   samps <- row.names(ranPts.joined[ranPts.joined$expl_id==s1$expl_id,])
-#   if (length(samps) > s1$finalSampNum) samps <- sample(samps, size = s1$finalSampNum) # samples to remove
-#   ranPts.joined2 <- rbind(ranPts.joined2, ranPts.joined[samps,])
-# }
 ranPts.joined <- ranPts.joined2
-#rm(ex, s1, samps, ranPts.joined2)
 rm(rndid, ranPts.joined2)
 
 #check for cases where sample smaller than requested
@@ -190,6 +188,13 @@ ranPts.joined <- ranPts.joined[,colsToKeep]
 nm.RanPtFile <- paste(loc_model, model_species,"inputs/presence",paste(baseName, "_RanPts.shp", sep = ""), sep = "/")
 # write it out
 st_write(ranPts.joined, nm.RanPtFile, driver="ESRI Shapefile", delete_layer = TRUE)
+
+# also write to geopackage
+# transform to WGS84 first (see above)
+ranPts_joined_wgs84 <- st_transform(ranPts.joined, 4326)
+nm.pylyr <- paste0(baseName, "_RanPts")
+st_write(ranPts_joined_wgs84, dsn = nm.gpkg, layer = nm.pylyr, delete_layer = TRUE)
+
 
 ###
 ### remove Coincident Background points ----
@@ -244,19 +249,37 @@ bgSubsAtt <- dbGetQuery(db, qry)
 dbRemoveTable(db, tmpTableName)
 dbDisconnect(db)
 
+#remove extra fid column(s) (dots in colname corrupts gpkg layer for esri)
+bgSubsAtt <- bgSubsAtt[,-grep("fid.+",names(bgSubsAtt))]
+
 # # remove NAs #### convert this to removing columns instead?
 # bgSubsAtt$bulkDens <- as.numeric(bgSubsAtt$bulkDens)
 # bgSubsAtt$clay <- as.numeric(bgSubsAtt$clay) 
 # bgSubsAtt$soil_pH <- as.numeric(bgSubsAtt$soil_pH) 
 # bgSubsAtt$flowacc <- as.numeric(bgSubsAtt$flowacc) 
 # 
-# bgSubsAtt <- bgSubsAtt[complete.cases(bgSubsAtt),]
-# nrow(bgSubsAtt)
+
+# temp!  gypfine is all NA right now. REMOVE IT
+bgSubsAtt <- bgSubsAtt[,!grepl("nm_gypfine",names(bgSubsAtt))]
+
+bgSubsAtt <- bgSubsAtt[complete.cases(bgSubsAtt),]
+nrow(bgSubsAtt)
 
 dbName <- paste0(loc_model, "/", model_species, "/inputs/model_input/", baseName, "_att.sqlite")
 db <- dbConnect(SQLite(), dbName)
 dbWriteTable(db, paste0(nm_bkgPts[2], "_clean"), bgSubsAtt, overwrite = TRUE)
 
 dbDisconnect(db)
+
+## TODO. Note, writing bkg to presence folder (geopackage) because it's cleaner. 
+## perhaps cleanup and remove these folders inside 'inputs'
+
+# also write to geopackage
+# transform to WGS84 first (see above)
+bgSubsAtt <- st_sf(bgSubsAtt, geometry = st_as_sfc(bgSubsAtt$wkt, crs = tcrs))
+bgSubsAtt_wgs84 <- st_transform(bgSubsAtt, 4326)
+nm.pylyr <- paste0(baseName, "_bkgPts_clean")
+st_write(bgSubsAtt_wgs84, dsn = nm.gpkg, layer = nm.pylyr, delete_layer = TRUE)
+
 
 rm(db, do, dt, qry, tmpTableName)
