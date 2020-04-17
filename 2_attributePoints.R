@@ -105,6 +105,19 @@ fullL <- gridlist[names(gridlist) %in% tolower(gridlistSub$gridName)]
 #source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
 #envStack <- stack(newL)
 
+# 
+# x <- fullL[1:50]
+# y <- stack(x)
+# 
+# z <- fullL[grepl("snap",fullL)]
+# a <- stack(z)
+# 
+# j <- extent(raster(z[[1]]))
+# for(i in 1:length(z)){
+#   
+#   z[[i]]$ext <- extent(raster(z[[i]]))
+# }
+
 # make grid stack with subset
 envStack <- stack(fullL)
 rm(fullL, gridlistSub, modType, branches, activeBranch)
@@ -161,6 +174,11 @@ if (length(tv) > 0) {
   points_attributed <- pa[-grep(".", names(pa), fixed = TRUE)]
 }
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
+
+
+# temp!  gypfine is all NA right now. REMOVE IT
+points_attributed <- points_attributed[,!grepl("nm_gypfine",names(points_attributed))]
+
 
 # write it out to the att db
 dbName <- paste(baseName, "_att.sqlite", sep="")
