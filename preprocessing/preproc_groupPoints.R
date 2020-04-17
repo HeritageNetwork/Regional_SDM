@@ -26,7 +26,7 @@ crs_aea <- st_crs(x)
 path <- paste0(loc_scripts,"/_data/occurrence")
 setwd(path)
 
-cutecode <- "linuallr"
+cutecode <- "amsothar"
 desiredCols <- c("SPECIES_CD","OBSDATE", "Accuracy")
 desiredPolyCols <- c("SPECIES_CD","OBSDATE","GROUP_ID","UID","RA")
 
@@ -54,11 +54,12 @@ pt_name <- paste0(cutecode, "_pt.shp")
 if(file.exists(pt_name)){
   pt <- st_read(pt_name, stringsAsFactors = FALSE)
   pt_dat <- st_transform(pt, crs_aea)
+  names(pt_dat)[grepl("species_cd", names(pt_dat))] <- "SPECIES_CD"
   if(nrow(pt_dat) > 0 ){
     havePointData <- TRUE  
   }
   # reduce to desired cols
-  geomName <- names(pol_dat)[length(names(pol_dat))]
+  geomName <- names(pt_dat)[length(names(pt_dat))]
   pt_dat <- pt_dat[,c(desiredCols,geomName)]
 }
 
@@ -94,12 +95,12 @@ if(havePointData){
   
   # convert to single-part, add attribute table
   pt_grps = st_cast(pt_grps, "POLYGON")
-  ptdf <- data.frame("grp_id" = c(1:length(pt_grps)))
+  ptdf <- data.frame("GROUP_ID" = c(1:length(pt_grps)))
   pt_grps <- st_set_geometry(ptdf, pt_grps)
   
   # attribute points with group ID
   ptd_grps <- suppressWarnings(st_intersection(ptp, pt_grps))
-  table(ptd_grps$grp_id)
+  table(ptd_grps$GROUP_ID)
 
   geomName <- names(ptd_grps)[length(names(ptd_grps))]
   names(ptd_grps) <- c("UID","OBSDATE","SPECIES_CD","RA", "GROUP_ID",geomName)
@@ -118,11 +119,18 @@ if(havePointData){
     # merge the pt and poly data sets
     dat_all <- rbind(pol_dat, ptd_grps)
     
+    
+    # st_is_valid(dat_all)
+    # st_is_valid(ptd_grps)
+    # st_is_valid(pol_dat)
+    # dat_all <- st_make_valid(dat_all)
+    # dat_all <- st_buffer(dat_all, dist = 0)
+    
     # remove overlapping polygons by merging
     dat_all_m <- st_union(dat_all, by_feature = FALSE)
     # convert to single-part, add attribute table
     dat_all_sp = st_cast(dat_all_m, "POLYGON")
-    dadf <- data.frame("poly_id" = c(1:length(dat_all_sp)))
+    dadf <- data.frame("UID" = c(1:length(dat_all_sp)))
     dat_all_sp <- st_set_geometry(dadf, dat_all_sp)
     
     # TODO: polys could have custom group designations (not based on a standard sep distance)
@@ -132,18 +140,19 @@ if(havePointData){
     
     # convert to single-part, add attribute table
     py_grps = st_cast(py_grps, "POLYGON")
-    pydf <- data.frame("grp_id" = c(1:length(py_grps)))
+    pydf <- data.frame("GROUP_ID" = c(1:length(py_grps)))
     py_grps <- st_set_geometry(pydf, py_grps)
     
     # attribute original polys with group ID
     py_grps <- suppressWarnings(st_intersection(py_grps, dat_all_sp))
-    table(py_grps$grp_id)
+    table(py_grps$GROUP_ID)
     
     # get back date (using the most recent obs date for each polygon)
     pyp_j <- st_join(py_grps, dat_all[,c("OBSDATE","SPECIES_CD","RA")], join = st_intersects, left = TRUE)
-    pyp_a <- aggregate(pyp_j, by = list(pyp_j$poly_id), FUN = function(x){ max(x)})
+    pyp_a <- aggregate(pyp_j, by = list(pyp_j$UID), FUN = function(x){ max(x)})
     geomName <- names(pyp_a)[length(names(pyp_a))]
-    pyp <- pyp_a[,c("poly_id","grp_id", "OBSDATE","SPECIES_CD","RA",geomName)]
+    pyp <- pyp_a[,c("UID","GROUP_ID", "OBSDATE","SPECIES_CD","RA",geomName)]
+
 
     # move the existing (point and poly) files to the pre-processed folder
     filesToMove <- list.files(pattern = cutecode)

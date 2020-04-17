@@ -10,13 +10,13 @@ library(RSQLite)
 library(snowfall)
 
 # path where .tif env. var rasters are stored
-pathToRas <- here("_data","env_vars","raster")
+pathToRas <- here("_data","env_vars","raster","cropped")
 # path to output tables (a database is generated here if it doesn't exist)
 pathToTab <- here("_data","env_vars","tabular")
 # background points table name (this should be already created with preproc_makeBackgroundPoints.R)
 pts_table <- "background_pts"
 # lkpEnvVars database
-dbLookup <- dbConnect(SQLite(), here("_data","databases","SDM_lookupAndTracking.sqlite"))
+dbLookup <- dbConnect(SQLite(), here("_data","databases","SDM_lookupAndTracking_NM.sqlite"))
 
 ## create a stack from all envvars ----
 setwd(pathToRas)
@@ -24,19 +24,19 @@ setwd(pathToRas)
 ## create a stack.
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
-x <- grepl("ras/",raslist)
-raslist <- raslist[!grepl("ras/",raslist)]
+#x <- grepl("ras/",raslist)
+#raslist <- raslist[!grepl("ras/",raslist)]
 
 # temporal groups -> take only max year by group
-tv <- list.dirs(recursive = FALSE, full.names = FALSE)
-if (length(tv) > 1) {
-  tv_grp <- as.character(do.call(rbind.data.frame, strsplit(tv,"_",fixed = TRUE))[,1])
-  for (t in unique(tv_grp)) {
-    stv <- tv[grep(t, tv)]
-    nouse <- stv[!stv %in% max(stv[grep(t,stv)])]
-    raslist <- raslist[-grep(paste(nouse,collapse="|"),raslist)]
-  }
-}
+# tv <- list.dirs(recursive = FALSE, full.names = FALSE)
+# if (length(tv) > 1) {
+#   tv_grp <- as.character(do.call(rbind.data.frame, strsplit(tv,"_",fixed = TRUE))[,1])
+#   for (t in unique(tv_grp)) {
+#     stv <- tv[grep(t, tv)]
+#     nouse <- stv[!stv %in% max(stv[grep(t,stv)])]
+#     raslist <- raslist[-grep(paste(nouse,collapse="|"),raslist)]
+#   }
+# }
 gridlist <- as.list(paste(pathToRas,raslist,sep = "/"))
 
 # get short names
@@ -60,6 +60,12 @@ if(length(nulls) > 0){
 #stack only half of it (54 layers)
 #gl <- gridlist[1:35]
 
+#update only one layer
+gridlist <- gridlist[grepl("nm_gypfine",names(gridlist))]
+
+
+
+
 envStack <- stack(gridlist)
 
 # prep for parallel
@@ -67,14 +73,15 @@ s.list <- unstack(envStack)
 names(s.list) <- names(envStack)
 
 ## Get random points table ----
-db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_CA.sqlite"))
+db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_NM.sqlite"))
 
 tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", pts_table, "';"))$p
 
 # get all the points
 bkgd <- dbReadTable(db, pts_table)
+nrow(bkgd)
 bkgd <- bkgd[complete.cases(bkgd),]
-
+nrow(bkgd)
 ## export to shp
 #samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 #st_write(samps, dsn = "N:/_TerrestrialModels/_data/env_vars/background/california_bkgd.shp")
@@ -100,7 +107,7 @@ bkgd <- bkgd[-c(1:2),]
 brks <- cut(bkgd$fid, breaks = 100)
 brkgrps <- unique(brks)
 
-for(i in 8:length(brkgrps)){
+for(i in 1:length(brkgrps)){
   bg <- bkgd[brks == brkgrps[i],]
   samps <- st_sf(bg, geometry = st_as_sfc(bg$wkt, crs = tcrs))
 
@@ -164,6 +171,35 @@ tp <- as.vector("INTEGER")
 names(tp) <- "fid"
 dbWriteTable(db, paste0(pts_table, "_att"), sampsAtt, overwrite = T, field.types = tp)
 # not writing shapefile, since base shapefile already exists
+
+### method #4 no looping, no parallel (built for updating just one col in existing att table)
+#get bkg tbl
+bkgd <- dbReadTable(db, pts_table)
+#remove any huc12 nulls
+bkgd <- bkgd[complete.cases(bkgd),]
+# get existing att table
+bkgd_att <- dbReadTable(db, paste0(pts_table,"_att"))
+
+nrow(bkgd)
+nrow(bkgd_att)
+bk <- merge(bkgd, bkgd_att) #need to spatial info over to att
+samps <- st_sf(bk, geometry = st_as_sfc(bk$wkt, crs = tcrs))
+# do the extract
+att <- extract(envStack, samps, method="simple")
+
+#sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), att))
+#sampsAtt <- as.data.frame(cbind(samps, att))
+
+samps$nm_gypfine <- att[,"nm_gypfine"]
+st_geometry(samps) <- NULL
+samps <- samps[,names(bkgd_att)]
+sampsAtt <- samps
+dbWriteTable(db, paste0(pts_table, "_att"), sampsAtt, overwrite = TRUE)
+
+
+###
+dbWriteTable(db, paste0(pts_table, "_att"), sampsAtt, overwrite = FALSE, append = TRUE)
+
 
 dbDisconnect(db)
 rm(db)
