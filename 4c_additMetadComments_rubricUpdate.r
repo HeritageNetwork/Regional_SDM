@@ -54,7 +54,7 @@ cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$si
 sql <- paste0("SELECT ModelCycle.EGT_ID, ModelCycle.model_cycle, ",
               "Workflows.locality_data_eval_rubric, Workflows.model_reviewed ",
               "FROM ModelCycle ",
-              "INNER JOIN Workflows ON ModelCycle.ID = Workflows.ID ",
+              "INNER JOIN Workflows ON ModelCycle.ID = Workflows.model_cycle_ID ",
               "WHERE ModelCycle.EGT_ID= ", ElementNames$EGT_ID, ";")
 
 evalAndReviewStatus <- dbGetQuery(cn, sql)
