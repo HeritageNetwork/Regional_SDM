@@ -98,7 +98,7 @@ Table 1. Input statistics. Presence points are points placed in polygon-based lo
 <<tableOne, results="asis", echo = FALSE>>=
 	summ.table <- data.frame(Name=c("Presence points","Groups","Background points"),
                          Number=c(nrow(subset(df.full, pres == 1)),
-                         numEOs,
+                         length(group$vals),
                          nrow(subset(df.full, pres == 0))
                          ))
   print(xtable(summ.table),
@@ -402,8 +402,8 @@ Category & Metric & Score & Notes
   & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} 
 \\ \hline
   & Iterative 
-  & \Sexpr{as.character(sdm.modeluse$interative)} 
-  & \Sexpr{as.character(sdm.modeluse$interativeNotes)} 
+  & \Sexpr{as.character(sdm.modeluse$iterative)} 
+  & \Sexpr{as.character(sdm.modeluse$iterativeNotes)} 
 \\ \hline                      
 \end{tabular}
 \end{table}
