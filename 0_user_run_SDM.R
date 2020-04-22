@@ -10,7 +10,7 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "amsothar"
+model_species <- "eriogyps"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -45,7 +45,7 @@ modeller = "Tim Howard"
 #                   "me" (maxent), 
 #                   "xgb" (extreme gradient boosting), 
 #                   "gam" (generalized additive models)
-ensemble_algos = c("rf", "me")
+ensemble_algos = c("rf")
 
 # list non-standard variables to add to model run
 add_vars = NULL
@@ -82,6 +82,7 @@ run_SDM(
   model_comments = model_comments,
   metaData_comments = metaData_comments,
   modeller = modeller,
+  ensemble_algos = ensemble_algos,
   add_vars = add_vars,
   remove_vars = remove_vars,
   #rubric_default = rubric_default,
@@ -170,7 +171,7 @@ rm(list=ls())
 
 model_species <- "eriogyps"
 
-load(here("_data","species",model_species,"runSDM_paths.Rdata"))
+load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
 # if debugging script 4 or later, also load the specific model output rdata file

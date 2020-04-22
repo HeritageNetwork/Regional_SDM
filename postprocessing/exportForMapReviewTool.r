@@ -64,7 +64,7 @@ length(not_yet_exported)
 for (j in 1:length(not_yet_exported)){
   print (paste0("Starting Model Review Tool export for model ",j," of ",length(not_yet_exported)," : ",not_yet_exported[j]))
   model_species <- not_yet_exported[j]
-  load(here("_data","species",model_species,"runSDM_paths.Rdata"))
+  load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
   for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
   
   # load the specific model output rdata file

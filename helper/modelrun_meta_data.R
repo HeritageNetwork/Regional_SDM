@@ -22,4 +22,5 @@ modelrun_meta_data <- list(model_run_name = model_run_name,
                            seed = seed)
 # re-save fn_args with model_run
 fn_args$modelrun_meta_data <- modelrun_meta_data
-save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
+save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths_most_recent.Rdata"))
+save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths_", model_run_name,".Rdata"))

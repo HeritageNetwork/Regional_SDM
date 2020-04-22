@@ -24,7 +24,7 @@ run_SDM <- function(
   model_comments = "",
   metaData_comments = "",
   modeller = NULL,
-  ensemble_algos = c("rf"),
+  ensemble_algos = NULL,
   begin_step = "1",
   model_rdata = NULL,
   add_vars = NULL,
@@ -42,12 +42,12 @@ run_SDM <- function(
   if (begin_step != "1") {
     if (begin_step %in% c("2","3")) {
       message("Loading most recent saved runSDM settings...")
-      load(paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
+      load(paste0(loc_model, "/" , model_species, "/runSDM_paths_most_recent.Rdata"))
     } else {
       if (is.null(model_rdata) | is.null(loc_model)) {
         stop("Must provide both 'loc_model' and 'model_rdata' for continuing a model run.")
       } else {
-        load(paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
+        load(paste0(loc_model, "/" , model_species, "/runSDM_paths_most_recent.Rdata"))
       }
     }
     # re-write modified variables
@@ -102,7 +102,7 @@ run_SDM <- function(
   }
   # save fn_args
   dir.create(paste0(loc_model, "/" , model_species), showWarnings = F)
-  save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
+  save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths_most_recent.Rdata"))
   
   # assign objects
   for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]], envir = .GlobalEnv)
