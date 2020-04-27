@@ -250,7 +250,10 @@ dbRemoveTable(db, tmpTableName)
 dbDisconnect(db)
 
 #remove extra fid column(s) (dots in colname corrupts gpkg layer for esri)
-bgSubsAtt <- bgSubsAtt[,-grep("fid.+",names(bgSubsAtt))]
+#bgSubsAtt <- bgSubsAtt[,-grep("fid.+",names(bgSubsAtt))] #package update may have removed dot
+fidlocs <- grep("fid.*",names(bgSubsAtt))
+bgSubsAtt <- bgSubsAtt[,-fidlocs[2:length(fidlocs)]]
+
 
 # # remove NAs #### convert this to removing columns instead?
 # bgSubsAtt$bulkDens <- as.numeric(bgSubsAtt$bulkDens)
@@ -260,7 +263,9 @@ bgSubsAtt <- bgSubsAtt[,-grep("fid.+",names(bgSubsAtt))]
 # 
 
 # temp!  gypfine is all NA right now. REMOVE IT
-bgSubsAtt <- bgSubsAtt[,!grepl("nm_gypfine",names(bgSubsAtt))]
+#bgSubsAtt <- bgSubsAtt[,!grepl("nm_gypfine",names(bgSubsAtt))]
+#x <- bgSubsAtt[complete.cases(bgSubsAtt),]
+#nrow(x)
 
 bgSubsAtt <- bgSubsAtt[complete.cases(bgSubsAtt),]
 nrow(bgSubsAtt)
