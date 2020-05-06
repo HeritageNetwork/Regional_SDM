@@ -454,18 +454,19 @@ tmap_mode("plot")
 mtype <- 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 basetiles <- read_osm(bbox, type = mtype, ext = 1.1)
 # plot it
-qtm(basetiles) + 
-  tm_shape(ras) + 
-    tm_raster(palette = clrs, title = "modeled suitability",
-            labels = c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability")) +   tm_shape(referenceBoundaries) +
-    tm_borders(col = "grey", lwd = 1) + 
-  tm_shape(studyAreaExtent) + 
-    tm_borders(col = "red", lwd = 2) + 
-  tm_compass(north = 0, type = "arrow", position = c("left","bottom")) + 
-  tm_scale_bar()
+# qtm(basetiles) +
+#   tm_shape(ras) +
+#   tm_raster(palette = clrs, title = "modeled suitability",
+#       labels = c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability")) +
+#   tm_shape(referenceBoundaries) +
+#   tm_borders(col = "grey", lwd = 1) +
+#   tm_shape(studyAreaExtent) +
+#     tm_borders(col = "red", lwd = 2) +
+#   tm_compass(north = 0, type = "arrow", position = c("left","bottom")) +
+#   tm_scale_bar()
 
 @
-\includegraphics{figure/mapFig-1.png}    
+%\includegraphics{figure/mapFig-1.png}    
 \end{center}
 Figure 4. A generalized view of the model predictions throughout the modeled area. State boundaries are depicted as a thin gray line. The modeled area is outlined in red. Basemap: CartoDB.Positron (\copyright  \href{https://www.openstreetmap.org/copyright}{OpenStreetMap}, contributors: \copyright  \href{https://carto.com/attributions}{CARTO}).
 
