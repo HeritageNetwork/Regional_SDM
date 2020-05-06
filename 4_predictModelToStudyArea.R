@@ -7,8 +7,8 @@ library(raster)
 library(randomForest)
 library(RSQLite)
 library(sf)
-library(snow)
-library(parallel)
+# library(snow)
+# library(parallel)
 
 removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
@@ -65,31 +65,14 @@ envStack <- stack(newL)
 #envStack <- stack(fullL) # if not using helper/crop_mask_rast.R
 rm(fullL)
 
-# run prediction ----
-setwd(paste0(loc_model, "/", model_species,"/outputs"))
-fileNm <- paste0("model_predictions/", model_run_name,".tif")
+#### predict! ###
 
-cat("... predicting throughout study area \n")
-# use parallel processing if packages installed
-if (all(c("snow","parallel") %in% installed.packages())) {
-  try({
-    beginCluster(type = "SOCK", n=parallel:::detectCores()-10)
-    outRas <- clusterR(envStack, predict, args = list(model=rf.full, type = "prob", index = 2), verbose = TRUE)
-    writeRaster(outRas, filename = fileNm, format = "GTiff", overwrite = TRUE)
-  })
-  try(endCluster())
-  if (!exists("outRas")) {
-    cat("Cluster processing failed. Falling back to single-core processing...\n")
-    outRas <- predict(object=envStack, model=rf.full, type = "prob", index=2,
-                      filename=fileNm, format = "GTiff", overwrite=TRUE)
-  }
-# otherwise regular processing
-} else {
-  cat("Using single-core processing for prediction.\nInstall package 'snow' for faster cluster (multi-core) processing.\n")
-  outRas <- predict(object=envStack, model=rf.full, type = "prob", index=2,
-                    filename=fileNm, format = "GTiff", overwrite=TRUE)
-
+for(algo in ensemble_algos){
+  message(paste0("building out a prediction for the ", algo, " model."))
+  scriptToCall <- paste0(algo, "_4_predictModelToStudyArea.R")
+  source(here("ensemble", scriptToCall))
 }
+
 
 # delete temp rasts folder
 if (dir.exists(paste0(options("rasterTmpDir")[1], "/", modelrun_meta_data$model_run_name))) {
