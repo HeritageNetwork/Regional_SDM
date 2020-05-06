@@ -1,16 +1,17 @@
 # File: user_run_SDM.r
 # Purpose: Run a new, full SDM model (all steps)
 
+library(checkpoint)
+checkpoint("2020-04-22")
+
 library(here)
 rm(list=ls())
 # 
-# library(checkpoint)
-# checkpoint("2020-03-01")
 
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "eriogyps"
+model_species <- "linuallr"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -45,7 +46,7 @@ modeller = "Tim Howard"
 #                   "me" (maxent), 
 #                   "xgb" (extreme gradient boosting), 
 #                   "gam" (generalized additive models)
-ensemble_algos = c("rf")
+ensemble_algos = c("me")
 
 # list non-standard variables to add to model run
 add_vars = NULL
@@ -54,7 +55,7 @@ remove_vars = NULL
 # do you want to stop execution after each modeling step (script)?
 prompt = FALSE
 
-project_blurb = "Models developed for the ..."
+project_blurb = "Models developed for the BLM. "
 
 # set wd and load function
 setwd(loc_scripts)
@@ -129,8 +130,9 @@ source(here("helper", "run_SDM.R"))
   # to just run new model, begin at step 3 (see next example)
 run_SDM(
   begin_step = "3",
-  model_species = "allimunz",
-  loc_model = loc_model
+  model_species = "amsothar",
+  loc_model = loc_model,
+  loc_scripts = loc_scripts
 )
 
 
@@ -150,7 +152,7 @@ run_SDM(
 # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
   begin_step = "4",
-  model_species = "linuallr",
+  model_species = "amsothar",
   loc_model = loc_model,
   loc_scripts = loc_scripts,
   model_rdata = max(list.files(here("_data","species",model_species,"outputs","rdata")))
@@ -169,9 +171,11 @@ rm(list=ls())
 
 # for scripts 1-3, run just the following 3 lines
 
-model_species <- "eriogyps"
+model_species <- "amsothar"
 
 load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
+# if you want an earlier run, enter it and load it here:
+#load(here("_data","species",model_species,"runSDM_paths_amsothar_20200417_132223.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
 # if debugging script 4 or later, also load the specific model output rdata file
