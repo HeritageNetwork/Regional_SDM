@@ -68,8 +68,8 @@ envStack <- stack(newL)
 rm(fullL)
 
 # run prediction ----
-setwd(paste0(loc_model, "/", model_species,"/outputs"))
-fileNm <- paste0("model_predictions/xgb_", model_run_name,".tif")
+setwd(file.path(loc_model, model_species,"outputs","model_predictions"))
+fileNm <- paste0(model_run_name,"_",algo,".tif")
 
 
 cat("... predicting throughout study area \n")
