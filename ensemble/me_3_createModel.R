@@ -354,7 +354,7 @@ if(length(group$vals)>1){
 
 
 # subsample down to a reasonable number 
-df.full.s <- subSampByGp(df.full, sampSizeVec[-grep("pseu-a", names(sampSizeVec))])
+df.full.s <- subSampByGp(df.full, sampSizeVec[-grep("pseu-a", names(sampSizeVec))], group$colNm)
 df.full.s <- rbind(df.full.s, df.full[df.full$pres == 0,])
 
 outPth <- file.path(loc_model, ElementNames$Code,"outputs","ensemble","me")
