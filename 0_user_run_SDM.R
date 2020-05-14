@@ -46,7 +46,7 @@ modeller = "Tim Howard"
 #                   "me" (maxent), 
 #                   "xgb" (extreme gradient boosting), 
 #                   "gam" (generalized additive models)
-ensemble_algos = c("me")
+ensemble_algos = c("xgb")
 
 # list non-standard variables to add to model run
 add_vars = NULL
@@ -173,13 +173,14 @@ rm(list=ls())
 
 model_species <- "amsothar"
 
-load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
+#load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
 # if you want an earlier run, enter it and load it here:
-#load(here("_data","species",model_species,"runSDM_paths_amsothar_20200417_132223.Rdata"))
+load(here("_data","species",model_species,"runSDM_paths_amsothar_20200428_104806.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
 # if debugging script 4 or later, also load the specific model output rdata file
-model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata")))
+#model_rdata <- max(list.files(here("_data","species",model_species,"outputs","rdata")))
+model_rdata <- paste0(fn_args$modelrun_meta_data$model_run_name, ".Rdata")
 load(here("_data","species",model_species,"outputs","rdata",paste0(model_rdata)))
 
 
