@@ -30,7 +30,7 @@ test.df.full.xgb <- xgb.DMatrix(as.matrix(df.full[,indVarCols]),
                            label=as.integer(as.character(df.full$pres)))
 
 xgb.predicted <- predict(xgb.full, test.df.full.xgb)
-xgb.predicted <- as.data.frame(cbind(df.full[,c("pres","group_id","stratum")], "pred" = a))
+xgb.predicted <- as.data.frame(cbind(df.full[,c("pres","group_id","stratum")], "pred" = xgb.predicted))
 allVotesPresPts <- xgb.predicted[xgb.predicted$pres=="1",]
 #mtp
 MTP <- min(allVotesPresPts[, "pred"])
