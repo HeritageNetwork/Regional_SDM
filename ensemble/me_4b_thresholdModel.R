@@ -11,8 +11,8 @@ library(DBI)
 
 ### find and load model data ----
 #setwd(loc_model)
-setwd(paste0(model_species,"/outputs"))
-load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
+#setwd(paste0(model_species,"/outputs"))
+#load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 ## Calculate different thresholds ----
 #set an empty list
@@ -21,7 +21,7 @@ cutList <- list()
 # total number of EOs, polys, pts (subtract absence class)
 totEOs.s <- length(unique(df.full.s$group_id)[!grepl("pseu-a",unique(df.full.s$group_id))])
 totPolys.s <- length(unique(df.full.s$stratum)[!grepl("pseu-a",unique(df.full.s$stratum))])
-totPts.s <- nrow(df.full.s[!df.full.s$stratum == "pseu-a",])
+totPts.s <- nrow(df.full.s[df.full.s$pres == 1,])
 
 #####
 # me calculated threholds are here, for example
@@ -243,6 +243,7 @@ cutList$MPVG <- list("value" = MPVG, "code" = "MPVG",
 numThresh <- length(cutList)
 
 allThresh <- data.frame("model_run_name" = rep(modelrun_meta_data$model_run_name, numThresh),
+                        "algorithm" = rep(algo, numThresh),
                         "ElemCode" = rep(ElementNames$Code, numThresh),
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
                 "cutCode" = unlist(lapply(cutList, function(x) x["code"])),
