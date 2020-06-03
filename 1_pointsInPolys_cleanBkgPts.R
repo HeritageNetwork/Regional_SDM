@@ -25,8 +25,8 @@ library(stringr)
 
 # set the working directory to the location of the csv of species by reaches
 setwd(loc_model)
-dir.create(paste0(model_species,"/inputs/presence"), recursive = T, showWarnings = F)
-dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = F)
+dir.create(paste0(model_species,"/inputs/presence"), recursive = TRUE, showWarnings = FALSE)
+dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = FALSE)
 setwd(paste0(loc_model,"/",model_species,"/inputs"))
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
@@ -123,15 +123,25 @@ shapef$huc12 <- str_pad(shapef$huc12, 12, pad=0)
 # get huc12s, geom
 pres.geom <- merge(shapef, presReaches, by = "comid")
 
-# define project background
-# subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
-presHUCs <- pres.geom$huc12
 
-# test at what level HUCS are the same, and choose that level to run the predictions at.  
-# For example, if all know occurences are within the same HUC6, then the study area will be clipped to that HUC6. 
-# If they are not same at any level, then the model will be run at the full extant of the predictor layer.  
-# THis is used to define the project background below.
-if (is.null(huc_level)) {
+
+# define the range of the model, either by 1) loading a shapefile describing the range that has huc10 as a field; or 2) defining the range based on the extent of known occurences
+
+# based on a range shapefile.  Shapefile should be placed in the occurrence directory and be named as <CUTECODE>_range.shp 
+if(file.exists(nm_rangeFile)){
+  print("range file exists!")
+  range_shape <- st_read(nm_rangeFile, quiet=TRUE)
+  huc_level <- 10
+  presHUCs <- as.character(unique(range_shape$HUC10))
+  message("Using custom range boundary based on HUC", huc_level , " features...") 
+  # dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
+  # SQLQuery <- paste0("SELECT * FROM ",nm_bkg[2]," WHERE substr(huc12, 1, 10) IN ('", paste(range_huc10, collapse = "','"),"');")
+  # shapefrange <- dbGetQuery(dbEV, SQLQuery)  
+} else if(is.null(huc_level)&&!file.exists(nm_rangeFile)) {
+  # define project background
+  # subset background reaches by HUC2 to prevent predictions into basics where the species is not known to occur
+  presHUCs <- unique(pres.geom$huc12)
+  
   if(length(unique(substr(presHUCs,1,8)))==1){
     huc_level <- 8
   } else if(length(unique(substr(presHUCs,1,6)))==1){
@@ -143,10 +153,13 @@ if (is.null(huc_level)) {
   } else {
     huc_level <- 4 # changed from 2 to try to narrow up the prediction area
   }
-  fn_args$huc_level <- huc_level
-  save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
+  message("Using huc_level of ", huc_level , "...") 
 }
-message("Using huc_level of ", huc_level , "...")
+
+fn_args$huc_level <- huc_level
+fn_args$presHUCs <- presHUCs
+save(fn_args, file = paste0(loc_model, "/" , model_species, "/runSDM_paths.Rdata"))
+
 
 # create background geom based on HUCsubset
 dbEV <- dbConnect(SQLite(),dbname=nm_bkg[1])
@@ -164,11 +177,17 @@ SQLQuery <- paste0("SELECT proj4string p FROM lkpCRS WHERE table_name = '", nm_b
 proj4 <- dbGetQuery(dbEV, SQLQuery)$p
 shapef <- st_sf(shapef[c("comid", "huc12")], geometry = st_as_sfc(shapef$wkt), crs = proj4)
 
+
 # find presence and presence-adjacent reaches by intersection
-bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = F)
-bkgd.geom <- shapef[!apply(bkgd.int, 1, FUN = any),]
-if (length(bkgd.geom$geometry) > 3000) { 
-  bkgd.geom <- bkgd.geom[sort(sample(as.numeric(row.names(bkgd.geom)), size = 3000, replace = F)),]
+bkgd.int <- st_intersects(st_zm(shapef), st_zm(pres.geom) , sparse = TRUE)
+bkgd.int <- unlist(lapply(bkgd.int, FUN = function(x) length(x)>0))
+if (TRUE %in% bkgd.int) bkgd.geom <- shapef[!bkgd.int,] else bkgd.geom <- shapef
+
+# reduce the number of bkg records if huge
+# use the greater of 20 * pres records or 50,000
+bkgTarg <- max(nrow(pres.geom) * 20, 50000)
+if(nrow(bkgd.geom) > bkgTarg){
+  bkgd.geom <- bkgd.geom[sample(nrow(bkgd.geom), size = bkgTarg, replace = FALSE),]
 }
 
 # write species reach data

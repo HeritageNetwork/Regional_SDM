@@ -21,7 +21,7 @@ library(tables)
 library(tmap)
 library(tmaptools)
 library(OpenStreetMap)
-library(rmapshaper)
+#library(rmapshaper)
 
 ### find and load model data ----
 ## three lines need your attention. The one directly below (loc_scripts),
@@ -36,11 +36,16 @@ load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 # get reach data for the map
 results_shape <- st_read(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results.shp"), quiet = T) # shapefile results for mapping
 
+# simplfy the aquatic lines
+# library(smoothr)
+# results_shape1 <- as(results_shape, 'Spatial') # st_simplify(results_shape)
+# results_shape1a <- gSimplify(results_shape1,tol = 0.05)
+
 # get background poly data for the map (study area, reference boundaries, and aquatic areas)
 studyAreaExtent <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_modelrange.shp")), quiet = T)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = T)
 
-if(exists(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"))){
+if(file.exists(paste0("model_predictions/", modelrun_meta_data$model_run_name, "_results_aquaPolys.shp"))){
   aquaPolys <- st_read(here("_data","species",model_species,"outputs","model_predictions",paste0(model_run_name, "_results_aquaPolys.shp")), quiet = T)
 } else {
   cat("No aquatic polygon shapefile...")
@@ -102,8 +107,7 @@ sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue", "capturedEOs", "capturedPts", "cutDescription")]
 names(sdm.thresh.table) <- c("Threshold", "Value", "Groups", "Pct","Description")
 sdm.thresh.table$Description <- gsub("points", "reaches", sdm.thresh.table$Description, fixed=TRUE) # hack to change points -> reaches
-sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/numEOs*100, 1), "(",sdm.thresh.table$Groups, ")", sep="")
-#sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),  "(",sdm.thresh.table$Polys, ")", sep="")
+sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/length(group$vals)*100, 1), "(",sdm.thresh.table$Groups, ")", sep="")
 numPts <- nrow(subset(df.full, pres == 1))
 sdm.thresh.table$Pct <- paste(round(sdm.thresh.table$Pct/numPts*100, 1),  sep="")
 
