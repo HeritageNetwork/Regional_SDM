@@ -31,9 +31,58 @@ library(OpenStreetMap)
 ## and about line 46 where you choose which record to use
 
 setwd(loc_model)
-dir.create(paste0(model_species,"/outputs/metadata"), recursive = T, showWarnings = F)
+dir.create(paste0(model_species,"/outputs/metadata"), recursive = TRUE, showWarnings = FALSE)
 setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
+
+# create table 1, summary of input data
+# get data from DB
+# connect to DB ..
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+sql <- paste0("SELECT * from tblModelInputs where model_run_name = '", 
+              model_run_name, "';")
+inputs <- dbGetQuery(db, statement = sql)
+dbDisconnect(db)
+rm(db)
+
+# Assume groups and pres inputs are the same among algorithms
+# but background inputs vary
+summ.table <- data.frame(
+  Sample=c("Presence locations (groups)",
+        "Subsamples within groups",
+        "Total presence inputs",
+        paste0("Background inputs - ", inputs$algorithm)),
+  Count=c(
+    ifelse(inputs$jckn_grp_column[[1]] == "stratum", 
+           inputs$feat_count[[1]],
+           inputs$feat_grp_count[[1]]
+           ),
+    inputs$mn_grp_subsamp[[1]],
+    inputs$tot_obs_subsamp[[1]],
+    paste0(inputs$tot_bkgd_subsamp)
+     ))
+
+# create table 2, summary of validation statistics
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+sql <- paste0("SELECT * from tblModelResultsValidationStats where model_run_name = '", 
+              model_run_name, "';")
+vstats <- dbGetQuery(db, statement = sql)
+dbDisconnect(db)
+rm(db)
+
+metricsToGet <- c("AUC","Sensitivity","Specificity","TSS")
+colsToGet <- c("algorithm","metric","metric_mn","metric_sd")
+vstats <- vstats[vstats$metric %in% metricsToGet,colsToGet]
+names(vstats) <- c("algorithm","metric","mean","SD")
+
+vstatsList <- split(vstats, f = vstats$algorithm)
+vstatsList <- lapply(vstatsList, FUN = function(x) x[,!names(x)=="algorithm"])
+attr(vstatsList, "subheadings") <- paste0("Algorithm = ", names(vstatsList))
+
+
+
+
+print.xtableList(xList)
 
 # get background poly data for the map (study area, reference boundaries)
 studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)

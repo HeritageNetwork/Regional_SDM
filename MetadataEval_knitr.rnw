@@ -96,11 +96,6 @@ Table 1. Input statistics. Presence points are points placed in polygon-based lo
 \smallskip
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("Presence points","Groups","Background points"),
-                         Number=c(nrow(subset(df.full, pres == 1)),
-                         length(group$vals),
-                         nrow(subset(df.full, pres == 0))
-                         ))
   print(xtable(summ.table),
              floating = FALSE, include.rownames=FALSE)
 @
@@ -116,31 +111,17 @@ fielding2002}\protect\endNoHyper}.
 
 \begin{center}
 <<tableTwo, results="asis", echo = FALSE>>=
-  if (exists("tss.summ")) {
-    summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
-                                   "TSS", "Kappa", "AUC"), 
-                           Mean=c(OvAc.summ$mean, specif.summ$mean,sensit.summ$mean,
-                                  tss.summ$mean,Kappa.unw.summ$mean,
-                                  auc.summ$mean),
-                           SD=c(OvAc.summ$sd, specif.summ$sd,sensit.summ$sd,
-                                  tss.summ$sd,Kappa.unw.summ$sd, 
-                                  auc.summ$sd),
-                           SEM=c(OvAc.summ$sem, specif.summ$sem,sensit.summ$sem,
-                                  tss.summ$sem,Kappa.unw.summ$sem, 
-                                  auc.summ$sem))
-  } else {
-    summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
-                                   "TSS", "Kappa", "AUC"),
-                             Mean = rep(NA, 6), SD = rep(NA, 6), SEM = rep(NA, 6))
-  }
-    print(xtable(summ.table), 
+  print(xtableList(vStatsxList),
                 floating=FALSE, include.rownames=FALSE)
 @
 \end{center}
 
 \medskip
 \normalsize
-    <<checkEvalExists, include=FALSE, echo=FALSE>>=
+
+
+<<move all of this paragraph to appendix>>
+ <<checkEvalExists, include=FALSE, echo=FALSE>>=
 if (exists("n.var")) {
   txt <- paste0("Validation runs used ",n.var," environmental 
   variables, the most important of ",OriginalNumberOfEnvars," 
