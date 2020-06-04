@@ -9,6 +9,8 @@ library(randomForest)
 library(iterators)
 library(doParallel)
 
+
+
 ##
 # tune mtry ----
 #subset df to ten times pres for getting mtry  ## to increase speed
@@ -73,10 +75,13 @@ numCores <- 10
 cl <- makeCluster(numCores)   
 registerDoParallel(cl)
 
+# pass libPath to workers
+x <- clusterCall(cl, function(x) .libPaths(x), .libPaths())
+
 treeSubs <- ntrees/numCores
 
 rf.find.envars <- foreach(ntree = rep(treeSubs,numCores), .combine = randomForest::combine, 
-                   .packages = 'randomForest', .multicombine = TRUE) %dopar% {
+                    .packages = 'randomForest', .multicombine = TRUE) %dopar% {
                      randomForest(df.full[,indVarCols],
                                   y=df.full[,depVarCol],
                                   importance=TRUE,
@@ -86,6 +91,7 @@ rf.find.envars <- foreach(ntree = rep(treeSubs,numCores), .combine = randomFores
                                   sampsize = sampSizeVec, replace = TRUE,
                                   norm.votes = TRUE)
                    }
+
 
 impvals <- importance(rf.find.envars, type = 1)
 OriginalNumberOfEnvars <- length(impvals)
@@ -388,16 +394,16 @@ if(length(group$vals)>1){
 	sensit <- v.y.flat.sn[,"pred. pres"]/(v.y.flat.sn[,"pred. pres"] + v.y.flat.sn[,"pred. abs"])    #sensitivity
 	sensit.summ <- data.frame("mean"=mean(sensit), "sd"=sd(sensit),"sem"= sd(sensit)/sqrt(length(sensit)))
 
-	summ.table <- data.frame(Name=c("Weighted Kappa", "Unweighted Kappa", "AUC",
+	summ.table <- data.frame(metric=c("Weighted Kappa", "Unweighted Kappa", "AUC",
 									"TSS", "Overall Accuracy", "Specificity",
 									"Sensitivity"),
-							 Mean=c(Kappa.w.summ$mean, Kappa.unw.summ$mean,auc.summ$mean,
+							metric_mn=c(Kappa.w.summ$mean, Kappa.unw.summ$mean,auc.summ$mean,
 									tss.summ$mean, OvAc.summ$mean, specif.summ$mean,
 									sensit.summ$mean),
-							 SD=c(Kappa.w.summ$sd, Kappa.unw.summ$sd,auc.summ$sd,
+							metric_sd=c(Kappa.w.summ$sd, Kappa.unw.summ$sd,auc.summ$sd,
 									tss.summ$sd, OvAc.summ$sd, specif.summ$sd,
 									sensit.summ$sd),
-							 SEM=c(Kappa.w.summ$sem, Kappa.unw.summ$sem,auc.summ$sem,
+							metric_sem=c(Kappa.w.summ$sem, Kappa.unw.summ$sem,auc.summ$sem,
 									tss.summ$sem, OvAc.summ$sem, specif.summ$sem,
 									sensit.summ$sem))
 	summ.table
@@ -426,6 +432,47 @@ rf.full <- foreach(ntree = rep(treeSubs,numCores), .combine = randomForest::comb
                               sampsize = sampSizeVec, replace = TRUE,
                               norm.votes = TRUE)
                               }
+
+# write out input data
+# connect to DB ..
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+
+# write model input data to database before any other changes made
+tblModelInputs <- data.frame(table_code = baseName,
+                             model_run_name = model_run_name,
+                             algorithm = algo,
+                             EGT_ID = ElementNames$EGT_ID, 
+                             datetime = as.character(Sys.time()),
+                             feat_count = length(unique(df.in$stratum)), 
+                             feat_grp_count = length(unique(df.in$group_id)),
+                             jckn_grp_column = group$colNm,
+                             jckn_grp_type = group$JackknType,
+                             mn_grp_subsamp = mean(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             min_grp_subsamp = min(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             max_grp_subsamp = max(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             tot_obs_subsamp = sum(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             tot_bkgd_subsamp = sum(sampSizeVec[names(sampSizeVec) == "pseu-a"]),
+                             obs_count = nrow(df.in), 
+                             bkgd_count = nrow(df.abs)
+)
+dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, 
+                     "' and algorithm = '", algo, "';")) # remove any previously prepped dataset entry
+dbWriteTable(db, "tblModelInputs", tblModelInputs, append = TRUE)
+
+# write validation data
+summ.table <- cbind("model_run_name" = rep(model_run_name, nrow(summ.table)), 
+                       "algorithm" = rep(algo, nrow(summ.table)), 
+                    summ.table)
+
+dbExecute(db, paste0("DELETE FROM tblModelResultsValidationStats where model_run_name = '", model_run_name, 
+                     "' and algorithm = '", algo, "';")) # remove any previously prepped dataset entry
+dbWriteTable(db, "tblModelResultsValidationStats", summ.table, append = TRUE)
+
+
+dbDisconnect(db)
+rm(db)
+
+
 
 ####
 # Importance measures ----
@@ -486,6 +533,13 @@ for(i in 1:length(pPlots)){
   pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
 }
 rm(ppPres, ppAbs, ppPresSamp, ppAbsSamp, ppPreddata)
+
+# clear out registered clusters as caret is unhappy with them ...
+unregister <- function() {
+  env <- foreach:::.foreachGlobals
+  rm(list=ls(name=env), pos=env)
+}
+unregister()
 
 stopCluster(cl)
 rm(cl)

@@ -42,21 +42,12 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id, g_rank, rounded_g_rank FROM lkpSpecies WHERE sp_code = '", model_species,"';", sep="")
 ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
 
-# write model input data to database before any other changes made
-tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.character(Sys.time()),
-                             feat_count = length(unique(df.in$stratum)), 
-                             feat_grp_count = length(unique(df.in$group_id)), 
-                             obs_count = length(df.in[,1]), bkgd_count = length(df.abs[,1]),
-                             range_area_sqkm = NA)
-dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, "';")) # remove any previously prepped dataset entry
-dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
 envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVars;")$g
 envvar_list <- tolower(envvar_list)
 
 #also get correlated env var information
 SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
 corrdEVs <- dbGetQuery(db, statement = SQLquery)
-
 dbDisconnect(db)
 rm(db, SQLquery)
 
@@ -211,8 +202,33 @@ totPts <- table(df.full[,group$colNm])
 for (i in names(sampSizeVec)) if (sampSizeVec[i] > totPts[i]) sampSizeVec[i] <- totPts[i]
 rm(totPts)
 
-#### run the models! ###
+# # connect to DB ..
+# db <- dbConnect(SQLite(),dbname=nm_db_file)
+# 
+# # write model input data to database before any other changes made
+# tblModelInputs <- data.frame(table_code = baseName,
+#                              model_run_name = model_run_name,
+#                              EGT_ID = ElementNames$EGT_ID, 
+#                              datetime = as.character(Sys.time()),
+#                              feat_count = length(unique(df.in$stratum)), 
+#                              feat_grp_count = length(unique(df.in$group_id)),
+#                              jckn_grp_column = group$colNm,
+#                              jckn_grp_type = group$JackknType,
+#                              mn_grp_subsamp = mean(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+#                              min_grp_subsamp = min(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+#                              max_grp_subsamp = max(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+#                              tot_obs_subsamp = sum(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+#                              tot_bkgd_subsamp = sampSizeVec[names(sampSizeVec) == "pseu-a"],
+#                              obs_count = nrow(df.in), 
+#                              bkgd_count = nrow(df.abs)
+#                              )
+# dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, "';")) # remove any previously prepped dataset entry
+# dbWriteTable(db, "tblModelInputs", tblModelInputs, append = TRUE)
+# 
+# dbDisconnect(db)
+# rm(db)
 
+#### run the models! ###
 for(algo in ensemble_algos){
   print(paste0("building and validating ", algo, " model."))
   scriptToCall <- paste0(algo, "_3_createModel.R")

@@ -9,7 +9,7 @@ library(RSQLite)
 #library(ROCR)    #for ROC plots and stats
 #library(vcd)     #for kappa stats
 #library(abind)   #for collapsing the nested lists
-library(foreign) #for reading dbf files
+#library(foreign) #for reading dbf files
 #library(randomForest)
 #library(iterators)
 #library(doParallel)
@@ -18,6 +18,9 @@ library(caret)
 library(recipes)
 # for xgb
 library(xgboost)
+
+# having parallel package loaded messes up caret
+#detach("package:doParallel", unload=TRUE)
 
 
 ###
@@ -163,10 +166,8 @@ subSampByGp <- function(x, ssvec, gpColName) {
   df.sub
 }
 
-
-
-
 df.full.s <- subSampByGp(df.full, sampSizeVec[-grep("pseu-a", names(sampSizeVec))], group$colNm)
+## TODO sample background down to a reasonable number ##### research it?
 df.full.s <- rbind(df.full.s, df.full[df.full$pres == 0,])
 
 # define the folds
@@ -191,8 +192,6 @@ xgbfitControl <- trainControl(
   classProbs = TRUE
 )
 
-df.full.s <- df.full.s[,c(depVarCol,indVarCols)]
-#str(df.full.s)
 # caret seems to need this
 df.full.s$pres <- as.character(df.full.s$pres)
 df.full.s[df.full.s$pres == "0","pres"] <- "abs"
@@ -211,8 +210,9 @@ df.full.s$pres <- as.factor(df.full.s$pres)
 #modRecipe <- recipe(pres ~ ., data = df.full.s
 #)
 
-xgbFit1 <- train(pres ~ ., data = df.full.s,
-                 method = "xgbTree", 
+# run validation with caret
+xgbFit1 <- train(pres ~ ., data = df.full.s[,c(depVarCol,indVarCols)],
+                 method = "xgbTree",
                  trControl = xgbfitControl,
                  metric = "ROC")
 
@@ -222,7 +222,7 @@ df.full.s[df.full.s$pres == "abs","pres"] <- "0"
 df.full.s[df.full.s$pres == "pres","pres"] <- "1"
 df.full.s$pres <- as.factor(df.full.s$pres)
 
-df.full.s.xgb <- xgb.DMatrix(as.matrix(df.full.s[,-grep("pres",names(df.full.s))]), 
+df.full.s.xgb <- xgb.DMatrix(as.matrix(df.full.s[,indVarCols]), 
                            label=as.integer(as.character(df.full.s$pres)))
 
 ####
@@ -234,18 +234,60 @@ xgb.full <- xgb.train(params=xgbFit1$finalModel$params,
                              nrounds = 100)
 
 
+# write out input data
+# connect to DB ..
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+
+# write model input data to database before any other changes made
+tblModelInputs <- data.frame(table_code = baseName,
+                             model_run_name = model_run_name,
+                             algorithm = algo,
+                             EGT_ID = ElementNames$EGT_ID, 
+                             datetime = as.character(Sys.time()),
+                             feat_count = length(unique(df.in$stratum)), 
+                             feat_grp_count = length(unique(df.in$group_id)),
+                             jckn_grp_column = group$colNm,
+                             jckn_grp_type = group$JackknType,
+                             mn_grp_subsamp = mean(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             min_grp_subsamp = min(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             max_grp_subsamp = max(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             tot_obs_subsamp = sum(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             tot_bkgd_subsamp = nrow(df.full.s[df.full.s$pres == "0",]),
+                             obs_count = nrow(df.in), 
+                             bkgd_count = nrow(df.abs)
+)
+dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, 
+                     "' and algorithm = '", algo, "';")) # remove any previously prepped dataset entry
+dbWriteTable(db, "tblModelInputs", tblModelInputs, append = TRUE)
+# write validation data
+
+xgbTuneOutput <- xgbFit1$results[as.numeric(rownames(xgbFit1$finalModel$tuneValue)),]
 
 
-xgb.impvals <- xgb.importance(model=xgb.full)
+xgb.summ.table <- as.data.frame(cbind("model_run_name" = rep(model_run_name, 4), 
+                    "algorithm" = rep(algo, 4), 
+                    "metric" = c("AUC","Sensitivity","Specificity","TSS"),
+                    "metric_mn" = c(xgbTuneOutput$ROC,
+                                    xgbTuneOutput$Sens,
+                                    xgbTuneOutput$Spec, 
+                                    xgbTuneOutput$Sens + xgbTuneOutput$Spec - 1),
+                    "metric_sd" = c(xgbTuneOutput$ROCSD,
+                                    xgbTuneOutput$SensSD,
+                                    xgbTuneOutput$SpecSD,
+                                    NA)
+                    ))
 
+dbExecute(db, paste0("DELETE FROM tblModelResultsValidationStats where model_run_name = '", model_run_name, 
+                     "' and algorithm = '", algo, "';")) # remove any previously prepped dataset entry
+dbWriteTable(db, "tblModelResultsValidationStats", xgb.summ.table, append = TRUE)
 
-
-
-
+dbDisconnect(db)
+rm(db)
 
 ####
 # Importance measures ----
 ####
+xgb.impvals <- xgb.importance(model=xgb.full)
 
 g.imp <- xgb.impvals[,c("Feature","Gain")]
 
@@ -292,7 +334,7 @@ if(length(ord) > 9){
 # # run partial plots in parallel
 #curvars = EnvVars$gridName[1:pPlotListLen]
 
-xgb.pPlots <- xgb.plot.shap(data = as.matrix(df.full.s[,-grep("pres",names(df.full.s))]), 
+xgb.pPlots <- xgb.plot.shap(data = as.matrix(df.full.s[,indVarCols]), 
                      model = xgb.full, 
                      features = xgb.EnvVars$gridName[1:pPlotListLen],
                      target_class = 1,

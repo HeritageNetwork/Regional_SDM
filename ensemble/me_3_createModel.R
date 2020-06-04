@@ -334,16 +334,16 @@ if(length(group$vals)>1){
   sensit <- me.v.y.flat.sn[,"pred. pres"]/(me.v.y.flat.sn[,"pred. pres"] + me.v.y.flat.sn[,"pred. abs"])    #sensitivity
   sensit.summ <- data.frame("mean"=mean(sensit), "sd"=sd(sensit),"sem"= sd(sensit)/sqrt(length(sensit)))
   
-  me.summ.table <- data.frame(Name=c("Weighted Kappa", "Unweighted Kappa", "AUC",
+  me.summ.table <- data.frame(metric=c("Weighted Kappa", "Unweighted Kappa", "AUC",
                                   "TSS", "Overall Accuracy", "Specificity",
                                   "Sensitivity"),
-                           Mean=c(Kappa.w.summ$mean, Kappa.unw.summ$mean,auc.summ$mean,
+                              metric_mn=c(Kappa.w.summ$mean, Kappa.unw.summ$mean,auc.summ$mean,
                                   tss.summ$mean, OvAc.summ$mean, specif.summ$mean,
                                   sensit.summ$mean),
-                           SD=c(Kappa.w.summ$sd, Kappa.unw.summ$sd,auc.summ$sd,
+                              metric_sd=c(Kappa.w.summ$sd, Kappa.unw.summ$sd,auc.summ$sd,
                                 tss.summ$sd, OvAc.summ$sd, specif.summ$sd,
                                 sensit.summ$sd),
-                           SEM=c(Kappa.w.summ$sem, Kappa.unw.summ$sem,auc.summ$sem,
+                              metric_sem=c(Kappa.w.summ$sem, Kappa.unw.summ$sem,auc.summ$sem,
                                  tss.summ$sem, OvAc.summ$sem, specif.summ$sem,
                                  sensit.summ$sem))
   me.summ.table
@@ -370,6 +370,44 @@ me.out.fin <- maxent(df.full.s[,indVarCols], df.full.s[,depVarCol],
 # p = product. Allow product features to be used
 # q = quadratic. Allow quadratic features to be used
 # l = linear. Allow linear features to be used
+
+# write out input data
+# connect to DB ..
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+
+# write model input data to database before any other changes made
+tblModelInputs <- data.frame(table_code = baseName,
+                             model_run_name = model_run_name,
+                             algorithm = algo,
+                             EGT_ID = ElementNames$EGT_ID, 
+                             datetime = as.character(Sys.time()),
+                             feat_count = length(unique(df.in$stratum)), 
+                             feat_grp_count = length(unique(df.in$group_id)),
+                             jckn_grp_column = group$colNm,
+                             jckn_grp_type = group$JackknType,
+                             mn_grp_subsamp = mean(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             min_grp_subsamp = min(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             max_grp_subsamp = max(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             tot_obs_subsamp = sum(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
+                             tot_bkgd_subsamp = nrow(df.full.s[df.full.s$pres == 0,]),
+                             obs_count = nrow(df.in), 
+                             bkgd_count = nrow(df.abs)
+)
+dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, 
+                     "' and algorithm = '", algo, "';")) # remove any previously prepped dataset entry
+dbWriteTable(db, "tblModelInputs", tblModelInputs, append = TRUE)
+
+# write validation data
+me.summ.table <- cbind("model_run_name" = rep(model_run_name, nrow(me.summ.table)), 
+                       "algorithm" = rep(algo, nrow(me.summ.table)), 
+                       me.summ.table)
+
+dbExecute(db, paste0("DELETE FROM tblModelResultsValidationStats where model_run_name = '", model_run_name, 
+                     "' and algorithm = '", algo, "';")) # remove any previously prepped dataset entry
+dbWriteTable(db, "tblModelResultsValidationStats", me.summ.table, append = TRUE)
+
+dbDisconnect(db)
+rm(db)
 
 
 ####
