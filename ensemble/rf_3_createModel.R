@@ -263,12 +263,12 @@ if(length(group$vals)>1){
 	# run a ROC performance with ROCR
 	v.rocr.rocplot.restruct <- performance(v.rocr.pred.restruct, "tpr","fpr")
 	# send it to perf for the averaging lines that follow
-	perf <- v.rocr.rocplot.restruct
+	rf.perf <- v.rocr.rocplot.restruct
   rm(v.rocr.rocplot.restruct)
 	## for infinite cutoff, assign maximal finite cutoff + mean difference
 	## between adjacent cutoff pairs  (this code is from ROCR)
-	if (length(perf@alpha.values)!=0) perf@alpha.values <-
-		lapply(perf@alpha.values,
+	if (length(rf.perf@alpha.values)!=0) rf.perf@alpha.values <-
+		lapply(rf.perf@alpha.values,
 			function(x) { isfin <- is.finite(x);
 				x[is.infinite(x)] <-
 					(max(x[isfin]) +
@@ -277,34 +277,34 @@ if(length(group$vals)>1){
 				x[is.nan(x)] <- 0.001; #added by tgh to handle vectors length 2
 		x})
 
-	for (i in 1:length(perf@x.values)) {
-		ind.bool <- (is.finite(perf@x.values[[i]]) & is.finite(perf@y.values[[i]]))
-		if (length(perf@alpha.values) > 0)
-			perf@alpha.values[[i]] <- perf@alpha.values[[i]][ind.bool]
-		perf@x.values[[i]] <- perf@x.values[[i]][ind.bool]
-		perf@y.values[[i]] <- perf@y.values[[i]][ind.bool]
+	for (i in 1:length(rf.perf@x.values)) {
+		ind.bool <- (is.finite(rf.perf@x.values[[i]]) & is.finite(rf.perf@y.values[[i]]))
+		if (length(rf.perf@alpha.values) > 0)
+			rf.perf@alpha.values[[i]] <- rf.perf@alpha.values[[i]][ind.bool]
+		rf.perf@x.values[[i]] <- rf.perf@x.values[[i]][ind.bool]
+		rf.perf@y.values[[i]] <- rf.perf@y.values[[i]][ind.bool]
 	}
-	perf.sampled <- perf
+	rf.perf.sampled <- rf.perf
 
 	# create a list of cutoffs to interpolate off of
-	alpha.values <- rev(seq(min(unlist(perf@alpha.values)),
-							max(unlist(perf@alpha.values)),
-							length=max(sapply(perf@alpha.values, length))))
+	alpha.values <- rev(seq(min(unlist(rf.perf@alpha.values)),
+							max(unlist(rf.perf@alpha.values)),
+							length=max(sapply(rf.perf@alpha.values, length))))
 	# interpolate by cutoff, values for y and x
-	for (i in 1:length(perf.sampled@y.values)) {
-		perf.sampled@x.values[[i]] <-
-		  approxfun(perf@alpha.values[[i]],perf@x.values[[i]],
+	for (i in 1:length(rf.perf.sampled@y.values)) {
+		rf.perf.sampled@x.values[[i]] <-
+		  approxfun(rf.perf@alpha.values[[i]],rf.perf@x.values[[i]],
 					rule=2, ties=mean)(alpha.values)
-		perf.sampled@y.values[[i]] <-
-		  approxfun(perf@alpha.values[[i]], perf@y.values[[i]],
+		rf.perf.sampled@y.values[[i]] <-
+		  approxfun(rf.perf@alpha.values[[i]], rf.perf@y.values[[i]],
 					rule=2, ties=mean)(alpha.values)
 	}
 
 	## compute average curve
-	perf.avg <- perf.sampled
-	perf.avg@x.values <- list(rowMeans( data.frame( perf.avg@x.values)))
-	perf.avg@y.values <- list(rowMeans( data.frame( perf.avg@y.values)))
-	perf.avg@alpha.values <- list( alpha.values )
+	rf.perf.avg <- rf.perf.sampled
+	rf.perf.avg@x.values <- list(rowMeans( data.frame( rf.perf.avg@x.values)))
+	rf.perf.avg@y.values <- list(rowMeans( data.frame( rf.perf.avg@y.values)))
+	rf.perf.avg@alpha.values <- list( alpha.values )
 
 	for(i in 1:length(group$vals)){
 	  ### get threshold
