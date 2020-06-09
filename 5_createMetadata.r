@@ -24,26 +24,22 @@ library(tmap)
 library(tmaptools)
 library(OpenStreetMap)
 
+library(tidyr)
+library(ggplot2)
 
 ### find and load model data ----
-## three lines need your attention. The one directly below (loc_scripts),
-## about line 35 where you choose which Rdata file to use,
-## and about line 46 where you choose which record to use
-
 setwd(loc_model)
 dir.create(paste0(model_species,"/outputs/metadata"), recursive = TRUE, showWarnings = FALSE)
 setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
-# create table 1, summary of input data
-# get data from DB
-# connect to DB ..
+##
+## create table 1, summary of input data ----
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 sql <- paste0("SELECT * from tblModelInputs where model_run_name = '", 
               model_run_name, "';")
 inputs <- dbGetQuery(db, statement = sql)
 dbDisconnect(db)
-rm(db)
 
 # Assume groups and pres inputs are the same among algorithms
 # but background inputs vary
@@ -61,14 +57,16 @@ summ.table <- data.frame(
     inputs$tot_obs_subsamp[[1]],
     paste0(inputs$tot_bkgd_subsamp)
      ))
+# summ.table is what gets used in knitr file
+rm(db, inputs, sql)
 
-# create table 2, summary of validation statistics
+##
+## create table 2, summary of validation statistics ----
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 sql <- paste0("SELECT * from tblModelResultsValidationStats where model_run_name = '", 
               model_run_name, "';")
 vstats <- dbGetQuery(db, statement = sql)
 dbDisconnect(db)
-rm(db)
 
 metricsToGet <- c("AUC","Sensitivity","Specificity","TSS")
 colsToGet <- c("algorithm","metric","metric_mn","metric_sd")
@@ -78,13 +76,214 @@ names(vstats) <- c("algorithm","metric","mean","SD")
 vstatsList <- split(vstats, f = vstats$algorithm)
 vstatsList <- lapply(vstatsList, FUN = function(x) x[,!names(x)=="algorithm"])
 attr(vstatsList, "subheadings") <- paste0("Algorithm = ", names(vstatsList))
+vStatsxList <- xtableList(vstatsList)
+# vStatsxList is what gets used in knitr file
+rm(db, sql, vstats, metricsToGet, colsToGet, vstatsList)
+
+##
+## create table with all other modeling input settings ----
+#  this is placed at the end in Appendix 2
+#first get envars counts
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+sql <- paste0("SELECT * from tblModelResultsVarsUsed where model_run_name = '", 
+              model_run_name, "';")
+varsUsedStats <- dbGetQuery(db, statement = sql)
+dbDisconnect(db)
+varsUsedStats <- varsUsedStats[varsUsedStats$inFinalModel == 1,]
+vuStats <- aggregate(varsUsedStats$inFinalModel, by = list(varsUsedStats$algorithm), sum)
+names(vuStats) <- c("algo","value")
+
+vuStats <- cbind("Name"= "number of predictors used", vuStats)
+vuStatsList <- split(vuStats, f = vuStats$algo)
+vuStatsList <- lapply(vuStatsList, FUN = function(x) x[,!names(x)=="algo"])
+
+for(algo in names(vuStatsList)){
+  if(algo == "me"){
+    medat <- data.frame(Name = c("linear feature type used",
+                                 "product feature type used",
+                                 "quadratic feature type used",
+                                 "hinge feature type used"),
+               value = c("yes","yes","yes","yes"))
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], medat)
+  }
+  if(algo == "xgb"){
+    xgbdat <- data.frame(Name = c(
+                                  "iterations",
+                                  "eta",
+                                  "max depth",
+                                  "gamma",
+                                  "colsample by tree",
+                                  "min child weight",
+                                  "subsample",
+                                  "objective"),
+                         value = c(
+                                   xgb.full$niter,
+                                   xgb.full$params$eta,
+                                   xgb.full$params$max_depth,
+                                   xgb.full$params$gamma,
+                                   xgb.full$params$colsample_bytree,
+                                   xgb.full$params$min_child_weight,
+                                   xgb.full$params$subsample,
+                                   xgb.full$params$objective
+                                   ))
+    #paste0(deparse(xgb.full$call), collapse = ""),
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], xgbdat)
+  }
+  if(algo == "rf"){
+    rfdat <- data.frame(Name = c(
+                                "mtry",
+                                "number of trees",
+                                "type of trees"
+                              ),
+                        value = c(
+                                rf.full$mtry,
+                                rf.full$ntree,
+                                rf.full$type
+                              )
+    )
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], rfdat)
+    }
+}
+# vuStatsList is what gets used in knitr file
+rm(db, sql, varsUsedStats, vuStats, medat, xgbdat, rfdat, algo)
+
+##
+## build ROC plot ----
+#### this is all in the rnw, possibly change to ggplot, then build it here and print it there
+# build lookup for line details
+figSpecs <- data.frame(algos = c("rf","me","xgb"),
+                       col = c("blue","red","black"),
+                       lwd = c(3,2,1),
+                       lty = c(1,1,1),
+                       stringsAsFactors = FALSE)
+# 
+# # first a blank plot
+# plot(0.5,0.5,lwd=0, col = "white", xlim = c(0,1), ylim = c(0,1),
+#      xlab="Avg. false positive rate", ylab="Avg. true positive rate")
+# # now add each that was run  
+# #if no validation, then this will fail. Used to use if(exists("rf.perf"))...
+# for(algo in ensemble_algos){
+#   if(algo == "rf" & exists("rf.perf")){
+#     specs <- figSpecs[match(algo,figSpecs$algos),]
+#     plot(rf.perf,
+#          lwd=specs$lwd, 
+#          col=specs$col,
+#          avg="threshold", 
+#          add = TRUE)
+#   }
+#   if(algo == "me" & exists("me.perf")){
+#     specs <- figSpecs[match(algo,figSpecs$algos),]
+#     plot(me.perf, 
+#          lwd=specs$lwd, 
+#          col=specs$col,
+#          avg="threshold", 
+#          add = TRUE)
+#   }
+#   if(algo == "xgb"){
+#     xgb.pred <- prediction(xgbFit1$pred$pres, xgbFit1$pred$obs)
+#     xgb.perf <- performance(xgb.pred, "tpr","fpr")
+#     specs <- figSpecs[match(algo,figSpecs$algos),]
+#     plot(xgb.perf, 
+#          lwd=specs$lwd, 
+#          col=specs$col,
+#          avg="threshold", 
+#          add = TRUE)
+#   }
+# }
+# #possible else if no models were validated: text(0.5,0.5, "No evaluation")
+# 
+# legend("bottomright", ensemble_algos, 
+#        col = figSpecs[match(ensemble_algos,figSpecs$algos),"col"],
+#        lwd = figSpecs[match(ensemble_algos,figSpecs$algos),"lwd"],
+#        lty = figSpecs[match(ensemble_algos,figSpecs$algos),"lty"],
+#        text.col = "black", 
+#        merge = TRUE, bg = "gray95")
+#   
+# 
+
+
+##
+## build importance plot ----
+
+# get the vars used for each
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+sql <- paste0("SELECT * from tblModelResultsVarsUsed where model_run_name = '", 
+              model_run_name, "';")
+varsImp <- dbGetQuery(db, statement = sql)
+# get full names
+sql <- "SELECT gridName, fullName FROM lkpEnvVars"
+varNms <- dbGetQuery(db, statement = sql)
+dbDisconnect(db)
+
+# remove vars not used by any algo
+varsImp <- varsImp[varsImp$inFinalModel == 1,]
+#varsImpUnqV <- unique(varsImp$gridName)
+
+# merge in full name, reduce cols
+varsImp <- merge(varsImp, varNms)
+varsImp <- varsImp[,c("algorithm","fullName","impVal")]
+
+# # convert to wide format 
+# varsImp.s <- spread(varsImp, algorithm, impVal)
+# # clear rows with all na (shouldn't be needed)
+# varsImp.s <- varsImp.s[!rowSums(is.na(varsImp.s[,2:ncol(varsImp.s)]))==3,]
+# # standardize to 0-1 then sort by mean importance
+# for(algo in ensemble_algos){
+#   naLocs <- is.na(varsImp.s[,algo])
+#   varsImp.s[,algo][!naLocs] <- varsImp.s[,algo][!naLocs]/max(varsImp.s[,algo][!naLocs])
+# }
+# mnImp <- apply(varsImp.s[,2:ncol(varsImp.s)],1, "mean", na.rm = TRUE)
+# varsImp.s <- varsImp.s[order(mnImp),]
+# varsImp.s$fullName <- factor(varsImp.s$fullName, levels = varsImp.s$fullName)
+# # set up the ggplot
+# impPlot <- ggplot(data = varsImp.s) + 
+#   xlab(bquote(atop("lower" %->% "greater", "importance"))) + 
+#   theme(axis.title.y = element_blank(),
+#         text = element_text(size=8),
+#         legend.position = c(0.85,0.15))
+# # loop through algos, add each to the plot, use same colors as in ROC plot
+# for(algo in ensemble_algos){
+#   specs <- figSpecs[match(algo,figSpecs$algos),] 
+#   inString <- paste("geom_point(aes(x = ", algo, ", y = fullName), color = '", specs$col, "', na.rm = TRUE)")
+#   impPlot <- impPlot + eval(parse(text = inString))
+#   inString <- paste("geom_path(data = varsImp.s[!is.na(varsImp.s[algo]),],",
+#                     " aes(x = ", algo, ", y = as.numeric(fullName)), color = '", specs$col, "', na.rm = TRUE)")
+#   impPlot <- impPlot + eval(parse(text = inString))
+# }
+
+## do it in long format !!
+# standardize to 0-1 then sort by mean importance (using factors)
+for(algo in ensemble_algos){
+  algoLocs <- varsImp$algorithm == algo
+  varsImp[algoLocs,"impVal"] <- varsImp[algoLocs, "impVal"]/max(varsImp[algoLocs,"impVal"])
+}
+
+varsSorted <- varsImp %>%
+  group_by(fullName) %>%
+  summarise_at(vars(impVal), mean) %>%
+  arrange(impVal)
+
+varsImp$fullName <- factor(varsImp$fullName, levels = varsSorted$fullName)
+varsImp <- varsImp[order(as.integer(varsImp$fullName)),]
+
+#use same colors as ROC plot
+scaleVec <- figSpecs$col
+names(scaleVec) <- figSpecs$algos
+
+# build the figure 
+impPlot <- ggplot(data = varsImp) + 
+  xlab(bquote(atop("lower" %->% "greater", "importance"))) + 
+  theme(axis.title.y = element_blank(),
+        text = element_text(size=8),
+        legend.position = c(0.85,0.15)) + 
+  geom_point(aes(x = impVal, y = fullName, color = algorithm)) + 
+  geom_path(aes(x = impVal, y = fullName, color = algorithm, group = algorithm)) + 
+  scale_color_manual(values = scaleVec)
 
 
 
 
-print.xtableList(xList)
-
-# get background poly data for the map (study area, reference boundaries)
+## get background poly data for the map (study area, reference boundaries) ----
 studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = T) # name of state boundaries file
 
@@ -225,7 +424,7 @@ sdm.modeluse$process_performNotes <- gsub("<","$<$ ", sdm.modeluse$process_perfo
 setwd("metadata")
 # knit2pdf errors for some reason...just knit then call directly
 #knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+knit2pdf(paste(loc_scripts,"MetadataEval_knitr_test.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
 #call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
 # call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex") # this stops execution if there is an error. Not really necessary
 #system(call)
