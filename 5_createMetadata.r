@@ -7,6 +7,7 @@
 
 # load libraries ----
 library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp10/2009-February/189936.html
+library(xtable)
 library(randomForest)
 library(knitr)
 library(raster)
@@ -16,7 +17,6 @@ library(sf)
 library(RColorBrewer)
 library(rasterVis)
 library(RSQLite)
-library(xtable)
 library(stringi)
 library(tables)
 
@@ -28,10 +28,14 @@ library(tidyr)
 library(ggplot2)
 
 ### find and load model data ----
-setwd(loc_model)
-dir.create(paste0(model_species,"/outputs/metadata"), recursive = TRUE, showWarnings = FALSE)
-setwd(paste0(model_species,"/outputs"))
-load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
+#setwd(loc_model)
+dir.create(file.path(loc_model, model_species, "outputs","metadata"), recursive = TRUE, showWarnings = FALSE)
+setwd(file.path(loc_model, model_species, "outputs"))
+
+model_run_name <- modelrun_meta_data$model_run_name
+
+load(file.path(loc_model, model_species, "outputs","rdata", paste0(modelrun_meta_data$model_run_name,".Rdata")))
+
 
 ##
 ## create table 1, summary of input data ----
@@ -58,7 +62,7 @@ summ.table <- data.frame(
     paste0(inputs$tot_bkgd_subsamp)
      ))
 # summ.table is what gets used in knitr file
-rm(db, inputs, sql)
+rm(db, sql)
 
 ##
 ## create table 2, summary of validation statistics ----
@@ -78,7 +82,22 @@ vstatsList <- lapply(vstatsList, FUN = function(x) x[,!names(x)=="algorithm"])
 attr(vstatsList, "subheadings") <- paste0("Algorithm = ", names(vstatsList))
 vStatsxList <- xtableList(vstatsList)
 # vStatsxList is what gets used in knitr file
-rm(db, sql, vstats, metricsToGet, colsToGet, vstatsList)
+rm(db, sql, metricsToGet, colsToGet, vstatsList)
+
+##
+## create data for thermometer figure ----
+summaryTSS <- mean(vstats[vstats$metric == "TSS", "mean"])
+
+# 
+# print(xtableList(vStatsxList, type="html", file="table2.html"))
+# x <- print(vStatsxList, file="table2.tex", include.rownames=FALSE)
+# 
+# dput(vStatsxList)
+# 
+# getwd()
+# vStatsxList <- dget(file = "testDput.r")
+# library(xtable)
+
 
 ##
 ## create table with all other modeling input settings ----
@@ -258,10 +277,18 @@ for(algo in ensemble_algos){
   varsImp[algoLocs,"impVal"] <- varsImp[algoLocs, "impVal"]/max(varsImp[algoLocs,"impVal"])
 }
 
+# varsSorted <- varsImp %>%
+#   group_by(fullName) %>%
+#   summarise_at(vars(impVal), mean) %>%
+#   arrange(impVal)
+
+#try sorting with zeros added
 varsSorted <- varsImp %>%
   group_by(fullName) %>%
-  summarise_at(vars(impVal), mean) %>%
+  summarise_at(vars(impVal), function(x) { sum(x)/length(ensemble_algos)}) %>%
   arrange(impVal)
+
+
 
 varsImp$fullName <- factor(varsImp$fullName, levels = varsSorted$fullName)
 varsImp <- varsImp[order(as.integer(varsImp$fullName)),]
@@ -281,21 +308,19 @@ impPlot <- ggplot(data = varsImp) +
   scale_color_manual(values = scaleVec)
 
 
-
-
-## get background poly data for the map (study area, reference boundaries) ----
-studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)
-referenceBoundaries <- st_read(nm_refBoundaries, quiet = T) # name of state boundaries file
-
-r <- dir(path = "model_predictions", pattern = ".tif$",full.names=FALSE)
-fileName <- r[grep(model_run_name, r)]
-fileName <- fileName[[1]] #only take the first for now TODO: handle ensembles
-
-ras <- raster(paste0("model_predictions/", fileName))
-
-# project to match raster, just in case
-studyAreaExtent <- st_transform(studyAreaExtent, as.character(ras@crs))
-referenceBoundaries <- st_transform(referenceBoundaries, as.character(ras@crs))
+# ## get background poly data for the map (study area, reference boundaries) ----
+# studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)
+# referenceBoundaries <- st_read(nm_refBoundaries, quiet = T) # name of state boundaries file
+# 
+# r <- dir(path = "model_predictions", pattern = ".tif$",full.names=FALSE)
+# fileName <- r[grep(model_run_name, r)]
+# fileName <- fileName[[1]] #only take the first for now TODO: handle ensembles
+# 
+# ras <- raster(paste0("model_predictions/", fileName))
+# 
+# # project to match raster, just in case
+# studyAreaExtent <- st_transform(studyAreaExtent, as.character(ras@crs))
+# referenceBoundaries <- st_transform(referenceBoundaries, as.character(ras@crs))
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
@@ -354,12 +379,12 @@ sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
   "capturedEOs", "capturedPts", "cutDescription")]
 names(sdm.thresh.table) <- c("Threshold", "Value", "Groups","Pts","Description")
-sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/numEOs*100, 1),
+sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/inputs$feat_grp_count[[1]]*100, 1),
                                      "(",sdm.thresh.table$Groups, ")", sep="")
 # sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
 #                               "(",sdm.thresh.table$Polys, ")", sep="")
-numPts <- nrow(subset(df.full, pres == 1))
-sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/numPts*100, 1),
+#numPts <- nrow(subset(df.full, pres == 1))
+sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/inputs$feat_count[[1]]*100, 1),
                               sep="")
 
 ## get grank definition ----
@@ -429,7 +454,6 @@ knit2pdf(paste(loc_scripts,"MetadataEval_knitr_test.rnw",sep="/"), output=paste(
 # call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex") # this stops execution if there is an error. Not really necessary
 #system(call)
 #system(call) # 2nd run to apply citation numbers
-
 
 # delete .txt, .log etc if pdf is created successfully.
 fn_ext <- c(".log",".aux",".out")
