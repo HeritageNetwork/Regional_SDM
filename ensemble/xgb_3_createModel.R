@@ -155,7 +155,11 @@ subSampByGp <- function(x, ssvec, gpColName) {
   df.sub = x[FALSE,]
   for(i in 1:length(ssvec)){
     cls <- names(ssvec[i])
-    toDrawFrom <- x[x[,gpColName] == cls, ]
+    if(cls == "pseu-a"){
+      toDrawFrom <- x[x[,"pres"] == 0, ]
+    } else {
+      toDrawFrom <- x[x[,gpColName] == cls & x[,"pres"] == 1, ]
+    }
     if(ssvec[[i]] > nrow(toDrawFrom)) { #lame
       ssvec[[i]] <- nrow(toDrawFrom)
     }
@@ -166,9 +170,10 @@ subSampByGp <- function(x, ssvec, gpColName) {
   df.sub
 }
 
-df.full.s <- subSampByGp(df.full, sampSizeVec[-grep("pseu-a", names(sampSizeVec))], group$colNm)
+#df.full.s <- subSampByGp(df.full, sampSizeVec[-grep("pseu-a", names(sampSizeVec))], group$colNm)
+df.full.s <- subSampByGp(df.full, sampSizeVec, group$colNm)
 ## TODO sample background down to a reasonable number ##### research it?
-df.full.s <- rbind(df.full.s, df.full[df.full$pres == 0,])
+#df.full.s <- rbind(df.full.s, df.full[df.full$pres == 0,])
 
 # define the folds
 folds <- groupKFold(df.full.s$stratum, k = kf) 
@@ -189,7 +194,8 @@ xgbfitControl <- trainControl(
   index = folds,
   number = 1,
   summaryFunction = twoClassSummary,
-  classProbs = TRUE
+  classProbs = TRUE,
+  savePredictions = TRUE
 )
 
 # caret seems to need this
