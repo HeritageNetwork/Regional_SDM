@@ -6,23 +6,23 @@
 # For knitr to work, you need MikTex installed. See http://miktex.org/
 
 # load libraries ----
-library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp10/2009-February/189936.html
+#library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp10/2009-February/189936.html
 library(xtable)
-library(randomForest)
+#library(randomForest)
 library(knitr)
-library(raster)
-library(maptools)
+#library(raster)
+#library(maptools)
 library(dplyr)
-library(sf)
-library(RColorBrewer)
-library(rasterVis)
+#library(sf)
+#library(RColorBrewer)
+#library(rasterVis)
 library(RSQLite)
-library(stringi)
-library(tables)
+library(stringi)  #only used once, could clean up?
+#library(tables)
 
-library(tmap)
-library(tmaptools)
-library(OpenStreetMap)
+#library(tmap)
+#library(tmaptools)
+#library(OpenStreetMap)
 
 library(tidyr)
 library(ggplot2)
@@ -36,6 +36,18 @@ model_run_name <- modelrun_meta_data$model_run_name
 
 load(file.path(loc_model, model_species, "outputs","rdata", paste0(modelrun_meta_data$model_run_name,".Rdata")))
 
+##
+## create table 1, ensemble summary
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+sql <- paste0("SELECT * from lkpAlgorithms;")
+ensemble_details <- dbGetQuery(db, statement = sql)
+dbDisconnect(db)
+
+ensemble_details <- ensemble_details[ensemble_details$shortCode %in% ensemble_algos,
+                                     c("fullName","shortCode","rPackage")]
+names(ensemble_details) <- c("Name", "Code","R package")
+# ensemble_details is used in knitr file
+rm(db, sql)
 
 ##
 ## create table 1, summary of input data ----
@@ -76,13 +88,15 @@ metricsToGet <- c("AUC","Sensitivity","Specificity","TSS")
 colsToGet <- c("algorithm","metric","metric_mn","metric_sd")
 vstats <- vstats[vstats$metric %in% metricsToGet,colsToGet]
 names(vstats) <- c("algorithm","metric","mean","SD")
+vstats$evalOut <- paste0(round(vstats$mean,2), "(",round(vstats$SD,2), ")")
+vstats <- vstats[,c("algorithm","metric","evalOut")]
 
-vstatsList <- split(vstats, f = vstats$algorithm)
-vstatsList <- lapply(vstatsList, FUN = function(x) x[,!names(x)=="algorithm"])
-attr(vstatsList, "subheadings") <- paste0("Algorithm = ", names(vstatsList))
-vStatsxList <- xtableList(vstatsList)
-# vStatsxList is what gets used in knitr file
-rm(db, sql, metricsToGet, colsToGet, vstatsList)
+# convert to wide format
+vstats.w <- spread(vstats, metric, evalOut)
+names(vstats.w) <- c("algorithm","AUC","Sens","Spec","TSS")
+
+# vstats.w is what gets used in knitr file
+rm(db, sql, metricsToGet, colsToGet)
 
 ##
 ## create data for thermometer figure ----
@@ -163,6 +177,9 @@ for(algo in names(vuStatsList)){
     vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], rfdat)
     }
 }
+
+attr(vuStatsList, "subheadings") <- paste0("Algorithm = ", names(vuStatsList))
+
 # vuStatsList is what gets used in knitr file
 rm(db, sql, varsUsedStats, vuStats, medat, xgbdat, rfdat, algo)
 
