@@ -324,6 +324,152 @@ impPlot <- ggplot(data = varsImp) +
   geom_path(aes(x = impVal, y = fullName, color = algorithm, group = algorithm)) + 
   scale_color_manual(values = scaleVec)
 
+# build partial plots ----
+
+# grid.arrange from gridExtra for arranging the plots
+
+# use ggExtra for marginal plots -- no, no good, needs same data in geom_point plot, which we don't want
+#library(ggExtra)
+library(ggplot2)
+library(gtable)
+library(grid)
+library(gridExtra)
+
+# make a list to fill with grobs
+grobList <- vector("list",length(pPlots))
+names(grobList) <- names(pPlots)
+
+# for now assume an rf model has been run, use its pplot list to define set of nine
+for (plotpi in 1:length(pPlots)){
+  #dens data
+  df.full <- rbind(df.in, df.abs)
+  densdat <- data.frame(x = df.full[,pPlots[[plotpi]]$gridName], pres = df.full[,"pres"])
+
+  # pplot data
+  # rf
+  grdName <- pPlots[[plotpi]]$gridName
+  grdFullName <- pPlots[[plotpi]]$fname
+  dat <- data.frame(x = pPlots[[plotpi]]$x, y = pPlots[[plotpi]]$y)
+  dat <- cbind(dat, algo = "rf")
+  #standardize 0-1
+  dat$y <- (dat$y - min(dat$y))/(max(dat$y)-min(dat$y))
+  
+  # check and use xgb if there are data
+  if(grdName %in% dimnames(xgb.pPlots$data)[[2]]){
+    xgbdat <- data.frame(xgb.pPlots$data)
+    xgbresp <- data.frame(xgb.pPlots$shap_contrib)
+    xgbdat.b <- data.frame(x = xgbdat[,grdName], y = xgbresp[,grdName], algo = "xgb")
+    #standardize 0-1
+    xgbdat.b$y <- (xgbdat.b$y - min(xgbdat.b$y))/(max(xgbdat.b$y)-min(xgbdat.b$y))
+    #order, ascending
+    xgbdat.b <- xgbdat.b[order(xgbdat.b$x),]
+    #smooth it
+    #dat <- rbind(dat, xgbdat.b)
+    dat <- rbind(dat, data.frame(supsmu(xgbdat.b$x, xgbdat.b$y), algo = "xgb"))
+    #rm(xgbdat, xgbresp, xgbdat.b)
+  }
+    
+  pplot <- ggplot(data = dat, aes(x=x, y=y, color = algo)) + 
+    geom_line(size = 1) +
+    xlab(pPlots[[plotpi]]$fname) + 
+    scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
+                       expand = expansion(mult = c(0.05))) +
+    theme(axis.title.y = element_blank(), legend.position = "none",
+          plot.margin = margin(t = 1, r = 5, b = 5, l = 5, unit = "pt")
+          )
+
+  # create the density plot
+  densplot <- ggplot(data = densdat, aes(x = x, color = factor(pres))) + 
+    geom_density(size = 1) + 
+    scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
+                       expand = expansion(mult = c(0.05)),
+                       breaks = NULL) +
+    scale_y_continuous(breaks = NULL) + 
+    theme(axis.title.y = element_blank(), legend.position = "none",
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.line.y = element_blank(),
+          plot.margin = margin(t = 2, r = 0, b = 0, l = 0, unit = "pt")) +
+    scale_color_manual(values=c("red", "blue")) 
+    #theme_void()
+
+  # now do the layout
+  gdens <- ggplotGrob(densplot)
+  gpplt <- ggplotGrob(pplot)
+  panel_id <- gpplt$layout[gpplt$layout$name == "panel",c("t","l")]
+  gpplt <- gtable_add_rows(gpplt, unit(0.25,"null"), 0)
+  gpplt <- gtable_add_grob(gpplt, gdens,
+                       t = 1, l = panel_id$l)
+  grid.newpage()
+  grid.draw(gpplt)
+  grobList[[plotpi]] <- gpplt
+  
+}
+
+
+
+gt <- arrangeGrob(grobs=grobList, layout_matrix=rbind(c(1,2,3),
+                                                c(4,5,6),
+                                                c(7,8,9)))
+grid.newpage()
+grid.draw(gt)
+
+#TODO next step: add me partial plots
+
+
+ggplot(data = df.full, aes(x = clim_bio10, color = pres)) + 
+  geom_density(size = 1.2) + 
+  theme_void() + 
+  theme(legend.position="none") + 
+  xlim(min(dat$x), max(dat$x)) + 
+  scale_color_manual(values=c("red", "blue")
+
+ggMarginal(dens, margins = "x", size = 2,
+           groupColour = TRUE, groupFill = FALSE)
+
+
+
+ggplot(data=df, aes(x=dose, y=len, group=1)) +
+  geom_line()
+
+
+layout(matrix(c(19,2,4,6,20,19,1,3,5,20,19,8,10,12,20,19,7,9,11,20,19,14,16,18,20,19,13,15,17,20), 
+              nrow = 6, ncol = 5, byrow = TRUE), 
+       widths = c(0.05,1,1,1,0.1),heights=c(1,4,1,4,1,4))
+
+pres.dat <- subset(df.full, pres==1)
+abs.dat <- subset(df.full, pres==0)
+
+for (plotpi in 1:length(pPlots)){
+  par(mar=c(3,2,0,0.5))
+  if(is.character(pPlots[[plotpi]]$x)){
+    barplot(pPlots[[plotpi]]$y, width=rep(1, length(pPlots[[plotpi]]$y)), col="grey",
+            xlab = pPlots[[plotpi]]$fname, ylab = NA,
+            names.arg=pPlots[[plotpi]]$x, space=0.1,
+            cex.names=0.7, las=2)	
+    plot(1,1,axes=FALSE, type="n", xlab=NA, ylab=NA) #skip density plots if pPlot is barplot
+  } else {
+    plot(pPlots[[plotpi]]$x, pPlots[[plotpi]]$y,
+         type = "l",
+         xlab = pPlots[[plotpi]]$fname, ylab=NA)
+    pres.dens <- density(pres.dat[,pPlots[[plotpi]]$gridName])
+    abs.dens <- density(abs.dat[,pPlots[[plotpi]]$gridName])
+    par(mar=c(0,2,0.5,0.5))
+    plot(pres.dens, xlim=c(min(pPlots[[plotpi]]$x), 
+                           max(pPlots[[plotpi]]$x)),
+         ylim=c(0,max(c(abs.dens$y,pres.dens$y))),
+         main=NA,xlab=NA,ylab=NA,
+         axes=FALSE, col="blue", lwd=2
+    )
+    lines(abs.dens, col="red")
+  }
+}
+mtext("log of fraction of votes", side = 2, line = -1, outer=TRUE, cex = 0.7)
+
+
+
 
 # ## get background poly data for the map (study area, reference boundaries) ----
 # studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)
