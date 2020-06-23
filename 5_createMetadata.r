@@ -14,7 +14,7 @@ library(knitr)
 #library(maptools)
 library(dplyr)
 #library(sf)
-#library(RColorBrewer)
+library(RColorBrewer)
 #library(rasterVis)
 library(RSQLite)
 library(stringi)  #only used once, could clean up?
@@ -26,6 +26,9 @@ library(stringi)  #only used once, could clean up?
 
 library(tidyr)
 library(ggplot2)
+library(gtable)
+library(grid)
+library(gridExtra)
 
 ### find and load model data ----
 #setwd(loc_model)
@@ -89,14 +92,14 @@ colsToGet <- c("algorithm","metric","metric_mn","metric_sd")
 vstats <- vstats[vstats$metric %in% metricsToGet,colsToGet]
 names(vstats) <- c("algorithm","metric","mean","SD")
 vstats$evalOut <- paste0(round(vstats$mean,2), "(",round(vstats$SD,2), ")")
-vstats <- vstats[,c("algorithm","metric","evalOut")]
+vstats.s <- vstats[,c("algorithm","metric","evalOut")]
 
 # convert to wide format
-vstats.w <- spread(vstats, metric, evalOut)
+vstats.w <- spread(vstats.s, metric, evalOut)
 names(vstats.w) <- c("algorithm","AUC","Sens","Spec","TSS")
 
 # vstats.w is what gets used in knitr file
-rm(db, sql, metricsToGet, colsToGet)
+rm(db, sql, metricsToGet, colsToGet, vstats.s)
 
 ##
 ## create data for thermometer figure ----
@@ -187,8 +190,10 @@ rm(db, sql, varsUsedStats, vuStats, medat, xgbdat, rfdat, algo)
 ## build ROC plot ----
 #### this is all in the rnw, possibly change to ggplot, then build it here and print it there
 # build lookup for line details
+lineColors <- brewer.pal(6, "Dark2")[1:length(ensemble_algos)]
+
 figSpecs <- data.frame(algos = c("rf","me","xgb"),
-                       col = c("blue","red","black"),
+                       col = lineColors,
                        lwd = c(3,2,1),
                        lty = c(1,1,1),
                        stringsAsFactors = FALSE)
@@ -259,34 +264,6 @@ varsImp <- varsImp[varsImp$inFinalModel == 1,]
 varsImp <- merge(varsImp, varNms)
 varsImp <- varsImp[,c("algorithm","fullName","impVal")]
 
-# # convert to wide format 
-# varsImp.s <- spread(varsImp, algorithm, impVal)
-# # clear rows with all na (shouldn't be needed)
-# varsImp.s <- varsImp.s[!rowSums(is.na(varsImp.s[,2:ncol(varsImp.s)]))==3,]
-# # standardize to 0-1 then sort by mean importance
-# for(algo in ensemble_algos){
-#   naLocs <- is.na(varsImp.s[,algo])
-#   varsImp.s[,algo][!naLocs] <- varsImp.s[,algo][!naLocs]/max(varsImp.s[,algo][!naLocs])
-# }
-# mnImp <- apply(varsImp.s[,2:ncol(varsImp.s)],1, "mean", na.rm = TRUE)
-# varsImp.s <- varsImp.s[order(mnImp),]
-# varsImp.s$fullName <- factor(varsImp.s$fullName, levels = varsImp.s$fullName)
-# # set up the ggplot
-# impPlot <- ggplot(data = varsImp.s) + 
-#   xlab(bquote(atop("lower" %->% "greater", "importance"))) + 
-#   theme(axis.title.y = element_blank(),
-#         text = element_text(size=8),
-#         legend.position = c(0.85,0.15))
-# # loop through algos, add each to the plot, use same colors as in ROC plot
-# for(algo in ensemble_algos){
-#   specs <- figSpecs[match(algo,figSpecs$algos),] 
-#   inString <- paste("geom_point(aes(x = ", algo, ", y = fullName), color = '", specs$col, "', na.rm = TRUE)")
-#   impPlot <- impPlot + eval(parse(text = inString))
-#   inString <- paste("geom_path(data = varsImp.s[!is.na(varsImp.s[algo]),],",
-#                     " aes(x = ", algo, ", y = as.numeric(fullName)), color = '", specs$col, "', na.rm = TRUE)")
-#   impPlot <- impPlot + eval(parse(text = inString))
-# }
-
 ## do it in long format !!
 # standardize to 0-1 then sort by mean importance (using factors)
 for(algo in ensemble_algos){
@@ -294,18 +271,11 @@ for(algo in ensemble_algos){
   varsImp[algoLocs,"impVal"] <- varsImp[algoLocs, "impVal"]/max(varsImp[algoLocs,"impVal"])
 }
 
-# varsSorted <- varsImp %>%
-#   group_by(fullName) %>%
-#   summarise_at(vars(impVal), mean) %>%
-#   arrange(impVal)
-
 #try sorting with zeros added
 varsSorted <- varsImp %>%
   group_by(fullName) %>%
   summarise_at(vars(impVal), function(x) { sum(x)/length(ensemble_algos)}) %>%
   arrange(impVal)
-
-
 
 varsImp$fullName <- factor(varsImp$fullName, levels = varsSorted$fullName)
 varsImp <- varsImp[order(as.integer(varsImp$fullName)),]
@@ -326,21 +296,23 @@ impPlot <- ggplot(data = varsImp) +
 
 # build partial plots ----
 
-# grid.arrange from gridExtra for arranging the plots
+# create how many?
+if(length(pPlots) < 9){
+  numPPl <- length(pPlots)
+} else {
+  numPPl <- 9
+}
 
-# use ggExtra for marginal plots -- no, no good, needs same data in geom_point plot, which we don't want
-#library(ggExtra)
-library(ggplot2)
-library(gtable)
-library(grid)
-library(gridExtra)
+# get the order used in importance plot
+pplotVars <- varsSorted[order(varsSorted$impVal, decreasing = TRUE), "fullName"]
+pplotVars <- pplotVars[1:numPPl,]
 
 # make a list to fill with grobs
-grobList <- vector("list",length(pPlots))
-names(grobList) <- names(pPlots)
+grobList <- vector("list",numPPl)
+names(grobList) <- 1:numPPl
 
 # for now assume an rf model has been run, use its pplot list to define set of nine
-for (plotpi in 1:length(pPlots)){
+for (plotpi in 1:numPPl){
   #dens data
   df.full <- rbind(df.in, df.abs)
   densdat <- data.frame(x = df.full[,pPlots[[plotpi]]$gridName], pres = df.full[,"pres"])
@@ -368,19 +340,33 @@ for (plotpi in 1:length(pPlots)){
     dat <- rbind(dat, data.frame(supsmu(xgbdat.b$x, xgbdat.b$y), algo = "xgb"))
     #rm(xgbdat, xgbresp, xgbdat.b)
   }
-    
+  
+  # check and use me if there are data
+  melist <- unlist(lapply(me.pPlots, FUN = function(x) x$gridName))
+  if(grdName %in% melist){
+    grdLoc <- match(grdName, melist)
+    medat <- data.frame(x = me.pPlots[[grdLoc]]$x, y = me.pPlots[[grdLoc]]$y)
+    medat <- cbind(medat, algo = "me")
+    #standardize 0-1
+    medat$y <- (medat$y - min(medat$y))/(max(medat$y)-min(medat$y))
+    dat <- rbind(dat, medat)
+    rm(grdLoc)
+  }
+  
   pplot <- ggplot(data = dat, aes(x=x, y=y, color = algo)) + 
     geom_line(size = 1) +
     xlab(pPlots[[plotpi]]$fname) + 
     scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
                        expand = expansion(mult = c(0.05))) +
     theme(axis.title.y = element_blank(), legend.position = "none",
-          plot.margin = margin(t = 1, r = 5, b = 5, l = 5, unit = "pt")
-          )
+          plot.margin = margin(t = 2, r = 5, b = 5, l = 5, unit = "pt"),
+          text = element_text(size=8)
+          ) + 
+    scale_color_manual(values = scaleVec)
 
   # create the density plot
-  densplot <- ggplot(data = densdat, aes(x = x, color = factor(pres))) + 
-    geom_density(size = 1) + 
+  densplot <- ggplot(data = densdat, aes(x = x, color = factor(pres, labels = c("background","presence")))) + 
+    geom_density(size = 0.5) + 
     scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
                        expand = expansion(mult = c(0.05)),
                        breaks = NULL) +
@@ -391,7 +377,7 @@ for (plotpi in 1:length(pPlots)){
           axis.text.y = element_blank(),
           axis.ticks.y = element_blank(),
           axis.line.y = element_blank(),
-          plot.margin = margin(t = 2, r = 0, b = 0, l = 0, unit = "pt")) +
+          plot.margin = margin(t = 2, r = 0, b = 4, l = 0, unit = "pt")) +
     scale_color_manual(values=c("red", "blue")) 
     #theme_void()
 
@@ -402,73 +388,53 @@ for (plotpi in 1:length(pPlots)){
   gpplt <- gtable_add_rows(gpplt, unit(0.25,"null"), 0)
   gpplt <- gtable_add_grob(gpplt, gdens,
                        t = 1, l = panel_id$l)
-  grid.newpage()
-  grid.draw(gpplt)
+  #grid.newpage()
+  #grid.draw(gpplt)
   grobList[[plotpi]] <- gpplt
-  
-}
 
-
-
-gt <- arrangeGrob(grobs=grobList, layout_matrix=rbind(c(1,2,3),
-                                                c(4,5,6),
-                                                c(7,8,9)))
-grid.newpage()
-grid.draw(gt)
-
-#TODO next step: add me partial plots
-
-
-ggplot(data = df.full, aes(x = clim_bio10, color = pres)) + 
-  geom_density(size = 1.2) + 
-  theme_void() + 
-  theme(legend.position="none") + 
-  xlim(min(dat$x), max(dat$x)) + 
-  scale_color_manual(values=c("red", "blue")
-
-ggMarginal(dens, margins = "x", size = 2,
-           groupColour = TRUE, groupFill = FALSE)
-
-
-
-ggplot(data=df, aes(x=dose, y=len, group=1)) +
-  geom_line()
-
-
-layout(matrix(c(19,2,4,6,20,19,1,3,5,20,19,8,10,12,20,19,7,9,11,20,19,14,16,18,20,19,13,15,17,20), 
-              nrow = 6, ncol = 5, byrow = TRUE), 
-       widths = c(0.05,1,1,1,0.1),heights=c(1,4,1,4,1,4))
-
-pres.dat <- subset(df.full, pres==1)
-abs.dat <- subset(df.full, pres==0)
-
-for (plotpi in 1:length(pPlots)){
-  par(mar=c(3,2,0,0.5))
-  if(is.character(pPlots[[plotpi]]$x)){
-    barplot(pPlots[[plotpi]]$y, width=rep(1, length(pPlots[[plotpi]]$y)), col="grey",
-            xlab = pPlots[[plotpi]]$fname, ylab = NA,
-            names.arg=pPlots[[plotpi]]$x, space=0.1,
-            cex.names=0.7, las=2)	
-    plot(1,1,axes=FALSE, type="n", xlab=NA, ylab=NA) #skip density plots if pPlot is barplot
-  } else {
-    plot(pPlots[[plotpi]]$x, pPlots[[plotpi]]$y,
-         type = "l",
-         xlab = pPlots[[plotpi]]$fname, ylab=NA)
-    pres.dens <- density(pres.dat[,pPlots[[plotpi]]$gridName])
-    abs.dens <- density(abs.dat[,pPlots[[plotpi]]$gridName])
-    par(mar=c(0,2,0.5,0.5))
-    plot(pres.dens, xlim=c(min(pPlots[[plotpi]]$x), 
-                           max(pPlots[[plotpi]]$x)),
-         ylim=c(0,max(c(abs.dens$y,pres.dens$y))),
-         main=NA,xlab=NA,ylab=NA,
-         axes=FALSE, col="blue", lwd=2
-    )
-    lines(abs.dens, col="red")
+  # if on first loop, extract legends
+  if(plotpi == 1){
+    # Function to extract legend
+    g_legend <- function(a.gplot){ 
+      tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
+      leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
+      legend <- tmp$grobs[[leg]] 
+      legend
+    } 
+    # extract them
+    legPlot1 <- pplot + 
+      labs(color = "Algorithm") +
+      theme(legend.position = "bottom",
+            legend.margin=margin(t=0, r=0, b=0, l=0, unit="null"),
+            text = element_text(size=14))
+    legend1 <- g_legend(legPlot1) 
+    
+    legPlot2 <- densplot + 
+      labs(color = "Density") +
+      theme(legend.position = "bottom",
+            legend.margin=margin(t=0, r=0, b=0, l=0, unit="null"),
+            text = element_text(size=14))
+    legend2 <- g_legend(legPlot2)
   }
+    
 }
-mtext("log of fraction of votes", side = 2, line = -1, outer=TRUE, cex = 0.7)
 
+# set up legend grobs
+legGb <- arrangeGrob(grobs=list(legend2, legend1), 
+                  layout_matrix=rbind(c(1,2)))
 
+# set up full figure
+gt <- arrangeGrob(grobs=grobList, 
+                  layout_matrix=rbind(c(1,2,3),
+                                      c(4,5,6),
+                                      c(7,8,9)),
+                  left = "Relative Response")
+
+gtl <- gtable_add_rows(gt, unit(0.25, "null"), pos = -1)
+gtl <- gtable_add_grob(gtl, legGb, t = 4, l = 2, b = 4, r = 4)
+
+# grid.newpage()
+# grid.draw(gtl)
 
 
 # ## get background poly data for the map (study area, reference boundaries) ----
