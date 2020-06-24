@@ -429,12 +429,36 @@ SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName COLL
 for(i in 1:length(me.EnvVars$gridName)) {
   try(me.EnvVars$fullName[i] <- as.character(dbGetQuery(db, statement = SQLquery[i])[,2]))
 }
-##clean up
 
-# 
+rm(SQLquery, me.imp, me.f.imp)
 
-# write model metadata to db
+###
+# partial plot data ----
+###
+me.EnvVars.ord <- me.EnvVars[order(me.EnvVars$permutationImp, decreasing = TRUE),]
+#ord <- rownames(me.f.imp[order(me.f.imp$permutationImp, decreasing = TRUE),, drop = FALSE])
 
+if(nrow(me.EnvVars.ord) > 9){
+  pPlotListLen <- 9
+} else {
+  pPlotListLen <- nrow(me.EnvVars.ord)
+}
+
+me.pPlots <- me.trRes <- vector("list",pPlotListLen)
+names(me.pPlots) <- 1:pPlotListLen
+
+# get partial plot data
+
+for(i in 1:pPlotListLen){
+  outDat <- response(me.out.fin, var = me.EnvVars.ord$gridName[[i]])
+  me.pPlots[[i]]$x <- outDat[,1]
+  me.pPlots[[i]]$y <- outDat[,2]
+  me.pPlots[[i]]$gridName <- me.EnvVars.ord$gridName[[i]]
+  me.pPlots[[i]]$fname <- me.EnvVars.ord$fullName[[i]]
+}
+rm(outDat, me.EnvVars.ord)
+
+# write model metadata to db -----
 # tblModelResultsVarsUsed
 varImpDB <- data.frame(model_run_name = model_run_name, 
                        algorithm = algo, 
