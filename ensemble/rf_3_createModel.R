@@ -108,8 +108,8 @@ if(nrow(corrdEVs) > 0 ){
   rm(vars, imp.sub, varsToDrop)
 }
 
-# set the percentile, here choosing above 25% percentile
-envarPctile <- 0.25
+# set the percentile, here choosing above 35% percentile
+envarPctile <- 0.35
 y <- quantile(impvals, probs = envarPctile)
 impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)
@@ -497,8 +497,8 @@ for(i in 1:length(EnvVars$gridName)) {
 ###
 #get the order for the importance charts
 ord <- order(EnvVars$impVal, decreasing = TRUE)[1:length(indVarCols)]
-if(length(ord) > 9){
-  pPlotListLen <- 9
+if(length(ord) > 15){
+  pPlotListLen <- 15
 } else {
   pPlotListLen <- length(ord)
 }
