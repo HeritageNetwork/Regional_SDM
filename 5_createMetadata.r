@@ -311,17 +311,31 @@ pplotVars <- pplotVars[1:numPPl,]
 grobList <- vector("list",numPPl)
 names(grobList) <- 1:numPPl
 
-# for now assume an rf model has been run, use its pplot list to define set of nine
+# get the location of each rf pplot
+rflist <- unlist(lapply(pPlots, FUN = function(x) x$fname))
+
+# 
 for (plotpi in 1:numPPl){
+  evar <- pplotVars$fullName[[plotpi]]
+  rfLoc <- match(evar, rflist)
+
+  #medat <- data.frame(x = me.pPlots[[grdLoc]]$x, y = me.pPlots[[grdLoc]]$y)
+  #medat <- cbind(medat, algo = "me")
+  #standardize 0-1
+  #medat$y <- (medat$y - min(medat$y))/(max(medat$y)-min(medat$y))
+  #dat <- rbind(dat, medat)
+  #rm(grdLoc)
+  
   #dens data
   df.full <- rbind(df.in, df.abs)
-  densdat <- data.frame(x = df.full[,pPlots[[plotpi]]$gridName], pres = df.full[,"pres"])
+  #densdat <- data.frame(x = df.full[,pPlots[[plotpi]]$gridName], pres = df.full[,"pres"])
+  densdat <- data.frame(x = df.full[,pPlots[[rfLoc]]$gridName], pres = df.full[,"pres"])
 
   # pplot data
   # rf
-  grdName <- pPlots[[plotpi]]$gridName
-  grdFullName <- pPlots[[plotpi]]$fname
-  dat <- data.frame(x = pPlots[[plotpi]]$x, y = pPlots[[plotpi]]$y)
+  grdName <- pPlots[[rfLoc]]$gridName
+  grdFullName <- pPlots[[rfLoc]]$fname
+  dat <- data.frame(x = pPlots[[rfLoc]]$x, y = pPlots[[rfLoc]]$y)
   dat <- cbind(dat, algo = "rf")
   #standardize 0-1
   dat$y <- (dat$y - min(dat$y))/(max(dat$y)-min(dat$y))
@@ -355,7 +369,7 @@ for (plotpi in 1:numPPl){
   
   pplot <- ggplot(data = dat, aes(x=x, y=y, color = algo)) + 
     geom_line(size = 1) +
-    xlab(pPlots[[plotpi]]$fname) + 
+    xlab(pPlots[[rfLoc]]$fname) + 
     scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
                        expand = expansion(mult = c(0.05))) +
     theme(axis.title.y = element_blank(), legend.position = "none",

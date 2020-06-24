@@ -198,6 +198,15 @@ model using all sites as input. Importance values (mean decrease in accuracy) ar
 \normalsize
 \pagebreak
 
+<<pPlotFig, fig.width=7.0, fig.height=6.5, include=FALSE, echo=FALSE>>=
+grid.newpage()
+grid.draw(gtl)
+@
+\includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
+\small
+Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed {\protect\NoHyper\cite{liaw2002}\protect\endNoHyper}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the black line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationship overall; increasing lines, positive. The distribution of each category (thin red = Background points, thick blue = Presence points) is depicted at the top margin. See Appendix 1 for variable descriptions.
+\normalsize
+
 \medskip
 \medskip
 \noindent
