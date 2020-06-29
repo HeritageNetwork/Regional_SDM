@@ -17,20 +17,20 @@ library(xgboost)
 cutList <- list()
 
 # total number of EOs, polys, pts (subtract absence class)
-totEOs.s <- length(unique(df.full.s$group_id)[!grepl("pseu-a",unique(df.full.s$group_id))])
-totPolys.s <- length(unique(df.full.s$stratum)[!grepl("pseu-a",unique(df.full.s$stratum))])
-totPts.s <- nrow(df.full.s[df.full.s$pres == 1,])
+totEOs.s <- length(unique(xgb.df.full.s$group_id)[!grepl("pseu-a",unique(xgb.df.full.s$group_id))])
+totPolys.s <- length(unique(xgb.df.full.s$stratum)[!grepl("pseu-a",unique(xgb.df.full.s$stratum))])
+totPts.s <- nrow(xgb.df.full.s[xgb.df.full.s$pres == 1,])
 
 #get minimum training presence
 # the 'handle' might go awry
 xgb.full <- xgb.Booster.complete(xgb.full)
 
 #needs to be re-created ... contains an external pointer 
-df.full.s.xgb <- xgb.DMatrix(as.matrix(df.full.s[,indVarCols]), 
-                             label=as.integer(as.character(df.full.s$pres)))
+df.full.s.xgb <- xgb.DMatrix(as.matrix(xgb.df.full.s[,indVarCols]), 
+                             label=as.integer(as.character(xgb.df.full.s$pres)))
 
 xgb.predicted <- predict(xgb.full, df.full.s.xgb)
-xgb.predicted <- as.data.frame(cbind(df.full.s[,c("pres","group_id","stratum")], "pred" = xgb.predicted))
+xgb.predicted <- as.data.frame(cbind(xgb.df.full.s[,c("pres","group_id","stratum")], "pred" = xgb.predicted))
 allVotesPresPts <- xgb.predicted[xgb.predicted$pres=="1",]
 #mtp
 MTP <- min(allVotesPresPts[, "pred"])
@@ -190,17 +190,17 @@ cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
 
 #calc a few measures on the full set, call it test set
 # total number of EOs (subtract absence class)
-totEOs.f <- length(unique(df.full$group_id)[!grepl("pseu-a",unique(df.full$group_id))])
-totPolys.f <- length(unique(df.full$stratum)[!grepl("pseu-a",unique(df.full$stratum))])
-totPts.f <- nrow(df.full[df.full$pres == 1,])
+totEOs.f <- length(unique(xgb.df.full$group_id)[!grepl("pseu-a",unique(xgb.df.full$group_id))])
+totPolys.f <- length(unique(xgb.df.full$stratum)[!grepl("pseu-a",unique(xgb.df.full$stratum))])
+totPts.f <- nrow(xgb.df.full[xgb.df.full$pres == 1,])
 
 
 #needs to be re-created ... contains an external pointer 
-df.full.xgb <- xgb.DMatrix(as.matrix(df.full[,indVarCols]), 
-                             label=as.integer(as.character(df.full$pres)))
+df.full.xgb <- xgb.DMatrix(as.matrix(xgb.df.full[,indVarCols]), 
+                             label=as.integer(as.character(xgb.df.full$pres)))
 
 xgb.predicted <- predict(xgb.full, df.full.xgb)
-xgb.predicted <- as.data.frame(cbind(df.full[,c("pres","group_id","stratum")], "pred" = xgb.predicted))
+xgb.predicted <- as.data.frame(cbind(xgb.df.full[,c("pres","group_id","stratum")], "pred" = xgb.predicted))
 allVotesPresPts <- xgb.predicted[xgb.predicted$pres=="1",]
 
 #get minimum test set presence "Min Pres Validation Points"

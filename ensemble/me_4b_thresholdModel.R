@@ -19,17 +19,17 @@ library(DBI)
 cutList <- list()
 
 # total number of EOs, polys, pts (subtract absence class)
-totEOs.s <- length(unique(df.full.s$group_id)[!grepl("pseu-a",unique(df.full.s$group_id))])
-totPolys.s <- length(unique(df.full.s$stratum)[!grepl("pseu-a",unique(df.full.s$stratum))])
-totPts.s <- nrow(df.full.s[df.full.s$pres == 1,])
+totEOs.s <- length(unique(me.df.full.s$group_id)[!grepl("pseu-a",unique(me.df.full.s$group_id))])
+totPolys.s <- length(unique(me.df.full.s$stratum)[!grepl("pseu-a",unique(me.df.full.s$stratum))])
+totPts.s <- nrow(me.df.full.s[me.df.full.s$pres == 1,])
 
 #####
 # me calculated threholds are here, for example
 # me.out.fin@results[rownames(me.out.fin@results) == "Minimum.training.presence.Cloglog.threshold"]
 
 #calc most measures on the training subset
-me.predicted <- predict(me.out.fin, df.full.s, type = "prob")
-me.predicted <- as.data.frame(cbind(df.full.s[,c("pres","group_id","stratum")], "pred" = me.predicted))
+me.predicted <- predict(me.out.fin, me.df.full.s, type = "prob")
+me.predicted <- as.data.frame(cbind(me.df.full.s[,c("pres","group_id","stratum")], "pred" = me.predicted))
 allVotesPresPts <- me.predicted[me.predicted$pres=="1",]
 
 #get minimum training presence
@@ -192,12 +192,12 @@ cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
 
 #calc a few measures on the full set, call it test set
 # total number of EOs (subtract absence class)
-totEOs.f <- length(unique(df.full$group_id)[!grepl("pseu-a",unique(df.full$group_id))])
-totPolys.f <- length(unique(df.full$stratum)[!grepl("pseu-a",unique(df.full$stratum))])
-totPts.f <- nrow(df.full.s[!df.full$stratum == "pseu-a",])
+totEOs.f <- length(unique(me.df.full$group_id)[!grepl("pseu-a",unique(me.df.full$group_id))])
+totPolys.f <- length(unique(me.df.full$stratum)[!grepl("pseu-a",unique(me.df.full$stratum))])
+totPts.f <- nrow(me.df.full.s[!me.df.full$stratum == "pseu-a",])
 
-me.predicted <- predict(me.out.fin, df.full, type = "prob")
-me.predicted <- as.data.frame(cbind(df.full[,c("pres","group_id","stratum")], "pred" = me.predicted))
+me.predicted <- predict(me.out.fin, me.df.full, type = "prob")
+me.predicted <- as.data.frame(cbind(me.df.full[,c("pres","group_id","stratum")], "pred" = me.predicted))
 allVotesPresPts <- me.predicted[me.predicted$pres=="1",]
 
 #get minimum test set presence "Min Pres Validation Points"
