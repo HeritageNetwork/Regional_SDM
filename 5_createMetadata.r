@@ -197,50 +197,6 @@ figSpecs <- data.frame(algos = c("rf","me","xgb"),
                        lwd = c(3,2,1),
                        lty = c(1,1,1),
                        stringsAsFactors = FALSE)
-# 
-# # first a blank plot
-# plot(0.5,0.5,lwd=0, col = "white", xlim = c(0,1), ylim = c(0,1),
-#      xlab="Avg. false positive rate", ylab="Avg. true positive rate")
-# # now add each that was run  
-# #if no validation, then this will fail. Used to use if(exists("rf.perf"))...
-# for(algo in ensemble_algos){
-#   if(algo == "rf" & exists("rf.perf")){
-#     specs <- figSpecs[match(algo,figSpecs$algos),]
-#     plot(rf.perf,
-#          lwd=specs$lwd, 
-#          col=specs$col,
-#          avg="threshold", 
-#          add = TRUE)
-#   }
-#   if(algo == "me" & exists("me.perf")){
-#     specs <- figSpecs[match(algo,figSpecs$algos),]
-#     plot(me.perf, 
-#          lwd=specs$lwd, 
-#          col=specs$col,
-#          avg="threshold", 
-#          add = TRUE)
-#   }
-#   if(algo == "xgb"){
-#     xgb.pred <- prediction(xgbFit1$pred$pres, xgbFit1$pred$obs)
-#     xgb.perf <- performance(xgb.pred, "tpr","fpr")
-#     specs <- figSpecs[match(algo,figSpecs$algos),]
-#     plot(xgb.perf, 
-#          lwd=specs$lwd, 
-#          col=specs$col,
-#          avg="threshold", 
-#          add = TRUE)
-#   }
-# }
-# #possible else if no models were validated: text(0.5,0.5, "No evaluation")
-# 
-# legend("bottomright", ensemble_algos, 
-#        col = figSpecs[match(ensemble_algos,figSpecs$algos),"col"],
-#        lwd = figSpecs[match(ensemble_algos,figSpecs$algos),"lwd"],
-#        lty = figSpecs[match(ensemble_algos,figSpecs$algos),"lty"],
-#        text.col = "black", 
-#        merge = TRUE, bg = "gray95")
-#   
-# 
 
 
 ##
@@ -294,7 +250,7 @@ impPlot <- ggplot(data = varsImp) +
   geom_path(aes(x = impVal, y = fullName, color = algorithm, group = algorithm)) + 
   scale_color_manual(values = scaleVec)
 
-# build partial plots ----
+## build partial plots ----
 
 # create how many?
 if(length(pPlots) < 9){
@@ -314,21 +270,12 @@ names(grobList) <- 1:numPPl
 # get the location of each rf pplot
 rflist <- unlist(lapply(pPlots, FUN = function(x) x$fname))
 
-# 
 for (plotpi in 1:numPPl){
   evar <- pplotVars$fullName[[plotpi]]
   rfLoc <- match(evar, rflist)
 
-  #medat <- data.frame(x = me.pPlots[[grdLoc]]$x, y = me.pPlots[[grdLoc]]$y)
-  #medat <- cbind(medat, algo = "me")
-  #standardize 0-1
-  #medat$y <- (medat$y - min(medat$y))/(max(medat$y)-min(medat$y))
-  #dat <- rbind(dat, medat)
-  #rm(grdLoc)
-  
   #dens data
   df.full <- rbind(df.in, df.abs)
-  #densdat <- data.frame(x = df.full[,pPlots[[plotpi]]$gridName], pres = df.full[,"pres"])
   densdat <- data.frame(x = df.full[,pPlots[[rfLoc]]$gridName], pres = df.full[,"pres"])
 
   # pplot data
@@ -372,27 +319,31 @@ for (plotpi in 1:numPPl){
     xlab(pPlots[[rfLoc]]$fname) + 
     scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
                        expand = expansion(mult = c(0.05))) +
+    theme_classic() +
     theme(axis.title.y = element_blank(), legend.position = "none",
-          plot.margin = margin(t = 2, r = 5, b = 5, l = 5, unit = "pt"),
-          text = element_text(size=8)
+          plot.margin = margin(t = 1, r = 5, b = 5, l = 5, unit = "pt"),
+          text = element_text(size=8),
+          panel.border = element_rect(colour = "black", fill=NA, size=0.25)
           ) + 
     scale_color_manual(values = scaleVec)
 
   # create the density plot
   densplot <- ggplot(data = densdat, aes(x = x, color = factor(pres, labels = c("background","presence")))) + 
-    geom_density(size = 0.5) + 
+    geom_density(size = 0.5, show.legend = FALSE) + 
     scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
                        expand = expansion(mult = c(0.05)),
                        breaks = NULL) +
     scale_y_continuous(breaks = NULL) + 
+    theme_classic() + 
     theme(axis.title.y = element_blank(), legend.position = "none",
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
           axis.text.y = element_blank(),
           axis.ticks.y = element_blank(),
           axis.line.y = element_blank(),
-          plot.margin = margin(t = 2, r = 0, b = 4, l = 0, unit = "pt")) +
-    scale_color_manual(values=c("red", "blue")) 
+          axis.line.x = element_blank(),
+          plot.margin = margin(t = 2, r = 0, b = 1, l = 0, unit = "pt")) +
+    scale_color_manual(values=c("grey60", "black")) 
     #theme_void()
 
   # now do the layout
@@ -424,6 +375,8 @@ for (plotpi in 1:numPPl){
     legend1 <- g_legend(legPlot1) 
     
     legPlot2 <- densplot + 
+      geom_freqpoly(binwidth = 1000) + # hack to get lines instead of squares in legend
+      scale_x_continuous() + 
       labs(color = "Density") +
       theme(legend.position = "bottom",
             legend.margin=margin(t=0, r=0, b=0, l=0, unit="null"),
@@ -447,8 +400,8 @@ gt <- arrangeGrob(grobs=grobList,
 gtl <- gtable_add_rows(gt, unit(0.25, "null"), pos = -1)
 gtl <- gtable_add_grob(gtl, legGb, t = 4, l = 2, b = 4, r = 4)
 
-# grid.newpage()
-# grid.draw(gtl)
+grid.newpage()
+grid.draw(gtl)
 
 
 # ## get background poly data for the map (study area, reference boundaries) ----

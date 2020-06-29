@@ -28,7 +28,7 @@
 %add footers
 \cfoot{
 \small   %small font. The double slashes is newline in fancyhdr
-Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}).
+Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}).
 }
 \rfoot{p. \thepage}
 
@@ -40,7 +40,7 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 \noindent
 \begin{minipage}[b]{4.75in}   %everything in this minipage will be adjacent, left of the thermometer
   \LARGE \textit{\Sexpr{as.character(ElementNames[[1]])}} \\ 
-  \normalsize Species Distribution Model (SDM) assessment metrics and metadata \\
+  \normalsize Habitat Suitability Model (HSM) assessment metrics and metadata \\
   Common name: \href{\Sexpr{as.character(NSurl)}}{\Sexpr{as.character(ElementNames[[2]])}}  \\
   Grank: \Sexpr{ paste(as.character(ElementNames[[6]])," - ",as.character(grank_desc[[2]]), sep="")}\\
   Date: \Sexpr{format(Sys.Date(), "%d %b %Y")} \\  
@@ -84,7 +84,7 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 \Sexpr{as.character(project_overview)}
 \smallskip
 \noindent
-This SDM incorporates the number of known and background locations indicated in Table 2., modeled using the algorithms in Table 1 in the R statistical environment. We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} for a total of \Sexpr{length(group$vals)} groups. The statistics in Table 3 report the mean and variance of validation statistics for these jackknifing runs.\\
+This HSM incorporates the number of known and background locations indicated in Table 2., modeled using the algorithms in Table 1 in the R statistical environment. We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} and testing \Sexpr{length(group$vals)} groups. The statistics in Table 3 report the validation statistics for these jackknifing runs.\\
 \smallskip
 \small
 \begin{minipage}[t]{3in}
@@ -98,7 +98,7 @@ species. The specific implementations are listed in the package column. Details 
 @
 \end{center}
 \smallskip
-Table 2. Input statistics. Presence points are points placed in polygon-based location information or point-based observations. Groups describe groupings of points based on polygon data or spatial grouping of observations. Background points are placed throughout model area excluding known species locations.
+Table 2. Input statistics. Presence locations are known locations for this species. These locations may be based on Point observations (buffered based on spatial accuracy of the point) and polygon representations of a known occurrence. Coincident and adjacent locations are grouped together. Environmental conditions are randomly sampled within each of these groups the number of times noted (subsamples) to generate the total number of presence inputs. Background points are placed throughout model area excluding known species locations. Algorithms incorporate background points differently; the number used for each is noted. 
 \begin{center}
 <<tableTwo, results="asis", echo = FALSE>>=
   print(xtable(summ.table),
@@ -106,10 +106,7 @@ Table 2. Input statistics. Presence points are points placed in polygon-based lo
 @
 \end{center}
 \smallskip
-Table 3. Validation statistics for jackknife trials. AUC = 
-area under the ROC curve, Sens = sensitivity, Spec = specificity, TSS = 
-True Skill Statistic {\protect\NoHyper\cite{allouche2006, vaughan2005,
-fielding2002}\protect\endNoHyper}.
+Table 3. Validation statistics for jackknife trials, with the mean and standard deviation reported. AUC = area under the ROC curve, Sens = sensitivity, Spec = specificity, TSS = True Skill Statistic {\protect\NoHyper\cite{allouche2006, vaughan2005, fielding2002}\protect\endNoHyper}.
 \begin{center}
 <<tableThree, results="asis", echo = FALSE>>=
   print(xtable(vstats.w), floating=FALSE, include.rownames=FALSE)
@@ -169,17 +166,17 @@ legend("bottomright", ensemble_algos,
        merge = TRUE, bg = "gray95")
   
 @
-\includegraphics{figure/ROCplot-1.pdf} %place it    
+%\includegraphics{figure/ROCplot-1.pdf} %place it    
 \end{center}
-Figure 1. ROC plot for all \Sexpr{length(group$vals)} validation runs, 
-averaged along cutoffs, for each modeling algorithm.
+%Figure 1. ROC plot for all \Sexpr{length(group$vals)} validation runs, 
+%averaged along cutoffs, for each modeling algorithm.
 
 \end{minipage}%
 \hfill \begin{minipage}[t]{3.5in}
 
 \smallskip  %dummy first line to align with previous minipage
 
-<<importanceFig, fig.width=3.2, fig.height=7.0, include=FALSE, echo=FALSE>>=
+<<importanceFig, fig.width=3.2, fig.height=6.5, include=FALSE, echo=FALSE>>=
 par(mar=c(3.2,2.5,.25,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
     mgp=c(1.3,0.4,0), #placement of axis title, labels, line
@@ -191,8 +188,7 @@ print(impPlot)
 \begin{center}
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
-Figure 2. Relative importance of each environmental variable based on the full
-model using all sites as input. Importance values (mean decrease in accuracy) are extracted from the randomForest{\protect\NoHyper\cite{liaw2002}\protect\endNoHyper} function. See Appendix 1 for variable descriptions.
+Figure 2. Relative importance of each environmental variable based on the full model using all sites as input. Importance values are extracted from each algorithm and plotted here. Note each algorithm has its own variable removal rules (see Appendix 2); missing points indicate the variable was not used by that algorithm. See Appendix 1 for variable descriptions.
 \end{minipage}% 
 
 \normalsize
@@ -204,7 +200,7 @@ grid.draw(gtl)
 @
 \includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
 \small
-Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed {\protect\NoHyper\cite{liaw2002}\protect\endNoHyper}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the black line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationship overall; increasing lines, positive. The distribution of each category (thin red = Background points, thick blue = Presence points) is depicted at the top margin. See Appendix 1 for variable descriptions.
+Figure 3. Partial dependence plots for the \Sexpr{as.character(numPPl)} environmental variables with the most influence on the models (averaged). Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed {\protect\NoHyper\cite{liaw2002}\protect\endNoHyper}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationship overall; increasing lines, positive. The distribution of each category (thin red = Background points, thick blue = Presence points) is depicted at the top margin. See Appendix 1 for variable descriptions.
 \normalsize
 
 \medskip
