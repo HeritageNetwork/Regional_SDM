@@ -67,6 +67,10 @@ library(caret)
 # #envStack <- stack(fullL) # if not using helper/crop_mask_rast.R
 # rm(fullL)
 
+# rearrange and subset envStack
+envStack_ss <- envStack[[xgb.full$feature_names]]
+
+
 # run prediction ----
 setwd(file.path(loc_model, model_species,"outputs","model_predictions"))
 fileNm <- paste0(model_run_name,"_",algo,".tif")
@@ -84,7 +88,7 @@ predfun <- function(m, d){
   predict(m,y)
 }
 
-pd <- raster::predict(envStack, xgb.full, filename = fileNm, fun=predfun, index = 2)
+pd <- raster::predict(envStack_ss, xgb.full, filename = fileNm, fun=predfun, index = 2)
 
 #, type = "response", index = 2)
 

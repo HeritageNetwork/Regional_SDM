@@ -65,6 +65,8 @@ library(parallel)
 # #envStack <- stack(fullL) # if not using helper/crop_mask_rast.R
 # rm(fullL)
 
+#rearrange and subset envstack
+envStack_ss <- envStack[[names(rf.full$forest$xlevels)]]
 # run prediction ----
 setwd(file.path(loc_model, model_species,"outputs","model_predictions"))
 fileNm <- paste0(model_run_name,"_",algo,".tif")

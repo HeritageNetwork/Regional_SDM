@@ -21,43 +21,55 @@ setwd(paste0(model_species,"/outputs"))
 # load rdata
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
-##Make the raster stack
-stackOrder <- names(df.full)[indVarCols]
-# set wd
-#temprast <- paste0(loc_model, "/", model_species, "/inputs/temp_rasts")
-#if (dir.exists(temprast)) setwd(temprast) else 
-setwd(loc_envVars)
-
-# get raster full names
+# each algo in the ensemble uses a different set of env vars
+#
+# get the vars used for each
 db <- dbConnect(SQLite(),dbname=nm_db_file)
-SQLQuery <- "select gridName, fileName from lkpEnvVars;"
-evs <- dbGetQuery(db, SQLQuery)
+sql <- paste0("SELECT * from tblModelResultsVarsUsed where model_run_name = '", 
+              model_run_name, "';")
+varsImp <- dbGetQuery(db, statement = sql)
+# get full file names
+sql <- "SELECT gridName, fileName FROM lkpEnvVars"
+evs <- dbGetQuery(db, statement = sql)
 evs$gridName <- tolower(evs$gridName)
-rasFiles <- merge(data.frame(gridName = stackOrder), evs)
-#sort it back to stackOrder's order
-rasFiles <- rasFiles[match(stackOrder, rasFiles$gridName),]
 dbDisconnect(db)
 rm(db)
+
+# remove vars not used by any algo
+varsImp <- varsImp[varsImp$inFinalModel == 1,]
+
+# merge in full name, reduce cols and dups
+rasFiles <- merge(varsImp, evs)
+rasFiles <- unique(rasFiles[,c("gridName","fileName")])
+
+##Make the raster stack
+setwd(loc_envVars)
 
 # find matching var rasters (with folder for temporal vars)
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
-fullL <- list()
 
+fullL <- as.list(rasFiles$fileName)
+names(fullL) <- rasFiles$gridName
+
+# this loop handles temporal rasters but otherwise is not necessary. 
+# keep it simple (as above two-liner does) till we need this (or improve it)
 # attach file names to env var names
-for (i in 1:length(stackOrder)) {
-  rs <- raslist[grep(rasFiles$fileName[i], raslist, ignore.case = TRUE)]
-  if (length(rs) > 1) {
-    # always take most recent temporal raster
-    rs1 <- do.call(rbind.data.frame, strsplit(rs, "_|/"))
-    rs1$nm <- rs
-    rs <- rs1$nm[which.max(as.numeric(rs1[,2]))]
-    rm(rs1)
-  }
-  fullL[[i]] <- rs
-}
-names(fullL) <- stackOrder
-rm(rs)
+# fullL <- list()
+# for (i in 1:nrow(rasFiles)) {
+#   rs <- raslist[grep(rasFiles$fileName[i], raslist, ignore.case = TRUE)]
+#   if (length(rs) > 1) {
+#     # always take most recent temporal raster
+#     rs1 <- do.call(rbind.data.frame, strsplit(rs, "_|/"))
+#     rs1$nm <- rs
+#     rs <- rs1$nm[which.max(as.numeric(rs1[,2]))]
+#     rm(rs1)
+#   }
+#   fullL[[i]] <- rs
+# }
+# names(fullL) <- rasFiles$gridName
+# rm(rs)
+
 
 source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = FALSE)
 envStack <- stack(newL)
