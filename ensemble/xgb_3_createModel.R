@@ -73,9 +73,9 @@ rm(y)
 impEnvVarCols <- names(df.full) %in% impEnvVars$Feature
 impEnvVarCols[1:5] <- TRUE
 # subset!
-df.full <- df.full[,impEnvVarCols]
+xgb.df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
-indVarCols <- c(6:length(names(df.full)))
+indVarCols <- c(6:length(names(xgb.df.full)))
 
 rm(xgb.impvals, impEnvVars, impEnvVarCols)
 
@@ -94,9 +94,9 @@ if(length(group$vals) > 50){
 # can be drawn into KFolds
 
 # vector to split up represents row indices
-rowInd <- seq(1, nrow(df.full[df.full$pres == 0,]),by=1)
+rowInd <- seq(1, nrow(xgb.df.full[xgb.df.full$pres == 0,]),by=1)
 # first, randomly assign based on number of pres records in each group
-presCounts <- table(df.full[,group$colNm])
+presCounts <- table(xgb.df.full[,group$colNm])
 presCounts <- presCounts[!names(presCounts) == "pseu-a"]
 # start by assigning a base number to avoid huge skews
 drawAmt <- ifelse(presCounts>5,5,presCounts)
@@ -129,8 +129,8 @@ rm(rowInd, presCounts, drawAmt, numToDistribute, weights, i, x)
 #sampVec <- c(sampVec, sampVec2)
 sampVec <- sampVec[order(sampVec)]
 # this defines group assignment for each df.full row (assumed pres=1 is first)
-fullSampVec <- c(as.character(df.full[df.full$pres == 1,group$colNm]), names(sampVec))
-df.full$stratum <- fullSampVec
+fullSampVec <- c(as.character(xgb.df.full[xgb.df.full$pres == 1,group$colNm]), names(sampVec))
+xgb.df.full$stratum <- fullSampVec
 
 # subsample down to a reasonable number 
 
@@ -171,12 +171,12 @@ subSampByGp <- function(x, ssvec, gpColName) {
 }
 
 #df.full.s <- subSampByGp(df.full, sampSizeVec[-grep("pseu-a", names(sampSizeVec))], group$colNm)
-df.full.s <- subSampByGp(df.full, sampSizeVec, group$colNm)
+xgb.df.full.s <- subSampByGp(xgb.df.full, sampSizeVec, group$colNm)
 ## TODO sample background down to a reasonable number ##### research it?
 #df.full.s <- rbind(df.full.s, df.full[df.full$pres == 0,])
 
 # define the folds
-folds <- groupKFold(df.full.s$stratum, k = kf) 
+folds <- groupKFold(xgb.df.full.s$stratum, k = kf) 
 
 #library(pROC)
 # xgbfitControl <- trainControl(
@@ -199,10 +199,10 @@ xgbfitControl <- trainControl(
 )
 
 # caret seems to need this
-df.full.s$pres <- as.character(df.full.s$pres)
-df.full.s[df.full.s$pres == "0","pres"] <- "abs"
-df.full.s[df.full.s$pres == "1","pres"] <- "pres"
-df.full.s$pres <- as.factor(df.full.s$pres)
+xgb.df.full.s$pres <- as.character(xgb.df.full.s$pres)
+xgb.df.full.s[xgb.df.full.s$pres == "0","pres"] <- "abs"
+xgb.df.full.s[xgb.df.full.s$pres == "1","pres"] <- "pres"
+xgb.df.full.s$pres <- as.factor(xgb.df.full.s$pres)
 
 # xgbGrid <-  expand.grid(
 #   nrounds = c(5, 10, 20),
@@ -217,19 +217,19 @@ df.full.s$pres <- as.factor(df.full.s$pres)
 #)
 
 # run validation with caret
-xgbFit1 <- train(pres ~ ., data = df.full.s[,c(depVarCol,indVarCols)],
+xgbFit1 <- train(pres ~ ., data = xgb.df.full.s[,c(depVarCol,indVarCols)],
                  method = "xgbTree",
                  trControl = xgbfitControl,
                  metric = "ROC")
 
 # flip *back* for raw xgb
-df.full.s$pres <- as.character(df.full.s$pres)
-df.full.s[df.full.s$pres == "abs","pres"] <- "0"
-df.full.s[df.full.s$pres == "pres","pres"] <- "1"
-df.full.s$pres <- as.factor(df.full.s$pres)
+xgb.df.full.s$pres <- as.character(xgb.df.full.s$pres)
+xgb.df.full.s[xgb.df.full.s$pres == "abs","pres"] <- "0"
+xgb.df.full.s[xgb.df.full.s$pres == "pres","pres"] <- "1"
+xgb.df.full.s$pres <- as.factor(xgb.df.full.s$pres)
 
-df.full.s.xgb <- xgb.DMatrix(as.matrix(df.full.s[,indVarCols]), 
-                           label=as.integer(as.character(df.full.s$pres)))
+df.full.s.xgb <- xgb.DMatrix(as.matrix(xgb.df.full.s[,indVarCols]), 
+                           label=as.integer(as.character(xgb.df.full.s$pres)))
 
 ####
 #   run the full model ----
@@ -258,7 +258,7 @@ tblModelInputs <- data.frame(table_code = baseName,
                              min_grp_subsamp = min(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
                              max_grp_subsamp = max(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
                              tot_obs_subsamp = sum(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
-                             tot_bkgd_subsamp = nrow(df.full.s[df.full.s$pres == "0",]),
+                             tot_bkgd_subsamp = nrow(xgb.df.full.s[xgb.df.full.s$pres == "0",]),
                              obs_count = nrow(df.in), 
                              bkgd_count = nrow(df.abs)
 )
@@ -313,7 +313,7 @@ for(i in 1:length(xgb.EnvVars$gridName)) {
 # ###
 # # partial plot data ----
 # ###
-df.full.s$pres <- as.integer(as.character(df.full.s$pres))
+xgb.df.full.s$pres <- as.integer(as.character(xgb.df.full.s$pres))
 
 #get the order for the importance charts
 ord <- order(xgb.EnvVars$impVal, decreasing = TRUE)[1:length(indVarCols)]
@@ -340,7 +340,7 @@ if(length(ord) > 9){
 # # run partial plots in parallel
 #curvars = EnvVars$gridName[1:pPlotListLen]
 
-xgb.pPlots <- xgb.plot.shap(data = as.matrix(df.full.s[,indVarCols]), 
+xgb.pPlots <- xgb.plot.shap(data = as.matrix(xgb.df.full.s[,indVarCols]), 
                      model = xgb.full, 
                      features = xgb.EnvVars$gridName[1:pPlotListLen],
                      target_class = 1,

@@ -54,9 +54,9 @@ rm(y)
 impEnvVarCols <- names(df.full) %in% impEnvVars$var
 impEnvVarCols[1:5] <- TRUE
 # subset!
-df.full <- df.full[,impEnvVarCols]
+me.df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
-indVarCols <- c(6:length(names(df.full)))
+indVarCols <- c(6:length(names(me.df.full)))
 
 rm(impvals, impEnvVars, impEnvVarCols)
 
@@ -92,8 +92,8 @@ subSampByGp <- function(x, ssvec, gpColName) {
 
 # prep for validation loop ----
 #now that entire set is cleaned up, split back out to use any of the three DFs below
-df.in2 <- subset(df.full,pres == "1")
-df.abs2 <- subset(df.full, pres == "0")
+df.in2 <- subset(me.df.full,pres == "1")
+df.abs2 <- subset(me.df.full, pres == "0")
 df.in2$stratum <- factor(df.in2$stratum)
 df.abs2$stratum <- factor(df.abs2$stratum)
 df.in2$group_id <- factor(df.in2$group_id)
@@ -354,14 +354,14 @@ if(length(group$vals)>1){
 
 
 # subsample down to a reasonable number 
-df.full.s <- subSampByGp(df.full, sampSizeVec[-grep("pseu-a", names(sampSizeVec))], group$colNm)
-df.full.s <- rbind(df.full.s, df.full[df.full$pres == 0,])
+me.df.full.s <- subSampByGp(me.df.full, sampSizeVec[-grep("pseu-a", names(sampSizeVec))], group$colNm)
+me.df.full.s <- rbind(me.df.full.s, me.df.full[me.df.full$pres == 0,])
 
 outPth <- file.path(loc_model, ElementNames$Code,"outputs","ensemble","me")
 dir.create(outPth, showWarnings = FALSE)
 
 
-me.out.fin <- maxent(df.full.s[,indVarCols], df.full.s[,depVarCol],
+me.out.fin <- maxent(me.df.full.s[,indVarCols], me.df.full.s[,depVarCol],
                  path = outPth,
                  args=c("-J", "-P"))
 # args: (boolean flags toggle the default, and p,q,l are already 'true')
@@ -389,7 +389,7 @@ tblModelInputs <- data.frame(table_code = baseName,
                              min_grp_subsamp = min(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
                              max_grp_subsamp = max(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
                              tot_obs_subsamp = sum(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
-                             tot_bkgd_subsamp = nrow(df.full.s[df.full.s$pres == 0,]),
+                             tot_bkgd_subsamp = nrow(me.df.full.s[me.df.full.s$pres == 0,]),
                              obs_count = nrow(df.in), 
                              bkgd_count = nrow(df.abs)
 )

@@ -118,9 +118,9 @@ rm(y)
 impEnvVarCols <- names(df.full) %in% names(impEnvVars)
 impEnvVarCols[1:5] <- TRUE
 # subset!
-df.full <- df.full[,impEnvVarCols]
+rf.df.full <- df.full[,impEnvVarCols]
 # reset the indvarcols object
-indVarCols <- c(6:length(names(df.full)))
+indVarCols <- c(6:length(names(rf.df.full)))
 
 rm(impvals, impEnvVars, impEnvVarCols)
 
@@ -130,8 +130,8 @@ rm(impvals, impEnvVars, impEnvVarCols)
 
 # prep for validation loop ----
 #now that entire set is cleaned up, split back out to use any of the three DFs below
-df.in2 <- subset(df.full,pres == "1")
-df.abs2 <- subset(df.full, pres == "0")
+df.in2 <- subset(rf.df.full,pres == "1")
+df.abs2 <- subset(rf.df.full, pres == "0")
 df.in2$stratum <- factor(df.in2$stratum)
 df.abs2$stratum <- factor(df.abs2$stratum)
 df.in2$group_id <- factor(df.in2$group_id)
@@ -423,12 +423,12 @@ cat("... creating full model \n")
 
 rf.full <- foreach(ntree = rep(treeSubs,numCores), .combine = randomForest::combine, 
                     .packages = 'randomForest', .multicombine = TRUE) %dopar% {
-                        randomForest(df.full[,indVarCols],
-                              y=df.full[,depVarCol],
+                        randomForest(rf.df.full[,indVarCols],
+                              y=rf.df.full[,depVarCol],
                               importance=TRUE,
                               ntree=ntree,
                               mtry=mtry,
-                              strata = df.full[,group$colNm],
+                              strata = rf.df.full[,group$colNm],
                               sampsize = sampSizeVec, replace = TRUE,
                               norm.votes = TRUE)
                               }
@@ -506,8 +506,8 @@ if(length(ord) > 15){
 cat("... calculating partial plots \n")
 
 ### subsample, grouped by pres/abs, to speed up partial plots
-ppPres <- df.full[df.full$pres == 1, ]
-ppAbs <- df.full[df.full$pres == 0, ]
+ppPres <- rf.df.full[rf.df.full$pres == 1, ]
+ppAbs <- rf.df.full[rf.df.full$pres == 0, ]
 ppPresSamp <- min(c(nrow(ppPres), 6000)) # take all pres samples, or 6000, whichever is less
 ppPresSamp <- sample(1:nrow(ppPres), size = round(ppPresSamp), replace = FALSE)
 ppPresSamp <- ppPres[ppPresSamp,]
