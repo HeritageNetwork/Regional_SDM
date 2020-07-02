@@ -19,6 +19,7 @@
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{float}
+\usepackage{tabularx}
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 \usepackage[normalem]{ulem}
 \useunder{\uline}{\ul}{}
@@ -210,6 +211,29 @@ Species distribution model outputs display the probability (0-1) of a location (
 
 \medskip
 \noindent
+\begin{minipage}{\linewidth} %keep table header with table
+\small
+Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\endNoHyper} calculated from the final model. The Value column reports the threshold; Groups indicates the percentage (number in brackets) of groups within which at least one point was predicted as suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of groups and presence points used in the final model are reported in Table 1.
+\smallskip
+\begin{center}
+<<tableFour, results="asis", echo = FALSE>>=
+
+  print(sdm.thresh.list.xtbl,
+        floating=FALSE, include.rownames=FALSE)
+
+@
+
+adding a little text here as a test
+
+<<tableFour_b, results="asis", echo = FALSE>>=
+  print(thresh.descr.xtbl,
+        floating = FALSE, include.rownames=FALSE)
+
+@
+
+
+\end{center}
+\end{minipage}
 
 \small
 
@@ -262,7 +286,7 @@ Species distribution model outputs display the probability (0-1) of a location (
 Appendix 1. Descriptions for environmental variables included in model.
 \begin{table}[H]
 \resizebox{\textwidth}{!}{
-<<tableFour, results="asis", echo = FALSE>>=
+<<tableFive, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
 addtorow <- list()
 addtorow$pos <- list()

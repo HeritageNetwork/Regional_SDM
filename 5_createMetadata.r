@@ -217,8 +217,8 @@ varsImp <- varsImp[varsImp$inFinalModel == 1,]
 #varsImpUnqV <- unique(varsImp$gridName)
 
 # merge in full name, reduce cols
-varsImp <- merge(varsImp, varNms)
-varsImp <- varsImp[,c("algorithm","fullName","impVal")]
+varsImp.full <- merge(varsImp, varNms)
+varsImp <- varsImp.full[,c("algorithm","fullName","impVal")]
 
 ## do it in long format !!
 # standardize to 0-1 then sort by mean importance (using factors)
@@ -274,18 +274,26 @@ for (plotpi in 1:numPPl){
   evar <- pplotVars$fullName[[plotpi]]
   rfLoc <- match(evar, rflist)
 
+  #get gridname
+  grdName <- unique(varsImp.full[varsImp.full$fullName == evar, "gridName"])
+  
   #dens data
   df.full <- rbind(df.in, df.abs)
-  densdat <- data.frame(x = df.full[,pPlots[[rfLoc]]$gridName], pres = df.full[,"pres"])
+  densdat <- data.frame(x = df.full[,grdName], pres = df.full[,"pres"])
 
   # pplot data
-  # rf
-  grdName <- pPlots[[rfLoc]]$gridName
-  grdFullName <- pPlots[[rfLoc]]$fname
-  dat <- data.frame(x = pPlots[[rfLoc]]$x, y = pPlots[[rfLoc]]$y)
-  dat <- cbind(dat, algo = "rf")
-  #standardize 0-1
-  dat$y <- (dat$y - min(dat$y))/(max(dat$y)-min(dat$y))
+  # do rf only if there are data
+  if(!is.na(rfLoc)){
+    # rf
+    #grdName <- pPlots[[rfLoc]]$gridName
+    grdFullName <- pPlots[[rfLoc]]$fname
+    dat <- data.frame(x = pPlots[[rfLoc]]$x, y = pPlots[[rfLoc]]$y)
+    dat <- cbind(dat, algo = "rf")
+    #standardize 0-1
+    dat$y <- (dat$y - min(dat$y))/(max(dat$y)-min(dat$y))    
+  } else {
+    dat <- data.frame(x = numeric(), y = numeric(), algo = character())
+  }
   
   # check and use xgb if there are data
   if(grdName %in% dimnames(xgb.pPlots$data)[[2]]){
@@ -400,8 +408,8 @@ gt <- arrangeGrob(grobs=grobList,
 gtl <- gtable_add_rows(gt, unit(0.25, "null"), pos = -1)
 gtl <- gtable_add_grob(gtl, legGb, t = 4, l = 2, b = 4, r = 4)
 
-grid.newpage()
-grid.draw(gtl)
+#grid.newpage()
+#grid.draw(gtl)
 
 
 # ## get background poly data for the map (study area, reference boundaries) ----
@@ -443,6 +451,7 @@ SQLquery <- paste("SELECT model_end_time date, egt_id, metadata_comments comment
                   " FROM tblModelResults ", 
                   "WHERE model_run_name ='", model_run_name, "'; ", sep="")
 sdm.customComments <- dbGetQuery(db, statement = SQLquery)
+dbDisconnect(db)
 # assume you want the most recently entered comments, if there are multiple entries
 if(nrow(sdm.customComments) > 1) {
   sdm.customComments <- sdm.customComments[order(sdm.customComments$date, decreasing = TRUE),]
@@ -452,14 +461,12 @@ if(nrow(sdm.customComments) > 1) {
 }
 
 ## Get threshold information ----
-SQLquery <- paste("Select ElemCode, dateTime, cutCode, cutValue, capturedEOs, capturedPts ", 
+db <- dbConnect(SQLite(),dbname=nm_db_file)  
+SQLquery <- paste("Select ElemCode, algorithm, dateTime, cutCode, cutValue, 
+                  capturedEOs, capturedPolys, capturedPts, prpCapEOs, prpCapPolys, prpCapPts ", 
                   "FROM tblModelResultsCutoffs ", 
                   "WHERE model_run_name ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
-# filter to only most recent
-#uniqueTimes <- unique(sdm.thresholds$dateTime)
-#mostRecent <- uniqueTimes[order(uniqueTimes, decreasing = TRUE)][[1]]
-#sdm.thresholds <- sdm.thresholds[sdm.thresholds$dateTime == mostRecent,]
 
 # get info about thresholds
 SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort, cutCitationFull, sortOrder ", 
@@ -469,38 +476,81 @@ SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort
                   ");", sep = "")
 sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
 
+dbDisconnect(db)
+rm(db)
+# merge and sort
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
-#sort it
 sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
-sdm.thresh.table <- sdm.thresh.merge[,c("cutFullName", "cutValue",
-  "capturedEOs", "capturedPts", "cutDescription")]
-names(sdm.thresh.table) <- c("Threshold", "Value", "Groups","Pts","Description")
-sdm.thresh.table$Groups <- paste(round(sdm.thresh.table$Groups/inputs$feat_grp_count[[1]]*100, 1),
-                                     "(",sdm.thresh.table$Groups, ")", sep="")
-# sdm.thresh.table$Polys <- paste(round(sdm.thresh.table$Polys/numPys*100, 1),
-#                               "(",sdm.thresh.table$Polys, ")", sep="")
-#numPts <- nrow(subset(df.full, pres == 1))
-sdm.thresh.table$Pts <- paste(round(sdm.thresh.table$Pts/inputs$feat_count[[1]]*100, 1),
-                              sep="")
+# remove metrics we don't want to display
+sdm.thresh.merge <- sdm.thresh.merge[!sdm.thresh.merge$cutCode %in% c("FMeasPt01"),]
+# extract descriptions of those we are using
+thresh.descr <- unique(sdm.thresh.merge[,c("cutCode","cutFullName","cutDescription")])
+names(thresh.descr) <- c("Code","Threshold full name","Threshold description")
+
+# define groups (eos or polys) based on validation
+if(group$JackknType == "polygon"){
+  sdm.thresh.merge$pctCapGPs <- paste0(round(sdm.thresh.merge$prpCapPolys * 100),"(",
+                                       round(sdm.thresh.merge$capturedPolys),")")
+} else {
+  sdm.thresh.merge$pctCapGPs <- paste0(round(sdm.thresh.merge$prpCapEOs * 100),"(",
+                                      round(sdm.thresh.merge$capturedEOs),")")
+}
+sdm.thresh.merge$pctCapPts <- round(sdm.thresh.merge$prpCapPts * 100)
+# subset and remove metrics we don't want to display
+sdm.thresh.merge <- sdm.thresh.merge[,c("cutCode","algorithm","cutValue",
+                                        "pctCapGPs","pctCapPts")]
+
+
+sdm.thresh.list <- split(sdm.thresh.merge, f = sdm.thresh.merge$algorithm)
+sdm.thresh.list <- lapply(sdm.thresh.list, FUN = function(x) x[,!names(x)=="algorithm"])
+
+#clean up cutcodes names. list entries after 1 get code
+for(i in 1:length(sdm.thresh.list)){
+  if(i == 1){
+    sdm.thresh.list[[i]]$cutName <- paste0(sdm.thresh.list[[i]]$cutFullName," (",
+                                           sdm.thresh.list[[i]]$cutCode, ")")
+  } else {
+    sdm.thresh.list[[i]]$cutName <- sdm.thresh.list[[i]]$cutCode
+  }
+  sdm.thresh.list[[i]] <- sdm.thresh.list[[i]][,c("cutName","cutValue",
+                                                  "pctCapGPs","pctCapPts")]
+}
+
+attr(sdm.thresh.list, "subheadings") <- paste0("Algorithm = ", names(sdm.thresh.list))
+# can't get xtable's sanitize functions to work, manually escape % here. 
+# attr(sdm.thresh.list, "message") <- paste0(thresh.descr$cutCode, ": ",
+#                             gsub("%","\\%",thresh.descr$cutDescription, fixed = TRUE))
+
+sdm.thresh.list.xtbl <- xtableList(sdm.thresh.list, 
+                          align = c("llrrr"))
+
+thresh.descr.xtbl <- xtable(thresh.descr)
+
 
 ## get grank definition ----
+db <- dbConnect(SQLite(),dbname=nm_db_file) 
 SQLquery <- paste0("SELECT rank, rankname FROM lkpRankDefinitions where rank = '",ElementNames$rounded_g_rank,"';", sep="")
 grank_desc <- dbGetQuery(db, SQLquery)
+dbDisconnect(db)
 
 # make a url to NatureServe Explorer
 NSurl <- paste("http://explorer.natureserve.org/servlet/NatureServe?searchName=",gsub(" ", "+", ElementNames[[1]], fixed=TRUE), sep="")
 
 ## get Model Evaluation and Use data ----
+db <- dbConnect(SQLite(),dbname=nm_db_file) 
 SQLquery <- paste("Select spdata_dataqual, spdata_abs, spdata_eval, envvar_relevance, envvar_align, process_algo, process_sens, process_rigor, process_perform, process_review, products_mapped, products_support, products_repo, iterative, spdata_dataqualNotes, spdata_absNotes, spdata_evalNotes, envvar_relevanceNotes, envvar_alignNotes, process_algoNotes, process_sensNotes, process_rigorNotes, process_performNotes, process_reviewNotes, products_mappedNotes, products_supportNotes, products_repoNotes, iterativeNotes ", 
                   "FROM lkpSpeciesRubric ", 
                   "WHERE sp_code ='", model_species, "'; ", sep="")
 sdm.modeluse <- dbGetQuery(db, statement = SQLquery)
+dbDisconnect(db)
+
 sdm.modeluse[is.na(sdm.modeluse)] <- " "
 sdm.modeluse[sdm.modeluse=="I"] <- "\\cellcolor[HTML]{9AFF99} Ideal"
 sdm.modeluse[sdm.modeluse=="A"] <- "\\cellcolor[HTML]{FFFFC7} Acceptable"
 sdm.modeluse[sdm.modeluse=="C"] <- "\\cellcolor[HTML]{FD6864} Interpret with Caution"
 
 ## Get env. var lookup table ----
+db <- dbConnect(SQLite(),dbname=nm_db_file) 
 SQLquery <- paste0("SELECT gridName g from tblModelResultsVarsUsed where model_run_name = '",
                    model_run_name, "' and inFinalModel = 1;")
 var_names <- dbGetQuery(db, SQLquery)$g
@@ -511,6 +561,7 @@ SQLquery <- paste("SELECT fullName, description ",
                   ") ORDER BY fullName;", sep = "")
 sdm.var.info <- dbGetQuery(db, statement = SQLquery)
 names(sdm.var.info) <- c("Variable Name","Variable Description")
+dbDisconnect(db)
 
 # escape symbols for latex
 ls <- c("&","%","$","#","_","{","}")
@@ -566,5 +617,5 @@ if (file.exists(paste(model_run_name, ".pdf",sep=""))){
 
 
 ## clean up ----
-dbDisconnect(db)
+#dbDisconnect(db)
 options(op)
