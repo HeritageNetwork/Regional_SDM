@@ -2,27 +2,17 @@
 # Purpose: threshold the distribution model prediction raster
 
 ## start with a fresh workspace with no objects loaded
-library(raster)
-library(sf)
 library(ROCR)
 library(RSQLite)
 library(DBI)
-removeTmpFiles(48) # clean old (>2days) Raster temporary files
-
-### find and load model data ----
-# setwd(loc_model)
-# setwd(paste0(model_species,"/outputs"))
-# load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
 ## Calculate different thresholds ----
 #set an empty list
 cutList <- list()
 
-# total number of EOs (subtract absence class)
-totEOs <- length(unique(rf.df.full$group_id)) - 1
-# total number of polys
-totPolys <- length(unique(rf.df.full$stratum)) - 1
-# tot pts
+# total number of GPs, polys, pts
+totGPs <- length(unique(rf.df.full[,group$colNm])[!grepl("pseu-a",unique(rf.df.full[,group$colNm]))])
+totPolys <- length(unique(rf.df.full$stratum)[!grepl("pseu-a",unique(rf.df.full$stratum))])
 totPts <- nrow(rf.df.full[rf.df.full$pres == 1,])
 
 #get minimum training presence
@@ -30,66 +20,53 @@ allVotes <- data.frame(rf.full$y, rf.full$votes/numCores, rf.df.full[,c("group_i
 allVotesPresPts <- allVotes[allVotes$rf.full.y ==1,]
 
 MTP <- min(allVotesPresPts$X1)
-capturedEOs <- length(unique(allVotesPresPts$group_id))
+capturedGPs <- length(unique(allVotesPresPts[,group$colNm]))
 capturedPolys <- length(unique(allVotesPresPts$stratum))
 capturedPts <- nrow(allVotesPresPts)
-propCaptEOs <- capturedEOs/totEOs
+propCaptGPs <- capturedGPs/totGPs
 propCaptPolys <- capturedPolys/totPolys
 propCaptPts <- capturedPts/totPts
 cutList$MTP <- list("value" = MTP, "code" = "MTP", 
-                    "capturedEOs" = capturedEOs,
+                    "capturedGPs" = capturedGPs,
                     "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts,
-                    "prpCapEOs"= propCaptEOs,
+                    "prpCapGPs"= propCaptGPs,
                     "prpCapPolys" = propCaptPolys,
                     "prpCapPts"=  propCaptPts)
 
 #get 10 percentile training presence
 TenPctile <- quantile(allVotesPresPts$X1, prob = c(0.1))
 TenPctilePts <- allVotesPresPts[allVotesPresPts$X1 >= TenPctile,]
-capturedEOs <- length(unique(TenPctilePts$group_id))
+capturedGPs <- length(unique(TenPctilePts[,group$colNm]))
 capturedPolys <- length(unique(TenPctilePts$stratum))
 capturedPts <- nrow(TenPctilePts)
-propCaptEOs <- capturedEOs/totEOs
+propCaptGPs <- capturedGPs/totGPs
 propCaptPolys <- capturedPolys/totPolys
 propCaptPts <- capturedPts/totPts
 cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
-                    "capturedEOs" = capturedEOs,
+                    "capturedGPs" = capturedGPs,
                     "capturedPolys" = capturedPolys,
                     "capturedPts" = capturedPts,
-                    "prpCapEOs"= propCaptEOs,
+                    "prpCapGPs"= propCaptGPs,
                     "prpCapPolys" = propCaptPolys,
                     "prpCapPts"=  propCaptPts)
 
-# # get min of max values by polygon (MTPP; minimum training polygon presence)
-# maxInEachPoly <- aggregate(allVotesPresPts$X1, 
-#                            by=list(allVotesPresPts$stratum, allVotesPresPts$group_id), max)
-# names(maxInEachPoly) <- c("stratum","group_id","X1")
-# MTPP <- min(maxInEachPoly$X1)
-# capturedEOs <- length(unique(maxInEachPoly$group_id))
-# capturedPolys <- length(unique(maxInEachPoly$stratum))
-# capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPP,])
-# cutList$MTPP <- list("value" = MTPP, "code" = "MTPP", 
-#                     "capturedEOs" = capturedEOs,
-#                     "capturedPolys" = capturedPolys,
-#                     "capturedPts" = capturedPts)
-
-# get min of max values by EO (MTPEO; minimum training EO presence)
-maxInEachEO <- aggregate(allVotesPresPts$X1, 
-                           by=list(allVotesPresPts$group_id), max)
-names(maxInEachEO) <- c("group_id","X1")
-MTPEO <- min(maxInEachEO$X1)
-capturedEOs <- length(unique(maxInEachEO$group_id))
-capturedPolys <- length(unique(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,"stratum"]))
-capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPEO,])
-propCaptEOs <- capturedEOs/totEOs
+# get min of max values by GP (MTPGP; minimum training GP presence)
+maxInEachGP <- aggregate(allVotesPresPts$X1, 
+                           by=list(allVotesPresPts[,group$colNm]), max)
+names(maxInEachGP) <- c(group$colNm,"X1")
+MTPGP <- min(maxInEachGP$X1)
+capturedGPs <- length(unique(maxInEachGP[,group$colNm]))
+capturedPolys <- length(unique(allVotesPresPts[allVotesPresPts$X1 >= MTPGP,"stratum"]))
+capturedPts <- nrow(allVotesPresPts[allVotesPresPts$X1 >= MTPGP,])
+propCaptGPs <- capturedGPs/totGPs
 propCaptPolys <- capturedPolys/totPolys
 propCaptPts <- capturedPts/totPts
-cutList$MTPEO <- list("value" = MTPEO, "code" = "MTPEO", 
-                     "capturedEOs" = capturedEOs,
+cutList$MTPGP <- list("value" = MTPGP, "code" = "MTPGP", 
+                     "capturedGPs" = capturedGPs,
                      "capturedPolys" = capturedPolys,
                      "capturedPts" = capturedPts,
-                     "prpCapEOs"= propCaptEOs,
+                     "prpCapGPs"= propCaptGPs,
                      "prpCapPolys" = propCaptPolys,
                      "prpCapPts"=  propCaptPts)
 
@@ -110,17 +87,17 @@ rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][["cutoff"]]
 names(rf.full.ctoff) <- c("0","1")
 FMeasPt01 <- rf.full.ctoff[2]
 z <- allVotesPresPts[allVotesPresPts$X1 >= FMeasPt01,]
-capturedEOs <- length(unique(z$group_id))
+capturedGPs <- length(unique(z[,group$colNm]))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
-propCaptEOs <- capturedEOs/totEOs
+propCaptGPs <- capturedGPs/totGPs
 propCaptPolys <- capturedPolys/totPolys
 propCaptPts <- capturedPts/totPts
 cutList$FMeasPt01 <- list("value" = FMeasPt01, "code" = "FMeasPt01",
-                          "capturedEOs" = capturedEOs,
+                          "capturedGPs" = capturedGPs,
                           "capturedPolys" = capturedPolys,
                           "capturedPts" = capturedPts,
-                          "prpCapEOs"= propCaptEOs,
+                          "prpCapGPs"= propCaptGPs,
                           "prpCapPolys" = propCaptPolys,
                           "prpCapPts"=  propCaptPts)
 
@@ -132,17 +109,17 @@ rf.full.sss <- data.frame(cutSens = unlist(rf.full.sens@x.values),sens = unlist(
 rf.full.sss$sss <- with(rf.full.sss, sens + spec)
 maxSSS <- rf.full.sss[which.max(rf.full.sss$sss),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$X1 >= maxSSS,]
-capturedEOs <- length(unique(z$group_id))
+capturedGPs <- length(unique(z[,group$colNm]))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
-propCaptEOs <- capturedEOs/totEOs
+propCaptGPs <- capturedGPs/totGPs
 propCaptPolys <- capturedPolys/totPolys
 propCaptPts <- capturedPts/totPts
 cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
-  "capturedEOs" = capturedEOs,
+  "capturedGPs" = capturedGPs,
   "capturedPolys" = capturedPolys,
   "capturedPts" = capturedPts,
-  "prpCapEOs"= propCaptEOs,
+  "prpCapGPs"= propCaptGPs,
   "prpCapPolys" = propCaptPolys,
   "prpCapPts"=  propCaptPts)
 
@@ -150,17 +127,17 @@ cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
 rf.full.sss$diff <- abs(rf.full.sss$sens - rf.full.sss$spec)
 eqss <- rf.full.sss[which.min(rf.full.sss$diff),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$X1 >= eqss,]
-capturedEOs <- length(unique(z$group_id))
+capturedGPs <- length(unique(z[,group$colNm]))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
-propCaptEOs <- capturedEOs/totEOs
+propCaptGPs <- capturedGPs/totGPs
 propCaptPolys <- capturedPolys/totPolys
 propCaptPts <- capturedPts/totPts
 cutList$eqss <- list("value" = eqss, "code" = "eqSS",
-                       "capturedEOs" = capturedEOs,
+                       "capturedGPs" = capturedGPs,
                        "capturedPolys" = capturedPolys,
                        "capturedPts" = capturedPts,
-                     "prpCapEOs"= propCaptEOs,
+                     "prpCapGPs"= propCaptGPs,
                      "prpCapPolys" = propCaptPolys,
                      "prpCapPts"=  propCaptPts)
 
@@ -174,11 +151,11 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
 # cutpt <- which.max(abs(rf.full.perf@x.values[[1]]-rf.full.perf@y.values[[1]]))
 # ROCupperleft <- rf.full.perf@alpha.values[[1]][cutpt]
 # z <- allVotesPresPts[allVotesPresPts$X1 >= ROCupperleft,]
-# capturedEOs <- length(unique(z$group_id))
+# capturedGPs <- length(unique(z[,group$colNm]))
 # capturedPolys <- length(unique(z$stratum))
 # capturedPts <- nrow(z)
 # cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
-#                           "capturedEOs" = capturedEOs,
+#                           "capturedGPs" = capturedGPs,
 #                           "capturedPolys" = capturedPolys,
 #                           "capturedPts" = capturedPts)
 
@@ -193,10 +170,10 @@ allThresh <- data.frame("model_run_name" = rep(modelrun_meta_data$model_run_name
                 "dateTime" = rep(as.character(Sys.time()), numThresh),
                 "cutCode" = unlist(lapply(cutList, function(x) x["code"])),
                 "cutValue" = unlist(lapply(cutList, function(x) x["value"])),
-                "capturedEOs" = unlist(lapply(cutList, function(x) x["capturedEOs"])),
+                "capturedGPs" = unlist(lapply(cutList, function(x) x["capturedGPs"])),
                 "capturedPolys" = unlist(lapply(cutList, function(x) x["capturedPolys"])),
                 "capturedPts" = unlist(lapply(cutList, function(x) x["capturedPts"])),
-                "prpCapEOs" = unlist(lapply(cutList, function(x) x["prpCapEOs"])),
+                "prpCapGPs" = unlist(lapply(cutList, function(x) x["prpCapGPs"])),
                 "prpCapPolys" = unlist(lapply(cutList, function(x) x["prpCapPolys"])),
                 "prpCapPts" = unlist(lapply(cutList, function(x) x["prpCapPts"])),
                 stringsAsFactors = FALSE)
