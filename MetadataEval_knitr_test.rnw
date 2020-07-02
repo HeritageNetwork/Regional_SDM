@@ -99,7 +99,7 @@ species. The specific implementations are listed in the package column. Details 
 @
 \end{center}
 \smallskip
-Table 2. Input statistics. Presence locations are known locations for this species. These locations may be based on Point observations (buffered based on spatial accuracy of the point) and polygon representations of a known occurrence. Coincident and adjacent locations are grouped together. Environmental conditions are randomly sampled within each of these groups the number of times noted (subsamples) to generate the total number of presence inputs. Background points are placed throughout model area excluding known species locations. Algorithms incorporate background points differently; the number used for each is noted. 
+Table 2. Input statistics. Presence locations are known locations for this species. These locations may be based on point observations (buffered based on spatial accuracy of the point) and polygon representations. Nearby locations are grouped together. Environmental conditions are randomly sampled within each of these groups the number of times noted (subsamples) to generate the total number of presence inputs (by tree for rf; for entire model for all others). Background points are placed throughout model area excluding known species locations. Algorithms incorporate background points differently; the number used for each is noted. 
 \begin{center}
 <<tableTwo, results="asis", echo = FALSE>>=
   print(xtable(summ.table),
