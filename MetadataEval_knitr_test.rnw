@@ -223,7 +223,7 @@ Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\end
 
 @
 
-adding a little text here as a test
+\smallskip
 
 <<tableFour_b, results="asis", echo = FALSE>>=
   print(thresh.descr.xtbl,
@@ -231,11 +231,98 @@ adding a little text here as a test
 
 @
 
-
 \end{center}
 \end{minipage}
+\normalsize
+\bigskip
+\noindent
+\textbf{Model Evaluation and Intended Use} \\\\
+All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 {\protect\NoHyper\cite{SofaerEtAl2019}\protect\endNoHyper}. \Sexpr{as.character(project_blurb)}
+\\
 
+\smallskip
+\pagebreak
+
+\noindent Table 5. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or interpret with caution.
+\normalsize
+\begin{table}[H]
 \small
+\centering
+\begin{tabular}{m{2.8cm}m{5cm}P{2cm}m{5.7cm}}
+\hline
+Category & Metric & Score & Notes 
+\\ \hline
+\multirow{3}{*}{Species Data} 
+  & Presence data quality 
+  & \Sexpr{as.character(sdm.modeluse$spdata_dataqual)} 
+  & \Sexpr{as.character(sdm.modeluse$spdata_dataqualNotes)} 
+\\ \cline{2-4}
+  & Absence/Background Data 
+  & \Sexpr{as.character(sdm.modeluse$spdata_abs)} 
+  & \Sexpr{as.character(sdm.modeluse$spdata_absNotes)} 
+\\ \cline{2-4}
+  & Evaluation Data 
+  & \Sexpr{as.character(sdm.modeluse$spdata_eval)} 
+  & \Sexpr{as.character(sdm.modeluse$spdata_evalNotes)} 
+\\ \hline
+\multirow{2}{2.8cm}{Environmental Predictors} 
+  & Ecological and predictive relevance 
+  & \Sexpr{as.character(sdm.modeluse$envvar_relevance)} 
+  & \Sexpr{as.character(sdm.modeluse$envvar_relevanceNotes)} 
+\\ \cline{2-4}
+  & Spatial and temporal alignment 
+  & \Sexpr{as.character(sdm.modeluse$envvar_align)} 
+  & \Sexpr{as.character(sdm.modeluse$envvar_alignNotes)} 
+\\ \hline
+\multirow{5}{*}{Modeling Process} 
+  & Algorithm choice 
+  & \Sexpr{as.character(sdm.modeluse$process_algo)} 
+  & \Sexpr{as.character(sdm.modeluse$process_algoNotes)} 
+\\ \cline{2-4}
+  & Sensitivity 
+  & \Sexpr{as.character(sdm.modeluse$process_sens)} 
+  & \Sexpr{as.character(sdm.modeluse$process_sensNotes)} 
+\\ \cline{2-4}
+  & Statistical rigor 
+  & \Sexpr{as.character(sdm.modeluse$process_rigor)} 
+  & \Sexpr{as.character(sdm.modeluse$process_rigorNotes)} 
+\\ \cline{2-4}
+  & Performance 
+  & \Sexpr{as.character(sdm.modeluse$process_perform)} 
+  & \Sexpr{as.character(sdm.modeluse$process_performNotes)} 
+\\ \cline{2-4}
+  & Model review 
+  & \Sexpr{as.character(sdm.modeluse$process_review)} 
+  & \Sexpr{as.character(sdm.modeluse$process_reviewNotes)}
+\\ \hline
+\multirow{3}{*}{Model Products} 
+  & Mapped products 
+  & \Sexpr{as.character(sdm.modeluse$products_mapped)} 
+  & \Sexpr{as.character(sdm.modeluse$products_mappedNotes)} 
+\\ \cline{2-4}
+  & Interpretation support products 
+  & \Sexpr{as.character(sdm.modeluse$products_support)} 
+  & \Sexpr{as.character(sdm.modeluse$products_supportNotes)} 
+\\ \cline{2-4}
+  & Reproducibility 
+  & \Sexpr{as.character(sdm.modeluse$products_repo)} 
+  & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} 
+\\ \hline
+  & Iterative 
+  & \Sexpr{as.character(sdm.modeluse$iterative)} 
+  & \Sexpr{as.character(sdm.modeluse$iterativeNotes)} 
+\\ \hline                      
+\end{tabular}
+\end{table}
+
+\medskip
+\noindent
+<<customComments, results="asis", echo = FALSE>>=
+if(nrow(sdm.customComments.subset) > 0){
+  cat("\\textbf{Model Comments} \\\\")
+  cat(sdm.customComments.subset$comments)
+}
+@
 
 \pagebreak
 \noindent

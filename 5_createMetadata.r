@@ -39,8 +39,14 @@ model_run_name <- modelrun_meta_data$model_run_name
 
 load(file.path(loc_model, model_species, "outputs","rdata", paste0(modelrun_meta_data$model_run_name,".Rdata")))
 
+## get grank definition for header ----
+db <- dbConnect(SQLite(),dbname=nm_db_file) 
+SQLquery <- paste0("SELECT rank, rankname FROM lkpRankDefinitions where rank = '",ElementNames$rounded_g_rank,"';", sep="")
+grank_desc <- dbGetQuery(db, SQLquery)
+dbDisconnect(db)
+
 ##
-## create table 1, ensemble summary
+## create table 1, ensemble summary ----
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 sql <- paste0("SELECT * from lkpAlgorithms;")
 ensemble_details <- dbGetQuery(db, statement = sql)
@@ -53,7 +59,7 @@ names(ensemble_details) <- c("Name", "Code","R package")
 rm(db, sql)
 
 ##
-## create table 1, summary of input data ----
+## create table 2, summary of input data ----
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 sql <- paste0("SELECT * from tblModelInputs where model_run_name = '", 
               model_run_name, "';")
@@ -80,7 +86,7 @@ summ.table <- data.frame(
 rm(db, sql)
 
 ##
-## create table 2, summary of validation statistics ----
+## create table 3, summary of validation statistics ----
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 sql <- paste0("SELECT * from tblModelResultsValidationStats where model_run_name = '", 
               model_run_name, "';")
@@ -104,17 +110,7 @@ rm(db, sql, metricsToGet, colsToGet, vstats.s)
 ##
 ## create data for thermometer figure ----
 summaryTSS <- mean(vstats[vstats$metric == "TSS", "mean"])
-
-# 
-# print(xtableList(vStatsxList, type="html", file="table2.html"))
-# x <- print(vStatsxList, file="table2.tex", include.rownames=FALSE)
-# 
-# dput(vStatsxList)
-# 
-# getwd()
-# vStatsxList <- dget(file = "testDput.r")
-# library(xtable)
-
+rm(vstats)
 
 ##
 ## create table with all other modeling input settings ----
@@ -189,7 +185,8 @@ rm(db, sql, varsUsedStats, vuStats, medat, xgbdat, rfdat, algo)
 ##
 ## build ROC plot ----
 #### this is all in the rnw, possibly change to ggplot, then build it here and print it there
-# build lookup for line details
+
+## build lookup for line details ----
 lineColors <- brewer.pal(6, "Dark2")[1:length(ensemble_algos)]
 
 figSpecs <- data.frame(algos = c("rf","me","xgb"),
@@ -214,7 +211,6 @@ dbDisconnect(db)
 
 # remove vars not used by any algo
 varsImp <- varsImp[varsImp$inFinalModel == 1,]
-#varsImpUnqV <- unique(varsImp$gridName)
 
 # merge in full name, reduce cols
 varsImp.full <- merge(varsImp, varNms)
@@ -250,6 +246,7 @@ impPlot <- ggplot(data = varsImp) +
   geom_path(aes(x = impVal, y = fullName, color = algorithm, group = algorithm)) + 
   scale_color_manual(values = scaleVec)
 
+##
 ## build partial plots ----
 
 # create how many?
@@ -258,7 +255,6 @@ if(length(pPlots) < 9){
 } else {
   numPPl <- 9
 }
-
 # get the order used in importance plot
 pplotVars <- varsSorted[order(varsSorted$impVal, decreasing = TRUE), "fullName"]
 pplotVars <- pplotVars[1:numPPl,]
@@ -460,7 +456,8 @@ if(nrow(sdm.customComments) > 1) {
   sdm.customComments.subset <- sdm.customComments
 }
 
-## Get threshold information ----
+## Get threshold table information ----
+# get thresholds
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
 SQLquery <- paste("Select ElemCode, algorithm, dateTime, cutCode, cutValue, 
                   capturedEOs, capturedPolys, capturedPts, prpCapEOs, prpCapPolys, prpCapPts ", 
@@ -475,9 +472,9 @@ SQLquery <- paste("SELECT cutCode, cutFullName, cutDescription, cutCitationShort
                   toString(sQuote(sdm.thresholds$cutCode)),
                   ");", sep = "")
 sdm.thresh.info <- dbGetQuery(db, statement = SQLquery)
-
 dbDisconnect(db)
 rm(db)
+
 # merge and sort
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
@@ -499,22 +496,9 @@ sdm.thresh.merge$pctCapPts <- round(sdm.thresh.merge$prpCapPts * 100)
 # subset and remove metrics we don't want to display
 sdm.thresh.merge <- sdm.thresh.merge[,c("cutCode","algorithm","cutValue",
                                         "pctCapGPs","pctCapPts")]
-
-
+names(sdm.thresh.merge) <- c("Code","algorithm","Value","Groups","Points")
 sdm.thresh.list <- split(sdm.thresh.merge, f = sdm.thresh.merge$algorithm)
 sdm.thresh.list <- lapply(sdm.thresh.list, FUN = function(x) x[,!names(x)=="algorithm"])
-
-#clean up cutcodes names. list entries after 1 get code
-for(i in 1:length(sdm.thresh.list)){
-  if(i == 1){
-    sdm.thresh.list[[i]]$cutName <- paste0(sdm.thresh.list[[i]]$cutFullName," (",
-                                           sdm.thresh.list[[i]]$cutCode, ")")
-  } else {
-    sdm.thresh.list[[i]]$cutName <- sdm.thresh.list[[i]]$cutCode
-  }
-  sdm.thresh.list[[i]] <- sdm.thresh.list[[i]][,c("cutName","cutValue",
-                                                  "pctCapGPs","pctCapPts")]
-}
 
 attr(sdm.thresh.list, "subheadings") <- paste0("Algorithm = ", names(sdm.thresh.list))
 # can't get xtable's sanitize functions to work, manually escape % here. 
@@ -522,16 +506,14 @@ attr(sdm.thresh.list, "subheadings") <- paste0("Algorithm = ", names(sdm.thresh.
 #                             gsub("%","\\%",thresh.descr$cutDescription, fixed = TRUE))
 
 sdm.thresh.list.xtbl <- xtableList(sdm.thresh.list, 
-                          align = c("llrrr"))
+                          align = "llrrr",
+                          digits=c(0,0,3,0,0))
 
-thresh.descr.xtbl <- xtable(thresh.descr)
+thresh.descr.xtbl <- xtable(thresh.descr, 
+                            align = "lllp{3in}")
 
 
-## get grank definition ----
-db <- dbConnect(SQLite(),dbname=nm_db_file) 
-SQLquery <- paste0("SELECT rank, rankname FROM lkpRankDefinitions where rank = '",ElementNames$rounded_g_rank,"';", sep="")
-grank_desc <- dbGetQuery(db, SQLquery)
-dbDisconnect(db)
+
 
 # make a url to NatureServe Explorer
 NSurl <- paste("http://explorer.natureserve.org/servlet/NatureServe?searchName=",gsub(" ", "+", ElementNames[[1]], fixed=TRUE), sep="")
