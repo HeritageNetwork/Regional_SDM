@@ -142,22 +142,24 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
                      "prpCapPts"=  propCaptPts)
 
 # upper left corner of ROC plot
-### NO, it looks like these calculations are technically not the upper left corner
-### and the upper left corner is different from these others.
-### So this needs reworking to represent ROC if it is ever used. Need to use
-### pythagorean formula, I think. Liu etal 2005 and Cantor et al 1999 don't seem 
-### to provide formula. Aha, see package OptimalCutpoints
-# rf.full.perf <- performance(rf.full.pred, "tpr","fpr")
-# cutpt <- which.max(abs(rf.full.perf@x.values[[1]]-rf.full.perf@y.values[[1]]))
-# ROCupperleft <- rf.full.perf@alpha.values[[1]][cutpt]
-# z <- allVotesPresPts[allVotesPresPts$X1 >= ROCupperleft,]
-# capturedGPs <- length(unique(z[,group$colNm]))
-# capturedPolys <- length(unique(z$stratum))
-# capturedPts <- nrow(z)
-# cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
-#                           "capturedGPs" = capturedGPs,
-#                           "capturedPolys" = capturedPolys,
-#                           "capturedPts" = capturedPts)
+rf.full.perf <- performance(rf.full.pred, "tpr","fpr")
+# use pythagorean formula to get hypotenuse distance from 0,1 to each point in curve
+dist.to.01 <- sqrt(rf.full.perf@x.values[[1]]^2 + (1-rf.full.perf@y.values[[1]])^2)
+ROCupperleft <- rf.full.perf@alpha.values[[1]][[which.min(dist.to.01)]]
+z <- allVotesPresPts[allVotesPresPts$pred >= ROCupperleft,]
+capturedGPs <- length(unique(z[,group$colNm]))
+capturedPolys <- length(unique(z$stratum))
+capturedPts <- nrow(z)
+propCaptGPs <- capturedGPs/totGPs
+propCaptPolys <- capturedPolys/totPolys
+propCaptPts <- capturedPts/totPts
+cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
+                    "capturedGPs" = capturedGPs,
+                    "capturedPolys" = capturedPolys,
+                    "capturedPts" = capturedPts,
+                    "prpCapGPs"= propCaptGPs,
+                    "prpCapPolys" = propCaptPolys,
+                    "prpCapPts"=  propCaptPts)
 
 # collate and write to DB ----
 

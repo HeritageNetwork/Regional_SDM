@@ -216,7 +216,7 @@ varsImp <- varsImp[varsImp$inFinalModel == 1,]
 varsImp.full <- merge(varsImp, varNms)
 varsImp <- varsImp.full[,c("algorithm","fullName","impVal")]
 
-## do it in long format !!
+# do it in long format ...
 # standardize to 0-1 then sort by mean importance (using factors)
 for(algo in ensemble_algos){
   algoLocs <- varsImp$algorithm == algo
@@ -229,6 +229,8 @@ varsSorted <- varsImp %>%
   summarise_at(vars(impVal), function(x) { sum(x)/length(ensemble_algos)}) %>%
   arrange(impVal)
 
+# to factors for correct ordering in ggplot
+varsSorted$fullName <- factor(varsSorted$fullName, levels = varsSorted$fullName)
 varsImp$fullName <- factor(varsImp$fullName, levels = varsSorted$fullName)
 varsImp <- varsImp[order(as.integer(varsImp$fullName)),]
 
@@ -236,15 +238,32 @@ varsImp <- varsImp[order(as.integer(varsImp$fullName)),]
 scaleVec <- figSpecs$col
 names(scaleVec) <- figSpecs$algos
 
-# build the figure 
-impPlot <- ggplot(data = varsImp) + 
+# build the figure
+# impPlot <- ggplot(data = varsImp) + 
+#   xlab(bquote(atop("lower" %->% "greater", "importance"))) + 
+#   theme(axis.title.y = element_blank(),
+#         text = element_text(size=8),
+#         legend.position = c(0.85,0.15)) + 
+#   geom_point(aes(x = impVal, y = fullName, color = algorithm)) + 
+#   geom_path(aes(x = impVal, y = fullName, color = algorithm, group = algorithm)) + 
+#   scale_color_manual(values = scaleVec)
+
+# with mean as thick grey line, need to plot it first so its on the bottom
+impPlot <- ggplot(data = varsSorted) + 
   xlab(bquote(atop("lower" %->% "greater", "importance"))) + 
+  geom_path(data = varsSorted, aes(x=impVal, y=fullName, group = 1),
+            color="grey60", size = 2) + 
+  geom_point(data = varsImp, 
+             aes(x = impVal, y = fullName, color = algorithm)) + 
+  geom_path(data = varsImp, 
+            aes(x = impVal, y = fullName, color = algorithm, group = algorithm)) + 
+  scale_color_manual(values = scaleVec) + 
+  theme_classic() + 
   theme(axis.title.y = element_blank(),
         text = element_text(size=8),
         legend.position = c(0.85,0.15)) + 
-  geom_point(aes(x = impVal, y = fullName, color = algorithm)) + 
-  geom_path(aes(x = impVal, y = fullName, color = algorithm, group = algorithm)) + 
-  scale_color_manual(values = scaleVec)
+  geom_hline(yintercept = 1:nrow(varsSorted), 
+             linetype = "18", color = "grey40")
 
 ##
 ## build partial plots ----
@@ -320,7 +339,7 @@ for (plotpi in 1:numPPl){
   
   pplot <- ggplot(data = dat, aes(x=x, y=y, color = algo)) + 
     geom_line(size = 1) +
-    xlab(pPlots[[rfLoc]]$fname) + 
+    xlab(evar) + 
     scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
                        expand = expansion(mult = c(0.05))) +
     theme_classic() +
@@ -460,7 +479,7 @@ if(nrow(sdm.customComments) > 1) {
 # get thresholds
 db <- dbConnect(SQLite(),dbname=nm_db_file)  
 SQLquery <- paste("Select ElemCode, algorithm, dateTime, cutCode, cutValue, 
-                  capturedEOs, capturedPolys, capturedPts, prpCapEOs, prpCapPolys, prpCapPts ", 
+                  capturedGPs, capturedPolys, capturedPts, prpCapGPs, prpCapPolys, prpCapPts ", 
                   "FROM tblModelResultsCutoffs ", 
                   "WHERE model_run_name ='", model_run_name, "'; ", sep="")
 sdm.thresholds <- dbGetQuery(db, statement = SQLquery)
@@ -484,14 +503,17 @@ sdm.thresh.merge <- sdm.thresh.merge[!sdm.thresh.merge$cutCode %in% c("FMeasPt01
 thresh.descr <- unique(sdm.thresh.merge[,c("cutCode","cutFullName","cutDescription")])
 names(thresh.descr) <- c("Code","Threshold full name","Threshold description")
 
-# define groups (eos or polys) based on validation
-if(group$JackknType == "polygon"){
-  sdm.thresh.merge$pctCapGPs <- paste0(round(sdm.thresh.merge$prpCapPolys * 100),"(",
-                                       round(sdm.thresh.merge$capturedPolys),")")
-} else {
-  sdm.thresh.merge$pctCapGPs <- paste0(round(sdm.thresh.merge$prpCapEOs * 100),"(",
-                                      round(sdm.thresh.merge$capturedEOs),")")
-}
+# define groups (GPs or polys) based on validation
+# if(group$JackknType == "polygon"){
+#   sdm.thresh.merge$pctCapGPs <- paste0(round(sdm.thresh.merge$prpCapPolys * 100),"(",
+#                                        round(sdm.thresh.merge$capturedPolys),")")
+# } else {
+#   sdm.thresh.merge$pctCapGPs <- paste0(round(sdm.thresh.merge$prpCapGPs * 100),"(",
+#                                       round(sdm.thresh.merge$capturedGPs),")")
+# }
+sdm.thresh.merge$pctCapGPs <- paste0(round(sdm.thresh.merge$prpCapGPs * 100),"(",
+                                     round(sdm.thresh.merge$capturedGPs),")")
+
 sdm.thresh.merge$pctCapPts <- round(sdm.thresh.merge$prpCapPts * 100)
 # subset and remove metrics we don't want to display
 sdm.thresh.merge <- sdm.thresh.merge[,c("cutCode","algorithm","cutValue",
