@@ -4,6 +4,8 @@
 library(checkpoint)
 checkpoint("2020-04-22")
 
+
+
 library(here)
 rm(list=ls())
 # 
@@ -11,7 +13,7 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "linuallr"
+model_species <- "amsothar"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -46,7 +48,7 @@ modeller = "Tim Howard"
 #                   "me" (maxent), 
 #                   "xgb" (extreme gradient boosting), 
 #                   "gam" (generalized additive models)
-ensemble_algos = c("xgb")
+ensemble_algos = c("rf", "me", "xgb")
 
 # list non-standard variables to add to model run
 add_vars = NULL
@@ -163,6 +165,9 @@ run_SDM(
 ##########
 
 # TESTING / DEBUGGING ONLY
+library(checkpoint)
+checkpoint("2020-04-22")
+
 library(here)
 rm(list=ls())
 # Use the lines below for debugging (running line by line) for a certain script
@@ -173,9 +178,9 @@ rm(list=ls())
 
 model_species <- "amsothar"
 
-#load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
+load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
 # if you want an earlier run, enter it and load it here:
-load(here("_data","species",model_species,"runSDM_paths_amsothar_20200428_104806.Rdata"))
+#load(here("_data","species",model_species,"runSDM_paths_amsothar_20200508_171152.Rdata"))
 for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
 # if debugging script 4 or later, also load the specific model output rdata file
