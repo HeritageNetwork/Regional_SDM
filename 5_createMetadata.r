@@ -252,7 +252,7 @@ names(scaleVec) <- figSpecs$algos
 impPlot <- ggplot(data = varsSorted) + 
   xlab(bquote(atop("lower" %->% "greater", "importance"))) + 
   geom_path(data = varsSorted, aes(x=impVal, y=fullName, group = 1),
-            color="grey60", size = 2) + 
+            color="grey60", size = 1.5) + 
   geom_point(data = varsImp, 
              aes(x = impVal, y = fullName, color = algorithm)) + 
   geom_path(data = varsImp, 
@@ -263,7 +263,7 @@ impPlot <- ggplot(data = varsSorted) +
         text = element_text(size=8),
         legend.position = c(0.85,0.15)) + 
   geom_hline(yintercept = 1:nrow(varsSorted), 
-             linetype = "18", color = "grey40")
+             linetype = "18", color = "grey40", size = 0.1)
 
 ##
 ## build partial plots ----
@@ -353,7 +353,7 @@ for (plotpi in 1:numPPl){
   # create the density plot
   densplot <- ggplot(data = densdat, aes(x = x, color = factor(pres, labels = c("background","presence")))) + 
     geom_density(size = 0.5, show.legend = FALSE) + 
-    scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
+    scale_x_continuous(limits = c(min(densdat$x), max(densdat$x)), 
                        expand = expansion(mult = c(0.05)),
                        breaks = NULL) +
     scale_y_continuous(breaks = NULL) + 
