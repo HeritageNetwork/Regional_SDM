@@ -4,9 +4,13 @@ This repository is for collaboration among Heritage programs and NatureServe for
 
 You are currently reading the Readme file. Scripts (and other files as needed) are also part of this repository.
 
-Primary activity in 2018-2019 is for the MoBI project. 
-
 Note that most development activity is currently occuring on the two branches: Aquatic and Terrestrial. This master branch is currently behind. Choose one of these branches if you wish to use these scripts. The ultimate vision is to merge the branches back up to master. 
+
+# to get a local copy
+
+`git clone git@github.com:HeritageNetwork/Regional_SDM.git`
+
+and then check out the wiki for software and customizations
 
 License
 =======
