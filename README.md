@@ -8,7 +8,7 @@ Note that most development activity is currently occuring on the two branches: A
 
 # to get a local copy
 
-git clone git@github.com:HeritageNetwork/Regional_SDM.git
+`git clone git@github.com:HeritageNetwork/Regional_SDM.git`
 
 and then check out the wiki for software and customizations
 
