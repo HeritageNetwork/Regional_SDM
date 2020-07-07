@@ -237,7 +237,7 @@ tmpTableName <- paste0(nm_bkgPts[2], "_", baseName)
 dbWriteTable(db, tmpTableName, backgSubset, overwrite = TRUE)
 
 # do the join, get all the data back down
-qry <- paste0("SELECT * from ", tmpTableName, " INNER JOIN ", nm_bkgPts[2], "_att on ",
+qry <- paste0("SELECT huc12 wkt from ", tmpTableName, " INNER JOIN ", nm_bkgPts[2], "_att on ",
               tmpTableName,".fid = ", nm_bkgPts[2], "_att.fid;")
 bgSubsAtt <- dbGetQuery(db, qry)
 # delete the table on the db
