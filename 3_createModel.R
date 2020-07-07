@@ -275,6 +275,9 @@ numCores <- 10
 cl <- makeCluster(numCores)   
 registerDoParallel(cl)
 
+# pass libPath to workers
+x <- clusterCall(cl, function(x) .libPaths(x), .libPaths())
+
 treeSubs <- ntrees/numCores
 
 rf.find.envars <- foreach(ntree = rep(treeSubs,numCores), .combine = randomForest::combine, 
@@ -708,11 +711,12 @@ tblModelResults <- data.frame(model_run_name = model_run_name, EGT_ID = ElementN
                               internal_comments = model_comments, metadata_comments = metaData_comments,
                               model_comp_name = model_comp_name, modeller = modeller,
                               model_start_time = model_start_time, model_end_time = as.character(Sys.time()),
+                              algorithms = "rf",
                               r_version = r_version, repo_head = repo_head, seed = seed)
 dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
 
 # tblModelResultsVarsUsed
-varImpDB <- data.frame(model_run_name = model_run_name, gridName = tolower(envvar_list), inFinalModel = 0)
+varImpDB <- data.frame(model_run_name = model_run_name, algorithm = "rf", gridName = tolower(envvar_list), inFinalModel = 0)
 varImpDB <- merge(varImpDB, EnvVars[c("gridName","impVal")], by = "gridName", all.x = T)
 varImpDB$inFinalModel[!is.na(varImpDB$impVal)] <- 1
 dbWriteTable(db, "tblModelResultsVarsUsed", varImpDB, append = T)

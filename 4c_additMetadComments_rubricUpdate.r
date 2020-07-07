@@ -50,11 +50,11 @@ if (dat.in.db$metadata_comments != newText) {
 fn <- here("_data","databases", "mobi_tracker_connection_string_short.dsn")
 cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
 
-sql <- paste0("SELECT FinalSppList.ELEMENT_GLOBAL_ID, LocalityData.pres_dat_eval_rubric, 
-              LocalityData.bison_use, LocalityData.gbif_use, LocalityData.inat_use, 
-              LocalityData.other_use, LocalityData.MJD_sufficient, LocalityData.MJD_only, LocalityData.status
-              FROM FinalSppList INNER JOIN LocalityData ON FinalSppList.ELEMENT_GLOBAL_ID = LocalityData.EGT_ID
-              WHERE (((FinalSppList.ELEMENT_GLOBAL_ID)= ", ElementNames$EGT_ID, "));")
+sql <- paste0("SELECT FinalSppList.ELEMENT_GLOBAL_ID, LocalityData.pres_dat_eval_rubric, ", 
+              "LocalityData.bison_use, LocalityData.gbif_use, LocalityData.inat_use, ",
+              "LocalityData.other_use, LocalityData.MJD_sufficient, LocalityData.MJD_only, LocalityData.status ",
+              "FROM FinalSppList INNER JOIN LocalityData ON FinalSppList.ELEMENT_GLOBAL_ID = LocalityData.EGT_ID ",
+              "WHERE (((FinalSppList.ELEMENT_GLOBAL_ID)= ", ElementNames$EGT_ID, "));")
 localityData <- dbGetQuery(cn, sql)
 
 sql <- paste0("SELECT Reviewer.EGT_ID, Reviewer.response, Reviewer.date_completed
@@ -151,11 +151,13 @@ if(nCycles > 1){
   } else {
     iterAtt <- "A"
   }
+} else {
+  iterAtt <- "C"
 }
 
 iterUpdate <- iterMatrix[match(iterAtt, iterMatrix$iAttribute),]
-sql <- paste0("update lkpSpeciesRubric set interative = '", iterUpdate$iAttribute, 
-              "', interativeNotes = '", iterUpdate$iComments, 
+sql <- paste0("update lkpSpeciesRubric set iterative = '", iterUpdate$iAttribute, 
+              "', iterativeNotes = '", iterUpdate$iComments, 
               "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
 dbExecute(db, statement = sql)
 
