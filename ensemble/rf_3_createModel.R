@@ -109,7 +109,7 @@ if(nrow(corrdEVs) > 0 ){
 }
 
 # set the percentile, here choosing above 35% percentile
-envarPctile <- 0.35
+envarPctile <- 0.50
 y <- quantile(impvals, probs = envarPctile)
 impEnvVars <- impvals[impvals > y,]
 subsetNumberofEnvars <- length(impEnvVars)

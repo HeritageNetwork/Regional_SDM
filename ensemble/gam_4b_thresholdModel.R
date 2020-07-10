@@ -1,7 +1,6 @@
 # File: 4b_thresholdModel.r
 # Purpose: threshold the distribution model prediction raster
 
-## start with a fresh workspace with no objects loaded
 library(raster)
 library(sf)
 library(ROCR)

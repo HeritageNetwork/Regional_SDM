@@ -5,7 +5,6 @@ library(checkpoint)
 checkpoint("2020-04-22")
 
 
-
 library(here)
 rm(list=ls())
 # 
@@ -32,7 +31,7 @@ nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
 nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  # background grey reference lines in map
 
 # project overview - this appears in the first paragraph of the metadata
-project_overview = "The following metadata ..."
+project_overview = "This model was developed for the US Bureau of Land Mangement."
 
 # model comment in database
 model_comments = ""

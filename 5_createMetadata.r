@@ -13,16 +13,16 @@ library(knitr)
 #library(raster)
 #library(maptools)
 library(dplyr)
-#library(sf)
+library(sf)
 library(RColorBrewer)
 #library(rasterVis)
 library(RSQLite)
 library(stringi)  #only used once, could clean up?
 #library(tables)
 
-#library(tmap)
-#library(tmaptools)
-#library(OpenStreetMap)
+library(tmap)
+library(tmaptools)
+library(OpenStreetMap)
 
 library(tidyr)
 library(ggplot2)
@@ -427,19 +427,66 @@ gtl <- gtable_add_grob(gtl, legGb, t = 4, l = 2, b = 4, r = 4)
 #grid.draw(gtl)
 
 
-# ## get background poly data for the map (study area, reference boundaries) ----
-# studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = T)
-# referenceBoundaries <- st_read(nm_refBoundaries, quiet = T) # name of state boundaries file
-# 
-# r <- dir(path = "model_predictions", pattern = ".tif$",full.names=FALSE)
-# fileName <- r[grep(model_run_name, r)]
-# fileName <- fileName[[1]] #only take the first for now TODO: handle ensembles
-# 
-# ras <- raster(paste0("model_predictions/", fileName))
-# 
-# # project to match raster, just in case
-# studyAreaExtent <- st_transform(studyAreaExtent, as.character(ras@crs))
-# referenceBoundaries <- st_transform(referenceBoundaries, as.character(ras@crs))
+## build the map ----
+
+# get the name of the raster we'll be using
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+sql <- paste0("SELECT raster_for_metadata_figure FROM tblModelResults ",
+              "WHERE model_run_name = '", 
+              model_run_name, "';")
+rasName <- dbGetQuery(db, statement = sql)[[1]]
+dbDisconnect(db)
+
+ras <- raster(paste0("model_predictions/", rasName))
+
+studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = TRUE)
+referenceBoundaries <- st_read(nm_refBoundaries, quiet = TRUE) # name of state boundaries file
+
+# project to match raster, just in case
+studyAreaExtent <- st_transform(studyAreaExtent, as.character(ras@crs))
+referenceBoundaries <- st_transform(referenceBoundaries, as.character(ras@crs))
+
+# set up figure
+nclr <- 5
+clrs <- brewer.pal('Blues',n=nclr)
+
+# figure out size of study area, expand if less than 889km across,
+#  which is 1;5,000,000 when figure is 7 inches wide (which it is here)
+bbox <- bb(studyAreaExtent)
+studyAreaWidth <- bbox$xmax - bbox$xmin
+studyAreaHeight <- bbox$ymax - bbox$ymin
+if(studyAreaWidth < 889000){
+  bbox <- bb(bbox, width = 889000, relative = FALSE)
+}
+if(studyAreaHeight < 889000){
+  bbox <- bb(bbox, height = 889000, relative = FALSE)
+}
+
+tmap_options(max.raster = c("plot" = 300000, "view" = 100000))
+tmap_mode("plot")
+# get the basemap
+# for basemap options see http://leaflet-extras.github.io/leaflet-providers/preview/
+# for native options provided by read_osm, see ?OpenStreetMap::openmap
+
+## this is Esri.WorldGrayCanvas
+#mtype <- 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}.png?'
+
+## this is CartoDB.Positron
+mtype <- 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+basetiles <- read_osm(bbox, type = mtype, ext = 1.1)
+# plot it
+mapFig <- qtm(basetiles) +
+  tm_shape(ras) +
+  tm_raster(palette = clrs, title = "modeled suitability",
+      labels = c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability")) +
+  tm_shape(referenceBoundaries) +
+  tm_borders(col = "grey", lwd = 1) +
+  tm_shape(studyAreaExtent) +
+    tm_borders(col = "red", lwd = 2) +
+  tm_compass(north = 0, type = "arrow", position = c("left","bottom")) +
+  tm_scale_bar()
+
+
 
 ## Get Program and Data Sources info ----
 op <- options("useFancyQuotes")
@@ -589,35 +636,22 @@ sdm.modeluse$process_performNotes <- gsub("<","$<$ ", sdm.modeluse$process_perfo
 
 ## Run knitr and create metadata ----
 
-# writing to the same folder as a grid might cause problems.
-# if errors check that first
-#   more explanation: tex looks for and uses aux files, which are also used
-#   by esri. If there's a non-tex aux file, knitr bails. 
-
-# Also, might need to run this twice. First time through tex builds the reference
-# list, second time through it can then number the refs in the doc.
-
 setwd("metadata")
 # knit2pdf errors for some reason...just knit then call directly
-#knit(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-knit2pdf(paste(loc_scripts,"MetadataEval_knitr_test.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
-#call <- paste0("pdflatex -interaction=nonstopmode ",model_run_name , ".tex")
-# call <- paste0("pdflatex -halt-on-error -interaction=nonstopmode ",model_run_name , ".tex") # this stops execution if there is an error. Not really necessary
-#system(call)
-#system(call) # 2nd run to apply citation numbers
+knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
 
 # delete .txt, .log etc if pdf is created successfully.
-fn_ext <- c(".log",".aux",".out")
-if (file.exists(paste(model_run_name, ".pdf",sep=""))){
-  #setInternet2(TRUE)
-  #download.file(fileURL ,destfile,method="auto")
-  for(i in 1:NROW(fn_ext)){
-    fn <- paste(model_run_name, fn_ext[i],sep="")
-    if (file.exists(fn)){ 
-      file.remove(fn)
-    }
-  }
-}
+# fn_ext <- c(".log",".aux",".out")
+# if (file.exists(paste(model_run_name, ".pdf",sep=""))){
+#   #setInternet2(TRUE)
+#   #download.file(fileURL ,destfile,method="auto")
+#   for(i in 1:NROW(fn_ext)){
+#     fn <- paste(model_run_name, fn_ext[i],sep="")
+#     if (file.exists(fn)){ 
+#       file.remove(fn)
+#     }
+#   }
+# }
 
 
 ## clean up ----
