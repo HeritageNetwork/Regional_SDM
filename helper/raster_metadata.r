@@ -71,12 +71,13 @@ rm(db)
 
 # build everything in lists, then export
 # setup base structure ----
-m <- vector("list", 8)
+m <- vector("list", 7)
 names(m) <- c("Identification_Information", "Data_Quality_Information",
                   "Spatial_Data_Organization_Information", "Spatial_Reference_Information",
                   "Entity_and_Attribute_Information", "Distribution_Information",
-                  "Metadata_Reference_Information", "esri")
+                  "Metadata_Reference_Information")
 
+# Identification_Information ----
 m$Identification_Information <- vector("list",13)
 names(m$Identification_Information) <- c("Citation", 
                                                  "Description", 
@@ -92,15 +93,7 @@ names(m$Identification_Information) <- c("Citation",
                                                  "Native_Data_Set_Environment", 
                                                  "Cross_Reference")
 
-# citation section ----
-
-# get data from databases
-
-
-
-
-
-
+# ID_info: citation section ----
 
 cit_i <- as.list(c("Citation_Information" = NA))
 cit_i[[1]] <- vector("list", 6)
@@ -149,7 +142,7 @@ cit_i[[1]]$Online_Linkage <- NA
 # </citation>
 
 
-# description section ----
+# ID_info: description section ----
 
 des_i <- as.list(c("Description" = NA))
 des_i[[1]] <- vector("list", 2)
@@ -170,7 +163,7 @@ des_i[[1]]$Purpose <- paste0("This habitat suitability model (HSM) was developed
 #   Purpose: BLM REQUIRED – <A summary of the intentions with which the data set was developed. Why was the data set created? What business functions does this data set support? This [POINT, LINE, POLYGON] dataset was created to [EXPLANATION OF PURPOSE OF THIS DATASET]. This is not the correct location for any processing steps; those belong in the process section of the metadata.>
 #   Sample: "This data set was developed to support land-use planning and site-specific project planning", or “This point dataset was created to represent the 591 National Natural Landmark (NNL) sites for mapping and visualization purposes. These data were created from the centroids of the NNL Boundary dataset.”
 
-# status section ----
+# ID_info: status section ----
 
 stat_i <- as.list(c("Status" = NA))
 stat_i[[1]] <- vector("list", 2)
@@ -191,7 +184,7 @@ stat_i[[1]]$Maintenance_and_Update_Frequency <-
 #   <update>BLM REQUIRED</update>
 # </status>
 
-# time period of content ----
+# ID_info: time period of content ----
 
 tpoc <- as.list(c("Time_Period_of_Content" = NA))
 tpoc[[1]] <- vector("list",2)
@@ -219,7 +212,7 @@ tpoc[[1]]$Currentness_Reference <- "Period of data compilation and model develop
 #   <current>BLM REQUIRED</current>
 # </timeperd>
 
-# spatial domain ----
+# ID_info: spatial domain ----
 
 # use study area instead of output raster (faster?)
 studyArea <- st_read(here("_data","species",  spp.dat$sp_code, "inputs", "model_input",
@@ -239,10 +232,10 @@ names(spdom[[1]][[1]]) <- c("West_Bounding_Coordinate",
                             "North_Bounding_Coordinate",
                             "South_Bounding_Coordinate")
 
-spdom[[1]][[1]]$West_Bounding_Coordinate <- latlon_bb$xmin
-spdom[[1]][[1]]$East_Bounding_Coordinate <- latlon_bb$xmax
-spdom[[1]][[1]]$North_Bounding_Coordinate <- latlon_bb$ymax
-spdom[[1]][[1]]$South_Bounding_Coordinate <- latlon_bb$ymin
+spdom[[1]][[1]]$West_Bounding_Coordinate <- latlon_bb$xmin[[1]]
+spdom[[1]][[1]]$East_Bounding_Coordinate <- latlon_bb$xmax[[1]]
+spdom[[1]][[1]]$North_Bounding_Coordinate <- latlon_bb$ymax[[1]]
+spdom[[1]][[1]]$South_Bounding_Coordinate <- latlon_bb$ymin[[1]]
 
 # Spatial_Domain:
 #   Bounding_Coordinates: 
@@ -259,7 +252,7 @@ spdom[[1]][[1]]$South_Bounding_Coordinate <- latlon_bb$ymin
 # </bounding>
 # </spdom>
 
-# keywords ----
+# ID_info: keywords ----
 kw <- as.list(c("Keywords" = NA))
 kw[[1]] <- vector("list",4)
 names(kw[[1]]) <- c("Theme", 
@@ -312,7 +305,7 @@ for(i in 1:length(intersectingStates)){
 #   Place_Keyword_Thesaurus: BLM REQUIRED – BLM-STATE
 #   Place_Keyword: BLM REQUIRED – < At least 1 keyword from BLM-STATE Thesaurus. >
   
-# Access_Constraints ----
+# ID_info: Access_Constraints ----
 
 # using #4 from here
 #  https://www.blm.gov/sites/blm.gov/files/uploads/IM2014-029_att1.pdf
@@ -336,11 +329,11 @@ accc <- as.list(c("Access_Constraints" =  paste0(
 #Access_Constraints: BLM REQUIRED – <Use appropriate BLM standardized access constraints provided in WO IM 2014-029, see the directives attachment Standardized Disclaimer Statements for BLM for specifics.>
 ## tgh: see https://www.blm.gov/policy/im-2014-029
 
-# Use constraints ----
+# ID_info: Use constraints ----
 
 #this is #4, as above in access constraints
 usec <- as.list(c("Use_Constraints" = paste0(
-  "NON-BLM DATA–USE IS SUBJECT TO DATA SHARING AGREEMENT. All use must conform to the ", 
+  "NON-BLM DATA-USE IS SUBJECT TO DATA SHARING AGREEMENT. All use must conform to the ", 
   "restrictions placed on the User by the Data Sharing Agreement on file in Records Management. ",
   "Users will take all measures to ensure this data is protected from disclosure. ", 
   "Users assume the entire risk associated with use of this data.  The BLM has no liability for ", 
@@ -352,7 +345,7 @@ usec <- as.list(c("Use_Constraints" = paste0(
   "Committee or International Standards Organization standards. In the event of highly sensitive data ", 
   "the source organization might have modified the data for release. Users will assume ", 
   "that no attempts have been made to verify, correct, or complete the source metadata except ", 
-  "where noted in a process step–the data and metadata are 'as is' from the source. The BLM ", 
+  "where noted in a process step-the data and metadata are 'as is' from the source. The BLM ", 
   "attempts to ensure that the external data in corporate holdings is current. Users are responsible ", 
   "for verifying the timeliness of data. The BLM is not responsible for maintenance or update, and ", 
   "offers no warranty of data.  Users agree not to misrepresent the data, nor to imply that changes made ", 
@@ -384,30 +377,31 @@ usec <- as.list(c("Use_Constraints" = paste0(
 #<Please use BLM standardized Use Constraints provided in WO IM 2014-029.>
 ## tgh: see https://www.blm.gov/policy/im-2014-029 and link therein to the pdf 
 
-# Point_of_Contact ----
+# ID_info: Point_of_Contact ----
 
 poc <- as.list(c("Point_of_Contact" = NA))
-poc[[1]] <- as.list(c("Contact_Info" = vector("list",4)))
-names(poc[[1]]) <- c("Contact_Organization_Primary", 
+poc[[1]] <- as.list(c("Contact_Info" = NA))
+poc[[1]]$Contact_Info <- vector("list",4)
+names(poc[[1]]$Contact_Info) <- c("Contact_Organization_Primary", 
                      "Contact_Position",
                      "Contact_Address",
                      "Contact_Electronic_Mail_Address")
   
-poc[[1]]$Contact_Organization_Primary <- vector("list",2)
-names(poc[[1]]$Contact_Organization_Primary) <- c("Contact_Organization","Contact_Person")
-poc[[1]]$Contact_Organization_Primary$Contact_Organization <- "NatureServe"
-poc[[1]]$Contact_Organization_Primary$Contact_Person <- "Patrick McIntyre, PhD "
-poc[[1]]$Contact_Position <- "Senior Ecologist, NatureServe"
-poc[[1]]$Contact_Address <- vector("list",6)
-names(poc[[1]]$Contact_Address) <- c("Address_Type","Address","City","State_or_Province","Postal_Code","Country")
-poc[[1]]$Contact_Address$Address_Type <- "Mailing Address"
-poc[[1]]$Contact_Address$Address <- "1680 38th St. Suite 120"
-poc[[1]]$Contact_Address$City <- "Boulder"
-poc[[1]]$Contact_Address$State_or_Province <- "CO"
-poc[[1]]$Contact_Address$Postal_Code <- "80301"
-poc[[1]]$Contact_Address$Country <- "US"
+poc[[1]]$Contact_Info$Contact_Organization_Primary <- vector("list",2)
+names(poc[[1]]$Contact_Info$Contact_Organization_Primary) <- c("Contact_Organization","Contact_Person")
+poc[[1]]$Contact_Info$Contact_Organization_Primary$Contact_Organization <- "NatureServe"
+poc[[1]]$Contact_Info$Contact_Organization_Primary$Contact_Person <- "Patrick McIntyre, PhD "
+poc[[1]]$Contact_Info$Contact_Position <- "Senior Ecologist, NatureServe"
+poc[[1]]$Contact_Info$Contact_Address <- vector("list",6)
+names(poc[[1]]$Contact_Info$Contact_Address) <- c("Address_Type","Address","City","State_or_Province","Postal_Code","Country")
+poc[[1]]$Contact_Info$Contact_Address$Address_Type <- "Mailing Address"
+poc[[1]]$Contact_Info$Contact_Address$Address <- "1680 38th St. Suite 120"
+poc[[1]]$Contact_Info$Contact_Address$City <- "Boulder"
+poc[[1]]$Contact_Info$Contact_Address$State_or_Province <- "CO"
+poc[[1]]$Contact_Info$Contact_Address$Postal_Code <- "80301"
+poc[[1]]$Contact_Info$Contact_Address$Country <- "US"
 
-poc[[1]]$Contact_Electronic_Mail_Address <- "Patrick_McIntyre@natureserve.org"
+poc[[1]]$Contact_Info$Contact_Electronic_Mail_Address <- "Patrick_McIntyre@natureserve.org"
 
 
 # Point_of_Contact:
@@ -455,7 +449,7 @@ poc[[1]]$Contact_Electronic_Mail_Address <- "Patrick_McIntyre@natureserve.org"
 
 
 
-# Data_Set_Credit ----
+# ID_info: Data_Set_Credit ----
 
 dsc <- as.list(c("Data_Set_Credit" = paste0(
   "This data set was developed by NatureServe and the Natural Heritage Network"
@@ -464,7 +458,7 @@ dsc <- as.list(c("Data_Set_Credit" = paste0(
 # Data_Set_Credit: BLM RECOMMENDED – <Expect most cases will be listed as BLM Admin State.>
 
 
-# Security_Information ----
+# ID_info: Security_Information ----
 
 seci <- as.list(c("Security_Information" = NA))
 seci[[1]] <- vector("list", 3)
@@ -480,7 +474,7 @@ seci[[1]]$Security_Handling_Description <- NA
 #   Security_Classification: BLM REQUIRED, If Applicable
 #   Security_Handling_Description: BLM REQUIRED, If Applicable
 
-# Native_Data_Set_Environment ----
+# ID_info: Native_Data_Set_Environment ----
 
 sysi <- Sys.info()
 
@@ -493,18 +487,18 @@ ndse <- as.list(c("Native_Data_Set_Environment" = paste0(
 rm(sysi)
 #Native_Data_Set_Environment: BLM RECOMMENDED – <A description of the processing environment in which the data set resides. For BLM this is should focus on the software used to in the processing such as the name and version of the software.> Example of what Arc 10 Metadata puts in the metadata by default:  “Microsoft Windows 7 Version 6.1 (Build 7601) Service Pack 1; ESRI ArcGIS 10.0.5.4400”.
 
-# Cross_Reference ----
+# ID_info: Cross_Reference ----
 
 cref <- as.list(c("Cross_Reference" = NA))
-cref[[1]] <- vector("list", 4)
-names(cref[[1]]) <- c("Citation_Information", 
-                      "Publication_Information",
-                      "Other_Citation_Details",
-                      "Online_Linkage")
-cref[[1]]$Citation_Information <- vector("list", 3)
+cref[[1]] <- vector("list", 1)
+names(cref[[1]]) <- c("Citation_Information")
+cref[[1]]$Citation_Information <- vector("list", 6)
 names(cref[[1]]$Citation_Information) <- c("Originator",
                                            "Publication_Date",
-                                           "Title")
+                                           "Title",
+                                           "Publication_Information",
+                                           "Other_Citation_Details",
+                                           "Online_Linkage")
 cref[[1]]$Citation_Information$Originator <- vector("list", 11)
 cref[[1]]$Citation_Information$Originator[[1]] <- "Helen R Sofaer"
 cref[[1]]$Citation_Information$Originator[[2]] <- "Catherine S Jarnevich"
@@ -519,12 +513,13 @@ cref[[1]]$Citation_Information$Originator[[10]] <- "Jeffrey T Morisette"
 cref[[1]]$Citation_Information$Originator[[11]] <- "Healy Hamilton"
 cref[[1]]$Citation_Information$Publication_Date <- "2019"
 cref[[1]]$Citation_Information$Title <- "The development and delivery of species distribution models to inform decision-making"
-cref[[1]]$Publication_Information <- vector("list", 2)
-names(cref[[1]]$Publication_Information) <- c("Publication_Place","Publisher")
-cref[[1]]$Publication_Information$Publication_Place <- "Bioscience"
-cref[[1]]$Publication_Information$Publisher <- "Oxford Academic Press"
-cref[[1]]$Other_Citation_Details <- "Volume 69, page 544."
-cref[[1]]$Online_Linkage <- "https://academic.oup.com/bioscience/article/69/7/544/5505326"
+
+cref[[1]]$Citation_Information$Publication_Information <- vector("list", 2)
+names(cref[[1]]$Citation_Information$Publication_Information) <- c("Publication_Place","Publisher")
+cref[[1]]$Citation_Information$Publication_Information$Publication_Place <- "Bioscience"
+cref[[1]]$Citation_Information$Publication_Information$Publisher <- "Oxford Academic Press"
+cref[[1]]$Citation_Information$Other_Citation_Details <- "Volume 69, page 544."
+cref[[1]]$Citation_Information$Online_Linkage <- "https://academic.oup.com/bioscience/article/69/7/544/5505326"
 
 # Cross_Reference:
 #   Citation_Information:
@@ -538,22 +533,7 @@ cref[[1]]$Online_Linkage <- "https://academic.oup.com/bioscience/article/69/7/54
 #   Online_Linkage: BLM RECOMMENDED
 
 
-# join 'em up ----
-m$Identification_Information$Citation <- cit_i
-m$Identification_Information$Description <- des_i[[1]]
-m$Identification_Information$Status <- stat_i$Status
-m$Identification_Information$Time_Period_Information <- tpoc$Time_Period_Information
-m$Identification_Information$Spatial_Domain <- spdom$Spatial_Domain
-m$Identification_Information$Keywords <- kw[[1]]
-m$Identification_Information$Access_Constraints <- accc[[1]]
-m$Identification_Information$Use_Constraints <- usec[[1]]
-m$Identification_Information$Point_of_Contact <- poc[[1]]
-m$Identification_Information$Data_Set_Credit <- dsc[[1]]
-m$Identification_Information$Security_Information <- seci[[1]]
-m$Identification_Information$Native_Data_Set_Environment <- ndse[[1]]  
-m$Identification_Information$Cross_Reference <- cref[[1]]
-
-##### data quality information ----
+# Data Quality Information ----
 
 m$Data_Quality_Information <- vector("list",5)
 names(m$Data_Quality_Information) <- c("Attribute_Accuracy", 
@@ -562,7 +542,7 @@ names(m$Data_Quality_Information) <- c("Attribute_Accuracy",
                                          "Positional_Accuracy", 
                                          "Lineage")
 
-# attribute accuracy ----
+# DQ_info: attribute accuracy ----
 
 atta <- as.list(c("Attribute_Accuracy" = NA))
 atta[[1]] <- as.list(c("Attribute_Accuracy_Report" = paste0(
@@ -583,7 +563,7 @@ atta[[1]] <- as.list(c("Attribute_Accuracy_Report" = paste0(
 #     <attraccr>BLM REQUIRED</attraccr>
 #   </attracc>
 
-# logical consistency ----
+# DQ_info: logical consistency ----
 locorep <- as.list(c("Logical_Consistency_Report" = paste0(
   "This data set represents the output of a modeled relationship based on many other input ",
   "rasters. Before processing, all input rasters were snapped to the same projection, ",
@@ -598,7 +578,7 @@ locorep <- as.list(c("Logical_Consistency_Report" = paste0(
 #   <logic>BLM REQUIRED</logic>
 
 
-# completeness ----
+# DQ_info: completeness ----
 corep <- as.list(c("Completeness_Report" = paste0(
   "All raster cells within the modeling area are assigned a VALUE and thus ",
   "the raster represents a complete prediction surface. Care was taken to ",
@@ -610,7 +590,7 @@ corep <- as.list(c("Completeness_Report" = paste0(
 
 #   <complete>BLM REQUIRED</complete>
 
-# positional accuracy ----
+# DQ_info: positional accuracy ----
 
 predictionFileName <- paste0(model.run.dat$model_run_name, "_", algo, ".tif")
 fullPath <- here("_data","species", spp.dat$sp_code, "outputs","model_predictions",predictionFileName)
@@ -646,7 +626,7 @@ poac[[1]]$Vertical_Positional_Accuracy <- as.list(c("Vertical_Positional_Accurac
 #     </horizpa>
 #   </posacc>
 
-# lineage ----
+# DQ_info: lineage ----
 
 lin <- as.list(c("Lineage" = NA))
 lin[[1]] <- vector("list",3) # number of steps, plus one for source_info if needed
@@ -665,7 +645,7 @@ lin[[1]][[1]]$Process_Date <- as.Date(inputStats.dat$datetime)
 lin[[1]][[1]]$Process_Contact <- as.list(c("Contact_Information" = NA))
 ## TODO. Note shortcut here. Probably need a table in DB tracking contacts and 
 ## retrieve from there. Bah. 
-lin[[1]][[1]]$Process_Contact$Contact_Information <- poc[[1]]
+lin[[1]][[1]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Info
 
 lin[[1]][[2]] <- vector("list",3)
 names(lin[[1]][[2]]) <- c("Process_Description", "Process_Date", "Process_Contact")
@@ -676,7 +656,7 @@ lin[[1]][[2]]$Process_Description <- paste0("Model relationship between presence
         "in this model.")
 lin[[1]][[2]]$Process_Date <- as.Date(model.run.dat$model_start_time)
 lin[[1]][[2]]$Process_Contact <- as.list(c("Contact_Information" = NA))
-lin[[1]][[2]]$Process_Contact$Contact_Information <- poc[[1]]
+lin[[1]][[2]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Info
 
 lin[[1]][[3]] <- vector("list",3)
 names(lin[[1]][[3]]) <- c("Process_Description", "Process_Date", "Process_Contact")
@@ -685,7 +665,7 @@ lin[[1]][[3]]$Process_Description <- paste0("Use model to predict probability of
         round(minValue(ras), 1), " to ", round(maxValue(ras), 1), ". ")
 lin[[1]][[3]]$Process_Date <- as.Date(model.run.dat$model_start_time)
 lin[[1]][[3]]$Process_Contact <- as.list(c("Contact_Information" = NA))
-lin[[1]][[3]]$Process_Contact$Contact_Information <- poc[[1]]
+lin[[1]][[3]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Info
 
 #   Lineage:
 #     Source_Information:
@@ -767,42 +747,68 @@ lin[[1]][[3]]$Process_Contact$Contact_Information <- poc[[1]]
 # Spatial_Data_Organization_Information ----
 
 sdoi <-  as.list(c("Spatial_Data_Organization_Information" = NA))
-sdoi[[1]] <- as.list(c("Direct_Spatial_Reference_Method" = NA))
-sdoi[[1]][[1]] <- as.list(c("Raster" = NA))
-sdoi[[1]][[1]][[1]] <- vector("list",4)
-names(sdoi[[1]][[1]][[1]]) <- c("Raster_Object_Type", "Row_Count", "Column_Count", "Vertical_Count")
-sdoi[[1]][[1]][[1]]$Raster_Object_Type <- "Grid Cell"
-sdoi[[1]][[1]][[1]]$Row_Count <- dim(ras)[[1]]
-sdoi[[1]][[1]][[1]]$Column_Count <- dim(ras)[[2]]
-sdoi[[1]][[1]][[1]]$Vertical_Count <- dim(ras)[[3]]
+sdoi[[1]] <- vector("list",2)
+names(sdoi[[1]]) <- c("Direct_Spatial_Reference_Method", "Raster_Object_Information")
+sdoi[[1]]$Direct_Spatial_Reference_Method <- "Raster"
+sdoi[[1]]$Raster_Object_Information <- vector("list",4)
+names(sdoi[[1]]$Raster_Object_Information) <- c("Raster_Object_Type", "Row_Count", "Column_Count", "Vertical_Count")
+sdoi[[1]]$Raster_Object_Information$Raster_Object_Type <- "Grid Cell"
+sdoi[[1]]$Raster_Object_Information$Row_Count <- dim(ras)[[1]]
+sdoi[[1]]$Raster_Object_Information$Column_Count <- dim(ras)[[2]]
+sdoi[[1]]$Raster_Object_Information$Vertical_Count <- dim(ras)[[3]]
 
 # Spatial_Data_Organization_Information:
 #   Direct_Spatial_Reference_Method: BLM RECOMMENDED [“Point”, “Vector”, “Raster”] –  <The metadata needs to be first exported out from the dataset itself in order to automatically populate this information – with the output XML then being able to be further edited from there.>
 #   Indirect_Spatial_Reference: BLM RECOMMENDED – <name of types of geographic features, addressing schemes, or other means through which locations are referenced in the data set.>
   
 
-# spatial reference ----
-
+# Spatial_Reference_Information ----
+## hardcode it all, especially since R is in the middle of a revamp
 spref <- as.list(c("Spatial_Reference_Information" = NA))
 spref[[1]] <- as.list(c("Horizontal_Coordinate_System_Definition" = NA))
 spref[[1]][[1]] <- vector("list",2)
-names(spref[[1]][[1]]) <- c("Geographic", "Geodetic_Model")
-spref[[1]][[1]]$Geographic <- 
+names(spref[[1]][[1]]) <- c("Planar", "Geodetic")
+spref[[1]][[1]]$Planar <- vector("list",2)
+names(spref[[1]][[1]]$Planar) <- c("Map_Projection", "Planar_Coordinate_Information")
+spref[[1]][[1]]$Planar$Map_Projection <- as.list(c("Albers_Conical_Equal_Area" = NA))
+spref[[1]][[1]]$Planar$Map_Projection[[1]] <- vector("list",6)
+names(spref[[1]][[1]]$Planar$Map_Projection[[1]]) <- c("Standard_Parallel",
+                                                       "Standard_Parallel",
+                                                       "Longitude_of_Central_Meridian ",
+                                                       "Latitude_of_Projection_Origin ",
+                                                       "False_Easting ",
+                                                       "False_Northing")
+spref[[1]][[1]]$Planar$Map_Projection[[1]][[1]] <- 29.5
+spref[[1]][[1]]$Planar$Map_Projection[[1]][[2]] <- 45.5
+spref[[1]][[1]]$Planar$Map_Projection[[1]][[3]] <- -96
+spref[[1]][[1]]$Planar$Map_Projection[[1]][[4]] <- 23
+spref[[1]][[1]]$Planar$Map_Projection[[1]][[5]] <- 0.0
+spref[[1]][[1]]$Planar$Map_Projection[[1]][[6]] <- 0.0
+
+spref[[1]][[1]]$Planar$Planar_Coordinate_Information <- as.list(c("Planar_Distance_Units" = "Meter"))
+  
+spref[[1]][[1]]$Geodetic <- vector("list",4)
+names(spref[[1]][[1]]$Geodetic) <- c("Horizontal_Datum_Name","Ellipsoid_Name",
+                                     "Semi-major_Axis", "Denominator_of_Flattening_Ratio")
+spref[[1]][[1]]$Geodetic$Horizontal_Datum_Name <- "North American Datum of 1983"
+spref[[1]][[1]]$Geodetic$Ellipsoid_Name <- "Geodetic Reference System 1980"
+spref[[1]][[1]]$Geodetic$`Semi-major_Axis` <- 6378137.0
+spref[[1]][[1]]$Geodetic$Denominator_of_Flattening_Ratio <- 298.257222101
 
 # Spatial_Reference_Information:
 #   Horizontal_Coordinate_System_Definition:
 #   Geographic: [OR Planar:]
-# Latitude_Resolution: BLM RECOMMENDED
-# Longitude_Resolution: BLM RECOMMENDED
-# Geographic_Coordinate_Units: BLM REQUIRED, If Applicable - <Specify format of geographic coordinates, including “Decimal Degrees”, “Degrees, minutes, decimal seconds”, or other valid unit name.>
+#     Latitude_Resolution: BLM RECOMMENDED
+#     Longitude_Resolution: BLM RECOMMENDED
+#     Geographic_Coordinate_Units: BLM REQUIRED, If Applicable - <Specify format of geographic coordinates, including “Decimal Degrees”, “Degrees, minutes, decimal seconds”, or other valid unit name.>
 #   OR
-# Planar: [OR Geographic:]
-# Map_Projection: [OR Grid_Coordinate_System:]
-# Map_Projection_Name: BLM REQUIRED, If Applicable - <Specify full name of map projection, including “Albers Conical Equal Area”, “Alaska Albers Conical Equal Area”, “Lambert Conformal Conic”, “Transverse Mercator”, or other valid map projection name.>
+#  Planar: [OR Geographic:]
+#   Map_Projection: [OR Grid_Coordinate_System:]
+#   Map_Projection_Name: BLM REQUIRED, If Applicable - <Specify full name of map projection, including “Albers Conical Equal Area”, “Alaska Albers Conical Equal Area”, “Lambert Conformal Conic”, “Transverse Mercator”, or other valid map projection name.>
 #   OR
-# Grid_Coordinate_System: [OR Map_Projection:]
-# Grid_Coordinate_System_Name: BLM REQUIRED, If Applicable - <Specify "Universal Transverse Mercator", "Universal Polar Stereographic", "State Plane Coordinate System 1927", "State Plane Coordinate System 1983", "ARC Coordinate System", or "other grid system". >
-#   UTM: [OR State_Plane_Coordinate_System:]
+#  Grid_Coordinate_System: [OR Map_Projection:]
+#   Grid_Coordinate_System_Name: BLM REQUIRED, If Applicable - <Specify "Universal Transverse Mercator", "Universal Polar Stereographic", "State Plane Coordinate System 1927", "State Plane Coordinate System 1983", "ARC Coordinate System", or "other grid system". >
+#     UTM: [OR State_Plane_Coordinate_System:]
 # UTM_Zone_Number: BLM REQUIRED, If Applicable - <Specify numeric zone number, use positive numbers for northern     hemisphere, and negative numbers for southern hemisphere. Do not use ‘N’ or ‘S’ notation. > 
 #   OR
 # State_Plane_Coordinate_System: [OR UTM:]
@@ -844,20 +850,466 @@ spref[[1]][[1]]$Geographic <-
 # </spref>
   
   
-# functions ----
-# replaceInList <- function (x, FUN, ...) 
-# {
-#   if (is.list(x)) {
-#     for (i in seq_along(x)) {
-#       x[i] <- list(replaceInList(x[[i]], FUN, ...))
+# Entity_and_Attribute_Information ----
+
+eai <- as.list(c("Entity_and_Attribute_Information" = NA))
+eai[[1]] <- vector("list",2)
+names(eai[[1]]) <- c("Detailed_Description","Overview_Description")
+eai[[1]]$Detailed_Description <- vector("list",2)
+names(eai[[1]]$Detailed_Description) <- c("Entity_Type","Attribute")
+eai[[1]]$Detailed_Description$Entity_Type <- vector("list",2)
+names(eai[[1]]$Detailed_Description$Entity_Type) <- c("Entity_Type_Label", "Entity_Type_Definition")
+eai[[1]]$Detailed_Description$Entity_Type$Entity_Type_Label <- "Raster cells"
+eai[[1]]$Detailed_Description$Entity_Type$Entity_Type_Definition <- "Raster cells sized to match all input predictor data."
+
+eai[[1]]$Detailed_Description$Attribute <- vector("list",3)
+names(eai[[1]]$Detailed_Description$Attribute) <- c("Attribute_Label", "Attribute_Definition",
+                                                    "Attribute_Domain_Values")
+eai[[1]]$Detailed_Description$Attribute$Attribute_Label <- "VALUE"
+eai[[1]]$Detailed_Description$Attribute$Attribute_Definition <- 
+  paste0("Modeled prediction of suitability of raster cell for ", spp.dat$common_name, 
+         " (", spp.dat$scientific_name, ") where values closer to 1 represent higher ",
+         "suitability.")
+eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values <- 
+  as.list(c("Range_Domain" = NA))
+eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values$Range_Domain <- vector("list",2)
+names(eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values$Range_Domain) <-
+  c("Range_Domain_Minimum", "Range_Domain_Maximum")
+eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values$Range_Domain$Range_Domain_Minimum <- 
+  round(minValue(ras), 2)
+eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values$Range_Domain$Range_Domain_Maximum <- 
+  round(maxValue(ras), 2)  
+
+eai[[1]]$Overview_Description <- as.list(c("Entity_and_Attribute_Overview" = paste0(
+  "This is a raster dataset with a single attribute, the value of each raster cell. ",
+  "This value represents habitat suitability for the species being represented, ",
+  "based on modeling the relationship between known locations for this species ", 
+  "and environmental conditions throughout the modeling area. Values generally ",
+  "range from 0-1, where higher values represent higher suitability."
+  )))
+
+# Entity_and_Attribute_Information:
+#   Detailed_Description:
+#     Entity_Type:
+#       Entity_Type_Label: BLM REQUIRED – <The name of the entity or is the spatial object(s) being portrayed in this data set.> 
+#         Sample: "Grazing Allotments Polygons" and/or “Arcs”.
+#       Entity_Type_Definition: BLM REQUIRED – <The description of the entity. This is a detailed description of the entity including any information on how to display the entity.> 
+#         Sample: "Grazing allotments as described and mapped in the Allotment Management Plan".
+#       Entity_Type_Definition_Source: BLM RECOMMENDED – <The authority or source of the entity definition.> 
+#         Sample: a reference to BLM Manuals/Handbooks/Data Standards documentation or to standard professional references.
+#     Attribute:
+#       Attribute_Label: BLM REQUIRED, If Applicable – <The name of the attribute of the spatial object(s) being portrayed in this data set. May not apply to certain raster datasets that lack an attribute table.> 
+#         Sample: "Grazing Allotments Polygons Name" or “Grazing Pasture Number”.
+#       Attribute_Definition: BLM REQUIRED, If Applicable – <The description of the attribute including any information on how to display the attribute. May not apply to certain raster datasets that lack an attribute table.>
+#           Sample: "Grazing allotments as described and mapped in the Allotment Management Plan".
+#         Attribute_Definition_Source: BLM RECOMMENDED – <The authority or source of the attribute definition.> 
+#           Example: a reference to BLM Manuals/Handbooks / Data Standards documentation or to standard professional references.
+#       Attribute_Domain_Values:
+#         Codeset_Domain: 
+#         Codeset_Name: BLM REQUIRED, If Applicable 
+#         Codeset_Source: BLM REQUIRED, If Applicable 	
+#         OR
+#         Enumerated_Domain:
+#           Enumerated_Domain_Value: BLM REQUIRED, If Applicable
+#           Enumerated_Domain_Value_Definition: BLM REQUIRED, If Applicable
+#           Enumerated_Domain_Value_Definition_Source: BLM RECOMMENDED
+#         OR
+#         Range_Domain:
+#           Range_Domain_Minimum: BLM REQUIRED, If Applicable
+#           Range_Domain_Maximum: BLM REQUIRED, If Applicable
+#           Attribute_Units_of_Measure: BLM RECOMMENDED
+#           Attribute_Measurement_Resolution: BLM RECOMMENDED
+#         OR
+#         Unrepresentable_Domain: BLM REQUIRED, If Applicable
+# 
+# Overview_Description:
+#   Entity_and_Attribute_Overview: BLM REQUIRED – <Detailed summary of the information contained in a data set. This is another instance where a specific office may choose to extend the standard by including reference to documented data standards.>
+#   Entity_and_Attribute_Detail_Citation: BLM RECOMMENDED – <Reference to the complete description of the entity types, attributes, and attribute values for the data set.>
+#   
+#   
+
+# Distribution Information ----
+
+di <- as.list(c("Distribution_Information" = NA))
+di[[1]] <- vector("list",4)
+names(di[[1]]) <- c("Distributor","Resource_Description",
+                    "Distribution_Liability", "Standard_Order_Process")
+di[[1]]$Distributor <- as.list(c("Contact_Information" = NA))
+di[[1]]$Distributor$Contact_Information <- poc[[1]]$Contact_Info
+di[[1]]$Resource_Description <- "For internal use only. Contains sensitive information."
+di[[1]]$Distribution_Liability <- "For internal use only. Contains sensitive information."
+di[[1]]$Standard_Order_Process <- ""
+
+# Distribution_Information:
+#   Distributor:
+#     Contact_Information:
+#     Contact_Organization_Primary: [OR Contact_Person_Primary:]
+#     Contact_Organization: BLM REQUIRED
+#     Contact_Person: BLM RECOMMENDED
+#     OR 
+#     Contact_Person_Primary: [OR Contact_Organization_Primary:]
+#     Contact_Organization: BLM REQUIRED
+#     Contact_Person: BLM REQUIRED
+#     
+#     Contact_Position: BLM REQUIRED
+#     Contact_Address:
+#       Address_Type: BLM REQUIRED
+#     Address: BLM REQUIRED
+#     City: BLM REQUIRED
+#     State_or_Province: BLM REQUIRED – <Use postal 2 character code (CA, VA, etc.)>
+#       Postal_Code: BLM REQUIRED – <either the 5 or 10 alphanumeric-character code (99999-9999)>
+#       Country: BLM REQUIRED
+#     Contact_Voice_Telephone: BLM RECOMMENDED
+#     Contact_TDD/TTY_Telephone: BLM RECOMMENDED
+#     Contact_Facsimile_Telephone: BLM RECOMMENDED
+#     Contact_Electronic_Mail_Address: BLM REQUIRED
+#     Hours_of_Service: BLM RECOMMENDED
+#     Contact_Instructions: BLM RECOMMENDED
+#   Resource_Description: BLM REQUIRED, If Applicable <Examples (required for Geoportal systems): “Downloadable data” or, “Live     Data and Maps”.>
+#   Distribution_Liability: BLM REQUIRED – <Use BLM standardized Distributor Liability Statements provided in WO IM 2014-029>.
+#   Standard_Order_Process:
+#     Digital_Form:
+#     Digital_Transfer_Information:
+#     Format_Name: BLM REQUIRED, If Applicable
+#     Format_Specification: BLM RECOMMENDED 
+#     File_Decompression_Technique: BLM RECOMMENDED 
+#     Format_Version_Number OR Format Version Date: BLM RECOMMENDED
+#     Transfer_Size: BLM RECOMMENDED 
+#     Digital_Transfer_Option:
+#       Online_Option:
+#       Computer_Contact_Information:
+#       Network_Address:
+#       Network_Resource_Name: BLM REQUIRED, If Applicable –<Only for data published to the public – may be required by some publishing systems, and managed by other publishing systems. Direct URL to dataset. Example: https://www.blm.gov/... >
+#       Access_Instructions: BLM RECOMMENDED
+#     Offline_Option:
+#       Offline_Media: BLM RECOMMENDED
+#     Recording_Capacity:
+#       Recording_Density: BLM RECOMMENDED
+#     Recording_Density_Units: BLM RECOMMENDED
+#     Recording_Format: BLM RECOMMENDED
+#     Compatibility_Information: BLM RECOMMENDED
+#     Fees: BLM RECOMMENDED
+#     Ordering_Instructions: BLM RECOMMENDED
+#     Turnaround: BLM RECOMMENDED
+#     Technical_Prerequisites: BLM RECOMMENDED
+#     Available_Time_Period:
+#       Time_Period_Information:
+#       Single_Date/Time:
+#       Calendar_Date: BLM Recommended – <Populate with date dataset is made available – can be same as publication date; Can alternatively use single date or multiple dates or range of dates if that better describes data availability.>
+# 
+# <distinfo>
+#   <distrib>
+#     <cntinfo>
+#       <cntorgp>
+#         <cntorg>BLM REQUIRED</cntorg>
+#       </cntorgp>
+#       <cntpos>BLM REQUIRED</cntpos>
+#       <cntaddr>
+#         <addrtype>BLM REQUIRED</addrtype>
+#         <address>BLM REQUIRED</address>
+#         <city>BLM REQUIRED</city>
+#         <state>BLM REQUIRED - &lt;Use postal 2 character code (CA, VA, etc.)&gt;</state>
+#         <postal>BLM REQUIRED - &lt;either the 5 or 10 alphanumeric-character code (99999-9999)&gt;</postal>
+#         <country>BLM REQUIRED</country>
+#       </cntaddr>
+#       <cntemail>BLM REQUIRED</cntemail>
+#     </cntinfo>
+#   </distrib>
+#   <resdesc>BLM REQUIRED, If Applicable &lt;Examples (required for Geoportal systems): "Downloadable data" or, "Live     Data and Maps".&gt;</resdesc>
+#   <distliab>BLM REQUIRED - &lt;Use BLM standardized Distributor Liability Statements provided in WO IM 2014-029&gt;.</distliab>
+#   <stdorder>
+#     <digform>
+#       <digtopt>
+#         <onlinopt>
+#           <computer>
+#             <networka>
+#               <networkr>BLM REQUIRED, If Applicable - &lt;Only for data published to the public - may be required by some publishing systems, and managed by other publishing systems. Direct URL to dataset. Example: https://www.blm.gov/... &gt;</networkr>
+#             </networka>
+#           </computer>
+#         </onlinopt>
+#       </digtopt>
+#     </digform>
+#   </stdorder>
+# </distinfo>
+
+
+
+
+# Metadata_Reference_Information ----
+mri <- as.list(c("Metadata_Reference_Information" = NA))
+mri[[1]] <- vector("list",9)
+names(mri[[1]]) <- c("Metadata_Date", "Metadata_Review_Date",
+                     "Metadata_Contact", "Metadata_Standard_Name", 
+                     "Metadata_Standard_Version", "Metadata_Time_Convention", 
+                     "Metadata_Access_Constraints", "Metadata_Use_Constraints", 
+                     "Metadata_Security_Information")
+mri[[1]]$Metadata_Date <- format(Sys.Date(), "%Y-%m-%d")
+mri[[1]]$Metadata_Review_Date <- NA
+mri[[1]]$Metadata_Contact <- as.list(c("Contact_Information" = NA))
+mri[[1]]$Metadata_Contact$Contact_Information <- poc[[1]]$Contact_Info
+mri[[1]]$Metadata_Standard_Name <- "FGDC Content Standard for Digital Geospatial Metadata"
+mri[[1]]$Metadata_Standard_Version <- "FGDC-STD-001-1998"
+mri[[1]]$Metadata_Time_Convention <- paste0("Local time for time zone '",
+                                            Sys.timezone(),"'.")
+mri[[1]]$Metadata_Access_Constraints <- "None"
+mri[[1]]$Metadata_Use_Constraints <- "None"
+mri[[1]]$Metadata_Security_Information <- ""
+
+# Metadata_Reference_Information:
+#   Metadata_Date: BLM REQUIRED
+#   Metadata_Review_Date: BLM REQUIRED
+#   Metadata_Contact:
+#     Contact_Information:
+#     Contact_Organization_Primary: [OR Contact_Person_Primary:]
+#     Contact_Organization: BLM REQUIRED
+#     Contact_Person: BLM RECOMMENDED
+#     OR 
+#     Contact_Person_Primary: [OR Contact_Organization_Primary:]
+#     Contact_Organization: BLM REQUIRED
+#     Contact_Person: BLM REQUIRED
+#     
+#     Contact_Position: BLM REQUIRED
+#     Contact_Address:
+#       Address_Type: BLM REQUIRED
+#     Address: BLM REQUIRED 
+#     City: BLM REQUIRED 
+#     State_or_Province: BLM REQUIRED – <Use postal 2 character code (CA, VA, etc.)>
+#       Postal_Code: BLM REQUIRED – <either the 5 or 10 alphanumeric-character code (99999-9999)>
+#       Country: BLM REQUIRED
+#     Contact_Voice_Telephone: BLM RECOMMENDED
+#     Contact_TDD/TTY_Telephone: BLM RECOMMENDED
+#     Contact_Facsimile_Telephone: BLM RECOMMENDED
+#     Contact_Electronic_Mail_Address: BLM REQUIRED
+#     Hours_of_Service: BLM RECOMMENDED
+#     Contact_Instructions: BLM RECOMMENDED
+#   Metadata_Standard_Name: BLM REQUIRED – FGDC Content Standard for Digital Geospatial Metadata
+#   Metadata_Standard_Version: BLM REQUIRED – FGDC-STD-001-1998
+#   Metadata_Time_Convention: BLM RECOMMENDED – <If using time elements associated with dates throughout the metadata, specify how that time is being used - either “local time”, “local time with time differential factor”, or “universal time”>
+#   Metadata_Access_Constraints: BLM REQUIRED, If Applicable
+#   Metadata_Use_Constraints: BLM REQUIRED, If Applicable
+#   Metadata_Security_Information:
+#     Metadata_Security_Classification_System: BLM REQUIRED, If Applicable
+#     Metadata_Security_Classification: BLM REQUIRED, If Applicable
+#     Metadata_Security_Handling_Description: BLM REQUIRED, If Applicable
+#   Metadata_Extensions:
+#     Online_Linkage: BLM RECOMMENDED
+#     Profile_Name: BLM RECOMMENDED
+# 
+# <metainfo>
+#   <metd>BLM REQUIRED</metd>
+#   <metrd>BLM REQUIRED</metrd>
+#   <metc>
+#     <cntinfo>
+#       <cntorgp>
+#         <cntorg>BLM REQUIRED</cntorg>
+#       </cntorgp>
+#       <cntpos>BLM REQUIRED</cntpos>
+#       <cntaddr>
+#         <addrtype>BLM REQUIRED</addrtype>
+#         <address>BLM REQUIRED</address>
+#         <city>BLM REQUIRED</city>
+#         <state>BLM REQUIRED - &lt;Use postal 2 character code (CA, VA, etc.)&gt;</state>
+#         <postal>BLM REQUIRED - &lt;either the 5 or 10 alphanumeric-character code (99999-9999)&gt;</postal>
+#         <country>BLM REQUIRED</country>
+#       </cntaddr>
+#       <cntemail>BLM REQUIRED</cntemail>
+#     </cntinfo>
+#   </metc>
+#   <metstdn>BLM REQUIRED - FGDC Content Standard for Digital Geospatial Metadata</metstdn>
+#   <metstdv>BLM REQUIRED - FGDC-STD-001-1998</metstdv>
+# </metainfo>
+
+# Compile all the parts ----
+m$Identification_Information$Citation <- cit_i
+m$Identification_Information$Description <- des_i[[1]]
+m$Identification_Information$Status <- stat_i$Status
+m$Identification_Information$Time_Period_Information <- tpoc$Time_Period_Information
+m$Identification_Information$Spatial_Domain <- spdom$Spatial_Domain
+m$Identification_Information$Keywords <- kw[[1]]
+m$Identification_Information$Access_Constraints <- accc[[1]]
+m$Identification_Information$Use_Constraints <- usec[[1]]
+m$Identification_Information$Point_of_Contact <- poc[[1]]
+m$Identification_Information$Data_Set_Credit <- dsc[[1]]
+m$Identification_Information$Security_Information <- seci[[1]]
+m$Identification_Information$Native_Data_Set_Environment <- ndse[[1]]  
+m$Identification_Information$Cross_Reference <- cref[[1]]
+m$Data_Quality_Information$Attribute_Accuracy <- atta$Attribute_Accuracy
+m$Data_Quality_Information$Logical_Consistency_Report <- locorep$Logical_Consistency_Report
+m$Data_Quality_Information$Completeness_Report <- corep$Completeness_Report
+m$Data_Quality_Information$Positional_Accuracy <- poac$Positional_Accuracy
+m$Data_Quality_Information$Lineage <- lin$Lineage
+m$Spatial_Data_Organization_Information <- sdoi$Spatial_Data_Organization_Information
+m$Entity_and_Attribute_Information <- eai$Entity_and_Attribute_Information
+m$Distribution_Information <- di$Distribution_Information
+m$Metadata_Reference_Information <- mri$Metadata_Reference_Information
+
+
+
+# convert to short codes (!!) ----
+#  lookup table to short code conversion ----
+lkpCodes <- data.frame(matrix(c(
+  "idinfo", "Identification_Information", 
+  "dataqual", "Data_Quality_Information", 
+  "spdoinfo", "Spatial_Data_Organization_Information", 
+  "spref", "Spatial_Reference_Information", 
+  "eainfo", "Entity_and_Attribute_Information", 
+  "distinfo", "Distribution_Information", 
+  "metainfo", "Metadata_Reference_Information", 
+  "citation", "Citation", 
+  "descript", "Description", 
+  "status", "Status", 
+  "timeperd", "Time_Period_of_Content", 
+  "spdom", "Spatial_Domain", 
+  "keywords", "Keywords", 
+  "accconst", "Access_Constraints", 
+  "useconst", "Use_Constraints", 
+  "ptcontac", "Point_of_Contact", 
+  "datacred", "Data_Set_Credit", 
+  "secinfo", "Security_Information", 
+  "native", "Native_Data_Set_Environment", 
+  "crossref", "Cross_Reference",
+  "citeinfo", "Citation_Information", 
+  "origin", "Originator", 
+  "pubdate", "Publication_Date", 
+  "title", "Title", 
+  "pubinfo", "Publication_Information", 
+  "othercit", "Other_Citation_Details", 
+  "onlink", "Online_Linkage",
+  "abstract", "Abstract",
+  "purpose", "Purpose",
+  "progress", "Progress",
+  "update", "Maintenance_and_Update_Frequency",
+  "timeinfo", "Time_Period_Information",
+  "current", "Currentness_Reference",
+  "sngdate", "Single_Date", 
+  "caldate", "Calendar_Date",
+  "bounding", "Bounding_Coordinates",
+  "westbc", "West_Bounding_Coordinate", 
+  "eastbc", "East_Bounding_Coordinate",
+  "northbc", "North_Bounding_Coordinate",
+  "southbc", "South_Bounding_Coordinate",
+  "theme", "Theme",
+  "place", "Place",
+  "themekt", "Theme_Keyword_Thesaurus", 
+  "themekey", "Theme_Keyword",
+  "cntinfo","Contact_Info",
+  "cntorgp","Contact_Organization_Primary",
+  "cntpos","Contact_Position",
+  "cntaddr","Contact_Address",
+  "cntemail","Contact_Electronic_Mail_Address",
+  "cntorg","Contact_Organization",
+  "cntper","Contact_Person",
+  "addrtype","Address_Type",
+  "address","Address",
+  "city","City",
+  "state","State_or_Province",
+  "postal","Postal_Code",
+  "country","Country",
+  "secsys", "Security_Classification_System",
+  "secclass","Security_Classification", 
+  "sechandl","Security_Handling_Description",
+  "attracc","Attribute_Accuracy", 
+  "logic","Logical_Consistency_Report", 
+  "complete", "Completeness_Report", 
+  "posacc", "Positional_Accuracy", 
+  "lineage", "Lineage",
+  "attraccr", "Attribute_Accuracy_Report",
+  "horizpa", "Horizontal_Positional_Accuracy",
+  "vertacc", "Vertical_Positional_Accuracy",
+  "horizpar", "Horizontal_Positional_Accuracy_Report",
+  "vertaccr", "Vertical_Positional_Accuracy_Report",
+  "procstep", "Process_Step",
+  "procdesc", "Process_Description", 
+  "procdate", "Process_Date", 
+  "proccont", "Process_Contact",
+  "direct", "Direct_Spatial_Reference_Method",
+  "raster","Raster",
+  "rasttype", "Raster_Object_Type", 
+  "rowcount", "Row_Count", 
+  "colcount", "Column_Count", 
+  "vrtcount", "Vertical_Count",
+  "horizsys", "Horizontal_Coordinate_System_Definition",
+  "planar", "Planar", 
+  "geodetic", "Geodetic",
+  "mapproj", "Map_Projection", 
+  "planci", "Planar_Coordinate_Information",
+  "albers", "Albers_Conical_Equal_Area",
+  "stdparll", "Standard_Parallel",
+  "longcm", "Longitude_of_Central_Meridian ",
+  "latprjo", "Latitude_of_Projection_Origin ",
+  "feast", "False_Easting ",
+  "fnorth", "False_Northing",
+  "plandu", "Planar_Distance_Units",
+  "horizdn", "Horizontal_Datum_Name",
+  "ellips", "Ellipsoid_Name",
+  "semiaxis", "Semi-major_Axis", 
+  "denflat", "Denominator_of_Flattening_Ratio",
+  "detailed", "Detailed_Description",
+  "overview", "Overview_Description",
+  "enttyp", "Entity_Type",
+  "attr", "Attribute",
+  "enttypl", "Entity_Type_Label", 
+  "enttypd", "Entity_Type_Definition",
+  "attrlabl", "Attribute_Label", 
+  "attrdef", "Attribute_Definition",
+  "attrdomv", "Attribute_Domain_Values",
+  "rdom", "Range_Domain",
+  "rdommin", "Range_Domain_Minimum", 
+  "rdommax", "Range_Domain_Maximum",
+  "cntinfo", "Contact_Information",
+  "distrib", "Distributor",
+  "resdesc", "Resource_Description",
+  "distliab", "Distribution_Liability", 
+  "stdorder", "Standard_Order_Process",
+  "metd", "Metadata_Date", 
+  "metrd", "Metadata_Review_Date",
+  "metc", "Metadata_Contact", 
+  "metstdn", "Metadata_Standard_Name", 
+  "metstdv", "Metadata_Standard_Version", 
+  "mettc", "Metadata_Time_Convention", 
+  "metac", "Metadata_Access_Constraints", 
+  "metuc", "Metadata_Use_Constraints", 
+  "metsi", "Metadata_Security_Information",
+  "rastinfo", "Raster_Object_Information"
+), ncol = 2, byrow = TRUE), stringsAsFactors = FALSE)
+names(lkpCodes) <- c("codenm","fullnm")
+
+
+# #  conversion (list rename) function ----
+# listRename <- function(nested_list) {
+#   found <- names(nested_list) %in% lkpCodes$fullnm
+#   names(nested_list)[found] <- lkpCodes[lkpCodes$fullnm %in% names(nested_list)[found],"codenm"]
+#   lapply(nested_list, FUN = function(x){
+#     if (is.list(x)) {
+#       listRename(x)
+#     } else {
+#       x
 #     }
-#     x
-#   }
-#   else FUN(x, ...)
+#   })
 # }
-# n <- replaceInList(m, function(x)if(is.null(x))"none" else x)
+# n <- listRename(m)
+# 
+
+library(purrr)
+
+lkp2 <- lkpCodes$codenm
+names(lkp2) <- lkpCodes$fullnm
+
+rename <- function(nested_list) {
+  found <- names(nested_list) %in% names(lkp2)
+  names(nested_list)[found] <- lkp2[names(nested_list)[found]]
+  nested_list %>% map(~{
+    if (is.list(.x)) {
+      rename(.x)
+    } else {
+      .x
+    }
+  })
+}
+y <- rename(m)
 
 
+# convert to xml  ----
 
 ##' Convert List to XML
 ##'
@@ -918,10 +1370,13 @@ listToXml <- function(item, tag) {
 }
 
 
+# export the file ----
 
-testout <- listToXml(m, "metadata")
-
-saveXML(testout, file="test6.xml")
+metadataConverted <- listToXml(y, "metadata")
+fn <- paste0(model.run.dat$model_run_name, "_", algo, ".xml")
+fp <- here("_data","species", spp.dat$sp_code, "outputs","metadata")
+setwd(fp)
+saveXML(metadataConverted, file = fn)
 
 
 
