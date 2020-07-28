@@ -80,18 +80,18 @@ names(m) <- c("Identification_Information", "Data_Quality_Information",
 # Identification_Information ----
 m$Identification_Information <- vector("list",13)
 names(m$Identification_Information) <- c("Citation", 
-                                                 "Description", 
-                                                 "Status", 
-                                                 "Time_Period_of_Content", 
-                                                 "Spatial_Domain", 
-                                                 "Keywords", 
-                                                 "Access_Constraints", 
-                                                 "Use_Constraints", 
-                                                 "Point_of_Contact", 
-                                                 "Data_Set_Credit", 
-                                                 "Security_Information", 
-                                                 "Native_Data_Set_Environment", 
-                                                 "Cross_Reference")
+                  "Description", 
+                  "Time_Period_of_Content", 
+                  "Status", 
+                  "Spatial_Domain", 
+                  "Keywords", 
+                  "Access_Constraints", 
+                  "Use_Constraints", 
+                  "Point_of_Contact", 
+                  "Data_Set_Credit", 
+                  "Security_Information", 
+                  "Native_Data_Set_Environment", 
+                  "Cross_Reference")
 
 # ID_info: citation section ----
 
@@ -169,9 +169,7 @@ stat_i <- as.list(c("Status" = NA))
 stat_i[[1]] <- vector("list", 2)
 names(stat_i[[1]]) <- c("Progress",
                         "Maintenance_and_Update_Frequency")
-stat_i[[1]]$Progress <- paste0("This product is complete for its intended use. ",
-                               "If additional locations for this species are discovered, ",
-                               "it should be modeled anew.")
+stat_i[[1]]$Progress <- paste0("Complete")
 stat_i[[1]]$Maintenance_and_Update_Frequency <- 
             paste0("This model should be re-run if surveys reveal additional information ",
                     "about the distribution of this species or if additional relevant ",
@@ -191,17 +189,15 @@ tpoc[[1]] <- vector("list",2)
 names(tpoc[[1]]) <- c("Time_Period_Information",
                       "Currentness_Reference")
 
-tpoc[[1]]$Time_Period_Information <- vector("list",2)
-names(tpoc[[1]]$Time_Period_Information) <- c("Single_Date", "Calendar_Date")
-
-tpoc[[1]]$Time_Period_Information$Single_Date <- model.date
-tpoc[[1]]$Time_Period_Information$Calendar_Date <- model.date
+tpoc[[1]]$Time_Period_Information <- vector("list",1)
+names(tpoc[[1]]$Time_Period_Information) <- c("Single_Date")
+tpoc[[1]]$Time_Period_Information$Single_Date <- as.list(c("Calendar_Date" =  model.date))
 tpoc[[1]]$Currentness_Reference <- "Period of data compilation and model development."
 
 # Time_Period_of_Content:
 #   Time_Period_Information:
-#   Single_Date/Time:
-#   Calendar_Date: BLM REQUIRED – <Can use single date or multiple dates or range of dates. Formatted as YYYYMMDD, YYYY-MM-DD, YYYY-MM, YYYY. >
+#     Single_Date/Time:
+#       Calendar_Date: BLM REQUIRED – <Can use single date or multiple dates or range of dates. Formatted as YYYYMMDD, YYYY-MM-DD, YYYY-MM, YYYY. >
 #   Currentness_Reference: BLM REQUIRED
 # <timeperd>
 #   <timeinfo>
@@ -381,10 +377,11 @@ usec <- as.list(c("Use_Constraints" = paste0(
 
 poc <- as.list(c("Point_of_Contact" = NA))
 poc[[1]] <- as.list(c("Contact_Info" = NA))
-poc[[1]]$Contact_Info <- vector("list",4)
+poc[[1]]$Contact_Info <- vector("list",5)
 names(poc[[1]]$Contact_Info) <- c("Contact_Organization_Primary", 
                      "Contact_Position",
                      "Contact_Address",
+                     "Contact_Voice_Telephone",
                      "Contact_Electronic_Mail_Address")
   
 poc[[1]]$Contact_Info$Contact_Organization_Primary <- vector("list",2)
@@ -401,6 +398,7 @@ poc[[1]]$Contact_Info$Contact_Address$State_or_Province <- "CO"
 poc[[1]]$Contact_Info$Contact_Address$Postal_Code <- "80301"
 poc[[1]]$Contact_Info$Contact_Address$Country <- "US"
 
+poc[[1]]$Contact_Info$Contact_Voice_Telephone <- "+1-703-797-4812"
 poc[[1]]$Contact_Info$Contact_Electronic_Mail_Address <- "Patrick_McIntyre@natureserve.org"
 
 
@@ -641,7 +639,7 @@ lin[[1]][[1]]$Process_Description <- paste0("Acquire and clean up input points. 
       "these groups resulted in ", inputStats.dat$tot_obs_subsamp, " presence observations ", 
       "used as inputs to the modeling process.")
 
-lin[[1]][[1]]$Process_Date <- as.Date(inputStats.dat$datetime)
+lin[[1]][[1]]$Process_Date <- format(as.Date(inputStats.dat$datetime), "%Y%m%d")
 lin[[1]][[1]]$Process_Contact <- as.list(c("Contact_Information" = NA))
 ## TODO. Note shortcut here. Probably need a table in DB tracking contacts and 
 ## retrieve from there. Bah. 
@@ -654,7 +652,7 @@ lin[[1]][[2]]$Process_Description <- paste0("Model relationship between presence
         "in the R package ", algo.dat$rPackage, " using ", model.run.dat$r_version, ". ", 
         "A total number of ", nrow(varsUsed.dat), " environmental variables were used ",
         "in this model.")
-lin[[1]][[2]]$Process_Date <- as.Date(model.run.dat$model_start_time)
+lin[[1]][[2]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
 lin[[1]][[2]]$Process_Contact <- as.list(c("Contact_Information" = NA))
 lin[[1]][[2]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Info
 
@@ -663,7 +661,7 @@ names(lin[[1]][[3]]) <- c("Process_Description", "Process_Date", "Process_Contac
 lin[[1]][[3]]$Process_Description <- paste0("Use model to predict probability of ",
         "suitable habitat throughout study area. The final output ranges from ", 
         round(minValue(ras), 1), " to ", round(maxValue(ras), 1), ". ")
-lin[[1]][[3]]$Process_Date <- as.Date(model.run.dat$model_start_time)
+lin[[1]][[3]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
 lin[[1]][[3]]$Process_Contact <- as.list(c("Contact_Information" = NA))
 lin[[1]][[3]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Info
 
@@ -770,22 +768,37 @@ spref[[1]][[1]] <- vector("list",2)
 names(spref[[1]][[1]]) <- c("Planar", "Geodetic")
 spref[[1]][[1]]$Planar <- vector("list",2)
 names(spref[[1]][[1]]$Planar) <- c("Map_Projection", "Planar_Coordinate_Information")
-spref[[1]][[1]]$Planar$Map_Projection <- as.list(c("Albers_Conical_Equal_Area" = NA))
-spref[[1]][[1]]$Planar$Map_Projection[[1]] <- vector("list",6)
-names(spref[[1]][[1]]$Planar$Map_Projection[[1]]) <- c("Standard_Parallel",
+spref[[1]][[1]]$Planar$Map_Projection <- vector("list",2)
+names(spref[[1]][[1]]$Planar$Map_Projection) <- c("Map_Projection_Name", "Albers_Conical_Equal_Area")
+spref[[1]][[1]]$Planar$Map_Projection$Map_Projection_Name = "Albers_Conical_Equal_Area"
+spref[[1]][[1]]$Planar$Map_Projection$Albers_Conical_Equal_Area <- vector("list",6)
+names(spref[[1]][[1]]$Planar$Map_Projection$Albers_Conical_Equal_Area) <- c("Standard_Parallel",
                                                        "Standard_Parallel",
                                                        "Longitude_of_Central_Meridian ",
                                                        "Latitude_of_Projection_Origin ",
                                                        "False_Easting ",
                                                        "False_Northing")
-spref[[1]][[1]]$Planar$Map_Projection[[1]][[1]] <- 29.5
-spref[[1]][[1]]$Planar$Map_Projection[[1]][[2]] <- 45.5
-spref[[1]][[1]]$Planar$Map_Projection[[1]][[3]] <- -96
-spref[[1]][[1]]$Planar$Map_Projection[[1]][[4]] <- 23
-spref[[1]][[1]]$Planar$Map_Projection[[1]][[5]] <- 0.0
-spref[[1]][[1]]$Planar$Map_Projection[[1]][[6]] <- 0.0
+spref[[1]][[1]]$Planar$Map_Projection$Albers_Conical_Equal_Area[[1]] <- 29.5
+spref[[1]][[1]]$Planar$Map_Projection$Albers_Conical_Equal_Area[[2]] <- 45.5
+spref[[1]][[1]]$Planar$Map_Projection$Albers_Conical_Equal_Area[[3]] <- -96
+spref[[1]][[1]]$Planar$Map_Projection$Albers_Conical_Equal_Area[[4]] <- 23
+spref[[1]][[1]]$Planar$Map_Projection$Albers_Conical_Equal_Area[[5]] <- 0.0
+spref[[1]][[1]]$Planar$Map_Projection$Albers_Conical_Equal_Area[[6]] <- 0.0
 
-spref[[1]][[1]]$Planar$Planar_Coordinate_Information <- as.list(c("Planar_Distance_Units" = "Meter"))
+spref[[1]][[1]]$Planar$Planar_Coordinate_Information <- vector("list",3)
+names(spref[[1]][[1]]$Planar$Planar_Coordinate_Information) <- c("Planar_Coordinate_Encoding_Method",
+                                                                 "Coordinate_Representation",
+                                                                 "Planar_Distance_Units")
+spref[[1]][[1]]$Planar$Planar_Coordinate_Information$Planar_Coordinate_Encoding_Method <- "coordinate pair"
+spref[[1]][[1]]$Planar$Planar_Coordinate_Information$Coordinate_Representation <- vector("list",2)
+names(spref[[1]][[1]]$Planar$Planar_Coordinate_Information$Coordinate_Representation) <- c(
+  "Abscissa_Resolution", 
+  "Ordinate_Resolution"
+)
+spref[[1]][[1]]$Planar$Planar_Coordinate_Information$Coordinate_Representation$Abscissa_Resolution <- xreso
+spref[[1]][[1]]$Planar$Planar_Coordinate_Information$Coordinate_Representation$Ordinate_Resolution <- yreso
+spref[[1]][[1]]$Planar$Planar_Coordinate_Information$Planar_Distance_Units <- "Meter"
+
   
 spref[[1]][[1]]$Geodetic <- vector("list",4)
 names(spref[[1]][[1]]$Geodetic) <- c("Horizontal_Datum_Name","Ellipsoid_Name",
@@ -857,19 +870,21 @@ eai[[1]] <- vector("list",2)
 names(eai[[1]]) <- c("Detailed_Description","Overview_Description")
 eai[[1]]$Detailed_Description <- vector("list",2)
 names(eai[[1]]$Detailed_Description) <- c("Entity_Type","Attribute")
-eai[[1]]$Detailed_Description$Entity_Type <- vector("list",2)
-names(eai[[1]]$Detailed_Description$Entity_Type) <- c("Entity_Type_Label", "Entity_Type_Definition")
+eai[[1]]$Detailed_Description$Entity_Type <- vector("list",3)
+names(eai[[1]]$Detailed_Description$Entity_Type) <- c("Entity_Type_Label", "Entity_Type_Definition", "Entity_Type_Definition_Source")
 eai[[1]]$Detailed_Description$Entity_Type$Entity_Type_Label <- "Raster cells"
 eai[[1]]$Detailed_Description$Entity_Type$Entity_Type_Definition <- "Raster cells sized to match all input predictor data."
+eai[[1]]$Detailed_Description$Entity_Type$Entity_Type_Definition_Source <- "None"
 
-eai[[1]]$Detailed_Description$Attribute <- vector("list",3)
+eai[[1]]$Detailed_Description$Attribute <- vector("list",4)
 names(eai[[1]]$Detailed_Description$Attribute) <- c("Attribute_Label", "Attribute_Definition",
-                                                    "Attribute_Domain_Values")
+                                                    "Attribute_Definition_Source", "Attribute_Domain_Values")
 eai[[1]]$Detailed_Description$Attribute$Attribute_Label <- "VALUE"
 eai[[1]]$Detailed_Description$Attribute$Attribute_Definition <- 
   paste0("Modeled prediction of suitability of raster cell for ", spp.dat$common_name, 
          " (", spp.dat$scientific_name, ") where values closer to 1 represent higher ",
          "suitability.")
+eai[[1]]$Detailed_Description$Attribute$Attribute_Definition_Source <- "Suitability modeling methodology."
 eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values <- 
   as.list(c("Range_Domain" = NA))
 eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values$Range_Domain <- vector("list",2)
@@ -880,13 +895,16 @@ eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values$Range_Domain$Ran
 eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values$Range_Domain$Range_Domain_Maximum <- 
   round(maxValue(ras), 2)  
 
-eai[[1]]$Overview_Description <- as.list(c("Entity_and_Attribute_Overview" = paste0(
+eai[[1]]$Overview_Description <- vector("list",2)
+names(eai[[1]]$Overview_Description) <- c("Entity_and_Attribute_Overview", "Entity_and_Attribute_Detail_Citation")
+eai[[1]]$Overview_Description$Entity_and_Attribute_Overview <- paste0(
   "This is a raster dataset with a single attribute, the value of each raster cell. ",
   "This value represents habitat suitability for the species being represented, ",
   "based on modeling the relationship between known locations for this species ", 
   "and environmental conditions throughout the modeling area. Values generally ",
   "range from 0-1, where higher values represent higher suitability."
-  )))
+  )
+eai[[1]]$Overview_Description$Entity_and_Attribute_Detail_Citation <- "None"
 
 # Entity_and_Attribute_Information:
 #   Detailed_Description:
@@ -931,14 +949,13 @@ eai[[1]]$Overview_Description <- as.list(c("Entity_and_Attribute_Overview" = pas
 # Distribution Information ----
 
 di <- as.list(c("Distribution_Information" = NA))
-di[[1]] <- vector("list",4)
+di[[1]] <- vector("list",3)
 names(di[[1]]) <- c("Distributor","Resource_Description",
-                    "Distribution_Liability", "Standard_Order_Process")
+                    "Distribution_Liability")
 di[[1]]$Distributor <- as.list(c("Contact_Information" = NA))
 di[[1]]$Distributor$Contact_Information <- poc[[1]]$Contact_Info
 di[[1]]$Resource_Description <- "For internal use only. Contains sensitive information."
 di[[1]]$Distribution_Liability <- "For internal use only. Contains sensitive information."
-di[[1]]$Standard_Order_Process <- ""
 
 # Distribution_Information:
 #   Distributor:
@@ -1043,17 +1060,22 @@ names(mri[[1]]) <- c("Metadata_Date", "Metadata_Review_Date",
                      "Metadata_Standard_Version", "Metadata_Time_Convention", 
                      "Metadata_Access_Constraints", "Metadata_Use_Constraints", 
                      "Metadata_Security_Information")
-mri[[1]]$Metadata_Date <- format(Sys.Date(), "%Y-%m-%d")
-mri[[1]]$Metadata_Review_Date <- NA
+mri[[1]]$Metadata_Date <- format(Sys.Date(), "%Y%m%d")
+mri[[1]]$Metadata_Review_Date <- format(Sys.Date(), "%Y%m%d")
 mri[[1]]$Metadata_Contact <- as.list(c("Contact_Information" = NA))
 mri[[1]]$Metadata_Contact$Contact_Information <- poc[[1]]$Contact_Info
 mri[[1]]$Metadata_Standard_Name <- "FGDC Content Standard for Digital Geospatial Metadata"
 mri[[1]]$Metadata_Standard_Version <- "FGDC-STD-001-1998"
-mri[[1]]$Metadata_Time_Convention <- paste0("Local time for time zone '",
-                                            Sys.timezone(),"'.")
+mri[[1]]$Metadata_Time_Convention <- "local time"
 mri[[1]]$Metadata_Access_Constraints <- "None"
 mri[[1]]$Metadata_Use_Constraints <- "None"
-mri[[1]]$Metadata_Security_Information <- ""
+mri[[1]]$Metadata_Security_Information <- vector("list",3)
+names(mri[[1]]$Metadata_Security_Information) <- c("Metadata_Security_Classification_System",
+                                                  "Metadata_Security_Classification",
+                                                  "Metadata_Security_Handling_Description" )
+mri[[1]]$Metadata_Security_Information$Metadata_Security_Classification_System <- "None"
+mri[[1]]$Metadata_Security_Information$Metadata_Security_Classification <- "Unclassified"
+mri[[1]]$Metadata_Security_Information$Metadata_Security_Handling_Description <- "Metadata can be shared."
 
 # Metadata_Reference_Information:
 #   Metadata_Date: BLM REQUIRED
@@ -1122,8 +1144,8 @@ mri[[1]]$Metadata_Security_Information <- ""
 # Compile all the parts ----
 m$Identification_Information$Citation <- cit_i
 m$Identification_Information$Description <- des_i[[1]]
+m$Identification_Information$Time_Period_of_Content <- tpoc$Time_Period_of_Content
 m$Identification_Information$Status <- stat_i$Status
-m$Identification_Information$Time_Period_Information <- tpoc$Time_Period_Information
 m$Identification_Information$Spatial_Domain <- spdom$Spatial_Domain
 m$Identification_Information$Keywords <- kw[[1]]
 m$Identification_Information$Access_Constraints <- accc[[1]]
@@ -1139,6 +1161,7 @@ m$Data_Quality_Information$Completeness_Report <- corep$Completeness_Report
 m$Data_Quality_Information$Positional_Accuracy <- poac$Positional_Accuracy
 m$Data_Quality_Information$Lineage <- lin$Lineage
 m$Spatial_Data_Organization_Information <- sdoi$Spatial_Data_Organization_Information
+m$Spatial_Reference_Information <- spref$Spatial_Reference_Information
 m$Entity_and_Attribute_Information <- eai$Entity_and_Attribute_Information
 m$Distribution_Information <- di$Distribution_Information
 m$Metadata_Reference_Information <- mri$Metadata_Reference_Information
@@ -1173,6 +1196,8 @@ lkpCodes <- data.frame(matrix(c(
   "pubdate", "Publication_Date", 
   "title", "Title", 
   "pubinfo", "Publication_Information", 
+  "pubplace", "Publication_Place", 
+  "publish", "Publisher", 
   "othercit", "Other_Citation_Details", 
   "onlink", "Online_Linkage",
   "abstract", "Abstract",
@@ -1192,10 +1217,13 @@ lkpCodes <- data.frame(matrix(c(
   "place", "Place",
   "themekt", "Theme_Keyword_Thesaurus", 
   "themekey", "Theme_Keyword",
+  "placekt", "Place_Keyword_Thesaurus", 
+  "placekey", "Place_Keyword",
   "cntinfo","Contact_Info",
   "cntorgp","Contact_Organization_Primary",
   "cntpos","Contact_Position",
   "cntaddr","Contact_Address",
+  "cntvoice", "Contact_Voice_Telephone", 
   "cntemail","Contact_Electronic_Mail_Address",
   "cntorg","Contact_Organization",
   "cntper","Contact_Person",
@@ -1232,6 +1260,11 @@ lkpCodes <- data.frame(matrix(c(
   "planar", "Planar", 
   "geodetic", "Geodetic",
   "mapproj", "Map_Projection", 
+  "mapprojn", "Map_Projection_Name", 
+  "plance", "Planar_Coordinate_Encoding_Method",
+  "coordrep", "Coordinate_Representation",
+  "absres", "Abscissa_Resolution", 
+  "ordres", "Ordinate_Resolution",
   "planci", "Planar_Coordinate_Information",
   "albers", "Albers_Conical_Equal_Area",
   "stdparll", "Standard_Parallel",
@@ -1246,12 +1279,16 @@ lkpCodes <- data.frame(matrix(c(
   "denflat", "Denominator_of_Flattening_Ratio",
   "detailed", "Detailed_Description",
   "overview", "Overview_Description",
+  "eaover", "Entity_and_Attribute_Overview",
+  "eadetcit", "Entity_and_Attribute_Detail_Citation",
   "enttyp", "Entity_Type",
   "attr", "Attribute",
   "enttypl", "Entity_Type_Label", 
   "enttypd", "Entity_Type_Definition",
+  "enttypds", "Entity_Type_Definition_Source", 
   "attrlabl", "Attribute_Label", 
   "attrdef", "Attribute_Definition",
+  "attrdefs", "Attribute_Definition_Source",
   "attrdomv", "Attribute_Domain_Values",
   "rdom", "Range_Domain",
   "rdommin", "Range_Domain_Minimum", 
@@ -1270,6 +1307,9 @@ lkpCodes <- data.frame(matrix(c(
   "metac", "Metadata_Access_Constraints", 
   "metuc", "Metadata_Use_Constraints", 
   "metsi", "Metadata_Security_Information",
+  "metscs", "Metadata_Security_Classification_System", 
+  "metsc", "Metadata_Security_Classification", 
+  "metshd", "Metadata_Security_Handling_Description", 
   "rastinfo", "Raster_Object_Information"
 ), ncol = 2, byrow = TRUE), stringsAsFactors = FALSE)
 names(lkpCodes) <- c("codenm","fullnm")
