@@ -376,30 +376,30 @@ usec <- as.list(c("Use_Constraints" = paste0(
 # ID_info: Point_of_Contact ----
 
 poc <- as.list(c("Point_of_Contact" = NA))
-poc[[1]] <- as.list(c("Contact_Info" = NA))
-poc[[1]]$Contact_Info <- vector("list",5)
-names(poc[[1]]$Contact_Info) <- c("Contact_Organization_Primary", 
+poc[[1]] <- as.list(c("Contact_Information" = NA))
+poc[[1]]$Contact_Information <- vector("list",5)
+names(poc[[1]]$Contact_Information) <- c("Contact_Organization_Primary", 
                      "Contact_Position",
                      "Contact_Address",
                      "Contact_Voice_Telephone",
                      "Contact_Electronic_Mail_Address")
   
-poc[[1]]$Contact_Info$Contact_Organization_Primary <- vector("list",2)
-names(poc[[1]]$Contact_Info$Contact_Organization_Primary) <- c("Contact_Organization","Contact_Person")
-poc[[1]]$Contact_Info$Contact_Organization_Primary$Contact_Organization <- "NatureServe"
-poc[[1]]$Contact_Info$Contact_Organization_Primary$Contact_Person <- "Patrick McIntyre, PhD "
-poc[[1]]$Contact_Info$Contact_Position <- "Senior Ecologist, NatureServe"
-poc[[1]]$Contact_Info$Contact_Address <- vector("list",6)
-names(poc[[1]]$Contact_Info$Contact_Address) <- c("Address_Type","Address","City","State_or_Province","Postal_Code","Country")
-poc[[1]]$Contact_Info$Contact_Address$Address_Type <- "Mailing Address"
-poc[[1]]$Contact_Info$Contact_Address$Address <- "1680 38th St. Suite 120"
-poc[[1]]$Contact_Info$Contact_Address$City <- "Boulder"
-poc[[1]]$Contact_Info$Contact_Address$State_or_Province <- "CO"
-poc[[1]]$Contact_Info$Contact_Address$Postal_Code <- "80301"
-poc[[1]]$Contact_Info$Contact_Address$Country <- "US"
+poc[[1]]$Contact_Information$Contact_Organization_Primary <- vector("list",2)
+names(poc[[1]]$Contact_Information$Contact_Organization_Primary) <- c("Contact_Organization","Contact_Person")
+poc[[1]]$Contact_Information$Contact_Organization_Primary$Contact_Organization <- "NatureServe"
+poc[[1]]$Contact_Information$Contact_Organization_Primary$Contact_Person <- "Patrick McIntyre, PhD "
+poc[[1]]$Contact_Information$Contact_Position <- "Senior Ecologist, NatureServe"
+poc[[1]]$Contact_Information$Contact_Address <- vector("list",6)
+names(poc[[1]]$Contact_Information$Contact_Address) <- c("Address_Type","Address","City","State_or_Province","Postal_Code","Country")
+poc[[1]]$Contact_Information$Contact_Address$Address_Type <- "Mailing Address"
+poc[[1]]$Contact_Information$Contact_Address$Address <- "1680 38th St. Suite 120"
+poc[[1]]$Contact_Information$Contact_Address$City <- "Boulder"
+poc[[1]]$Contact_Information$Contact_Address$State_or_Province <- "CO"
+poc[[1]]$Contact_Information$Contact_Address$Postal_Code <- "80301"
+poc[[1]]$Contact_Information$Contact_Address$Country <- "US"
 
-poc[[1]]$Contact_Info$Contact_Voice_Telephone <- "+1-703-797-4812"
-poc[[1]]$Contact_Info$Contact_Electronic_Mail_Address <- "Patrick_McIntyre@natureserve.org"
+poc[[1]]$Contact_Information$Contact_Voice_Telephone <- "+1-703-797-4812"
+poc[[1]]$Contact_Information$Contact_Electronic_Mail_Address <- "Patrick_McIntyre@natureserve.org"
 
 
 # Point_of_Contact:
@@ -643,7 +643,7 @@ lin[[1]][[1]]$Process_Date <- format(as.Date(inputStats.dat$datetime), "%Y%m%d")
 lin[[1]][[1]]$Process_Contact <- as.list(c("Contact_Information" = NA))
 ## TODO. Note shortcut here. Probably need a table in DB tracking contacts and 
 ## retrieve from there. Bah. 
-lin[[1]][[1]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Info
+lin[[1]][[1]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Information
 
 lin[[1]][[2]] <- vector("list",3)
 names(lin[[1]][[2]]) <- c("Process_Description", "Process_Date", "Process_Contact")
@@ -654,7 +654,7 @@ lin[[1]][[2]]$Process_Description <- paste0("Model relationship between presence
         "in this model.")
 lin[[1]][[2]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
 lin[[1]][[2]]$Process_Contact <- as.list(c("Contact_Information" = NA))
-lin[[1]][[2]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Info
+lin[[1]][[2]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Information
 
 lin[[1]][[3]] <- vector("list",3)
 names(lin[[1]][[3]]) <- c("Process_Description", "Process_Date", "Process_Contact")
@@ -663,7 +663,7 @@ lin[[1]][[3]]$Process_Description <- paste0("Use model to predict probability of
         round(minValue(ras), 1), " to ", round(maxValue(ras), 1), ". ")
 lin[[1]][[3]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
 lin[[1]][[3]]$Process_Contact <- as.list(c("Contact_Information" = NA))
-lin[[1]][[3]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Info
+lin[[1]][[3]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Information
 
 #   Lineage:
 #     Source_Information:
@@ -953,7 +953,7 @@ di[[1]] <- vector("list",3)
 names(di[[1]]) <- c("Distributor","Resource_Description",
                     "Distribution_Liability")
 di[[1]]$Distributor <- as.list(c("Contact_Information" = NA))
-di[[1]]$Distributor$Contact_Information <- poc[[1]]$Contact_Info
+di[[1]]$Distributor$Contact_Information <- poc[[1]]$Contact_Information
 di[[1]]$Resource_Description <- "For internal use only. Contains sensitive information."
 di[[1]]$Distribution_Liability <- "For internal use only. Contains sensitive information."
 
@@ -1063,7 +1063,7 @@ names(mri[[1]]) <- c("Metadata_Date", "Metadata_Review_Date",
 mri[[1]]$Metadata_Date <- format(Sys.Date(), "%Y%m%d")
 mri[[1]]$Metadata_Review_Date <- format(Sys.Date(), "%Y%m%d")
 mri[[1]]$Metadata_Contact <- as.list(c("Contact_Information" = NA))
-mri[[1]]$Metadata_Contact$Contact_Information <- poc[[1]]$Contact_Info
+mri[[1]]$Metadata_Contact$Contact_Information <- poc[[1]]$Contact_Information
 mri[[1]]$Metadata_Standard_Name <- "FGDC Content Standard for Digital Geospatial Metadata"
 mri[[1]]$Metadata_Standard_Version <- "FGDC-STD-001-1998"
 mri[[1]]$Metadata_Time_Convention <- "local time"
@@ -1219,7 +1219,6 @@ lkpCodes <- data.frame(matrix(c(
   "themekey", "Theme_Keyword",
   "placekt", "Place_Keyword_Thesaurus", 
   "placekey", "Place_Keyword",
-  "cntinfo","Contact_Info",
   "cntorgp","Contact_Organization_Primary",
   "cntpos","Contact_Position",
   "cntaddr","Contact_Address",
@@ -1314,39 +1313,53 @@ lkpCodes <- data.frame(matrix(c(
 ), ncol = 2, byrow = TRUE), stringsAsFactors = FALSE)
 names(lkpCodes) <- c("codenm","fullnm")
 
-
 # #  conversion (list rename) function ----
+# this version gets mismatch warnings ...
 # listRename <- function(nested_list) {
 #   found <- names(nested_list) %in% lkpCodes$fullnm
 #   names(nested_list)[found] <- lkpCodes[lkpCodes$fullnm %in% names(nested_list)[found],"codenm"]
 #   lapply(nested_list, FUN = function(x){
 #     if (is.list(x)) {
+#       print(names(x))
 #       listRename(x)
 #     } else {
 #       x
 #     }
 #   })
 # }
-# n <- listRename(m)
-# 
+# y <- listRename(m)
 
-library(purrr)
-
-lkp2 <- lkpCodes$codenm
-names(lkp2) <- lkpCodes$fullnm
-
-rename <- function(nested_list) {
-  found <- names(nested_list) %in% names(lkp2)
-  names(nested_list)[found] <- lkp2[names(nested_list)[found]]
-  nested_list %>% map(~{
-    if (is.list(.x)) {
-      rename(.x)
+listRename <- function(nested_list) {
+  newnames <- lkpCodes$codenm[match(names(nested_list), lkpCodes$fullnm)]
+  names(nested_list)[!is.na(newnames)] <- newnames[!is.na(newnames)]
+  lapply(nested_list, FUN = function(x){
+    if (is.list(x)) {
+      listRename(x)
     } else {
-      .x
+      x
     }
   })
 }
-y <- rename(m)
+y <- listRename(m)
+
+# yet another way, using purrr
+# library(purrr)
+# 
+# lkp2 <- lkpCodes$codenm
+# names(lkp2) <- lkpCodes$fullnm
+# 
+# rename <- function(nested_list) {
+#   found <- names(nested_list) %in% names(lkp2)
+#   names(nested_list)[found] <- lkp2[names(nested_list)[found]]
+#   nested_list %>% map(~{
+#     if (is.list(.x)) {
+#       rename(.x)
+#     } else {
+#       .x
+#     }
+#   })
+# }
+# y <- rename(m)
 
 
 # convert to xml  ----
@@ -1385,9 +1398,9 @@ listToXml <- function(item, tag) {
     for(i in 1:length(item)) {
       if (length (item[[i]]) == 0) {}
       else if (names(item)[i] != ".attrs") {
-        print(i)
+        #print(i)
         if (is.null (names(item[[i]][1])) ){
-          print(i)
+          #print(i)
           for (j in c(1:length (item[[i]]))){
             child <- xmlNode(names(item)[i])
             xmlValue(child) <- item[[i]][j]
