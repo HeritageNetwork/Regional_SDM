@@ -69,7 +69,80 @@ varsUsed.dat <- dbGetQuery(db, sql)
 dbDisconnect(db)
 rm(db)
 
-# build everything in lists, then export
+# set up all different contacts to be used ----
+# perhaps the best solution is to grab all this from a 'people' table
+# in a database that is pre-populated and has assigned roles. 
+
+# build the skeleton
+contact_skeleton <- as.list(c("Contact_Information" = NA))
+contact_skeleton$Contact_Information <- vector("list",5)
+names(contact_skeleton$Contact_Information) <- c("Contact_Organization_Primary", 
+                                                "Contact_Position",
+                                                "Contact_Address",
+                                                "Contact_Voice_Telephone",
+                                                "Contact_Electronic_Mail_Address")
+contact_skeleton$Contact_Information$Contact_Organization_Primary <- vector("list",2)
+names(contact_skeleton$Contact_Information$Contact_Organization_Primary) <- c("Contact_Organization","Contact_Person")
+contact_skeleton$Contact_Information$Contact_Address <- vector("list",6)
+names(contact_skeleton$Contact_Information$Contact_Address) <- c("Address_Type","Address","City","State_or_Province","Postal_Code","Country")
+contact_skeleton$Contact_Information$Contact_Address$Address_Type <- "Mailing Address"
+
+# apply skeleton to four contacts that will be used
+all_contacts <- vector("list",4)
+names(all_contacts) <- c("NS_McIntyre","BLM_Redecker","BLM_Davidson","NYNHP_Howard")
+all_contacts$NS_McIntyre <- contact_skeleton
+all_contacts$BLM_Redecker <- contact_skeleton
+all_contacts$BLM_Davidson <- contact_skeleton
+all_contacts$NYNHP_Howard <- contact_skeleton
+
+# now populate each
+all_contacts$NS_McIntyre$Contact_Information$Contact_Organization_Primary$Contact_Organization <- "NatureServe"
+all_contacts$NS_McIntyre$Contact_Information$Contact_Organization_Primary$Contact_Person <- "Patrick McIntyre, PhD"
+all_contacts$NS_McIntyre$Contact_Information$Contact_Position <- "Senior Ecologist, NatureServe"
+all_contacts$NS_McIntyre$Contact_Information$Contact_Address$Address <- "1680 38th St. Suite 120"
+all_contacts$NS_McIntyre$Contact_Information$Contact_Address$City <- "Boulder"
+all_contacts$NS_McIntyre$Contact_Information$Contact_Address$State_or_Province <- "CO"
+all_contacts$NS_McIntyre$Contact_Information$Contact_Address$Postal_Code <- "80301"
+all_contacts$NS_McIntyre$Contact_Information$Contact_Address$Country <- "US"
+all_contacts$NS_McIntyre$Contact_Information$Contact_Voice_Telephone <- "+1-703-797-4812"
+all_contacts$NS_McIntyre$Contact_Information$Contact_Electronic_Mail_Address <- "Patrick_McIntyre@natureserve.org"
+
+all_contacts$BLM_Redecker$Contact_Information$Contact_Organization_Primary$Contact_Organization <- "Bureau of Land Management"
+all_contacts$BLM_Redecker$Contact_Information$Contact_Organization_Primary$Contact_Person <- "Nathan Redecker"
+all_contacts$BLM_Redecker$Contact_Information$Contact_Position <- "Botany and Monitoring Specialist"
+all_contacts$BLM_Redecker$Contact_Information$Contact_Address$Address <- "New Mexico State Office, 301 Dinosaur Trail"
+#all_contacts$BLM_Redecker$Contact_Information$Contact_Address$Address <- "301 Dinosaur Trail"
+all_contacts$BLM_Redecker$Contact_Information$Contact_Address$City <- "Santa Fe"
+all_contacts$BLM_Redecker$Contact_Information$Contact_Address$State_or_Province <- "NM"
+all_contacts$BLM_Redecker$Contact_Information$Contact_Address$Postal_Code <- "87508"
+all_contacts$BLM_Redecker$Contact_Information$Contact_Address$Country <- "US"
+all_contacts$BLM_Redecker$Contact_Information$Contact_Voice_Telephone <- "+1-505-954-2116"
+all_contacts$BLM_Redecker$Contact_Information$Contact_Electronic_Mail_Address <- "nredecker@blm.gov"
+
+all_contacts$BLM_Davidson$Contact_Information$Contact_Organization_Primary$Contact_Organization <- "Bureau of Land Management"
+all_contacts$BLM_Davidson$Contact_Information$Contact_Organization_Primary$Contact_Person <- "Zoe Davidson"
+all_contacts$BLM_Davidson$Contact_Information$Contact_Position <- "Acting Branch Chief of Resources"
+all_contacts$BLM_Davidson$Contact_Information$Contact_Address$Address <- "New Mexico State Office, 301 Dinosaur Trail"
+#all_contacts$BLM_Davidson$Contact_Information$Contact_Address$Address <- "301 Dinosaur Trail"
+all_contacts$BLM_Davidson$Contact_Information$Contact_Address$City <- "Santa Fe"
+all_contacts$BLM_Davidson$Contact_Information$Contact_Address$State_or_Province <- "NM"
+all_contacts$BLM_Davidson$Contact_Information$Contact_Address$Postal_Code <- "87508"
+all_contacts$BLM_Davidson$Contact_Information$Contact_Address$Country <- "US"
+all_contacts$BLM_Davidson$Contact_Information$Contact_Voice_Telephone <- "+1-505-954-2045"
+all_contacts$BLM_Davidson$Contact_Information$Contact_Electronic_Mail_Address <- "zdavidson@blm.gov"
+
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Organization_Primary$Contact_Organization <- "New York Natural Heritage Program - SUNY ESF"
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Organization_Primary$Contact_Person <- "Tim Howard"
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Position <- "Director of Science"
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Address$Address <- "625 Broadway, 5th Floor"
+#all_contacts$NYNHP_Howard$Contact_Information$Contact_Address$Address <- ""
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Address$City <- "Albany"
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Address$State_or_Province <- "NY"
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Address$Postal_Code <- "12233-4757"
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Address$Country <- "US"
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Voice_Telephone <- "+1-518-402-8945"
+all_contacts$NYNHP_Howard$Contact_Information$Contact_Electronic_Mail_Address <- "tghoward@esf.edu"
+
 # setup base structure ----
 m <- vector("list", 7)
 names(m) <- c("Identification_Information", "Data_Quality_Information",
@@ -377,30 +450,7 @@ usec <- as.list(c("Use_Constraints" = paste0(
 
 poc <- as.list(c("Point_of_Contact" = NA))
 poc[[1]] <- as.list(c("Contact_Information" = NA))
-poc[[1]]$Contact_Information <- vector("list",5)
-names(poc[[1]]$Contact_Information) <- c("Contact_Organization_Primary", 
-                     "Contact_Position",
-                     "Contact_Address",
-                     "Contact_Voice_Telephone",
-                     "Contact_Electronic_Mail_Address")
-  
-poc[[1]]$Contact_Information$Contact_Organization_Primary <- vector("list",2)
-names(poc[[1]]$Contact_Information$Contact_Organization_Primary) <- c("Contact_Organization","Contact_Person")
-poc[[1]]$Contact_Information$Contact_Organization_Primary$Contact_Organization <- "NatureServe"
-poc[[1]]$Contact_Information$Contact_Organization_Primary$Contact_Person <- "Patrick McIntyre, PhD "
-poc[[1]]$Contact_Information$Contact_Position <- "Senior Ecologist, NatureServe"
-poc[[1]]$Contact_Information$Contact_Address <- vector("list",6)
-names(poc[[1]]$Contact_Information$Contact_Address) <- c("Address_Type","Address","City","State_or_Province","Postal_Code","Country")
-poc[[1]]$Contact_Information$Contact_Address$Address_Type <- "Mailing Address"
-poc[[1]]$Contact_Information$Contact_Address$Address <- "1680 38th St. Suite 120"
-poc[[1]]$Contact_Information$Contact_Address$City <- "Boulder"
-poc[[1]]$Contact_Information$Contact_Address$State_or_Province <- "CO"
-poc[[1]]$Contact_Information$Contact_Address$Postal_Code <- "80301"
-poc[[1]]$Contact_Information$Contact_Address$Country <- "US"
-
-poc[[1]]$Contact_Information$Contact_Voice_Telephone <- "+1-703-797-4812"
-poc[[1]]$Contact_Information$Contact_Electronic_Mail_Address <- "Patrick_McIntyre@natureserve.org"
-
+poc[[1]] <- all_contacts$NS_McIntyre$Contact_Information
 
 # Point_of_Contact:
 #   Contact_Information:
@@ -633,7 +683,7 @@ names(lin[[1]]) <- rep("Process_Step", 3)
 lin[[1]][[1]] <- vector("list",3)
 names(lin[[1]][[1]]) <- c("Process_Description", "Process_Date", "Process_Contact")
 lin[[1]][[1]]$Process_Description <- paste0("Acquire and clean up input points. ", 
-      "We acquired presence locations from these sources: ",
+      "We acquired presence locations from these sources: (",
       paste(presenceDatContributors.dat$ProgramName, collapse = ", "), ". ",
       "Grouping (", inputStats.dat$feat_grp_count, " groups) and random selection within ",
       "these groups resulted in ", inputStats.dat$tot_obs_subsamp, " presence observations ", 
@@ -643,7 +693,7 @@ lin[[1]][[1]]$Process_Date <- format(as.Date(inputStats.dat$datetime), "%Y%m%d")
 lin[[1]][[1]]$Process_Contact <- as.list(c("Contact_Information" = NA))
 ## TODO. Note shortcut here. Probably need a table in DB tracking contacts and 
 ## retrieve from there. Bah. 
-lin[[1]][[1]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Information
+lin[[1]][[1]]$Process_Contact$Contact_Information <- all_contacts$BLM_Davidson$Contact_Information
 
 lin[[1]][[2]] <- vector("list",3)
 names(lin[[1]][[2]]) <- c("Process_Description", "Process_Date", "Process_Contact")
@@ -654,7 +704,7 @@ lin[[1]][[2]]$Process_Description <- paste0("Model relationship between presence
         "in this model.")
 lin[[1]][[2]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
 lin[[1]][[2]]$Process_Contact <- as.list(c("Contact_Information" = NA))
-lin[[1]][[2]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Information
+lin[[1]][[2]]$Process_Contact$Contact_Information <- all_contacts$NYNHP_Howard$Contact_Information
 
 lin[[1]][[3]] <- vector("list",3)
 names(lin[[1]][[3]]) <- c("Process_Description", "Process_Date", "Process_Contact")
@@ -663,7 +713,7 @@ lin[[1]][[3]]$Process_Description <- paste0("Use model to predict probability of
         round(minValue(ras), 1), " to ", round(maxValue(ras), 1), ". ")
 lin[[1]][[3]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
 lin[[1]][[3]]$Process_Contact <- as.list(c("Contact_Information" = NA))
-lin[[1]][[3]]$Process_Contact$Contact_Information <- poc[[1]]$Contact_Information
+lin[[1]][[3]]$Process_Contact$Contact_Information <- all_contacts$NYNHP_Howard$Contact_Information
 
 #   Lineage:
 #     Source_Information:
@@ -953,7 +1003,7 @@ di[[1]] <- vector("list",3)
 names(di[[1]]) <- c("Distributor","Resource_Description",
                     "Distribution_Liability")
 di[[1]]$Distributor <- as.list(c("Contact_Information" = NA))
-di[[1]]$Distributor$Contact_Information <- poc[[1]]$Contact_Information
+di[[1]]$Distributor$Contact_Information <- all_contacts$NS_McIntyre$Contact_Information
 di[[1]]$Resource_Description <- "For internal use only. Contains sensitive information."
 di[[1]]$Distribution_Liability <- "For internal use only. Contains sensitive information."
 
@@ -1063,7 +1113,7 @@ names(mri[[1]]) <- c("Metadata_Date", "Metadata_Review_Date",
 mri[[1]]$Metadata_Date <- format(Sys.Date(), "%Y%m%d")
 mri[[1]]$Metadata_Review_Date <- format(Sys.Date(), "%Y%m%d")
 mri[[1]]$Metadata_Contact <- as.list(c("Contact_Information" = NA))
-mri[[1]]$Metadata_Contact$Contact_Information <- poc[[1]]$Contact_Information
+mri[[1]]$Metadata_Contact$Contact_Information <- all_contacts$NYNHP_Howard$Contact_Information
 mri[[1]]$Metadata_Standard_Name <- "FGDC Content Standard for Digital Geospatial Metadata"
 mri[[1]]$Metadata_Standard_Version <- "FGDC-STD-001-1998"
 mri[[1]]$Metadata_Time_Convention <- "local time"
@@ -1150,7 +1200,7 @@ m$Identification_Information$Spatial_Domain <- spdom$Spatial_Domain
 m$Identification_Information$Keywords <- kw[[1]]
 m$Identification_Information$Access_Constraints <- accc[[1]]
 m$Identification_Information$Use_Constraints <- usec[[1]]
-m$Identification_Information$Point_of_Contact <- poc[[1]]
+m$Identification_Information$Point_of_Contact <- all_contacts$NS_McIntyre
 m$Identification_Information$Data_Set_Credit <- dsc[[1]]
 m$Identification_Information$Security_Information <- seci[[1]]
 m$Identification_Information$Native_Data_Set_Environment <- ndse[[1]]  
