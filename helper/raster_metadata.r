@@ -1,14 +1,19 @@
 # create raster metadata. Intro and load libraries ----
 
+# This was built for a modeling project for US BLM that required FGDC metadata.
+# To use it, the primary modifcation you need to make is the contact
+# information starting near line 76 and the assignments
+# of these contacts scattered throughout. Ideally this 
+# would be updated to draw from a DB and assignments based
+# on task, not name. 
+# TODO: ^^
+
 # to later wrap into a function, the things needed that vary:
 # 1. model_run_name 
 # 2. algo (what algorithm is this)
 # 3. ensemble_stat (what statistic does this ensemble represent?)
 # either 2 or 3 would have data, the other would be NA
 # everythig else can get drawn from the database(s)?
-
-## TODO: store contact info for models in the DB so it can get 
-## queried and populated here instead of hard-coding it. 
 
 library(here)
 library(XML)
@@ -18,8 +23,6 @@ library(DBI)
 
 library(raster)
 library(sf)
-
-
 
 # start by gathering up data from databases ----
 cutecode <- strsplit(model_run_name, split = "_")[[1]][[1]]
@@ -69,7 +72,7 @@ varsUsed.dat <- dbGetQuery(db, sql)
 dbDisconnect(db)
 rm(db)
 
-# set up all different contacts to be used ----
+# setup all contacts that will be used ----
 # perhaps the best solution is to grab all this from a 'people' table
 # in a database that is pre-populated and has assigned roles. 
 
@@ -691,8 +694,6 @@ lin[[1]][[1]]$Process_Description <- paste0("Acquire and clean up input points. 
 
 lin[[1]][[1]]$Process_Date <- format(as.Date(inputStats.dat$datetime), "%Y%m%d")
 lin[[1]][[1]]$Process_Contact <- as.list(c("Contact_Information" = NA))
-## TODO. Note shortcut here. Probably need a table in DB tracking contacts and 
-## retrieve from there. Bah. 
 lin[[1]][[1]]$Process_Contact$Contact_Information <- all_contacts$BLM_Davidson$Contact_Information
 
 lin[[1]][[2]] <- vector("list",3)
