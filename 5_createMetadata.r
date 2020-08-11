@@ -177,7 +177,9 @@ for(algo in names(vuStatsList)){
     }
 }
 
-attr(vuStatsList, "subheadings") <- paste0("Algorithm = ", names(vuStatsList))
+attr(vuStatsList, "subheadings") <- paste0("\\textcolor{",
+                                           names(vuStatsList), "Color}{", 
+                                           "Algorithm = ",  names(vuStatsList),"}")
 
 # vuStatsList is what gets used in knitr file
 rm(db, sql, varsUsedStats, vuStats, medat, xgbdat, rfdat, algo)
@@ -186,15 +188,26 @@ rm(db, sql, varsUsedStats, vuStats, medat, xgbdat, rfdat, algo)
 ## build ROC plot ----
 #### this is all in the rnw, possibly change to ggplot, then build it here and print it there
 
-## build lookup for line details ----
+## build lookup for line details and colors ----
 lineColors <- brewer.pal(6, "Dark2")[1:length(ensemble_algos)]
 
 figSpecs <- data.frame(algos = c("rf","me","xgb"),
                        col = lineColors,
                        lwd = c(3,2,1),
                        lty = c(1,1,1),
+                       htmlCol = sub("#","",lineColors),
                        stringsAsFactors = FALSE)
 
+# set the knitr hook to create color definitions within the rnw file
+# based on the algorithm color definitions
+defs <- vector("list",nrow(figSpecs))
+for(i in 1:nrow(figSpecs)){
+  defs[[i]] <- paste0("\\\\definecolor{",figSpecs$algos[[i]],"Color}{HTML}{",figSpecs$htmlCol[[i]],"}")
+} 
+
+knit_hooks$set(document = function(x) {
+  sub('%CustomColorDefsHere', paste0(unlist(defs), "\n", collapse = ""), x)
+})
 
 ##
 ## build importance plot ----
@@ -569,7 +582,14 @@ names(sdm.thresh.merge) <- c("Code","algorithm","Value","Groups","Points")
 sdm.thresh.list <- split(sdm.thresh.merge, f = sdm.thresh.merge$algorithm)
 sdm.thresh.list <- lapply(sdm.thresh.list, FUN = function(x) x[,!names(x)=="algorithm"])
 
-attr(sdm.thresh.list, "subheadings") <- paste0("Algorithm = ", names(sdm.thresh.list))
+# no colored text
+#attr(sdm.thresh.list, "subheadings") <- paste0("Algorithm = ", names(sdm.thresh.list))
+# with colored text following lines on figures
+attr(sdm.thresh.list, "subheadings") <- paste0("\\textcolor{",
+                          names(sdm.thresh.list), "Color}{", 
+                          "Algorithm = ", 
+                          names(sdm.thresh.list),"}")
+
 # can't get xtable's sanitize functions to work, manually escape % here. 
 # attr(sdm.thresh.list, "message") <- paste0(thresh.descr$cutCode, ": ",
 #                             gsub("%","\\%",thresh.descr$cutDescription, fixed = TRUE))
@@ -580,8 +600,6 @@ sdm.thresh.list.xtbl <- xtableList(sdm.thresh.list,
 
 thresh.descr.xtbl <- xtable(thresh.descr, 
                             align = "lllp{3in}")
-
-
 
 
 # make a url to NatureServe Explorer

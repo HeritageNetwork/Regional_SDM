@@ -32,9 +32,11 @@
 Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}).
 }
 \rfoot{p. \thepage}
-
-
 \normalsize %return the font to normal
+
+% colors are set up in the R script as the number of colors depends 
+% on the number of algorithms. Give a place for the knitr hook to grab and replace
+%CustomColorDefsHere
 
 \begin{document}
 
@@ -71,7 +73,6 @@ Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\text
     text (1,1, "No evaluation",
         adj = c(0.5,4), cex = .75, col = "black", xpd=NA)
   }
-  
 @
   \begin{center}
   \includegraphics{figure/thermometer1-1.pdf} \\ %place it
@@ -83,8 +84,6 @@ Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\text
 \smallskip
 \noindent 
 \Sexpr{as.character(project_overview)}
-\smallskip
-\noindent
 This HSM incorporates the number of known and background locations indicated in Table 2., modeled using the algorithms in Table 1 in the R statistical environment. We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} and testing \Sexpr{length(group$vals)} groups. The statistics in Table 3 report the validation statistics for these jackknifing runs.\\
 \smallskip
 \small
