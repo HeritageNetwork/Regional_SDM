@@ -84,42 +84,63 @@ Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\text
 \smallskip
 \noindent 
 \Sexpr{as.character(project_overview)}
-This HSM incorporates the number of known and background locations indicated in Table 2., modeled using the algorithms in Table 1 in the R statistical environment. We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} and testing \Sexpr{length(group$vals)} groups. The statistics in Table 3 report the validation statistics for these jackknifing runs.\\
+This HSM was modeled using the algorithms in Table 1 in the R statistical environment, 
+incorporating the number of known and background locations indicated in Table 2 We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} and testing \Sexpr{length(group$vals)} groups. The statistics in Table 3 report the validation statistics for these jackknifing runs.\\
 \smallskip
 \small
 \begin{minipage}[t]{3in}
-\smallskip     %dummy first line to align with next minipage
+
+\smallskip
 Table 1. Ensemble details. These algorithms were used to create an ensemble model for this 
-species. The specific implementations are listed in the package column. Details in this document are attributed using the codes listed here. 
+species. The specific implementations are listed in the package column. Details in this document are attributed using the codes listed here.
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
   print(xtable(ensemble_details),
              floating = FALSE, include.rownames=FALSE)
 @
 \end{center}
-\smallskip
-Table 2. Input statistics. Presence locations are known locations for this species. These locations may be based on point observations (buffered based on spatial accuracy of the point) and polygon representations. Nearby locations are grouped together. Environmental conditions are randomly sampled within each of these groups the number of times noted (subsamples) to generate the total number of presence inputs (by tree for rf; for entire model for all others). Background points are placed throughout model area excluding known species locations. Algorithms incorporate background points differently; the number used for each is noted. 
+Table 2. Input statistics. Presence locations (= known locations) may be based on point observations (buffered based on their spatial accuracy) and polygon representations. Nearby locations are grouped together. Environmental conditions are randomly sampled within each of these groups the number of times noted (subsamples) to generate the total number of presence inputs (by tree for rf; for entire model for all others). Background points are placed throughout model area excluding presence locations. Algorithms incorporate background points differently, as noted. 
 \begin{center}
 <<tableTwo, results="asis", echo = FALSE>>=
   print(xtable(summ.table),
              floating = FALSE, include.rownames=FALSE)
 @
 \end{center}
-\smallskip
 Table 3. Validation statistics for jackknife trials, with the mean and standard deviation reported. AUC = area under the ROC curve, Sens = sensitivity, Spec = specificity, TSS = True Skill Statistic {\protect\NoHyper\cite{allouche2006, vaughan2005, fielding2002}\protect\endNoHyper}.
 \begin{center}
 <<tableThree, results="asis", echo = FALSE>>=
-  print(xtable(vstats.w), floating=FALSE, include.rownames=FALSE)
+  print(xtable(vstats.w), 
+        floating=FALSE, include.rownames=FALSE)
 @
 \end{center}
+
+\end{minipage}
+\hfill \begin{minipage}[t]{3.5in}
+
 \smallskip
-\normalsize
-\small
-\begin{center}
-<<ROCplot, fig.width=2.9, fig.height=1.6, include=FALSE, echo=FALSE>>=
-par(mar=c(2.8,2.5,.5,10),   #bottom, left, top, right
+<<importanceFig, fig.width=3.2, fig.height=6.5, include=FALSE, echo=FALSE>>=
+par(mar=c(3.2,2.5,.25,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
-    cex=0.6,     #text size
+    mgp=c(1.3,0.4,0), #placement of axis title, labels, line
+    bty="l"
+    )
+#print the plot created in script 5
+print(impPlot)
+@
+\begin{center}
+\includegraphics{figure/importanceFig-1.pdf}    %place it
+\end{center}
+Figure 1. Relative importance of each environmental variable based on the full model using all sites as input. Importance values are extracted from each algorithm and plotted here. Note each algorithm has its own variable removal rules (see Appendix 2); missing points indicate the variable was not used by that algorithm. See Appendix 1 for variable descriptions.
+\end{minipage}% 
+
+\normalsize
+\pagebreak
+
+\begin{center}
+<<ROCplot, fig.width=4.5, fig.height=4.5, include=FALSE, echo=FALSE>>=
+par(mar=c(3,3,3,3),   #bottom, left, top, right
+    tcl=-0.1,   #tic length
+    cex=1,     #text size
     mgp=c(1.6,0.4,0) #placement of axis title, labels, line
     )
 
@@ -166,42 +187,10 @@ legend("bottomright", ensemble_algos,
        merge = TRUE, bg = "gray95")
   
 @
-%\includegraphics{figure/ROCplot-1.pdf} %place it    
+\includegraphics{figure/ROCplot-1.pdf} %place it    
 \end{center}
-%Figure 1. ROC plot for all \Sexpr{length(group$vals)} validation runs, 
-%averaged along cutoffs, for each modeling algorithm.
-
-\end{minipage}%
-\hfill \begin{minipage}[t]{3.5in}
-
-\smallskip  %dummy first line to align with previous minipage
-
-<<importanceFig, fig.width=3.2, fig.height=6.5, include=FALSE, echo=FALSE>>=
-par(mar=c(3.2,2.5,.25,0.1),   #bottom, left, top, right
-    tcl=-0.1,   #tic length
-    mgp=c(1.3,0.4,0), #placement of axis title, labels, line
-    bty="l"
-    )
-#print the plot created in script 5
-print(impPlot)
-@
-\begin{center}
-\includegraphics{figure/importanceFig-1.pdf}    %place it
-\end{center}
-Figure 2. Relative importance of each environmental variable based on the full model using all sites as input. Importance values are extracted from each algorithm and plotted here. Note each algorithm has its own variable removal rules (see Appendix 2); missing points indicate the variable was not used by that algorithm. See Appendix 1 for variable descriptions.
-\end{minipage}% 
-
-\normalsize
-\pagebreak
-
-<<pPlotFig, fig.width=7.0, fig.height=6.5, include=FALSE, echo=FALSE>>=
-grid.newpage()
-grid.draw(gtl)
-@
-\includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
-\small
-Figure 3. Partial dependence plots for the \Sexpr{as.character(numPPl)} environmental variables with the most influence on the models (averaged). Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed {\protect\NoHyper\cite{liaw2002}\protect\endNoHyper}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationship overall; increasing lines, positive. The distribution of each category (thin red = Background points, thick blue = Presence points) is depicted at the top margin. See Appendix 1 for variable descriptions.
-\normalsize
+Figure 2. ROC plot for all \Sexpr{length(group$vals)} validation runs, 
+averaged along cutoffs, for each modeling algorithm.
 
 \medskip
 \medskip
@@ -212,7 +201,7 @@ Species distribution model outputs display the probability (0-1) of a location (
 \noindent
 \begin{minipage}{\linewidth} %keep table header with table
 \small
-Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\endNoHyper} calculated from the final model. The Value column reports the threshold; Groups indicates the percentage (number in brackets) of groups within which at least one point was predicted as suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of groups and presence points used in the final model are reported in Table 1.
+Table 4. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\endNoHyper} calculated from the final model. The Value column reports the threshold; Groups indicates the percentage (number in brackets) of groups within which at least one point was predicted as suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of groups and presence points used in the final model are reported in Table 1.
 \smallskip
 \begin{center}
 <<tableFour, results="asis", echo = FALSE>>=
@@ -221,28 +210,32 @@ Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\end
         floating=FALSE, include.rownames=FALSE)
 
 @
-
 \smallskip
-
 <<tableFour_b, results="asis", echo = FALSE>>=
   print(thresh.descr.xtbl,
         floating = FALSE, include.rownames=FALSE)
 
 @
-
 \end{center}
 \end{minipage}
 \normalsize
-\bigskip
-\noindent
-\textbf{Model Evaluation and Intended Use} \\\\
-All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 {\protect\NoHyper\cite{SofaerEtAl2019}\protect\endNoHyper}. \Sexpr{as.character(project_blurb)}
-\\
 
-\smallskip
 \pagebreak
+<<pPlotFig, fig.width=7.0, fig.height=6.5, include=FALSE, echo=FALSE>>=
+grid.newpage()
+grid.draw(gtl)
+@
+\includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
+\small
+Figure 3. Partial dependence plots for the \Sexpr{as.character(numPPl)} environmental variables with the most influence on the models (averaged). Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed {\protect\NoHyper\cite{liaw2002}\protect\endNoHyper}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationship overall; increasing lines, positive. The distribution of each category (thin red = Background points, thick blue = Presence points) is depicted at the top margin. See Appendix 1 for variable descriptions.
+\normalsize
 
-\noindent Table 5. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or interpret with caution.
+\pagebreak
+\noindent\textbf{Model Evaluation and Intended Use} \\
+All SDMs are sensitive to data inputs and methodological choices. Table 5 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 {\protect\NoHyper\cite{SofaerEtAl2019}\protect\endNoHyper}. \Sexpr{as.character(project_blurb)}\\
+
+
+\noindent Table 5. Model evaluation results based on Sofaer et al. (2019). Scores can be attributed as ideal, acceptable, or interpret with caution.
 \normalsize
 \begin{table}[H]
 \small
@@ -317,21 +310,16 @@ Category & Metric & Score & Notes
 \medskip
 \noindent
 <<customComments, results="asis", echo = FALSE>>=
-if(nrow(sdm.customComments.subset) > 0){
+if(length(sdm.customComments.subset$comments) > 1){
   cat("\\textbf{Model Comments} \\\\")
   cat(sdm.customComments.subset$comments)
 }
 @
-
-
-
 \pagebreak
-\medskip
 \begin{center}
-
 <<mapFig, fig.width=7, fig.height=7, include=FALSE, echo=FALSE, dev='png', dpi=200>>=
 
-print(mapFig)
+#print(mapFig)
 
 @
 \includegraphics{figure/mapFig-1.png}    
@@ -358,7 +346,7 @@ for(i in 1:length(sdm.dataSources$ProgramName)){
 
 \medskip
 \noindent
-This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. It is one of a suite of species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.
+This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. It is one of a suite of species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.\\
 
 \medskip
 \noindent
@@ -373,8 +361,8 @@ NatureServe and Heritage Network Partners. \Sexpr{format(Sys.Date(), "%Y")}. Spe
 \end{minipage}
 }
 
-
-\pagebreak
+\medskip
+\medskip
 \noindent
 \textbf{References}
 \small
@@ -437,6 +425,7 @@ print(xtable(sdm.var.info, label = NULL),
 \end{table}
 \medskip
 
+\pagebreak
 Appendix 2. Model details for reproducibility
 
 \begin{itemize}
@@ -450,12 +439,13 @@ Appendix 2. Model details for reproducibility
   \item{Random seed for each model: \Sexpr{modelrun_meta_data$seed}}
 \end{itemize}
 
-\begin{center}
+Algorithm-specific details. 
+
+
 <<tableAppendixTwoTableOne, results="asis", echo = FALSE>>=
   print(xtableList(vuStatsList),
                 floating=FALSE, include.rownames=FALSE)
 @
-\end{center}
 
 \end{document}
 
