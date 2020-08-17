@@ -4,12 +4,13 @@
 #  
 #  This script assumes these clean up tasks are already done:
 #   - clean points/polys to make sure they are checked and cleaned with respect to
-        # - range (as defined by HUC rangese)
+        # - range (as defined by HUC ranges)
         # - the chosen date threshold
         # - appropriate precision/accuracy
         # - appropriate type for appropriate species (e.g. only polys for G1, G2 if enough of them)
       # point layer needs OBSDATE SPECIES_CD, and, ideally Accuracy fields. 
       # poly layer needs OBSDATE SPECIES_CD, RA, Group_id
+# assumption: poly shp is named cutecode.shp; pt shapefile is named cutecode_pt.shp
 
 library(sf)
 library(dplyr)
@@ -46,6 +47,12 @@ if(file.exists(pol_name)){
   }
   geomName <- names(pol_dat)[length(names(pol_dat))]
   pol_dat <- pol_dat[,c(desiredPolyCols,geomName)]
+  # check for bad polys
+  if(FALSE %in% st_is_valid(pol_dat)){
+    pol_dat <- st_make_valid(pol_dat)
+  }
+  # drop z dim
+  pol_dat <- st_zm(pol_dat)
 }
 
 # check for point data
@@ -115,11 +122,10 @@ if(havePointData){
     # extend values in the point dataset to make everything unique
     pol_dat$UID <- pol_dat$UID + max_uid
     pol_dat$GROUP_ID <- pol_dat$GROUP_ID + max_gpid
-    
+
     # merge the pt and poly data sets
     dat_all <- rbind(pol_dat, ptd_grps)
-    
-    
+
     # st_is_valid(dat_all)
     # st_is_valid(ptd_grps)
     # st_is_valid(pol_dat)
