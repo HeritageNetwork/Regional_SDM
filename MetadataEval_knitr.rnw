@@ -130,7 +130,7 @@ print(impPlot)
 \begin{center}
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
-Figure 1. Relative importance of each environmental variable based on the full model using all sites as input. Importance values are extracted from each algorithm and plotted here. Note each algorithm has its own variable removal rules (see Appendix 2); missing points indicate the variable was not used by that algorithm. See Appendix 1 for variable descriptions.
+Figure 1. Relative importance of each environmental variable based on the full model using all sites as input. Importance values are extracted from each algorithm and plotted here, in descending order based on an average of all algorithms (grey line). Note each algorithm has its own variable removal rules (see Appendix 2); missing points indicate the variable was not used by that algorithm. See Appendix 1 for variable descriptions.
 \end{minipage}% 
 
 \normalsize
@@ -319,7 +319,7 @@ if(length(sdm.customComments.subset$comments) > 1){
 \begin{center}
 <<mapFig, fig.width=7, fig.height=7, include=FALSE, echo=FALSE, dev='png', dpi=200>>=
 
-#print(mapFig)
+print(mapFig)
 
 @
 \includegraphics{figure/mapFig-1.png}    
