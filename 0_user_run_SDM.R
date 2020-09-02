@@ -31,7 +31,7 @@ nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
 nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  # background grey reference lines in map
 
 # project overview - this appears in the first paragraph of the metadata
-project_overview = "This model was developed for the US Bureau of Land Mangement."
+project_overview = "This model was developed for the U.S. Department of the Interior Bureau of Land Mangement."
 
 # model comment in database
 model_comments = ""
@@ -56,7 +56,7 @@ remove_vars = NULL
 # do you want to stop execution after each modeling step (script)?
 prompt = FALSE
 
-project_blurb = "Models developed for the BLM. "
+project_blurb = ""
 
 # set wd and load function
 setwd(loc_scripts)
@@ -152,7 +152,7 @@ run_SDM(
 # example pick-up a model run at step 4c (metadata/comment update)
 # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
-  begin_step = "4",
+  begin_step = "4b",
   model_species = "amsothar",
   loc_model = loc_model,
   loc_scripts = loc_scripts,
