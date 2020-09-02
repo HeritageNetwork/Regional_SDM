@@ -1,5 +1,7 @@
 # File: user_run_SDM.r
 # Purpose: Run a new, full SDM model (all steps)
+library(checkpoint)
+checkpoint("2020-04-22")
 
 library(checkpoint)
 checkpoint("2020-04-22")

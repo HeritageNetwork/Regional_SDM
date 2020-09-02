@@ -202,32 +202,6 @@ totPts <- table(df.full[,group$colNm])
 for (i in names(sampSizeVec)) if (sampSizeVec[i] > totPts[i]) sampSizeVec[i] <- totPts[i]
 rm(totPts)
 
-# # connect to DB ..
-# db <- dbConnect(SQLite(),dbname=nm_db_file)
-# 
-# # write model input data to database before any other changes made
-# tblModelInputs <- data.frame(table_code = baseName,
-#                              model_run_name = model_run_name,
-#                              EGT_ID = ElementNames$EGT_ID, 
-#                              datetime = as.character(Sys.time()),
-#                              feat_count = length(unique(df.in$stratum)), 
-#                              feat_grp_count = length(unique(df.in$group_id)),
-#                              jckn_grp_column = group$colNm,
-#                              jckn_grp_type = group$JackknType,
-#                              mn_grp_subsamp = mean(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
-#                              min_grp_subsamp = min(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
-#                              max_grp_subsamp = max(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
-#                              tot_obs_subsamp = sum(sampSizeVec[!names(sampSizeVec) == "pseu-a"]),
-#                              tot_bkgd_subsamp = sampSizeVec[names(sampSizeVec) == "pseu-a"],
-#                              obs_count = nrow(df.in), 
-#                              bkgd_count = nrow(df.abs)
-#                              )
-# dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, "';")) # remove any previously prepped dataset entry
-# dbWriteTable(db, "tblModelInputs", tblModelInputs, append = TRUE)
-# 
-# dbDisconnect(db)
-# rm(db)
-
 #### run the models! ###
 for(algo in ensemble_algos){
   print(paste0("building and validating ", algo, " model."))
@@ -301,8 +275,6 @@ tblModelResults <- data.frame(model_run_name = model_run_name,
                               algorithms = paste(ensemble_algos, collapse = ", "),
                               r_version = r_version, repo_head = repo_head, seed = seed)
 dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
-
-
 dbDisconnect(db)
 
 message(paste0("Saved rdata file: '", model_run_name , "'."))
