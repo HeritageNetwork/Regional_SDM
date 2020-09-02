@@ -7,6 +7,9 @@
 # would be updated to draw from a DB and assignments based
 # on task, not name. 
 # TODO: ^^
+model_run_name
+ensemble_algos
+algo <- "xgb"
 
 # to later wrap into a function, the things needed that vary:
 # 1. model_run_name 
