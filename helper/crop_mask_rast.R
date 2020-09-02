@@ -142,5 +142,21 @@ for(k in 1:length(fullL)){
   }
 
 
+### if restarting with rasters already cropped, can get the proper newL with this
+# for(k in 1:length(fullL)){
+#   path <- fullL[[k]]
+#   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
+#   if (grepl("/",subnm)) {
+#     folderDepth <- length(gregexpr("/", subnm)[[1]])
+#     subdir <- paste(strsplit(subnm, "/", fixed = T)[[1]][1:folderDepth],collapse = "/")
+#     dir.create(paste0(temp, "/", subdir), showWarnings = FALSE, recursive = TRUE)
+#   }
+#   nnm <- paste0(temp, "/", subnm)
+#   newL[[k]] <- nnm
+#   message("cropped ", k, " of ", length(fullL), " rasters for predict.")
+# }
+
+
+
 closeAllConnections()
 
