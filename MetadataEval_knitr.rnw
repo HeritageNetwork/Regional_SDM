@@ -39,7 +39,6 @@ Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\text
 %CustomColorDefsHere
 
 \begin{document}
-
 \noindent
 \begin{minipage}[b]{4.75in}   %everything in this minipage will be adjacent, left of the thermometer
   \LARGE \textit{\Sexpr{as.character(ElementNames[[1]])}} \\ 
@@ -88,8 +87,8 @@ This HSM was modeled using the algorithms in Table 1 in the R statistical enviro
 incorporating the number of known and background locations indicated in Table 2 We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} and testing \Sexpr{length(group$vals)} groups. The statistics in Table 3 report the validation statistics for these jackknifing runs.\\
 \smallskip
 \small
+\nopagebreak[4]
 \begin{minipage}[t]{3in}
-
 \smallskip
 Table 1. Ensemble details. These algorithms were used to create an ensemble model for this 
 species. The specific implementations are listed in the package column. Details in this document are attributed using the codes listed here.
@@ -114,11 +113,10 @@ Table 3. Validation statistics for jackknife trials, with the mean and standard 
 @
 \end{center}
 
-\end{minipage}
-\hfill \begin{minipage}[t]{3.5in}
-
+\end{minipage}%
+\hfill \begin{minipage}[t]{3.3in}
 \smallskip
-<<importanceFig, fig.width=3.2, fig.height=6.5, include=FALSE, echo=FALSE>>=
+<<importanceFig, fig.width=3.3, fig.height=6.3, include=FALSE, echo=FALSE>>=
 par(mar=c(3.2,2.5,.25,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
     mgp=c(1.3,0.4,0), #placement of axis title, labels, line
@@ -130,9 +128,8 @@ print(impPlot)
 \begin{center}
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
-Figure 1. Relative importance of each environmental variable based on the full model using all sites as input. Importance values are extracted from each algorithm and plotted here, in descending order based on an average of all algorithms (grey line). Note each algorithm has its own variable removal rules (see Appendix 2); missing points indicate the variable was not used by that algorithm. See Appendix 1 for variable descriptions.
-\end{minipage}% 
-
+Figure 1. Relative importance of environmental variables based on the full model. Importance values are extracted from each algorithm and plotted in descending order based on an average of all algorithms (grey line). Note each algorithm has variable removal rules (see Appendix 2); a missing point indicates the variable was not used by that algorithm. See Appendix 1 for variable descriptions.
+\end{minipage}%
 \normalsize
 \pagebreak
 
