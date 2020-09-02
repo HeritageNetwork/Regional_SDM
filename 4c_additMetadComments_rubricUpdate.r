@@ -20,8 +20,9 @@ setwd(loc_model)
 setwd(paste0(model_species,"/outputs"))
 load(paste0("rdata/", modelrun_meta_data$model_run_name,".Rdata"))
 
-for(i in 1:length(modelrun_meta_data))
+for(i in 1:length(modelrun_meta_data)){
   assign(names(modelrun_meta_data)[i], modelrun_meta_data[[i]])
+}
 
 ## Additional Metadata Comments: get any current documentation ----
 db <- dbConnect(SQLite(),dbname=nm_db_file)
@@ -47,71 +48,34 @@ if (dat.in.db$metadata_comments != newText) {
 # get most recent data from the tracking DB for two of the rubric table fields that may vary
 # get tracking DB data from SQL Server tables 
 
-fn <- here("_data","databases", "mobi_tracker_connection_string_short.dsn")
+fn <- here("_data","databases", "hsm_tracker_connection_string_short.dsn")
 cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
 
-sql <- paste0("SELECT FinalSppList.ELEMENT_GLOBAL_ID, LocalityData.pres_dat_eval_rubric, ", 
-              "LocalityData.bison_use, LocalityData.gbif_use, LocalityData.inat_use, ",
-              "LocalityData.other_use, LocalityData.MJD_sufficient, LocalityData.MJD_only, LocalityData.status ",
-              "FROM FinalSppList INNER JOIN LocalityData ON FinalSppList.ELEMENT_GLOBAL_ID = LocalityData.EGT_ID ",
-              "WHERE (((FinalSppList.ELEMENT_GLOBAL_ID)= ", ElementNames$EGT_ID, "));")
-localityData <- dbGetQuery(cn, sql)
+sql <- paste0("SELECT ModelCycle.EGT_ID, ModelCycle.model_cycle, ",
+              "Workflows.locality_data_eval_rubric, Workflows.model_reviewed ",
+              "FROM ModelCycle ",
+              "INNER JOIN Workflows ON ModelCycle.ID = Workflows.model_cycle_ID ",
+              "WHERE ModelCycle.EGT_ID= ", ElementNames$EGT_ID, ";")
 
-sql <- paste0("SELECT Reviewer.EGT_ID, Reviewer.response, Reviewer.date_completed
-              FROM Reviewer
-              WHERE (((Reviewer.EGT_ID)= ", ElementNames$EGT_ID, " ));")
-reviewerData <- dbGetQuery(cn, sql)
-
-sql <- paste0("SELECT FinalSppList.Scientific_Name, FinalSppList.Common_Name, FinalSppList.ELEMENT_GLOBAL_ID, ",
-        "ModelCycle.EGT_ID, ModelCycle.model_cycle, SpeciesWorkFlow.cutecode, SpeciesWorkFlow.model_type, ",
-        "SpeciesWorkFlow.modeled, SpeciesWorkFlow.alternate_method, SpeciesWorkFlow.existing_model ",
-        "FROM (FinalSppList INNER JOIN ModelCycle ON FinalSppList.ID = ModelCycle.final_spp_list_ID) ",
-        "INNER JOIN SpeciesWorkFlow ON ModelCycle.ID = SpeciesWorkFlow.model_cycle_ID ",
-        "WHERE (((FinalSppList.ELEMENT_GLOBAL_ID)= ", ElementNames$EGT_ID, "));")
-modelCycleData <- dbGetQuery(cn, sql)
+evalAndReviewStatus <- dbGetQuery(cn, sql)
+modelCycleData <- evalAndReviewStatus[,c("EGT_ID","model_cycle")]
+# if more than one cycle, get the most recent cycle
+if(nrow(evalAndReviewStatus) > 1){
+  evalAndReviewStatus <- evalAndReviewStatus[order(evalAndReviewStatus$model_cycle, decreasing = TRUE),]
+  evalAndReviewStatus <- evalAndReviewStatus[1,]
+}
 
 dbDisconnect(cn)
 rm(cn)
 
-# fill status if it is NA
-localityData[is.na(localityData$status),"status"] <- "in progress"
 
-# convert row of T/F to a vector
-localityDataUse <- c(localityData[["bison_use"]], 
-                     localityData[["gbif_use"]],
-                     localityData[["inat_use"]],
-                     localityData[["other_use"]])
-
-if(localityData$status == "complete"){
-  # if complete, take scoring assessment from DB
-  #1 = caution, 2 = acceptible, 3 = ideal
-  dataQuality <- localityData$pres_dat_eval_rubric
-} else if(sum(localityDataUse) > 0) {
-  if(localityData$MJD_only == TRUE){
-    #this really means 'mjd_use' in the DB, not 'mjd_only'
-    # if any of the BIG data are tagged for use as well as the MJD data, tag it acceptible
-    dataQuality <- 2
-  } else {
-    # if no MJD data, tag as caution
-    dataQuality <- 1
-  }
-} else if(!sum(localityDataUse) > 0) {
-  if(localityData$MJD_only == TRUE){ 
-    #this really means 'mjd_use' in the DB, not 'mjd_only'
-    # if only MJD data tagged to use
-    dataQuality <- 3
-  } else {
-    #if nothing is tagged in DB, assume a mix of records
-    dataQuality <- 2
-  }
-}
 dqMatrix <- data.frame("dataQuality" = c(1,2,3),
                        "dqAttribute" = c("C","A","I"),
                        "dqComments" = c("Data taken from outside sources and may or may not be vetted for accuracy or weighted for spatial representation.",
                                         "Heritage Network data augmented with outside data which may or may not be vetted for accuracy or weighted for spatial representation.",
-                                        "Heritage Network data are vetted for accuracy and weighted for spatial representation."))
-dqUpdate <- dqMatrix[match(dataQuality, dqMatrix$dataQuality),]
-#push it up to DB
+                                        "Heritage Network (and possibly outside) data are vetted for accuracy and weighted for spatial representation."))
+dqUpdate <- dqMatrix[match(evalAndReviewStatus$locality_data_eval_rubric, dqMatrix$dataQuality),]
+#push it up to sqlite DB
 sql <- paste0("update lkpSpeciesRubric set spdata_dataqual = '", dqUpdate$dqAttribute, 
               "', spdata_dataqualNotes = '", dqUpdate$dqComments, 
               "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
@@ -127,11 +91,10 @@ sql <- paste0("update lkpSpeciesRubric set process_perform = '", prfmUpdate$pAtt
               "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
 dbExecute(db, statement = sql)
 ## model review
-modRev <- sum(reviewerData$response)
 revMatrix <- data.frame("rAttribute" = c("C","A"),
                         "rComments" = c("Model was not reviewed by regional, taxonomic experts.",
                                         "Model was reviewed by regional, taxonomic experts."))
-revAtt <- ifelse(sum(reviewerData$response) > 0 , "A", "C")
+revAtt <- ifelse(!is.na(evalAndReviewStatus$model_reviewed) , "A", "C")
 revUpdate <- revMatrix[match(revAtt, revMatrix$rAttribute),]
 sql <- paste0("update lkpSpeciesRubric set process_review = '", revUpdate$rAttribute, 
               "', process_reviewNotes = '", revUpdate$rComments, 
@@ -144,13 +107,13 @@ iterMatrix <- data.frame("iAttribute" = c("C","A"),
 nCycles <- nrow(modelCycleData)
 maxCycle <- max(modelCycleData$model_cycle)
 if(nCycles > 1){
-  if(nCycles == 2 & "Both" %in% modelCycleData$model_type){
-    iterAtt <- "C"
-  } else if(TRUE %in% modelCycleData[modelCycleData$model_cycle == maxCycle, c("alternate_method","existing_model")]){
-    iterAtt <- "C"
-  } else {
+  # if(nCycles == 2 & "Both" %in% modelCycleData$model_type){
+  #   iterAtt <- "C"
+  # } else if(TRUE %in% modelCycleData[modelCycleData$model_cycle == maxCycle, c("alternate_method","existing_model")]){
+  #   iterAtt <- "C"
+  # } else {
     iterAtt <- "A"
-  }
+  #}
 } else {
   iterAtt <- "C"
 }

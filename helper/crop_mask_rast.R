@@ -91,13 +91,40 @@ writeRaster(cropRas, clipRas, options="COMPRESS=NONE")
 
 rm(rtemp, rng)
 
-message("Spawning clusters for cropping")
-# # cluster process rasters
-cl <- snow::makeCluster(parallel::detectCores() - 10, type = "SOCK")
-snow::clusterExport(cl, list("temp", "clipRas", "loc_envVars"), envir = environment())
+# ## memory intensive way using clusters
+# message("Spawning clusters for cropping")
+# # # cluster process rasters
+# cl <- snow::makeCluster(parallel::detectCores() - 10, type = "SOCK")
+# snow::clusterExport(cl, list("temp", "clipRas", "loc_envVars"), envir = environment())
+# 
+# message("Creating raster subsets for species for ", length(fullL) , " environmental variables...")
+# newL <- snow::parLapply(cl, x = fullL, fun = function(path) {
+#   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
+#   if (grepl("/",subnm)) {
+#     folderDepth <- length(gregexpr("/", subnm)[[1]])
+#     subdir <- paste(strsplit(subnm, "/", fixed = T)[[1]][1:folderDepth],collapse = "/")
+#     dir.create(paste0(temp, "/", subdir), showWarnings = FALSE, recursive = TRUE)
+#   }
+#   nnm <- paste0(temp, "/", subnm)
+# 
+#   ## with fasterize and raster
+#   ras <- raster::raster(path) # read the raster
+#   dtp <- raster::dataType(ras) # get data type, some crops are setting large values to NA
+#   cropRas <- raster::raster(clipRas) # read the crop raster
+#   rasAtExtent <- raster::crop(ras, raster::extent(cropRas), datatype = dtp) # crop extent to same as mask ras
+#   outRas <- raster::mask(rasAtExtent, cropRas, filename = nnm, options="COMPRESS=NONE", datatype = dtp) # mask it
+# 
+#   return(nnm)
+# })
+# stopCluster(cl)
+# rm(cl)
 
+## less memory intensive but slower
 message("Creating raster subsets for species for ", length(fullL) , " environmental variables...")
-newL <- snow::parLapply(cl, x = fullL, fun = function(path) {
+newL <- fullL
+
+for(k in 1:length(fullL)){
+  path <- fullL[[k]]
   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
   if (grepl("/",subnm)) {
     folderDepth <- length(gregexpr("/", subnm)[[1]])
@@ -105,17 +132,31 @@ newL <- snow::parLapply(cl, x = fullL, fun = function(path) {
     dir.create(paste0(temp, "/", subdir), showWarnings = FALSE, recursive = TRUE)
   }
   nnm <- paste0(temp, "/", subnm)
-
-  ## with fasterize and raster
-  ras <- raster::raster(path) # read the raster
+  ras <- raster::raster(path)
   dtp <- raster::dataType(ras) # get data type, some crops are setting large values to NA
   cropRas <- raster::raster(clipRas) # read the crop raster
   rasAtExtent <- raster::crop(ras, raster::extent(cropRas), datatype = dtp) # crop extent to same as mask ras
-  outRas <- raster::mask(rasAtExtent, cropRas, filename = nnm, options="COMPRESS=NONE", datatype = dtp) # mask it
+  outRas <- raster::mask(rasAtExtent, cropRas, filename = nnm, options="COMPRESS=NONE", datatype = dtp, overwrite=TRUE) # mask it
+  newL[[k]] <- nnm
+  message("cropped ", k, " of ", length(fullL), " rasters for predict.")
+  }
 
-  return(nnm)
-})
-stopCluster(cl)
-rm(cl)
+
+### if restarting with rasters already cropped, can get the proper newL with this
+# for(k in 1:length(fullL)){
+#   path <- fullL[[k]]
+#   subnm <- gsub(paste0(loc_envVars,"/"), "", path)
+#   if (grepl("/",subnm)) {
+#     folderDepth <- length(gregexpr("/", subnm)[[1]])
+#     subdir <- paste(strsplit(subnm, "/", fixed = T)[[1]][1:folderDepth],collapse = "/")
+#     dir.create(paste0(temp, "/", subdir), showWarnings = FALSE, recursive = TRUE)
+#   }
+#   nnm <- paste0(temp, "/", subnm)
+#   newL[[k]] <- nnm
+#   message("cropped ", k, " of ", length(fullL), " rasters for predict.")
+# }
+
+
+
 closeAllConnections()
 

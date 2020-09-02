@@ -7,8 +7,8 @@ library(raster)
 library(randomForest)
 library(RSQLite)
 library(sf)
-library(snow)
-library(parallel)
+# library(snow)
+# library(parallel)
 
 removeTmpFiles(48) # clean old (>2days) Raster temporary files
 
@@ -21,43 +21,55 @@ setwd(paste0(model_species,"/outputs"))
 # load rdata
 load(paste0("rdata/",modelrun_meta_data$model_run_name,".Rdata"))
 
-##Make the raster stack
-stackOrder <- names(df.full)[indVarCols]
-# set wd
-#temprast <- paste0(loc_model, "/", model_species, "/inputs/temp_rasts")
-#if (dir.exists(temprast)) setwd(temprast) else 
-setwd(loc_envVars)
-
-# get raster full names
+# each algo in the ensemble uses a different set of env vars
+#
+# get the vars used for each
 db <- dbConnect(SQLite(),dbname=nm_db_file)
-SQLQuery <- "select gridName, fileName from lkpEnvVars;"
-evs <- dbGetQuery(db, SQLQuery)
+sql <- paste0("SELECT * from tblModelResultsVarsUsed where model_run_name = '", 
+              model_run_name, "';")
+varsImp <- dbGetQuery(db, statement = sql)
+# get full file names
+sql <- "SELECT gridName, fileName FROM lkpEnvVars"
+evs <- dbGetQuery(db, statement = sql)
 evs$gridName <- tolower(evs$gridName)
-rasFiles <- merge(data.frame(gridName = stackOrder), evs)
-#sort it back to stackOrder's order
-rasFiles <- rasFiles[match(stackOrder, rasFiles$gridName),]
 dbDisconnect(db)
 rm(db)
+
+# remove vars not used by any algo
+varsImp <- varsImp[varsImp$inFinalModel == 1,]
+
+# merge in full name, reduce cols and dups
+rasFiles <- merge(varsImp, evs)
+rasFiles <- unique(rasFiles[,c("gridName","fileName")])
+
+##Make the raster stack
+setwd(loc_envVars)
 
 # find matching var rasters (with folder for temporal vars)
 raslist <- list.files(pattern = ".tif$", recursive = TRUE)
 
-fullL <- list()
 
+fullL <- as.list(rasFiles$fileName)
+names(fullL) <- rasFiles$gridName
+
+# this loop handles temporal rasters but otherwise is not necessary. 
+# keep it simple (as above two-liner does) till we need this (or improve it)
 # attach file names to env var names
-for (i in 1:length(stackOrder)) {
-  rs <- raslist[grep(rasFiles$fileName[i], raslist, ignore.case = TRUE)]
-  if (length(rs) > 1) {
-    # always take most recent temporal raster
-    rs1 <- do.call(rbind.data.frame, strsplit(rs, "_|/"))
-    rs1$nm <- rs
-    rs <- rs1$nm[which.max(as.numeric(rs1[,2]))]
-    rm(rs1)
-  }
-  fullL[[i]] <- rs
-}
-names(fullL) <- stackOrder
-rm(rs)
+# fullL <- list()
+# for (i in 1:nrow(rasFiles)) {
+#   rs <- raslist[grep(rasFiles$fileName[i], raslist, ignore.case = TRUE)]
+#   if (length(rs) > 1) {
+#     # always take most recent temporal raster
+#     rs1 <- do.call(rbind.data.frame, strsplit(rs, "_|/"))
+#     rs1$nm <- rs
+#     rs <- rs1$nm[which.max(as.numeric(rs1[,2]))]
+#     rm(rs1)
+#   }
+#   fullL[[i]] <- rs
+# }
+# names(fullL) <- rasFiles$gridName
+# rm(rs)
+
 
 source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = FALSE)
 envStack <- stack(newL)
@@ -65,31 +77,14 @@ envStack <- stack(newL)
 #envStack <- stack(fullL) # if not using helper/crop_mask_rast.R
 rm(fullL)
 
-# run prediction ----
-setwd(paste0(loc_model, "/", model_species,"/outputs"))
-fileNm <- paste0("model_predictions/", model_run_name,".tif")
+#### predict! ###
 
-cat("... predicting throughout study area \n")
-# use parallel processing if packages installed
-if (all(c("snow","parallel") %in% installed.packages())) {
-  try({
-    beginCluster(type = "SOCK", n=parallel:::detectCores()-10)
-    outRas <- clusterR(envStack, predict, args = list(model=rf.full, type = "prob", index = 2), verbose = TRUE)
-    writeRaster(outRas, filename = fileNm, format = "GTiff", overwrite = TRUE)
-  })
-  try(endCluster())
-  if (!exists("outRas")) {
-    cat("Cluster processing failed. Falling back to single-core processing...\n")
-    outRas <- predict(object=envStack, model=rf.full, type = "prob", index=2,
-                      filename=fileNm, format = "GTiff", overwrite=TRUE)
-  }
-# otherwise regular processing
-} else {
-  cat("Using single-core processing for prediction.\nInstall package 'snow' for faster cluster (multi-core) processing.\n")
-  outRas <- predict(object=envStack, model=rf.full, type = "prob", index=2,
-                    filename=fileNm, format = "GTiff", overwrite=TRUE)
-
+for(algo in ensemble_algos){
+  message(paste0("building out a prediction for the ", algo, " model."))
+  scriptToCall <- paste0(algo, "_4_predictModelToStudyArea.R")
+  source(here("ensemble", scriptToCall))
 }
+
 
 # delete temp rasts folder
 if (dir.exists(paste0(options("rasterTmpDir")[1], "/", modelrun_meta_data$model_run_name))) {

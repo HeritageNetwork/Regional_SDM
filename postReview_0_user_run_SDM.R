@@ -27,7 +27,7 @@ for(sv in 1:length(sppVec)){
 
   loc_model <- fldrs[[sv]]
   model_species <- sppVec[[sv]]
-  load(file.path(loc_model, "outputs","rdata",paste0(model_species,"_runSDM_paths.Rdata")))
+  load(file.path(loc_model, "outputs","rdata",paste0(model_species,"_runSDM_paths_most_recent.Rdata")))
   # the vars we need
   fn_arg_vars <- c("project_overview","model_comments","metaData_comments","modeller","project_blurb","modelrun_meta_data")
   for(arg in fn_arg_vars)

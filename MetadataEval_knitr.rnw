@@ -19,6 +19,7 @@
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{float}
+\usepackage{tabularx}
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 \usepackage[normalem]{ulem}
 \useunder{\uline}{\ul}{}
@@ -28,19 +29,20 @@
 %add footers
 \cfoot{
 \small   %small font. The double slashes is newline in fancyhdr
-Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}).
+Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\textit{\Sexpr{as.character(ElementNames$SciName)}}).
 }
 \rfoot{p. \thepage}
-
-
 \normalsize %return the font to normal
 
-\begin{document}
+% colors are set up in the R script as the number of colors depends 
+% on the number of algorithms. Give a place for the knitr hook to grab and replace
+%CustomColorDefsHere
 
+\begin{document}
 \noindent
 \begin{minipage}[b]{4.75in}   %everything in this minipage will be adjacent, left of the thermometer
   \LARGE \textit{\Sexpr{as.character(ElementNames[[1]])}} \\ 
-  \normalsize Species Distribution Model (SDM) assessment metrics and metadata \\
+  \normalsize Habitat Suitability Model (HSM) assessment metrics and metadata \\
   Common name: \href{\Sexpr{as.character(NSurl)}}{\Sexpr{as.character(ElementNames[[2]])}}  \\
   Grank: \Sexpr{ paste(as.character(ElementNames[[6]])," - ",as.character(grank_desc[[2]]), sep="")}\\
   Date: \Sexpr{format(Sys.Date(), "%d %b %Y")} \\  
@@ -49,8 +51,8 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 \begin{minipage}[b]{2in}   %minipage for thermometer  
 <<thermometer1, fig.height=1, fig.width=1, include=FALSE, echo=FALSE>>=
   par(mar=c(0.9,0.2,0.2,0.2))
-  if (exists("tss.summ")) {
-    temp <- tss.summ$mean
+  if (exists("summaryTSS")) {
+    temp <- summaryTSS
     thermTemp <- vector("list")
     if (temp < .50){
                 thermTemp <- c("red", "poor")
@@ -70,7 +72,6 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
     text (1,1, "No evaluation",
         adj = c(0.5,4), cex = .75, col = "black", xpd=NA)
   }
-  
 @
   \begin{center}
   \includegraphics{figure/thermometer1-1.pdf} \\ %place it
@@ -79,264 +80,159 @@ Species distribution model for \Sexpr{as.character(ElementNames$CommName)} (\tex
 
 \smallskip
 \hrule
-\medskip
+\smallskip
 \noindent 
 \Sexpr{as.character(project_overview)}
+This HSM was modeled using the algorithms in Table 1 in the R statistical environment, 
+incorporating the number of known and background locations indicated in Table 2 We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} and testing \Sexpr{length(group$vals)} groups. The statistics in Table 3 report the validation statistics for these jackknifing runs.\\
 \smallskip
-\noindent
-This SDM incorporates the number of known and background locations indicated in Table 1, modeled with the random forests routine {\protect\NoHyper\cite{breiman2001, iverson2004}\protect\endNoHyper} in the R statistical environment {\protect\NoHyper\cite{liaw2002, r}\protect\endNoHyper}. We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} for a total of \Sexpr{length(group$vals)} groups. The statistics in Table 2 report the mean and variance of validation statistics for these jackknifing runs.\\
-\medskip
 \small
+\nopagebreak[4]
 \begin{minipage}[t]{3in}
-
-\smallskip     %dummy first line to align with next minipage
-
-
-Table 1. Input statistics. Presence points are points placed in polygon-based location information or point-based observations. Groups describe groupings of points based on polygon data or spatial grouping of observations. Background points are placed throughout model area excluding known species locations.
 \smallskip
+Table 1. Ensemble details. These algorithms were used to create an ensemble model for this 
+species. The specific implementations are listed in the package column. Details in this document are attributed using the codes listed here.
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
-	summ.table <- data.frame(Name=c("Presence points","Groups","Background points"),
-                         Number=c(nrow(subset(df.full, pres == 1)),
-                         numEOs,
-                         nrow(subset(df.full, pres == 0))
-                         ))
+  print(xtable(ensemble_details),
+             floating = FALSE, include.rownames=FALSE)
+@
+\end{center}
+Table 2. Input statistics. Presence locations (= known locations) may be based on point observations (buffered based on their spatial accuracy) and polygon representations. Nearby locations are grouped together. Environmental conditions are randomly sampled within each of these groups the number of times noted (subsamples) to generate the total number of presence inputs (by tree for rf; for entire model for all others). Background points are placed throughout model area excluding presence locations. Algorithms incorporate background points differently, as noted. 
+\begin{center}
+<<tableTwo, results="asis", echo = FALSE>>=
   print(xtable(summ.table),
              floating = FALSE, include.rownames=FALSE)
 @
 \end{center}
-
-\medskip
-
-Table 2. Validation statistics for jackknife trials. Overall Accuracy = 
-Correct Classification Rate, TSS = True Skill Statistic, AUC = 
-area under the ROC curve {\protect\NoHyper\cite{allouche2006, vaughan2005,
-fielding2002}\protect\endNoHyper}.
-\smallskip
-
+Table 3. Validation statistics for jackknife trials, with the mean and standard deviation reported. AUC = area under the ROC curve, Sens = sensitivity, Spec = specificity, TSS = True Skill Statistic {\protect\NoHyper\cite{allouche2006, vaughan2005, fielding2002}\protect\endNoHyper}.
 \begin{center}
-<<tableTwo, results="asis", echo = FALSE>>=
-  if (exists("tss.summ")) {
-    summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
-                                   "TSS", "Kappa", "AUC"), 
-                           Mean=c(OvAc.summ$mean, specif.summ$mean,sensit.summ$mean,
-                                  tss.summ$mean,Kappa.unw.summ$mean,
-                                  auc.summ$mean),
-                           SD=c(OvAc.summ$sd, specif.summ$sd,sensit.summ$sd,
-                                  tss.summ$sd,Kappa.unw.summ$sd, 
-                                  auc.summ$sd),
-                           SEM=c(OvAc.summ$sem, specif.summ$sem,sensit.summ$sem,
-                                  tss.summ$sem,Kappa.unw.summ$sem, 
-                                  auc.summ$sem))
-  } else {
-    summ.table <- data.frame(Name=c("Overall Accuracy", "Specificity", "Sensitivity",
-                                   "TSS", "Kappa", "AUC"),
-                             Mean = rep(NA, 6), SD = rep(NA, 6), SEM = rep(NA, 6))
-  }
-    print(xtable(summ.table), 
-                floating=FALSE, include.rownames=FALSE)
+<<tableThree, results="asis", echo = FALSE>>=
+  print(xtable(vstats.w), 
+        floating=FALSE, include.rownames=FALSE)
 @
 \end{center}
-
-\medskip
-\normalsize
-    <<checkEvalExists, include=FALSE, echo=FALSE>>=
-if (exists("n.var")) {
-  txt <- paste0("Validation runs used ",n.var," environmental 
-  variables, the most important of ",OriginalNumberOfEnvars," 
-  variables (top ",(1-envarPctile)*100," percent).
-  Each tree was built with ",trRes[[1]]$mtry," variables 
-  tried at each split (mtry) and ",trRes[[1]]$ntree," trees built.")
-} else { 
-  txt <- "Validation was not possible for this model (too few EOs)." 
-}
-@
-
-<<EvalTextPrint, results='asis', echo=FALSE>>=
-cat(txt)
-@
-The final model was built using \Sexpr{rf.full$ntree} trees, all presence 
-and background points, with an mtry of \Sexpr{rf.full$mtry}, and \Sexpr{length(EnvVars$impVal)} environmental variables.
-\small
-\begin{center}
-<<ROCplot, fig.width=2.9, fig.height=1.6, include=FALSE, echo=FALSE>>=
-par(mar=c(2.8,2.5,.5,10),   #bottom, left, top, right
-    tcl=-0.1,   #tic length
-    cex=0.6,     #text size
-    mgp=c(1.6,0.4,0) #placement of axis title, labels, line
-    )
-if (exists("perf")) {
-    plot(perf,lwd=2,
-          avg="threshold", colorize = TRUE,
-          #print.cutoffs.at = c(rf.full.ctoff[2], cutval.rf[2]),
-          #text.adj=c(-0.6,1.5), points.pch=19, points.cex=0.8, text.cex=0.8,
-          xlab="Avg. false positive rate", ylab="Avg. true positive rate",
-          colorkey.relwidth = 0.5,
-          colorize.palette=rainbow(256,start=3/6, end=0), colorkey.line = 1,
-          colorkey = FALSE
-          )
-  
-    # set the color palette
-    rl.colors <- rev(rainbow(256,start=3/6, end=0))
-    # find the min and max of the cutoffs, as used in the ROC plot
-    # for some reason perf gives some values over one, which confuses legend. Set it manually.
-    #rl.max.alpha <- max(unlist(perf@alpha.values))
-    rl.max.alpha <- 1
-    #rl.min.alpha <- min(unlist(perf@alpha.values))
-    rl.min.alpha <- 0
-    # get the y min and max of the ROC plot
-    rl.max.y <- max(axTicks(4))
-    rl.min.y <- min(axTicks(4))
-    # interpolate the cutoffs to the y axis
-    rl.alpha.ticks <- approxfun(c(rl.min.y, rl.max.y),
-                             c(rl.min.alpha, rl.max.alpha))(axTicks(4))
-    # set up a vector the length of colors ranging from min to max values
-    rl.col.cutoffs <- rev(seq(rl.min.alpha,rl.max.alpha, length=length( rl.colors )))
-    # create a function to do the interpolation in later commands 
-    rl.alpha2y <- approxfun(c(min(rl.alpha.ticks), max(rl.alpha.ticks)),
-                         c(rl.min.y,rl.max.y))
-    # place the axis, using the correct labeling scheme
-  axis(at=rl.alpha2y(rl.alpha.ticks),labels=round((rl.alpha.ticks),2), side=4, line=3.5)
-    # set up definition for what to display and then apply to y breaks and colors
-    rl.display.bool <- (rl.col.cutoffs >= min(rl.alpha.ticks) &
-                     rl.col.cutoffs < max(rl.alpha.ticks))
-    rl.y.lower <- rl.alpha2y(rl.col.cutoffs)[rl.display.bool]
-    rl.colors <- rl.colors[rl.display.bool]
-    rl.y.width <- rl.y.lower[2] - rl.y.lower[1]
-    rl.y.upper <- rl.y.lower + rl.y.width
-    # manually define x locations way off graph to minimize confusion
-    rl.x.left <- 1.3
-    rl.x.right <- 1.32
-    # place the bar, then the legend label
-  rect(rl.x.left, rl.y.lower, rl.x.right, rl.y.upper, col=rl.colors, border=rl.colors, xpd=NA)
-  mtext("cutoff", side=1, at = c(1.35), line = 0, cex=0.6)
-  mtext("legend", side=1, at = c(1.35), line = 1, cex=0.6)
-} else {
-  plot(0.5,0.5,lwd=0, col = "white", xlim = c(0,1), ylim = c(0,1),
-          xlab="Avg. false positive rate", ylab="Avg. true positive rate")
-  text(0.5,0.5, "No evaluation")
-}
-
-  #clean up
-rm(list=ls(pattern="rl."))
-
-@
-\includegraphics{figure/ROCplot-1.pdf} %place it    
-\end{center}
-Figure 1. ROC plot for all \Sexpr{length(group$vals)} validation runs, 
-averaged along cutoffs.
 
 \end{minipage}%
-\hfill \begin{minipage}[t]{3.5in}
-
-\smallskip  %dummy first line to align with previous minipage
-
-<<importanceFig, fig.width=3.2, fig.height=5.5, include=FALSE, echo=FALSE>>=
+\hfill \begin{minipage}[t]{3.3in}
+\smallskip
+<<importanceFig, fig.width=3.3, fig.height=6.3, include=FALSE, echo=FALSE>>=
 par(mar=c(3.2,2.5,.25,0.1),   #bottom, left, top, right
     tcl=-0.1,   #tic length
     mgp=c(1.3,0.4,0), #placement of axis title, labels, line
     bty="l"
     )
-  #get the order for the importance charts
-  ord <- rev(order(EnvVars$impVal, decreasing = TRUE)[1:length(EnvVars$impVal)])
-  xmin.i <- min(EnvVars$impVal)
-  #create importance dot chart
-  dotchart(EnvVars$impVal[ord], xlab = expression("lower" %->% "greater"),
-    xlim = c(xmin.i, max(EnvVars$impVal)), labels = EnvVars$fullName[ord],
-    cex = 0.62     #character size
-  )
-  mtext("importance", side = 1, line = 2, cex = 0.62)
+#print the plot created in script 5
+print(impPlot)
 @
 \begin{center}
 \includegraphics{figure/importanceFig-1.pdf}    %place it
 \end{center}
-Figure 2. Relative importance of each environmental variable based on the full
-model using all sites as input. Importance values (mean decrease in accuracy) are extracted from the randomForest{\protect\NoHyper\cite{liaw2002}\protect\endNoHyper} function. See Appendix 1 for variable descriptions.
-\end{minipage}% 
-
+Figure 1. Relative importance of environmental variables based on the full model. Importance values are extracted from each algorithm and plotted in descending order based on an average of all algorithms (grey line). Note each algorithm has variable removal rules (see Appendix 2); a missing point indicates the variable was not used by that algorithm. See Appendix 1 for variable descriptions.
+\end{minipage}%
 \normalsize
 \pagebreak
 
-<<pPlotFig, fig.width=7.0, fig.height=6.5, include=FALSE, echo=FALSE>>=
-par(tcl=-0.2,   #tic length
-    cex=0.6,     #text size
+\begin{center}
+<<ROCplot, fig.width=4.5, fig.height=4.5, include=FALSE, echo=FALSE>>=
+par(mar=c(3,3,3,3),   #bottom, left, top, right
+    tcl=-0.1,   #tic length
+    cex=1,     #text size
     mgp=c(1.6,0.4,0) #placement of axis title, labels, line
     )
 
-# layout(matrix(c(17,2,4,6,8,17,1,3,5,7,17,10,12,14,16,17,9,11,13,15), 
-# 		nrow = 4, ncol = 5, byrow = TRUE), 
-# 		widths = c(0.15,1,1,1,1),heights=c(1,3,1,3))
-layout(matrix(c(19,2,4,6,20,19,1,3,5,20,19,8,10,12,20,19,7,9,11,20,19,14,16,18,20,19,13,15,17,20), 
-		nrow = 6, ncol = 5, byrow = TRUE), 
-		widths = c(0.05,1,1,1,0.1),heights=c(1,4,1,4,1,4))
-
-pres.dat <- subset(df.full, pres==1)
-abs.dat <- subset(df.full, pres==0)
-
-for (plotpi in 1:length(pPlots)){
-    par(mar=c(3,2,0,0.5))
-  	if(is.character(pPlots[[plotpi]]$x)){
-		barplot(pPlots[[plotpi]]$y, width=rep(1, length(pPlots[[plotpi]]$y)), col="grey",
-                              xlab = pPlots[[plotpi]]$fname, ylab = NA,
-                              names.arg=pPlots[[plotpi]]$x, space=0.1,
-							  cex.names=0.7, las=2)	
-	plot(1,1,axes=FALSE, type="n", xlab=NA, ylab=NA) #skip density plots if pPlot is barplot
-	} else {
-	plot(pPlots[[plotpi]]$x, pPlots[[plotpi]]$y,
-		type = "l",
-		xlab = pPlots[[plotpi]]$fname, ylab=NA)
-	pres.dens <- density(pres.dat[,pPlots[[plotpi]]$gridName])
-	abs.dens <- density(abs.dat[,pPlots[[plotpi]]$gridName])
-	par(mar=c(0,2,0.5,0.5))
-	plot(pres.dens, xlim=c(min(pPlots[[plotpi]]$x), 
-					max(pPlots[[plotpi]]$x)),
-					ylim=c(0,max(c(abs.dens$y,pres.dens$y))),
-					main=NA,xlab=NA,ylab=NA,
-					axes=FALSE, col="blue", lwd=2
-					)
-	lines(abs.dens, col="red")
-	}
+# first a blank plot
+plot(0.5,0.5,lwd=0, col = "white", xlim = c(0,1), ylim = c(0,1),
+     xlab="Avg. false positive rate", ylab="Avg. true positive rate")
+# now add each that was run  
+#if no validation, then this will fail. Used to use if(exists("rf.perf"))...
+for(algo in ensemble_algos){
+  if(algo == "rf" & exists("rf.perf")){
+    specs <- figSpecs[match(algo,figSpecs$algos),]
+    plot(rf.perf,
+         lwd=specs$lwd, 
+         col=specs$col,
+         avg="threshold", 
+         add = TRUE)
+  }
+  if(algo == "me" & exists("me.perf")){
+    specs <- figSpecs[match(algo,figSpecs$algos),]
+    plot(me.perf, 
+         lwd=specs$lwd, 
+         col=specs$col,
+         avg="threshold", 
+         add = TRUE)
+  }
+  if(algo == "xgb"){
+    xgb.pred <- prediction(xgbFit1$pred$pres, xgbFit1$pred$obs)
+    xgb.perf <- performance(xgb.pred, "tpr","fpr")
+    specs <- figSpecs[match(algo,figSpecs$algos),]
+    plot(xgb.perf, 
+         lwd=specs$lwd, 
+         col=specs$col,
+         avg="threshold", 
+         add = TRUE)
+  }
 }
-  mtext("log of fraction of votes", side = 2, line = -1, outer=TRUE, cex = 0.7)
+#possible else if no models were validated: text(0.5,0.5, "No evaluation")
+
+legend("bottomright", ensemble_algos, 
+       col = figSpecs[match(ensemble_algos,figSpecs$algos),"col"],
+       lwd = figSpecs[match(ensemble_algos,figSpecs$algos),"lwd"],
+       lty = figSpecs[match(ensemble_algos,figSpecs$algos),"lty"],
+       text.col = "black", 
+       merge = TRUE, bg = "gray95")
+  
 @
-\includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
-\small
-Figure 3. Partial dependence plots for the \Sexpr{as.character(length(pPlots))} environmental variables with the most influence on the model. Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed {\protect\NoHyper\cite{liaw2002}\protect\endNoHyper}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the black line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationship overall; increasing lines, positive. The distribution of each category (thin red = Background points, thick blue = Presence points) is depicted at the top margin. See Appendix 1 for variable descriptions.
-\normalsize
+\includegraphics{figure/ROCplot-1.pdf} %place it    
+\end{center}
+Figure 2. ROC plot for all \Sexpr{length(group$vals)} validation runs, 
+averaged along cutoffs, for each modeling algorithm.
 
 \medskip
 \medskip
 \noindent
-Species distribution model outputs display the probability (0-1) of a location (i.e. stream reach or raster cell) having similar environmental conditions in comparison to known presence locations. No model will ever depict sites where a targeted element will occur with certainty, it can \textit{only} depict locations it interprets as appropriate habitat for the targeted element. The delineation of suitable habitats is made by the selection of a threshold value, where locations with values above the threshold are designated as likely suitable habitat, and those with values below the threshold may be unsuitable. Threshold values are often statistically calculated. SDMs can be used in many ways and the depiction of appropriate habitat should be varied depending on intended use. For targeting field surveys, an SDM may be used to refine the search area; users should always employ additional GIS tools to further direct search efforts. A lower threshold depicting more area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 3.
+Species distribution model outputs display the probability (0-1) of a location (i.e. stream reach or raster cell) having similar environmental conditions in comparison to known presence locations. No model will ever depict sites where a targeted element will occur with certainty, it can \textit{only} depict locations it interprets as appropriate habitat for the targeted element. The delineation of suitable habitats is made by the selection of a threshold value, where locations with values above the threshold are designated as likely suitable habitat, and those with values below the threshold may be unsuitable. Threshold values are often statistically calculated. SDMs can be used in many ways and the depiction of appropriate habitat should be varied depending on intended use. For targeting field surveys, an SDM may be used to refine the search area; users should always employ additional GIS tools to further direct search efforts. A lower threshold depicting more area may be appropriate to use in this case. For a more conservative depiction of suitable habitat that shows less area, a higher threshold may be more appropriate. Different thresholds for this model (full model) are described in Table 4.
 
 \medskip
 \noindent
 \begin{minipage}{\linewidth} %keep table header with table
 \small
-Table 3. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\endNoHyper} calculated from the final model. The Value column reports the threshold; Groups indicates the percentage (number in brackets) of groups within which at least one point was predicted as suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of groups and presence points used in the final model are reported in Table 1.
+Table 4. Thresholds {\protect\NoHyper\cite{LiuEtAl2005, LiuEtAl2015}\protect\endNoHyper} calculated from the final model. The Value column reports the threshold; Groups indicates the percentage (number in brackets) of groups within which at least one point was predicted as suitable habitat; Pts indicates the percentage of PR points predicted having suitable habitat. Total numbers of groups and presence points used in the final model are reported in Table 1.
 \smallskip
 \begin{center}
-<<tableThree, results="asis", echo = FALSE>>=
-  tbl <- sdm.thresh.table
-  #tbl$Citation <- gsub("(^.*)","\\\\cite{\\1}",sdm.thresh.table$Citation)
-  print(xtable(tbl, digits = 3, align = c("r","p{2in}","r","r","r","p{2.3in}")), 
-              floating=FALSE, include.rownames=FALSE)
+<<tableFour, results="asis", echo = FALSE>>=
+
+  print(sdm.thresh.list.xtbl,
+        floating=FALSE, include.rownames=FALSE)
+
+@
+\smallskip
+<<tableFour_b, results="asis", echo = FALSE>>=
+  print(thresh.descr.xtbl,
+        floating = FALSE, include.rownames=FALSE)
+
 @
 \end{center}
 \end{minipage}
-
 \normalsize
-\bigskip
-\noindent
-\textbf{Model Evaluation and Intended Use} \\\\
-All SDMs are sensitive to data inputs and methodological choices. Table 4 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 {\protect\NoHyper\cite{SofaerEtAl2019}\protect\endNoHyper}. \Sexpr{as.character(project_blurb)}
-\\
 
-\smallskip
 \pagebreak
+<<pPlotFig, fig.width=7.0, fig.height=6.5, include=FALSE, echo=FALSE>>=
+grid.newpage()
+grid.draw(gtl)
+@
+\includegraphics{figure/pPlotFig-1.pdf} \\   %place them, then line break
+\small
+Figure 3. Partial dependence plots for the \Sexpr{as.character(numPPl)} environmental variables with the most influence on the models (averaged). Each plot shows the effect of the variable on the probability of appropriate habitat with the effects of the other variables removed {\protect\NoHyper\cite{liaw2002}\protect\endNoHyper}. The x-axis covers the range of values for the variable assessed; the y-axis represents the effect between the variable and model response. Peaks in the line indicate where this variable had the strongest influence on predicting appropriate habitat. Decreasing lines from left to right show a negative relationship overall; increasing lines, positive. The distribution of each category (thin red = Background points, thick blue = Presence points) is depicted at the top margin. See Appendix 1 for variable descriptions.
+\normalsize
+
+\pagebreak
+\noindent\textbf{Model Evaluation and Intended Use} \\
+All SDMs are sensitive to data inputs and methodological choices. Table 5 presents scoring of modeling factors based on the model evaluation rubric presented in Sofaer et al. 2019 {\protect\NoHyper\cite{SofaerEtAl2019}\protect\endNoHyper}. \Sexpr{as.character(project_blurb)}\\
 
 
-\noindent Table 4. Model evaluation results based on Sofaer et al. 2019. Scores can be attributed as ideal, acceptable, or interpret with caution.
+\noindent Table 5. Model evaluation results based on Sofaer et al. (2019). Scores can be attributed as ideal, acceptable, or interpret with caution.
 \normalsize
 \begin{table}[H]
 \small
@@ -402,8 +298,8 @@ Category & Metric & Score & Notes
   & \Sexpr{as.character(sdm.modeluse$products_repoNotes)} 
 \\ \hline
   & Iterative 
-  & \Sexpr{as.character(sdm.modeluse$interative)} 
-  & \Sexpr{as.character(sdm.modeluse$interativeNotes)} 
+  & \Sexpr{as.character(sdm.modeluse$iterative)} 
+  & \Sexpr{as.character(sdm.modeluse$iterativeNotes)} 
 \\ \hline                      
 \end{tabular}
 \end{table}
@@ -411,65 +307,24 @@ Category & Metric & Score & Notes
 \medskip
 \noindent
 <<customComments, results="asis", echo = FALSE>>=
-if(nrow(sdm.customComments.subset) > 0){
+if(length(sdm.customComments.subset$comments) > 1){
   cat("\\textbf{Model Comments} \\\\")
   cat(sdm.customComments.subset$comments)
 }
 @
-
 \pagebreak
-\medskip
 \begin{center}
-
 <<mapFig, fig.width=7, fig.height=7, include=FALSE, echo=FALSE, dev='png', dpi=200>>=
-#par(mar=c(0,0,4.5,0), xpd = F, cex=0.9, adj = 0.05)
-nclr <- 5
-clrs <- brewer.pal('Blues',n=nclr)
 
-# figure out size of study area, expand if less than 889km across,
-#  which is 1;5,000,000 when figure is 7 inches wide (which it is here)
-bbox <- bb(studyAreaExtent)
-studyAreaWidth <- bbox$xmax - bbox$xmin
-studyAreaHeight <- bbox$ymax - bbox$ymin
-if(studyAreaWidth < 889000){
-  bbox <- bb(bbox, width = 889000, relative = FALSE)
-  }
-if(studyAreaHeight < 889000){
-  bbox <- bb(bbox, height = 889000, relative = FALSE)
-  }
-
-
-tmap_options(max.raster = c("plot" = 300000, "view" = 100000))
-tmap_mode("plot")
-###get the basemap
-# for basemap options see http://leaflet-extras.github.io/leaflet-providers/preview/
-# for native options provided by read_osm, see ?OpenStreetMap::openmap
-## this is stamen-toner
-#basetiles <- read_osm(studyAreaExtent, type = "stamen-toner", ext = 1.1)
-
-## this is Esri.WorldGrayCanvas
-#mtype <- 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}.png?'
-
-## this is CartoDB.Positron
-mtype <- 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-basetiles <- read_osm(bbox, type = mtype, ext = 1.1)
-# plot it
-qtm(basetiles) + 
-  tm_shape(ras) + 
-    tm_raster(palette = clrs, title = "modeled suitability",
-            labels = c("Low Habitat Suitability", rep(" ", nclr-2), "High Habitat Suitability")) +   tm_shape(referenceBoundaries) +
-    tm_borders(col = "grey", lwd = 1) + 
-  tm_shape(studyAreaExtent) + 
-    tm_borders(col = "red", lwd = 2) + 
-  tm_compass(north = 0, type = "arrow", position = c("left","bottom")) + 
-  tm_scale_bar()
+print(mapFig)
 
 @
 \includegraphics{figure/mapFig-1.png}    
 \end{center}
-Figure 4. A generalized view of the model predictions throughout the modeled area. State boundaries are depicted as a thin gray line. The modeled area is outlined in red. Basemap: CartoDB.Positron (\copyright  \href{https://www.openstreetmap.org/copyright}{OpenStreetMap}, contributors: \copyright  \href{https://carto.com/attributions}{CARTO}).
+Figure 4. A generalized view of the model predictions throughout the modeled area. If an ensemble was created this map shows simply an average of all model predictions. State boundaries are depicted as a thin gray line. The modeled area is outlined in red. Basemap: CartoDB.Positron (\copyright  \href{https://www.openstreetmap.org/copyright}{OpenStreetMap}, contributors: \copyright  \href{https://carto.com/attributions}{CARTO}).
 
 \normalsize
+
 \pagebreak
 
 This distribution model would not have been possible without data sharing among organizations. Other data sets and sources may have been evaluated, but this final model includes data from these sources:
@@ -488,7 +343,7 @@ for(i in 1:length(sdm.dataSources$ProgramName)){
 
 \medskip
 \noindent
-This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. It is one of a suite of species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.
+This model was built using a methodology developed through collaboration among the Florida Natural Areas Inventory, the New York Natural Heritage Program, the Pennsylvania Natural Heritage Program, and the Virginia Natural Heritage Program, all member programs of the NatureServe Network. It is one of a suite of species distribution models developed using the same methods, scripts, and environmental data sets. Our goal was to be consistent and transparent in our methodology, validation, and output.\\
 
 \medskip
 \noindent
@@ -503,6 +358,7 @@ NatureServe and Heritage Network Partners. \Sexpr{format(Sys.Date(), "%Y")}. Spe
 \end{minipage}
 }
 
+\medskip
 \medskip
 \noindent
 \textbf{References}
@@ -549,12 +405,10 @@ NatureServe and Heritage Network Partners. \Sexpr{format(Sys.Date(), "%Y")}. Spe
 \end{thebibliography}
 
 \pagebreak
-\noindent
-
 Appendix 1. Descriptions for environmental variables included in model.
 \begin{table}[H]
 \resizebox{\textwidth}{!}{
-<<tableFour, results="asis", echo = FALSE>>=
+<<tableFive, results="asis", echo = FALSE>>=
   # For variable descriptions, get variable name, source, description (3 columns)
 addtorow <- list()
 addtorow$pos <- list()
@@ -568,6 +422,7 @@ print(xtable(sdm.var.info, label = NULL),
 \end{table}
 \medskip
 
+\pagebreak
 Appendix 2. Model details for reproducibility
 
 \begin{itemize}
@@ -577,12 +432,17 @@ Appendix 2. Model details for reproducibility
   \item{All R Scripts are available at \href{https://github.com/HeritageNetwork/Regional_SDM}{github}}
   \item{The repository version (repo head) used for this run was: \Sexpr{modelrun_meta_data$repo_head}}
   \item{The model run name was: \Sexpr{model_run_name}}
-  \item{Validation metrics requiring a threshold use MTP (minimum training presence)}
   \item{R version: \Sexpr{modelrun_meta_data$r_version}}
-  \item{Random seed for full randomForest model: \Sexpr{modelrun_meta_data$seed}}
-  \item{randomForest mtry: \Sexpr{rf.full$mtry}}
-  \item{randomForest ntrees: \Sexpr{rf.full$ntree}}
+  \item{Random seed for each model: \Sexpr{modelrun_meta_data$seed}}
 \end{itemize}
+
+Algorithm-specific details. 
+
+
+<<tableAppendixTwoTableOne, results="asis", echo = FALSE>>=
+  print(xtableList(vuStatsList),
+                floating=FALSE, include.rownames=FALSE)
+@
 
 \end{document}
 

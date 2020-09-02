@@ -10,9 +10,15 @@ library(ROCR)    #for ROC plots and stats
 library(vcd)     #for kappa stats
 library(abind)   #for collapsing the nested lists
 library(foreign) #for reading dbf files
-library(randomForest)
+#library(randomForest)
 library(iterators)
 library(doParallel)
+
+#for maxent
+#library(dismo)
+
+# for gam
+library(mgcv)
 
 source(paste0(loc_scripts, "/helper/modelrun_meta_data.R"), local = FALSE) # generates modelrun_meta_data
 
@@ -42,12 +48,21 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 SQLquery <- paste("SELECT scientific_name SciName, common_name CommName, sp_code Code, broad_group Type, egt_id, g_rank, rounded_g_rank FROM lkpSpecies WHERE sp_code = '", model_species,"';", sep="")
 ElementNames <- as.list(dbGetQuery(db, statement = SQLquery)[1,])
 
+# write model input data to database before any other changes made
+tblModelInputs <- data.frame(table_code = baseName, EGT_ID = NA, datetime = as.character(Sys.time()),
+                             feat_count = length(unique(df.in$stratum)), 
+                             feat_grp_count = length(unique(df.in$group_id)), 
+                             obs_count = length(df.in[,1]), bkgd_count = length(df.abs[,1]),
+                             range_area_sqkm = NA)
+dbExecute(db, paste0("DELETE FROM tblModelInputs where table_code = '", baseName, "';")) # remove any previously prepped dataset entry
+dbWriteTable(db, "tblModelInputs", tblModelInputs, append = T)
 envvar_list <- dbGetQuery(db, "SELECT gridname g from lkpEnvVars;")$g
 envvar_list <- tolower(envvar_list)
 
 #also get correlated env var information
 SQLquery <- "SELECT gridName, correlatedVarGroupings FROM lkpEnvVars WHERE correlatedVarGroupings IS NOT NULL order by correlatedVarGroupings;"
 corrdEVs <- dbGetQuery(db, statement = SQLquery)
+
 dbDisconnect(db)
 rm(db, SQLquery)
 
@@ -202,80 +217,184 @@ totPts <- table(df.full[,group$colNm])
 for (i in names(sampSizeVec)) if (sampSizeVec[i] > totPts[i]) sampSizeVec[i] <- totPts[i]
 rm(totPts)
 
-#### run the models! ###
-for(algo in ensemble_algos){
-  print(paste0("building and validating ", algo, " model."))
-  scriptToCall <- paste0(algo, "_3_createModel.R")
-  source(here("ensemble", scriptToCall))
+outPth <- file.path(loc_model, ElementNames$Code,"outputs","ensemble")
+dir.create(outPth, showWarnings = FALSE)
+
+presInt <- as.integer(as.character(df.full$pres))
+gam.out <- gam(presInt ~ s(nlcdwwt100) +
+                 s(geoncarb) + 
+                 s(rgh10cx100) + 
+                 s(nlcdshb100) +
+                 s(dnwifemw) +
+                 s(nm_clay) + 
+                 s(nlcdopn1), data = df.full, select = TRUE,
+               family=binomial)
+
+
+fmla <- as.formula(paste("presInt ~ ", 
+                         paste("s(", 
+                               names(df.full[,rasnames[60:83]]),
+                               ")", 
+                               collapse= " + ", sep = "")
+                         ))
+
+gam.out <- gam(fmla, data = df.full, select = TRUE,
+               family=binomial)
+
+for(i in 1:ncol(df.full)){
+  print(paste("i:",i, " ", names(df.full)[i], " ", length(unique(df.full[,i]))))
+}
+### need to use the info above to set k
+# add nlcdopn1 to see if it will zero it out (via select)
+
+
+  
+
+
+###
+# Remove the least important env vars ----
+##
+
+me.dat <- as.data.frame(slot(me.out, "results"))
+me.imp.dat <- me.dat[grepl("permutation.importance",rownames(me.dat)), ,drop = FALSE]
+me.imp.dat <- cbind(me.imp.dat, 
+                    "var" = unlist(lapply(rownames(me.imp.dat), FUN = function(x) strsplit(x, "\\.")[[1]][[1]])))
+
+impvals <- me.imp.dat
+names(impvals) <- c("imp","var")
+
+OriginalNumberOfEnvars <- nrow(impvals)
+
+# first remove the bottom of the correlated vars
+corrdEVs <- corrdEVs[tolower(corrdEVs$gridName) %in% impvals$var,]
+if(nrow(corrdEVs) > 0 ){
+  for(grp in unique(corrdEVs$correlatedVarGroupings)){
+    vars <- tolower(corrdEVs[corrdEVs$correlatedVarGroupings == grp,"gridName"])
+    imp.sub <- impvals[impvals$var %in% vars,, drop = FALSE]
+    suppressWarnings(varsToDrop <- imp.sub[!imp.sub$imp == max(imp.sub$imp),, drop = FALSE])
+    impvals <- impvals[!impvals$var %in% rownames(varsToDrop),,drop = FALSE]
+  }
+  rm(vars, imp.sub, varsToDrop)
 }
 
-# #another way
-# if("rf" %in% ensemble_algos){
-#   source(here("ensemble","rf_3_createModel.R"))  
-# }
+# set the percentile, here choosing above 25% percentile
+envarPctile <- 0.25
+y <- quantile(impvals$imp, probs = envarPctile)
+impEnvVars <- impvals[impvals$imp > y,]
+subsetNumberofEnvars <- nrow(impEnvVars)
+rm(y)
+# which columns are these, then flip the non-envars to TRUE
+impEnvVarCols <- names(df.full) %in% impEnvVars$var
+impEnvVarCols[1:5] <- TRUE
+# subset!
+df.full <- df.full[,impEnvVarCols]
+# reset the indvarcols object
+indVarCols <- c(6:length(names(df.full)))
 
+rm(impvals, impEnvVars, impEnvVarCols)
+
+##
+# code above is for removing least important env vars
+##
+
+
+#me.out.fin <- maxent(df.full[,indVarCols], df.full[,depVarCol],
+                 path = outPth)
+
+
+
+
+####
+# Importance measures ----
+####
+# #get the importance measures (don't get GINI coeff - see Strobl et al. 2006)
+# f.imp <- importance(rf.full, class = NULL, scale = TRUE, type = NULL)
+# f.imp <- f.imp[,"MeanDecreaseAccuracy"]
+# 
+# db <- dbConnect(SQLite(),dbname=nm_db_file)  
+# # get importance data, set up a data frame
+# EnvVars <- data.frame(gridName = names(f.imp), impVal = f.imp, fullName="", stringsAsFactors = FALSE)
+# #set the query for the following lookup, note it builds many queries, equal to the number of vars
+# SQLquery <- paste("SELECT gridName, fullName FROM lkpEnvVars WHERE gridName COLLATE NOCASE in ('", paste(EnvVars$gridName,sep=", "),
+# 					"'); ", sep="")
+# #cycle through all select statements, put the results in the df
+# for(i in 1:length(EnvVars$gridName)) {
+#   try(EnvVars$fullName[i] <- as.character(dbGetQuery(db, statement = SQLquery[i])[,2]))
+# }
+# ##clean up
+# dbDisconnect(db)
+# 
+# ###
+# # partial plot data ----
+# ###
+# #get the order for the importance charts
+# ord <- order(EnvVars$impVal, decreasing = TRUE)[1:length(indVarCols)]
+# if(length(ord) > 9){
+#   pPlotListLen <- 9
+# } else {
+#   pPlotListLen <- length(ord)
+# }
+# 
+# cat("... calculating partial plots \n")
+# 
+# ### subsample, grouped by pres/abs, to speed up partial plots
+# ppPres <- df.full[df.full$pres == 1, ]
+# ppAbs <- df.full[df.full$pres == 0, ]
+# ppPresSamp <- min(c(nrow(ppPres), 6000)) # take all pres samples, or 6000, whichever is less
+# ppPresSamp <- sample(1:nrow(ppPres), size = round(ppPresSamp), replace = FALSE)
+# ppPresSamp <- ppPres[ppPresSamp,]
+# ppAbsSamp <- min(c(nrow(ppAbs), 6000)) # take all abs samples, or 6000, whichever is less
+# ppAbsSamp <- sample(1:nrow(ppAbs), size = round(ppAbsSamp), replace = FALSE)
+# ppAbsSamp <- ppAbs[ppAbsSamp,]
+# 
+# ppPreddata <- rbind(ppPresSamp, ppAbsSamp)
+# 
+# # run partial plots in parallel
+# curvars = names(f.imp[ord])[1:pPlotListLen]
+# pPlots <- foreach(i = iter(curvars), .packages = 'randomForest') %dopar% {
+#                   do.call("partialPlot", list(x = rf.full, pred.data = ppPreddata[,indVarCols],
+#                               x.var = i,
+#                               which.class = 1,
+#                               plot = FALSE))
+# }
+# 
+# #fill in names
+# names(pPlots) <- c(1:pPlotListLen)
+# for(i in 1:length(pPlots)){
+#   pPlots[[i]]$gridName <- curvars[[i]]
+#   pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
+# }
+# rm(ppPres, ppAbs, ppPresSamp, ppAbsSamp, ppPreddata)
+# 
+# stopCluster(cl)
+# rm(cl)
+closeAllConnections()
 
 # save the project, return to the original working directory
 dir.create(paste0(loc_model, "/", model_species,"/outputs/rdata"), recursive = TRUE, showWarnings = FALSE)
 setwd(paste0(loc_model, "/", model_species,"/outputs"))
 
-## testing, clear out as much as possible so S4 objects don't load
-## packages automatically
-# rm( "add_vars", "addtorow", "algo", "algoLocs", "allVotesPrespts", "alpha.values", 
-#     "auc", "auc.summ", "baseName", "colList", "corrdEVs", "curvars", "cutval.rf", 
-#     "db", "depVarCol", "df.abs", "df.abs2", "df.full", "df.full.s", "df.full.s.xgb", "df.full.xgb", "df.in", "df.in2", 
-#     "dtGrids", "ensemble_algos", "envarPctile", "envvar_list", "EnvVars", 
-#     "evRes", "evs", "f.imp", "figSpecs", "fn_args", "folds", "fullSampVec", "g.imp", "grank_desc", 
-# "grp", "i", "imp", "impPlot", "increaseAmt", "ind.bool", "indVarCols", 
-#     "K.unw", "K.w", "Kappa.unw.summ", "Kappa.w.summ", "kf", "l", "loc_envVars", "loc_model", "loc_scripts", 
-#     "ls", "me.cutval", "me.dat", "me.EnvVars", "me.evRes", "me.f.imp", "me.imp", "me.imp.dat", 
-#     "me.maxSSS", "me.MTP", "me.out", "me.out.fin", "me.perf.avg", "me.perf.sampled", 
-#     "me.summ.table", "me.t.ctoff", "me.t.f", "me.t.importance", "me.t.rocr.pred", "me.trRes", "me.v.kappa", 
-#     "me.v.OvAc", "me.v.rocr.auc", "me.v.rocr.pred", "me.v.rocr.pred.restruct", "me.v.rocr.rocplot", "me.v.tss", 
-#     "me.v.y", "me.v.y.flat", "me.v.y.flat.sn", "me.v.y.flat.sp", "metaData_comments", "model_comments", "model_comp_name", 
-#     "model_rdata", "model_species", "model_start_time", "modeller", "modelrun_meta_data", "MTP", "mtry", 
-#     "my_rprofile", "n.var", "new.desc", "nm_bkgPts", "nm_db_file", "nm_HUC_file", "nm_presFile", "nm_refBoundaries", "NSurl", 
-#     "ntrees", "numCores", "numEOs", "numPts", "numPys", "op", "ord", "OriginalNumberOfEnvars", "outPth", "OvAc", "OvAc.summ", 
-#     "param", "pPlotListLen", "pPlots", "project_blurb", "project_overview", "r_version", "raslist", "raslist.short", 
-#     "rasnames", "remove_vars", "repo_head", "rf.find.envars", "rf.perf.avg", "rf.perf.sampled", 
-#     "run_SDM", "sampSizeVec", "sampVec", "scaleVec", "scriptToCall", "sdat", "sdm.customComments", 
-#     "sdm.customComments.subset", "sdm.dataSources", "sdm.modeler", "sdm.modeluse", "sdm.thresh.info", 
-#     "sdm.thresh.merge", "sdm.thresh.table", "sdm.thresholds", "sdm.var.info", "seed", "seed_str", 
-#     "sensit", "sensit.summ", "specif", "specif.summ", "specs", "sql", "SQLquery", "ssVec", 
-#     "subSampByGp", "subsetNumberofEnvars", "summ.table", "t.ctoff", "t.f", "t.importance", 
-#     "t.rocr.pred", "tblModelInputs", "temp", "thermTemp", "treeSubs", "trRes", "trSet.s", 
-#     "tss", "tss.summ", "unregister", "used", "v.kappa", "v.me.pred.cut", "v.OvAc", 
-#     "v.rf.pred.cut", "v.rocr.auc", "v.rocr.pred", "v.rocr.pred.restruct", "v.rocr.rocplot", 
-#     "v.tss", "v.y", "v.y.flat", "v.y.flat.sn", "v.y.flat.sp", "var_names", "varImpDB", 
-#     "varNms", "varsImp", "varsSorted", "vStatsxList", "vuStatsList", "x", "xgb.EnvVars", 
-#     "xgb.find.envars",  "xgb.impvals", "xgb.perf", "xgb.pPlots", "xgb.pred", 
-#     "xgb.summ.table",  "xgbfitControl", "xgbTuneOutput" )
-
-
 # don't save fn args/vars
 for(i in 1:length(modelrun_meta_data)) assign(names(modelrun_meta_data)[i], modelrun_meta_data[[i]])
 ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
                                                              "run_steps","prompt","fn_args", names(fn_args))]
-save(list = ls.save, file = paste0("rdata/", model_run_name,".Rdata"), envir = environment())
-
-#save(list = ls(), file = "eriogyps_20200611_120037.Rdata")
+save(list = ls.save, file = paste0("rdata/gam_", model_run_name,".Rdata"), envir = environment())
 
 # write model metadata to db
 # tblModelResults
-db <- dbConnect(SQLite(),dbname=nm_db_file)  
-tblModelResults <- data.frame(model_run_name = model_run_name, 
-                              EGT_ID = ElementNames$EGT_ID, 
-                              table_code = baseName,
-                              internal_comments = model_comments, 
-                              metadata_comments = metaData_comments,
-                              model_comp_name = model_comp_name, 
-                              modeller = modeller,
-                              model_start_time = model_start_time, 
-                              model_end_time = as.character(Sys.time()),
-                              algorithms = paste(ensemble_algos, collapse = ", "),
-                              r_version = r_version, repo_head = repo_head, seed = seed)
-dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
-dbDisconnect(db)
-
+# db <- dbConnect(SQLite(),dbname=nm_db_file)  
+# tblModelResults <- data.frame(model_run_name = model_run_name, EGT_ID = ElementNames$EGT_ID, table_code = baseName,
+#                               internal_comments = model_comments, metadata_comments = metaData_comments,
+#                               model_comp_name = model_comp_name, modeller = modeller,
+#                               model_start_time = model_start_time, model_end_time = as.character(Sys.time()),
+#                               r_version = r_version, repo_head = repo_head, seed = seed)
+# dbWriteTable(db, "tblModelResults", tblModelResults, append = T)
+# 
+# # tblModelResultsVarsUsed
+# varImpDB <- data.frame(model_run_name = model_run_name, gridName = tolower(envvar_list), inFinalModel = 0)
+# varImpDB <- merge(varImpDB, EnvVars[c("gridName","impVal")], by = "gridName", all.x = T)
+# varImpDB$inFinalModel[!is.na(varImpDB$impVal)] <- 1
+# dbWriteTable(db, "tblModelResultsVarsUsed", varImpDB, append = T)
+# dbDisconnect(db)
+# 
 message(paste0("Saved rdata file: '", model_run_name , "'."))
-
