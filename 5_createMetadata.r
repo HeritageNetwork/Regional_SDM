@@ -102,7 +102,7 @@ vstats.s <- vstats[,c("algorithm","metric","evalOut")]
 
 # convert to wide format
 vstats.w <- spread(vstats.s, metric, evalOut)
-names(vstats.w) <- c("algorithm","AUC","Sens","Spec","TSS")
+names(vstats.w) <- c("alg","AUC","Sens","Spec","TSS")
 
 # vstats.w is what gets used in knitr file
 rm(db, sql, metricsToGet, colsToGet, vstats.s)
