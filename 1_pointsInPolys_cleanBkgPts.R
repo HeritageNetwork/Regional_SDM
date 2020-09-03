@@ -253,8 +253,9 @@ dbDisconnect(db)
 #remove extra fid column(s) (dots in colname corrupts gpkg layer for esri)
 #bgSubsAtt <- bgSubsAtt[,-grep("fid.+",names(bgSubsAtt))] #package update may have removed dot
 fidlocs <- grep("fid.*",names(bgSubsAtt))
-bgSubsAtt <- bgSubsAtt[,-fidlocs[2:length(fidlocs)]]
-
+if(length(fidlocs) > 1){
+  bgSubsAtt <- bgSubsAtt[,-fidlocs[2:length(fidlocs)]]  
+}
 
 # # remove NAs #### convert this to removing columns instead?
 # bgSubsAtt$bulkDens <- as.numeric(bgSubsAtt$bulkDens)
