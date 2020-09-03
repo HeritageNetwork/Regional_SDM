@@ -3,10 +3,6 @@
 library(checkpoint)
 checkpoint("2020-04-22")
 
-library(checkpoint)
-checkpoint("2020-04-22")
-
-
 library(here)
 rm(list=ls())
 # 
@@ -14,7 +10,7 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "amsothar"
+model_species <- "eriogyps"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -48,7 +44,7 @@ modeller = "Tim Howard"
 # options currently: "rf" (random forest), 
 #                   "me" (maxent), 
 #                   "xgb" (extreme gradient boosting), 
-#                   "gam" (generalized additive models)
+#                   [["gam" (generalized additive models) -- no not gam yet]]
 ensemble_algos = c("rf", "me", "xgb")
 
 # list non-standard variables to add to model run
@@ -132,8 +128,8 @@ source(here("helper", "run_SDM.R"))
   # to add/remove variables, begin at step 2
   # to just run new model, begin at step 3 (see next example)
 run_SDM(
-  begin_step = "3",
-  model_species = "amsothar",
+  begin_step = "2",
+  model_species = "eriogyps",
   loc_model = loc_model,
   loc_scripts = loc_scripts
 )
@@ -177,7 +173,7 @@ rm(list=ls())
 
 # for scripts 1-3, run just the following 3 lines
 
-model_species <- "amsothar"
+model_species <- "eriogyps"
 
 load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
 # if you want an earlier run, enter it and load it here:
