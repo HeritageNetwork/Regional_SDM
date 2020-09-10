@@ -9,7 +9,7 @@
 # TODO: ^^
 model_run_name
 ensemble_algos
-algo <- "xgb"
+#algo <- "xgb"
 
 # to later wrap into a function, the things needed that vary:
 # 1. model_run_name 
@@ -188,7 +188,7 @@ for(algo in ensemble_algos){
   cit_i[[1]]$Originator <- "NatureServe"
   cit_i[[1]]$Publication_Date <- model.date
   cit_i[[1]]$Title <- paste0("Predicted habitat suitability for ", 
-                             spp.dat$common_name, "(", spp.dat$scientific_name,")", 
+                             spp.dat$common_name, " (", spp.dat$scientific_name,")", 
                              " based on the ", 
                              algo.dat$fullName, 
                              " algorithm.")
