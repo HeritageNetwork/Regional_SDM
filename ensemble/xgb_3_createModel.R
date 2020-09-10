@@ -284,8 +284,14 @@ rm(db)
 # Importance measures ----
 ####
 xgb.impvals <- xgb.importance(model=xgb.full)
-
 g.imp <- xgb.impvals[,c("Feature","Gain")]
+
+#QC: are all features in impvals?
+#if not, add them as zero (assume model dropped them)
+if(FALSE %in% (xgb.full$feature_names %in% g.imp$Feature)){
+  toAdd <- xgb.full$feature_names[!xgb.full$feature_names %in% g.imp$Feature]
+  g.imp <- rbind(g.imp, data.frame("Feature" = toAdd, "Gain" = rep(0, length(toAdd))))
+}
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 # get importance data, set up a data frame
@@ -321,9 +327,7 @@ xgb.pPlots <- xgb.plot.shap(data = as.matrix(xgb.df.full.s[,indVarCols]),
 
 xgb.pPlots$fullNames <- xgb.EnvVars$fullName
 
-
 # write model metadata to db
-
 # tblModelResultsVarsUsed
 varImpDB <- data.frame(model_run_name = model_run_name, 
                        algorithm = algo, 
