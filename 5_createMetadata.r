@@ -8,14 +8,10 @@
 # load libraries ----
 #library(ROCR)  #July 2010: order matters, see http://finzi.psych.upenn.edu/Rhelp10/2009-February/189936.html
 library(xtable)
-#library(randomForest)
 library(knitr)
-#library(raster)
-#library(maptools)
 library(dplyr)
 library(sf)
 library(RColorBrewer)
-#library(rasterVis)
 library(RSQLite)
 library(stringi)  #only used once, could clean up?
 #library(tables)
@@ -174,8 +170,24 @@ for(algo in names(vuStatsList)){
                               )
     )
     vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], rfdat)
-    }
+  }
+  if(algo == "gam"){
+    gamdat <- data.frame(Name = c(
+      "method",
+      "family",
+      "validation method"
+    ),
+    value = c(
+      "gamSpline",
+      "binomial (logit)",
+      "Leave one out by group (LGOCV)"
+    )
+    )
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], gamdat)
+  }
 }
+
+
 
 attr(vuStatsList, "subheadings") <- paste0("\\textcolor{",
                                            names(vuStatsList), "Color}{", 
@@ -191,7 +203,7 @@ rm(db, sql, varsUsedStats, vuStats, medat, xgbdat, rfdat, algo)
 ## build lookup for line details and colors ----
 lineColors <- brewer.pal(6, "Dark2")[1:length(ensemble_algos)]
 
-figSpecs <- data.frame(algos = c("rf","me","xgb"),
+figSpecs <- data.frame(algos = ensemble_algos,
                        col = lineColors,
                        lwd = c(3,2,1),
                        lty = c(1,1,1),
@@ -324,33 +336,51 @@ for (plotpi in 1:numPPl){
   }
   
   # check and use xgb if there are data
-  if(grdName %in% dimnames(xgb.pPlots$data)[[2]]){
-    xgbdat <- data.frame(xgb.pPlots$data)
-    xgbresp <- data.frame(xgb.pPlots$shap_contrib)
-    xgbdat.b <- data.frame(x = xgbdat[,grdName], y = xgbresp[,grdName], algo = "xgb")
-    #standardize 0-1
-    xgbdat.b$y <- (xgbdat.b$y - min(xgbdat.b$y))/(max(xgbdat.b$y)-min(xgbdat.b$y))
-    #order, ascending
-    xgbdat.b <- xgbdat.b[order(xgbdat.b$x),]
-    #smooth it
-    #dat <- rbind(dat, xgbdat.b)
-    dat <- rbind(dat, data.frame(supsmu(xgbdat.b$x, xgbdat.b$y), algo = "xgb"))
-    #rm(xgbdat, xgbresp, xgbdat.b)
+  if(exists("xgb.pPlots")){
+    if(grdName %in% dimnames(xgb.pPlots$data)[[2]]){
+      xgbdat <- data.frame(xgb.pPlots$data)
+      xgbresp <- data.frame(xgb.pPlots$shap_contrib)
+      xgbdat.b <- data.frame(x = xgbdat[,grdName], y = xgbresp[,grdName], algo = "xgb")
+      #standardize 0-1
+      xgbdat.b$y <- (xgbdat.b$y - min(xgbdat.b$y))/(max(xgbdat.b$y)-min(xgbdat.b$y))
+      #order, ascending
+      xgbdat.b <- xgbdat.b[order(xgbdat.b$x),]
+      #smooth it
+      #dat <- rbind(dat, xgbdat.b)
+      dat <- rbind(dat, data.frame(supsmu(xgbdat.b$x, xgbdat.b$y), algo = "xgb"))
+      #rm(xgbdat, xgbresp, xgbdat.b)
+    }
   }
   
   # check and use me if there are data
-  melist <- unlist(lapply(me.pPlots, FUN = function(x) x$gridName))
-  if(grdName %in% melist){
-    grdLoc <- match(grdName, melist)
-    medat <- data.frame(x = me.pPlots[[grdLoc]]$x, y = me.pPlots[[grdLoc]]$y)
-    medat <- cbind(medat, algo = "me")
-    #standardize 0-1
-    medat$y <- (medat$y - min(medat$y))/(max(medat$y)-min(medat$y))
-    dat <- rbind(dat, medat)
-    rm(grdLoc)
+  if(exists("me.pPlots")){
+    melist <- unlist(lapply(me.pPlots, FUN = function(x) x$gridName))
+    if(grdName %in% melist){
+      grdLoc <- match(grdName, melist)
+      medat <- data.frame(x = me.pPlots[[grdLoc]]$x, y = me.pPlots[[grdLoc]]$y)
+      medat <- cbind(medat, algo = "me")
+      #standardize 0-1
+      medat$y <- (medat$y - min(medat$y))/(max(medat$y)-min(medat$y))
+      dat <- rbind(dat, medat)
+      rm(grdLoc)
+    }
   }
   
-  pplot <- ggplot(data = dat, aes(x=x, y=y, color = algo)) + 
+  # check and use gam if there are data
+  if(exists("gam.pPlots")){
+    dfPointer <- unlist(lapply(gam.pPlots, FUN = function(x){grdName %in% names(x)}))
+    if(TRUE %in% dfPointer){
+      gamdat <- gam.pPlots[dfPointer][[1]]
+      names(gamdat) <- c("x","y")
+      gamdat <- cbind(gamdat, algo = "gam")
+      #standardize 0-1
+      gamdat$y <- (gamdat$y - min(gamdat$y))/(max(gamdat$y)-min(gamdat$y))
+      dat <- rbind(dat, gamdat)
+      rm(dfPointer)
+    }
+  }
+  
+ pplot <- ggplot(data = dat, aes(x=x, y=y, color = algo)) + 
     geom_line(size = 1) +
     xlab(evar) + 
     scale_x_continuous(limits = c(min(dat$x), max(dat$x)), 
@@ -558,7 +588,8 @@ rm(db)
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 # remove metrics we don't want to display
-sdm.thresh.merge <- sdm.thresh.merge[!sdm.thresh.merge$cutCode %in% c("FMeasPt01"),]
+sdm.thresh.merge <- sdm.thresh.merge[!sdm.thresh.merge$cutCode %in% 
+                                       c("FMeasPt01", "MPVP", "MPVG"),]
 # extract descriptions of those we are using
 thresh.descr <- unique(sdm.thresh.merge[,c("cutCode","cutFullName","cutDescription")])
 names(thresh.descr) <- c("Code","Threshold full name","Threshold description")

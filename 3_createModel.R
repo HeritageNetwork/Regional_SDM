@@ -165,10 +165,12 @@ numEOs <- nrow(table(df.in$group_id))
 #initialize the grouping list, and set up grouping variables
 #if we have fewer than 5 EOs, move forward with jackknifing by polygon, otherwise
 #jackknife by EO.
+eoCountLimit <- 20
+
 group <- vector("list")
-group$colNm <- ifelse(numEOs < 5,"stratum","group_id")
-group$JackknType <- ifelse(numEOs < 5,"polygon","spatial grouping")
-if(numEOs < 5) {
+group$colNm <- ifelse(numEOs < eoCountLimit,"stratum","group_id")
+group$JackknType <- ifelse(numEOs < eoCountLimit,"polygon","spatial grouping")
+if(numEOs < eoCountLimit) {
   group$vals <- unique(df.in$stratum)
 } else {
   group$vals <- unique(df.in$group_id)
@@ -209,48 +211,10 @@ for(algo in ensemble_algos){
   source(here("ensemble", scriptToCall))
 }
 
-# #another way
-# if("rf" %in% ensemble_algos){
-#   source(here("ensemble","rf_3_createModel.R"))  
-# }
-
 
 # save the project, return to the original working directory
 dir.create(paste0(loc_model, "/", model_species,"/outputs/rdata"), recursive = TRUE, showWarnings = FALSE)
 setwd(paste0(loc_model, "/", model_species,"/outputs"))
-
-## testing, clear out as much as possible so S4 objects don't load
-## packages automatically
-# rm( "add_vars", "addtorow", "algo", "algoLocs", "allVotesPrespts", "alpha.values", 
-#     "auc", "auc.summ", "baseName", "colList", "corrdEVs", "curvars", "cutval.rf", 
-#     "db", "depVarCol", "df.abs", "df.abs2", "df.full", "df.full.s", "df.full.s.xgb", "df.full.xgb", "df.in", "df.in2", 
-#     "dtGrids", "ensemble_algos", "envarPctile", "envvar_list", "EnvVars", 
-#     "evRes", "evs", "f.imp", "figSpecs", "fn_args", "folds", "fullSampVec", "g.imp", "grank_desc", 
-# "grp", "i", "imp", "impPlot", "increaseAmt", "ind.bool", "indVarCols", 
-#     "K.unw", "K.w", "Kappa.unw.summ", "Kappa.w.summ", "kf", "l", "loc_envVars", "loc_model", "loc_scripts", 
-#     "ls", "me.cutval", "me.dat", "me.EnvVars", "me.evRes", "me.f.imp", "me.imp", "me.imp.dat", 
-#     "me.maxSSS", "me.MTP", "me.out", "me.out.fin", "me.perf.avg", "me.perf.sampled", 
-#     "me.summ.table", "me.t.ctoff", "me.t.f", "me.t.importance", "me.t.rocr.pred", "me.trRes", "me.v.kappa", 
-#     "me.v.OvAc", "me.v.rocr.auc", "me.v.rocr.pred", "me.v.rocr.pred.restruct", "me.v.rocr.rocplot", "me.v.tss", 
-#     "me.v.y", "me.v.y.flat", "me.v.y.flat.sn", "me.v.y.flat.sp", "metaData_comments", "model_comments", "model_comp_name", 
-#     "model_rdata", "model_species", "model_start_time", "modeller", "modelrun_meta_data", "MTP", "mtry", 
-#     "my_rprofile", "n.var", "new.desc", "nm_bkgPts", "nm_db_file", "nm_HUC_file", "nm_presFile", "nm_refBoundaries", "NSurl", 
-#     "ntrees", "numCores", "numEOs", "numPts", "numPys", "op", "ord", "OriginalNumberOfEnvars", "outPth", "OvAc", "OvAc.summ", 
-#     "param", "pPlotListLen", "pPlots", "project_blurb", "project_overview", "r_version", "raslist", "raslist.short", 
-#     "rasnames", "remove_vars", "repo_head", "rf.find.envars", "rf.perf.avg", "rf.perf.sampled", 
-#     "run_SDM", "sampSizeVec", "sampVec", "scaleVec", "scriptToCall", "sdat", "sdm.customComments", 
-#     "sdm.customComments.subset", "sdm.dataSources", "sdm.modeler", "sdm.modeluse", "sdm.thresh.info", 
-#     "sdm.thresh.merge", "sdm.thresh.table", "sdm.thresholds", "sdm.var.info", "seed", "seed_str", 
-#     "sensit", "sensit.summ", "specif", "specif.summ", "specs", "sql", "SQLquery", "ssVec", 
-#     "subSampByGp", "subsetNumberofEnvars", "summ.table", "t.ctoff", "t.f", "t.importance", 
-#     "t.rocr.pred", "tblModelInputs", "temp", "thermTemp", "treeSubs", "trRes", "trSet.s", 
-#     "tss", "tss.summ", "unregister", "used", "v.kappa", "v.me.pred.cut", "v.OvAc", 
-#     "v.rf.pred.cut", "v.rocr.auc", "v.rocr.pred", "v.rocr.pred.restruct", "v.rocr.rocplot", 
-#     "v.tss", "v.y", "v.y.flat", "v.y.flat.sn", "v.y.flat.sp", "var_names", "varImpDB", 
-#     "varNms", "varsImp", "varsSorted", "vStatsxList", "vuStatsList", "x", "xgb.EnvVars", 
-#     "xgb.find.envars",  "xgb.impvals", "xgb.perf", "xgb.pPlots", "xgb.pred", 
-#     "xgb.summ.table",  "xgbfitControl", "xgbTuneOutput" )
-
 
 # don't save fn args/vars
 for(i in 1:length(modelrun_meta_data)) assign(names(modelrun_meta_data)[i], modelrun_meta_data[[i]])

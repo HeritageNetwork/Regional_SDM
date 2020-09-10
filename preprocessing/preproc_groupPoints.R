@@ -27,7 +27,7 @@ crs_aea <- st_crs(x)
 path <- paste0(loc_scripts,"/_data/occurrence")
 setwd(path)
 
-cutecode <- "eriogyps"
+cutecode <- "astrgyps"
 desiredCols <- c("SPECIES_CD","OBSDATE", "Accuracy")
 desiredPolyCols <- c("SPECIES_CD","OBSDATE","GROUP_ID","UID","RA")
 

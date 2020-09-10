@@ -10,7 +10,7 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "eriogyps"
+model_species <- "astrgyps"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
@@ -45,7 +45,7 @@ modeller = "Tim Howard"
 #                   "me" (maxent), 
 #                   "xgb" (extreme gradient boosting), 
 #                   [["gam" (generalized additive models) -- no not gam yet]]
-ensemble_algos = c("rf", "me", "xgb")
+ensemble_algos = c("rf","me","xgb")
 
 # list non-standard variables to add to model run
 add_vars = NULL
