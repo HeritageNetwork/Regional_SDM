@@ -558,7 +558,8 @@ rm(db)
 sdm.thresh.merge <- merge(sdm.thresholds, sdm.thresh.info)
 sdm.thresh.merge <- sdm.thresh.merge[order(sdm.thresh.merge$sortOrder),]
 # remove metrics we don't want to display
-sdm.thresh.merge <- sdm.thresh.merge[!sdm.thresh.merge$cutCode %in% c("FMeasPt01"),]
+sdm.thresh.merge <- sdm.thresh.merge[!sdm.thresh.merge$cutCode %in% 
+                                       c("FMeasPt01", "MPVP", "MPVG"),]
 # extract descriptions of those we are using
 thresh.descr <- unique(sdm.thresh.merge[,c("cutCode","cutFullName","cutDescription")])
 names(thresh.descr) <- c("Code","Threshold full name","Threshold description")
