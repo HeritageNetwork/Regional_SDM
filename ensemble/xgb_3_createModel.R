@@ -6,14 +6,6 @@
 # - build partial plots of top performing env vars for metadata output
 
 library(RSQLite)
-#library(ROCR)    #for ROC plots and stats
-#library(vcd)     #for kappa stats
-#library(abind)   #for collapsing the nested lists
-#library(foreign) #for reading dbf files
-#library(randomForest)
-#library(iterators)
-#library(doParallel)
-
 library(caret)
 library(recipes)
 # for xgb
@@ -31,7 +23,6 @@ library(xgboost)
 df.full.xgb <- xgb.DMatrix(as.matrix(df.full[,indVarCols]), 
                            label=as.integer(as.character(df.full$pres)))
 
-
 param <- list(
   booster = "gbtree",
   max_depth = 5, 
@@ -43,7 +34,6 @@ param <- list(
 
 xgb.find.envars <- xgb.train(params=param, data = df.full.xgb,
                       nrounds = 20)
-
 
 xgb.impvals <- xgb.importance(model=xgb.find.envars)
 
@@ -323,23 +313,6 @@ if(length(ord) > 9){
   pPlotListLen <- length(ord)
 }
 
-# cat("... calculating partial plots \n")
-# 
-# ### subsample, grouped by pres/abs, to speed up partial plots
-# ppPres <- df.full[df.full$pres == 1, ]
-# ppAbs <- df.full[df.full$pres == 0, ]
-# ppPresSamp <- min(c(nrow(ppPres), 6000)) # take all pres samples, or 6000, whichever is less
-# ppPresSamp <- sample(1:nrow(ppPres), size = round(ppPresSamp), replace = FALSE)
-# ppPresSamp <- ppPres[ppPresSamp,]
-# ppAbsSamp <- min(c(nrow(ppAbs), 6000)) # take all abs samples, or 6000, whichever is less
-# ppAbsSamp <- sample(1:nrow(ppAbs), size = round(ppAbsSamp), replace = FALSE)
-# ppAbsSamp <- ppAbs[ppAbsSamp,]
-# 
-# ppPreddata <- rbind(ppPresSamp, ppAbsSamp)
-# 
-# # run partial plots in parallel
-#curvars = EnvVars$gridName[1:pPlotListLen]
-
 xgb.pPlots <- xgb.plot.shap(data = as.matrix(xgb.df.full.s[,indVarCols]), 
                      model = xgb.full, 
                      features = xgb.EnvVars$gridName[1:pPlotListLen],
@@ -347,15 +320,6 @@ xgb.pPlots <- xgb.plot.shap(data = as.matrix(xgb.df.full.s[,indVarCols]),
                      plot = FALSE)
 
 xgb.pPlots$fullNames <- xgb.EnvVars$fullName
-
-#plot(pPlots$data[,2], pPlots$shap_contrib[,2])
-
-# xgb.plot.shap(data = as.matrix(df.full.s[,-grep("pres",names(df.full.s))]), 
-#               model = xgb.full, 
-#               features = "nm_calgyp",
-#               target_class = 1,
-#               plot = TRUE)
-
 
 
 # write model metadata to db
@@ -370,25 +334,4 @@ varImpDB$inFinalModel[!is.na(varImpDB$impVal)] <- 1
 dbWriteTable(db, "tblModelResultsVarsUsed", varImpDB, append = TRUE)
 dbDisconnect(db)
 
-
-
-
-
 closeAllConnections()
-
-
-
-# 
-# 
-# 
-# # save the project, return to the original working directory
-# dir.create(paste0(loc_model, "/", model_species,"/outputs/rdata"), recursive = TRUE, showWarnings = FALSE)
-# setwd(paste0(loc_model, "/", model_species,"/outputs"))
-# 
-# # don't save fn args/vars
-# for(i in 1:length(modelrun_meta_data)) assign(names(modelrun_meta_data)[i], modelrun_meta_data[[i]])
-# ls.save <- ls(all.names = TRUE)[!ls(all.names = TRUE) %in% c("begin_step","rdata","prompt","scrpt",
-#                                                              "run_steps","prompt","fn_args", names(fn_args))]
-# save(list = ls.save, file = paste0("rdata/xgb_", model_run_name,".Rdata"), envir = environment())
-# 
-
