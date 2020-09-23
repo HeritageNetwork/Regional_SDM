@@ -84,7 +84,7 @@ if(length(group$vals) > 50){
 # can be drawn into KFolds
 
 # vector to split up represents row indices
-rowInd <- seq(1, nrow(xgb.df.full[xgb.df.full$pres == 0,]),by=1)
+rowInd <- seq(1, nrow(xgb.df.full[xgb.df.full$pres == "0",]),by=1)
 # first, randomly assign based on number of pres records in each group
 presCounts <- table(xgb.df.full[,group$colNm])
 presCounts <- presCounts[!names(presCounts) == "pseu-a"]
@@ -97,13 +97,18 @@ drawAmt <- drawAmt + round(numToDistribute*weights)
 # rounding might keep this from coming out even, so fix if it didn't
 if(sum(drawAmt) > length(rowInd)){
   reduceAmt <- sum(drawAmt) - length(rowInd)
-  # find the biggest set and subtract
-  drawAmt[drawAmt == max(drawAmt)] <- max(drawAmt) - reduceAmt
+  # take one away from each item till it balances
+  drawAmt[1:reduceAmt] <- drawAmt[1:reduceAmt] - 1
 }
 if(sum(drawAmt) < length(rowInd)){
   increaseAmt <- length(rowInd) - sum(drawAmt)
-  # find the biggest set and add
-  drawAmt[drawAmt == max(drawAmt)] <- max(drawAmt) + increaseAmt
+  if(increaseAmt < length(drawAmt)){
+    # add one to each item as needed
+    drawAmt[1:increaseAmt] <- drawAmt[1:increaseAmt] + 1
+  } else {
+    # find the biggest set and add
+    drawAmt[drawAmt == max(drawAmt)] <- max(drawAmt) + increaseAmt
+  }
 }
 # now randomly place absence rows into groups for k-folding
 sampVec <- integer(0)
@@ -119,7 +124,7 @@ rm(rowInd, presCounts, drawAmt, numToDistribute, weights, i, x)
 #sampVec <- c(sampVec, sampVec2)
 sampVec <- sampVec[order(sampVec)]
 # this defines group assignment for each df.full row (assumed pres=1 is first)
-fullSampVec <- c(as.character(xgb.df.full[xgb.df.full$pres == 1,group$colNm]), names(sampVec))
+fullSampVec <- c(as.character(xgb.df.full[xgb.df.full$pres == "1",group$colNm]), names(sampVec))
 xgb.df.full$stratum <- fullSampVec
 
 # subsample down to a reasonable number 

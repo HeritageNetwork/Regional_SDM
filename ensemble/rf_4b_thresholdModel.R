@@ -146,7 +146,7 @@ rf.full.perf <- performance(rf.full.pred, "tpr","fpr")
 # use pythagorean formula to get hypotenuse distance from 0,1 to each point in curve
 dist.to.01 <- sqrt(rf.full.perf@x.values[[1]]^2 + (1-rf.full.perf@y.values[[1]])^2)
 ROCupperleft <- rf.full.perf@alpha.values[[1]][[which.min(dist.to.01)]]
-z <- allVotesPresPts[allVotesPresPts$pred >= ROCupperleft,]
+z <- allVotesPresPts[allVotesPresPts$X1 >= ROCupperleft,]
 capturedGPs <- length(unique(z[,group$colNm]))
 capturedPolys <- length(unique(z$stratum))
 capturedPts <- nrow(z)
@@ -182,9 +182,16 @@ allThresh <- data.frame("model_run_name" = rep(modelrun_meta_data$model_run_name
 
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 
-
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
+
+# first clear any results if this run has already been written to the db
+sql <- paste0("Delete from tblModelResultsCutoffs WHERE model_run_name = '", 
+              modelrun_meta_data$model_run_name, 
+              "' AND algorithm = '",
+              algo,
+              "';")
+dbExecute(db, statement = sql)
 
 dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = TRUE)
 # clean up
