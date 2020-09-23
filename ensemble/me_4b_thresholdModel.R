@@ -254,6 +254,14 @@ db <- dbConnect(SQLite(),dbname=nm_db_file)
 op <- options("useFancyQuotes")
 options(useFancyQuotes = FALSE)
 
+# first clear any results if this run has already been written to the db
+sql <- paste0("Delete from tblModelResultsCutoffs WHERE model_run_name = '", 
+              modelrun_meta_data$model_run_name, 
+              "' AND algorithm = '",
+              algo,
+              "';")
+dbExecute(db, statement = sql)
+
 dbWriteTable(db, "tblModelResultsCutoffs", allThresh, append = TRUE)
 # clean up
 options(op)
