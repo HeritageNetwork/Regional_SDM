@@ -55,11 +55,12 @@ Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\text
     temp <- summaryTSS
     thermTemp <- vector("list")
     if (temp < .50){
-                thermTemp <- c("red", "poor")
-                } else if (temp < .80){
-                thermTemp <- c("yellow","fair")
-                } else {
-                thermTemp <- c("green", "good") }
+      thermTemp <- c("red", "poor")
+    } else if (temp < .80){
+      thermTemp <- c("yellow","fair")
+    } else {
+      thermTemp <- c("green", "good") 
+    }
     symbols(1, 1, thermometers=cbind(0.5, 1, temp), inches=.5, fg = thermTemp[[1]],
            xaxt = "n", yaxt = "n", ann = FALSE, bty = "n", pin = c(1.2,1.2) )
     text (1,1, thermTemp[[2]],

@@ -68,7 +68,7 @@ if(nrow(evalAndReviewStatus) > 1){
 dbDisconnect(cn)
 rm(cn)
 
-
+## data quality ----
 dqMatrix <- data.frame("dataQuality" = c(1,2,3),
                        "dqAttribute" = c("C","A","I"),
                        "dqComments" = c("Data taken from outside sources and may or may not be vetted for accuracy or weighted for spatial representation.",
@@ -80,17 +80,27 @@ sql <- paste0("update lkpSpeciesRubric set spdata_dataqual = '", dqUpdate$dqAttr
               "', spdata_dataqualNotes = '", dqUpdate$dqComments, 
               "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
 dbExecute(db, statement = sql)
-## performance
+
+## performance ----
+# get performance data
+db <- dbConnect(SQLite(),dbname=nm_db_file)
+sql <- paste0("SELECT * from tblModelResultsValidationStats where model_run_name = '", 
+              model_run_name, "';")
+vstats <- dbGetQuery(db, statement = sql)
+summaryTSS <- mean(vstats[vstats$metric == "TSS", "metric_mn"])
+rm(vstats)
+
 prfmcMatrix <- data.frame("pAttribute" = c("C","A"),
                           "pComments" = c("Model TSS < 0.6. Mapped model output is evaluated for ecological plausibility by expert review.",
                                           "Model TSS >= 0.6. Mapped model output is evaluated for ecological plausibility by expert review."))
-prfmAtt <- ifelse(tss.summ$mean<=0.6, "C", "A")
+prfmAtt <- ifelse(summaryTSS<=0.6, "C", "A")
 prfmUpdate <- prfmcMatrix[match(prfmAtt, prfmcMatrix$pAttribute),]
 sql <- paste0("update lkpSpeciesRubric set process_perform = '", prfmUpdate$pAttribute, 
               "', process_performNotes = '", prfmUpdate$pComments, 
               "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
 dbExecute(db, statement = sql)
-## model review
+
+## model review ----
 revMatrix <- data.frame("rAttribute" = c("C","A"),
                         "rComments" = c("Model was not reviewed by regional, taxonomic experts.",
                                         "Model was reviewed by regional, taxonomic experts."))
@@ -100,7 +110,8 @@ sql <- paste0("update lkpSpeciesRubric set process_review = '", revUpdate$rAttri
               "', process_reviewNotes = '", revUpdate$rComments, 
               "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
 dbExecute(db, statement = sql)
-## iterative
+
+## iterative ----
 iterMatrix <- data.frame("iAttribute" = c("C","A"),
                           "iComments" = c("Model not re-run with new or modified data.",
                                           "Model was re-run with new or modified data."))
