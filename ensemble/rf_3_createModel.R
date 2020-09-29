@@ -519,7 +519,7 @@ ppPreddata <- rbind(ppPresSamp, ppAbsSamp)
 
 # run partial plots in parallel
 curvars = names(f.imp[ord])[1:pPlotListLen]
-pPlots <- foreach(i = iter(curvars), .packages = 'randomForest') %dopar% {
+rf.pPlots <- foreach(i = iter(curvars), .packages = 'randomForest') %dopar% {
                   do.call("partialPlot", list(x = rf.full, pred.data = ppPreddata[,indVarCols],
                               x.var = i,
                               which.class = 1,
@@ -527,10 +527,10 @@ pPlots <- foreach(i = iter(curvars), .packages = 'randomForest') %dopar% {
 }
 
 #fill in names
-names(pPlots) <- c(1:pPlotListLen)
-for(i in 1:length(pPlots)){
-  pPlots[[i]]$gridName <- curvars[[i]]
-  pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
+names(rf.pPlots) <- c(1:pPlotListLen)
+for(i in 1:length(rf.pPlots)){
+  rf.pPlots[[i]]$gridName <- curvars[[i]]
+  rf.pPlots[[i]]$fname <- EnvVars$fullName[ord[i]]
 }
 rm(ppPres, ppAbs, ppPresSamp, ppAbsSamp, ppPreddata)
 

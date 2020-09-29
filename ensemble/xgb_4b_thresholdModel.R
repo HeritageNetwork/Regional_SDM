@@ -21,7 +21,7 @@ totPts.s <- nrow(xgb.df.full.s[xgb.df.full.s$pres == 1,])
 xgb.full <- xgb.Booster.complete(xgb.full)
 
 #needs to be re-created ... contains an external pointer 
-df.full.s.xgb <- xgb.DMatrix(as.matrix(xgb.df.full.s[,indVarCols]), 
+df.full.s.xgb <- xgb.DMatrix(as.matrix(xgb.df.full.s[,6:ncol(xgb.df.full.s)]), 
                              label=as.integer(as.character(xgb.df.full.s$pres)))
 
 xgb.predicted <- predict(xgb.full, df.full.s.xgb)
@@ -191,7 +191,7 @@ totPts.f <- nrow(xgb.df.full[xgb.df.full$pres == 1,])
 
 
 #needs to be re-created ... contains an external pointer 
-df.full.xgb <- xgb.DMatrix(as.matrix(xgb.df.full[,indVarCols]), 
+df.full.xgb <- xgb.DMatrix(as.matrix(xgb.df.full[,6:ncol(xgb.df.full)]), 
                              label=as.integer(as.character(xgb.df.full$pres)))
 
 xgb.predicted <- predict(xgb.full, df.full.xgb)
