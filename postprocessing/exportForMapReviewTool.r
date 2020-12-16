@@ -369,6 +369,10 @@ for (j in 1:length(not_yet_exported)){
                 "AND ((ModelCycle.model_cycle)=", model_cycle$max_Cycle, "));")
   workflow_id <- dbGetQuery(cn, sql)
   
+  if(!nrow(workflow_id) == 1){
+    stop("Problem with workflow records in Tracking DB. Not one workflow record for model cycle.")
+  }
+  
   commentString <- paste(modelrun_meta_data$model_run_name, "prepped for review tool on", Sys.Date())
   sql <- paste0("UPDATE Workflows SET modeled = 1, modeled_com = '",
                 commentString,
