@@ -1,33 +1,33 @@
 # File: 4b_thresholdModel.r
 # Purpose: threshold the distribution model prediction raster
 
-## start with a fresh workspace with no objects loaded
+library(raster)
+library(sf)
 library(ROCR)
 library(RSQLite)
 library(DBI)
-library(xgboost)
+
 
 ## Calculate different thresholds ----
 #set an empty list
 cutList <- list()
 
+#flip pres/abs back to 0/1 for consistency
+glm.df.full.s$pres <- as.character(glm.df.full.s$pres)
+glm.df.full.s[glm.df.full.s$pres == "abs","pres"] <- "0"
+glm.df.full.s[glm.df.full.s$pres == "pres","pres"] <- "1"
+glm.df.full.s$pres <- as.factor(glm.df.full.s$pres)
+
 # total number of GPs, polys, pts (subtract absence class)
-totGPs.s <- length(unique(xgb.df.full.s[,group$colNm])[!grepl("pseu-a",unique(xgb.df.full.s[,group$colNm]))])
-totPolys.s <- length(unique(xgb.df.full.s$stratum)[!grepl("pseu-a",unique(xgb.df.full.s$stratum))])
-totPts.s <- nrow(xgb.df.full.s[xgb.df.full.s$pres == 1,])
+totGPs.s <- length(unique(glm.df.full.s[,group$colNm])[!grepl("pseu-a",unique(glm.df.full.s[,group$colNm]))])
+totPolys.s <- length(unique(glm.df.full.s$stratum)[!grepl("pseu-a",unique(glm.df.full.s$stratum))])
+totPts.s <- nrow(glm.df.full.s[glm.df.full.s$pres == "1",])
 
-#get minimum training presence
-# the 'handle' might go awry
-xgb.full <- xgb.Booster.complete(xgb.full)
+glm.predicted <- predict(glmFit1, glm.df.full.s, type = "prob")
+glm.predicted <- as.data.frame(cbind(glm.df.full.s[,c("pres","group_id","stratum")], "pred" = glm.predicted[,"pres"]))
+allVotesPresPts <- glm.predicted[glm.predicted$pres=="1",]
 
-#needs to be re-created ... contains an external pointer 
-df.full.s.xgb <- xgb.DMatrix(as.matrix(xgb.df.full.s[,6:ncol(xgb.df.full.s)]), 
-                             label=as.integer(as.character(xgb.df.full.s$pres)))
-
-xgb.predicted <- predict(xgb.full, df.full.s.xgb)
-xgb.predicted <- as.data.frame(cbind(xgb.df.full.s[,c("pres","group_id","stratum")], "pred" = xgb.predicted))
-allVotesPresPts <- xgb.predicted[xgb.predicted$pres=="1",]
-#mtp
+#MTP ----
 MTP <- min(allVotesPresPts[, "pred"])
 capturedGPs <- length(unique(allVotesPresPts[,group$colNm]))
 capturedPolys <- length(unique(allVotesPresPts$stratum))
@@ -43,7 +43,7 @@ cutList$MTP <- list("value" = MTP, "code" = "MTP",
                     "prpCapPolys" = propCaptPolys,
                     "prpCapPts"=  propCaptPts)
 
-#get 10 percentile training presence
+#get 10 percentile training presence ----
 TenPctile <- quantile(allVotesPresPts$pred, prob = c(0.1))
 TenPctilePts <- allVotesPresPts[allVotesPresPts$pred >= TenPctile,]
 capturedGPs <- length(unique(TenPctilePts[,group$colNm]))
@@ -73,9 +73,9 @@ cutList$TenPctile <- list("value" = TenPctile, "code" = "TenPctile",
 #                     "capturedPolys" = capturedPolys,
 #                     "capturedPts" = capturedPts)
 
-# get min of max values by GP (MTPGP; minimum training GP presence)
+# get min of max values by GP (MTPGP; minimum training GP presence) ----
 maxInEachGP <- aggregate(allVotesPresPts$pred, 
-                           by=list(allVotesPresPts[,group$colNm]), max)
+                         by=list(allVotesPresPts[,group$colNm]), max)
 names(maxInEachGP) <- c(group$colNm,"pred")
 MTPGP <- min(maxInEachGP$pred)
 capturedGPs <- length(unique(maxInEachGP[,group$colNm]))
@@ -93,21 +93,21 @@ cutList$MTPGP <- list("value" = MTPGP, "code" = "MTPGP",
                       "prpCapPts"=  propCaptPts)
 
 
-# F-measure cutoff skewed towards capturing more presence points.
+# F-measure cutoff skewed towards capturing more presence points.----
 # extract the precision-recall F-measure from training data
 # set alpha very low to tip in favor of 'presence' data over 'absence' data
 # based on quick assessment in Spring 07, set alpha to 0.01
 alph <- 0.01
 #create the prediction object for ROCR. Get pres col from votes (=named "1")
-xgb.full.rocr.pred <- ROCR::prediction(xgb.predicted$pred,xgb.predicted$pres)
+glm.full.rocr.pred <- ROCR::prediction(glm.predicted$pred,glm.predicted$pres)
 #use ROCR performance to get the f measure
-xgb.full.f <- ROCR::performance(xgb.full.rocr.pred,"f",alpha = alph)
+glm.full.f <- ROCR::performance(glm.full.rocr.pred,"f",alpha = alph)
 #extract the data out of the S4 object, then find the cutoff that maximize the F-value.
-xgb.full.f.df <- data.frame(cutoff = unlist(xgb.full.f@x.values),fmeasure = unlist(xgb.full.f@y.values))
-xgb.full.ctoff <- c(1-xgb.full.f.df[which.max(xgb.full.f.df$fmeasure),][["cutoff"]], xgb.full.f.df[which.max(xgb.full.f.df$fmeasure),][["cutoff"]])
+glm.full.f.df <- data.frame(cutoff = unlist(glm.full.f@x.values),fmeasure = unlist(glm.full.f@y.values))
+glm.full.ctoff <- c(1-glm.full.f.df[which.max(glm.full.f.df$fmeasure),][["cutoff"]], glm.full.f.df[which.max(glm.full.f.df$fmeasure),][["cutoff"]])
 #rf.full.ctoff <- c(1-rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]], rf.full.f.df[which.max(rf.full.f.df$fmeasure),][[1]])
-names(xgb.full.ctoff) <- c("0","1")
-FMeasPt01 <- xgb.full.ctoff[2]
+names(glm.full.ctoff) <- c("0","1")
+FMeasPt01 <- glm.full.ctoff[2]
 z <- allVotesPresPts[allVotesPresPts$pred >= FMeasPt01,]
 capturedGPs <- length(unique(z[,group$colNm]))
 capturedPolys <- length(unique(z$stratum))
@@ -123,13 +123,13 @@ cutList$FMeasPt01 <- list("value" = FMeasPt01, "code" = "FMeasPt01",
                           "prpCapPolys" = propCaptPolys,
                           "prpCapPts"=  propCaptPts)
 
-#max sensitivity plus specificity (maxSSS per Liu et al 2016)
-xgb.full.sens <- performance(xgb.full.rocr.pred,"sens")
-xgb.full.spec <- performance(xgb.full.rocr.pred,"spec")
-xgb.full.sss <- data.frame(cutSens = unlist(xgb.full.sens@x.values),sens = unlist(xgb.full.sens@y.values),
-                          cutSpec = unlist(xgb.full.spec@x.values), spec = unlist(xgb.full.spec@y.values))
-xgb.full.sss$sss <- with(xgb.full.sss, sens + spec)
-maxSSS <- xgb.full.sss[which.max(xgb.full.sss$sss),"cutSens"]
+#max sensitivity plus specificity (maxSSS per Liu et al 2016) ----
+glm.full.sens <- performance(glm.full.rocr.pred,"sens")
+glm.full.spec <- performance(glm.full.rocr.pred,"spec")
+glm.full.sss <- data.frame(cutSens = unlist(glm.full.sens@x.values),sens = unlist(glm.full.sens@y.values),
+                           cutSpec = unlist(glm.full.spec@x.values), spec = unlist(glm.full.spec@y.values))
+glm.full.sss$sss <- with(glm.full.sss, sens + spec)
+maxSSS <- glm.full.sss[which.max(glm.full.sss$sss),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$pred >= maxSSS,]
 capturedGPs <- length(unique(z[,group$colNm]))
 capturedPolys <- length(unique(z$stratum))
@@ -145,9 +145,9 @@ cutList$maxSSS <- list("value" = maxSSS, "code" = "maxSSS",
                        "prpCapPolys" = propCaptPolys,
                        "prpCapPts"=  propCaptPts)
 
-#equal sensitivity and specificity
-xgb.full.sss$diff <- abs(xgb.full.sss$sens - xgb.full.sss$spec)
-eqss <- xgb.full.sss[which.min(xgb.full.sss$diff),"cutSens"]
+#equal sensitivity and specificity ----
+glm.full.sss$diff <- abs(glm.full.sss$sens - glm.full.sss$spec)
+eqss <- glm.full.sss[which.min(glm.full.sss$diff),"cutSens"]
 z <- allVotesPresPts[allVotesPresPts$pred >= eqss,]
 capturedGPs <- length(unique(z[,group$colNm]))
 capturedPolys <- length(unique(z$stratum))
@@ -163,11 +163,11 @@ cutList$eqss <- list("value" = eqss, "code" = "eqSS",
                      "prpCapPolys" = propCaptPolys,
                      "prpCapPts"=  propCaptPts)
 
-# upper left corner of ROC plot
-xgb.full.perf <- performance(xgb.full.rocr.pred, "tpr","fpr")
+# upper left corner of ROC plot ----
+glm.full.perf <- performance(glm.full.rocr.pred, "tpr","fpr")
 # use pythagorean formula to get hypotenuse distance from 0,1 to each point in curve
-dist.to.01 <- sqrt(xgb.full.perf@x.values[[1]]^2 + (1-xgb.full.perf@y.values[[1]])^2)
-ROCupperleft <- xgb.full.perf@alpha.values[[1]][[which.min(dist.to.01)]]
+dist.to.01 <- sqrt(glm.full.perf@x.values[[1]]^2 + (1-glm.full.perf@y.values[[1]])^2)
+ROCupperleft <- glm.full.perf@alpha.values[[1]][[which.min(dist.to.01)]]
 z <- allVotesPresPts[allVotesPresPts$pred >= ROCupperleft,]
 capturedGPs <- length(unique(z[,group$colNm]))
 capturedPolys <- length(unique(z$stratum))
@@ -183,22 +183,17 @@ cutList$ROC <- list("value" = ROCupperleft, "code" = "ROC",
                     "prpCapPolys" = propCaptPolys,
                     "prpCapPts"=  propCaptPts)
 
-#calc a few measures on the full set, call it test set
+#calc a few measures on the full set, call it test set ----
 # total number of GPs (subtract absence class)
-totGPs.f <- length(unique(xgb.df.full[,group$colNm])[!grepl("pseu-a",unique(xgb.df.full[,group$colNm]))])
-totPolys.f <- length(unique(xgb.df.full$stratum)[!grepl("pseu-a",unique(xgb.df.full$stratum))])
-totPts.f <- nrow(xgb.df.full[xgb.df.full$pres == 1,])
+totGPs.f <- length(unique(glm.df.full[,group$colNm])[!grepl("pseu-a",unique(glm.df.full[,group$colNm]))])
+totPolys.f <- length(unique(glm.df.full$stratum)[!grepl("pseu-a",unique(glm.df.full$stratum))])
+totPts.f <- nrow(glm.df.full[glm.df.full$pres == 1,])
 
+glm.predicted <- predict(glmFit1, glm.df.full, type = "prob")
+glm.predicted <- as.data.frame(cbind(glm.df.full[,c("pres","group_id","stratum")], "pred" = glm.predicted[,"pres"]))
+allVotesPresPts <- glm.predicted[glm.predicted$pres=="1",]
 
-#needs to be re-created ... contains an external pointer 
-df.full.xgb <- xgb.DMatrix(as.matrix(xgb.df.full[,6:ncol(xgb.df.full)]), 
-                             label=as.integer(as.character(xgb.df.full$pres)))
-
-xgb.predicted <- predict(xgb.full, df.full.xgb)
-xgb.predicted <- as.data.frame(cbind(xgb.df.full[,c("pres","group_id","stratum")], "pred" = xgb.predicted))
-allVotesPresPts <- xgb.predicted[xgb.predicted$pres=="1",]
-
-#get minimum test set presence "Min Pres Validation Points"
+#get minimum test set presence "Min Pres Validation Points" ----
 MPVP <- min(allVotesPresPts[, "pred"])
 capturedGPs <- length(unique(allVotesPresPts[,group$colNm]))
 capturedPolys <- length(unique(allVotesPresPts$stratum))
@@ -214,7 +209,7 @@ cutList$MPVP <- list("value" = MPVP, "code" = "MPVP",
                      "prpCapPolys" = propCaptPolys,
                      "prpCapPts"=  propCaptPts)
 
-#get minimum test set presence by group "Min Pres Validation Groups"
+#get minimum test set presence by group "Min Pres Validation Groups" ----
 #use polys for terrestrial models (GPs would be the same as subset)
 maxInEachGP <- aggregate(allVotesPresPts$pred, 
                          by=list(allVotesPresPts$stratum), max)

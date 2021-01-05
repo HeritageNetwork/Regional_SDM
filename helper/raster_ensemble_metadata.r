@@ -9,7 +9,13 @@
 # TODO: ^^
 model_run_name
 ensemble_algos
-#algo <- "xgb"
+
+rasType <- "ensemble"
+ensembleType <- "sum"
+threshType <- "maxSSS"
+inputType <- "Thresholded models"
+ensembleMethod <- "sumThresholds"  
+#ensembleMethod <- "meanOfContinuous"
 
 # to later wrap into a function, the things needed that vary:
 # 1. model_run_name 
@@ -27,17 +33,17 @@ library(DBI)
 library(raster)
 library(sf)
 
-for(algo in ensemble_algos){
+#for(algo in ensemble_algos){
   
   # start by gathering up data from databases ----
   cutecode <- strsplit(model_run_name, split = "_")[[1]][[1]]
   model.date <- strsplit(model_run_name, split = "_")[[1]][[2]]
   
   db <- dbConnect(SQLite(),dbname=nm_db_file)
-  sql <- paste0("SELECT * ",
-                "FROM lkpAlgorithms ",
-                "WHERE shortCode ='", algo , "';")
-  algo.dat <- dbGetQuery(db, sql)
+  # sql <- paste0("SELECT * ",
+  #               "FROM lkpAlgorithms ",
+  #               "WHERE shortCode ='", algo , "';")
+  # algo.dat <- dbGetQuery(db, sql)
   
   sql <- paste0("SELECT * ",
                 "FROM lkpSpecies ",
@@ -50,17 +56,17 @@ for(algo in ensemble_algos){
   model.run.dat <- dbGetQuery(db, sql)
   algos <- strsplit(model.run.dat$algorithms, split = ", ")[[1]]
   
-  sql <- paste0("SELECT * ",
-                "FROM tblModelResultsValidationStats ",
-                "WHERE model_run_name ='", model_run_name , "' ", 
-                "AND algorithm = '", algo, "';")
-  valStats.dat <- dbGetQuery(db, sql)
+  # sql <- paste0("SELECT * ",
+  #               "FROM tblModelResultsValidationStats ",
+  #               "WHERE model_run_name ='", model_run_name , "' ", 
+  #               "AND algorithm = '", algo, "';")
+  # valStats.dat <- dbGetQuery(db, sql)
   
-  sql <- paste0("SELECT * ",
-                "FROM tblModelInputs ",
-                "WHERE model_run_name ='", model_run_name , "' ", 
-                "AND algorithm = '", algo, "';")
-  inputStats.dat <- dbGetQuery(db, sql)
+  # sql <- paste0("SELECT * ",
+  #               "FROM tblModelInputs ",
+  #               "WHERE model_run_name ='", model_run_name , "' ", 
+  #               "AND algorithm = '", algo, "';")
+  # inputStats.dat <- dbGetQuery(db, sql)
   
   sql <- paste0("SELECT ProgramName, State, DataProvidedDate, EGT_ID ", 
                 "FROM lkpDataSources ",
@@ -68,11 +74,11 @@ for(algo in ensemble_algos){
                 "WHERE mapDataSourcesToSpp.EGT_ID = ", spp.dat$EGT_ID[[1]], ";")
   presenceDatContributors.dat <- dbGetQuery(db, sql)
   
-  sql <- paste0("SELECT * from tblModelResultsVarsUsed ",
-                "WHERE model_run_name = '", model_run_name, "' ",
-                "AND algorithm = '", algo, "' ", 
-                "AND inFinalModel = 1;")
-  varsUsed.dat <- dbGetQuery(db, sql)
+  # sql <- paste0("SELECT * from tblModelResultsVarsUsed ",
+  #               "WHERE model_run_name = '", model_run_name, "' ",
+  #               "AND algorithm = '", algo, "' ", 
+  #               "AND inFinalModel = 1;")
+  # varsUsed.dat <- dbGetQuery(db, sql)
   
   dbDisconnect(db)
   rm(db)
@@ -189,9 +195,7 @@ for(algo in ensemble_algos){
   cit_i[[1]]$Publication_Date <- model.date
   cit_i[[1]]$Title <- paste0("Predicted habitat suitability for ", 
                              spp.dat$common_name, " (", spp.dat$scientific_name,")", 
-                             " based on the ", 
-                             algo.dat$fullName, 
-                             " algorithm.")
+                             " based on an ensemble of suitability models.")
   cit_i[[1]]$Publication_Information <- as.list(c(
       "Publication_Place" = " Arlington, VA",
       "Publisher" = "NatureServe"
@@ -229,13 +233,23 @@ for(algo in ensemble_algos){
   des_i[[1]] <- vector("list", 2)
   names(des_i[[1]]) <- c("Abstract",
                          "Purpose")
-  des_i[[1]]$Abstract <- paste0("This habitat suitability model (HSM) displays ",
-                               "the probability (0-1) of a location having similar ",
-                               "environmental conditions in comparison to known presence locations. ",
-                               "It is one of ", length(algos), " individual models created for this ",
-                               "species, to be combined into an ensemble model.")
-    
-  des_i[[1]]$Purpose <- paste0("This habitat suitability model (HSM) was developed ",
+  
+  abstractChoices <- data.frame("ensMethod" = c("sumThresholds","meanOfContinuous"),
+                "ensText" = c(
+                  paste0("This raster depicts the output of an ensemble of ", 
+                         "Habitat Suitability Models (HSM). ",
+                         "There were ", length(ensemble_algos), " HSM used as inputs. Each ",
+                         "was thresholded at ", threshType, " and then combined by summing."),
+                  paste0("This raster depicts the output of an ensemble of ", 
+                         "Habitat Suitability Models (HSM). ",
+                         "There were ", length(ensemble_algos), " HSM used as inputs. Each ",
+                         "continuous probability raster was combined by calculating the mean of the inputs.")
+                )
+                , stringsAsFactors = FALSE)
+                            
+  des_i[[1]]$Abstract <- abstractChoices[match(ensembleMethod, abstractChoices$ensMethod),"ensText"]
+
+  des_i[[1]]$Purpose <- paste0("This habitat suitability ensemble model was developed ",
                               "to support survey and discovery, conservation action, ", 
                               " and management decisionmaking for this species.")
   
@@ -252,7 +266,7 @@ for(algo in ensemble_algos){
                           "Maintenance_and_Update_Frequency")
   stat_i[[1]]$Progress <- paste0("Complete")
   stat_i[[1]]$Maintenance_and_Update_Frequency <- 
-              paste0("This model should be re-run if surveys reveal additional information ",
+              paste0("The models should be re-run and the ensemble re-created if surveys reveal additional information ",
                       "about the distribution of this species or if additional relevant ",
                       "predictor variables are developed.")
   # Status:
@@ -601,16 +615,23 @@ for(algo in ensemble_algos){
   # DQ_info: attribute accuracy ----
   
   atta <- as.list(c("Attribute_Accuracy" = NA))
-  atta[[1]] <- as.list(c("Attribute_Accuracy_Report" = paste0(
-    "The only attribute associated with this data set is the raster VALUE, ",
-    "which represents the probability that the attributed raster cell is similar ",
-    "to conditions where this species is known to occur. External validation ", 
-    "reports accuracy for this attribute with the True Skill Statistic as ", 
-    round(valStats.dat[valStats.dat$metric == "TSS", "metric_mn"], 3), 
-    " and the Area Under the ROC Curve (AUC) as ",
-    round(valStats.dat[valStats.dat$metric == "AUC", "metric_mn"], 3), 
-    "."
-  )))
+  
+  attaChoices <- data.frame(
+    "ensMethod" = c("sumThresholds","meanOfContinuous"),
+    "attaText" = c(
+        paste0(
+          "The only attribute associated with this data set is the raster VALUE, ",
+          "which represents the number of algorithms predicting suitable habitat ",
+          "at a specific raster cell."
+        ),
+        paste0(
+          "The only attribute associated with this data set is the raster VALUE, ",
+          "which represents the mean probability value for all input rasters."
+        )
+      )
+      , stringsAsFactors = FALSE)
+  
+  atta[[1]] <- as.list(c("Attribute_Accuracy_Report" = attaChoices[match(ensembleMethod, attaChoices$ensMethod),"attaText"]))
   
   #   Attribute_Accuracy:
   #     Attribute_Accuracy_Report: BLM REQUIRED
@@ -637,7 +658,7 @@ for(algo in ensemble_algos){
   # DQ_info: completeness ----
   corep <- as.list(c("Completeness_Report" = paste0(
     "All raster cells within the modeling area are assigned a VALUE and thus ",
-    "the raster represents a complete prediction surface. Care was taken to ",
+    "the raster represents a complete surface. Care was taken to ",
     "ensure all input rasters were free of NULL cells within the modeling area ",
     "which would have resulted in equivalent NULL cells in this output."
     )))
@@ -647,8 +668,16 @@ for(algo in ensemble_algos){
   #   <complete>BLM REQUIRED</complete>
   
   # DQ_info: positional accuracy ----
-  
-  predictionFileName <- paste0(model.run.dat$model_run_name, "_", algo, ".tif")
+
+  rasNameChoices <- data.frame(
+    "ensMethod" = c("sumThresholds","meanOfContinuous"),
+    "ensText" = c(
+      paste0(model.run.dat$model_run_name, "_sum_", oneThresh, ".tif"),
+      paste0(model.run.dat$model_run_name, "_meanSuitabilities.tif")
+    )
+    , stringsAsFactors = FALSE)
+
+  predictionFileName <- rasNameChoices[match(ensembleMethod, rasNameChoices$ensMethod),"ensText"]
   fullPath <- here("_data","species", spp.dat$sp_code, "outputs","model_predictions",predictionFileName)
   ras <- raster(fullPath)
   xreso <- xres(ras)
@@ -660,7 +689,7 @@ for(algo in ensemble_algos){
   
   poac[[1]]$Horizontal_Positional_Accuracy <- as.list(c("Horizontal_Positional_Accuracy_Report" = paste0(
     "Horizontal accuracy is dependent on the accuracy of the inputs used to generate this model ", 
-    "and these inputs vary considerably. As such, all boundaries between habitat suitability levels ", 
+    "and these inputs vary considerably. As such, all boundaries between raster VALUE levels ", 
     "should be considered as approximate on the ground and should be validated with field visitation. ",
     "Raster cell size is ", round(xreso), " meters by ", round(yreso), " meters, indicating positional accuracy ",
     "should be considered to be broader than this cell size." 
@@ -685,29 +714,23 @@ for(algo in ensemble_algos){
   # DQ_info: lineage ----
   
   lin <- as.list(c("Lineage" = NA))
-  lin[[1]] <- vector("list",3) # number of steps, plus one for source_info if needed
-  names(lin[[1]]) <- rep("Process_Step", 3)
+  lin[[1]] <- vector("list",4) # number of steps, plus one for source_info if needed
+  names(lin[[1]]) <- rep("Process_Step", 4)
   
   lin[[1]][[1]] <- vector("list",3)
   names(lin[[1]][[1]]) <- c("Process_Description", "Process_Date", "Process_Contact")
   lin[[1]][[1]]$Process_Description <- paste0("Acquire and clean up input points. ", 
-        "We acquired presence locations from these sources: (",
-        paste(presenceDatContributors.dat$ProgramName, collapse = ", "), ". ",
-        "Grouping (", inputStats.dat$feat_grp_count, " groups) and random selection within ",
-        "these groups resulted in ", inputStats.dat$tot_obs_subsamp, " presence observations ", 
-        "used as inputs to the modeling process.")
+        "We acquired presence locations from these sources: ",
+        paste(presenceDatContributors.dat$ProgramName, collapse = ", "), ". ")
   
-  lin[[1]][[1]]$Process_Date <- format(as.Date(inputStats.dat$datetime), "%Y%m%d")
+  lin[[1]][[1]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
   lin[[1]][[1]]$Process_Contact <- as.list(c("Contact_Information" = NA))
   lin[[1]][[1]]$Process_Contact$Contact_Information <- all_contacts$BLM_Davidson$Contact_Information
   
   lin[[1]][[2]] <- vector("list",3)
   names(lin[[1]][[2]]) <- c("Process_Description", "Process_Date", "Process_Contact")
   lin[[1]][[2]]$Process_Description <- paste0("Model relationship between presence ",
-          "observations and the background landscape. We used ", algo.dat$fullName, " ",
-          "in the R package ", algo.dat$rPackage, " using ", model.run.dat$r_version, ". ", 
-          "A total number of ", nrow(varsUsed.dat), " environmental variables were used ",
-          "in this model.")
+          "observations and the background landscape.")
   lin[[1]][[2]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
   lin[[1]][[2]]$Process_Contact <- as.list(c("Contact_Information" = NA))
   lin[[1]][[2]]$Process_Contact$Contact_Information <- all_contacts$NYNHP_Howard$Contact_Information
@@ -715,11 +738,18 @@ for(algo in ensemble_algos){
   lin[[1]][[3]] <- vector("list",3)
   names(lin[[1]][[3]]) <- c("Process_Description", "Process_Date", "Process_Contact")
   lin[[1]][[3]]$Process_Description <- paste0("Use model to predict probability of ",
-          "suitable habitat throughout study area. The final output ranges from ", 
-          round(minValue(ras), 1), " to ", round(maxValue(ras), 1), ". ")
+          "suitable habitat throughout study area.")
   lin[[1]][[3]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
   lin[[1]][[3]]$Process_Contact <- as.list(c("Contact_Information" = NA))
   lin[[1]][[3]]$Process_Contact$Contact_Information <- all_contacts$NYNHP_Howard$Contact_Information
+  
+  lin[[1]][[4]] <- vector("list",3)
+  names(lin[[1]][[4]]) <- c("Process_Description", "Process_Date", "Process_Contact")
+  lin[[1]][[4]]$Process_Description <- paste0("Create ensemble output by merging ", length(ensemble_algos),
+                                              " individual models.")
+  lin[[1]][[4]]$Process_Date <- format(as.Date(model.run.dat$model_start_time), "%Y%m%d")
+  lin[[1]][[4]]$Process_Contact <- as.list(c("Contact_Information" = NA))
+  lin[[1]][[4]]$Process_Contact$Contact_Information <- all_contacts$NYNHP_Howard$Contact_Information
   
   #   Lineage:
   #     Source_Information:
@@ -936,10 +966,28 @@ for(algo in ensemble_algos){
   names(eai[[1]]$Detailed_Description$Attribute) <- c("Attribute_Label", "Attribute_Definition",
                                                       "Attribute_Definition_Source", "Attribute_Domain_Values")
   eai[[1]]$Detailed_Description$Attribute$Attribute_Label <- "VALUE"
-  eai[[1]]$Detailed_Description$Attribute$Attribute_Definition <- 
-    paste0("Modeled prediction of suitability of raster cell for ", spp.dat$common_name, 
-           " (", spp.dat$scientific_name, ") where values closer to 1 represent higher ",
-           "suitability.")
+  
+  attAbstractChoices <- data.frame(
+    "ensMethod" = c("sumThresholds","meanOfContinuous"),
+    "ensText" = c(
+      paste0("Estimate of model agreement for ",
+             length(ensemble_algos), " habitat models of ",
+             spp.dat$common_name, " (", spp.dat$scientific_name, "). ",
+             "Each individual model was used to classify, independently, areas deemed as ",
+             "suitable habitat; these areas were assigned a value of one. This raster shows the ",
+             "sum of those classified rasters, thus higher numbers show areas where more models ",
+             "classfied 'suitable' habitat."),
+      paste0("Estimate of average model suitability for ",
+             length(ensemble_algos), " habitat models of ",
+             spp.dat$common_name, " (", spp.dat$scientific_name, "). ",
+             "Each individual model was used to predict the probability of suitable habitat ",
+             "in the study area; this raster show the mean probability for these models at ",
+             "each location."
+    ))
+    , stringsAsFactors = FALSE)
+
+  eai[[1]]$Detailed_Description$Attribute$Attribute_Definition <-
+    attAbstractChoices[match(ensembleMethod, attAbstractChoices$ensMethod),"ensText"]
   eai[[1]]$Detailed_Description$Attribute$Attribute_Definition_Source <- "Suitability modeling methodology."
   eai[[1]]$Detailed_Description$Attribute$Attribute_Domain_Values <- 
     as.list(c("Range_Domain" = NA))
@@ -954,11 +1002,7 @@ for(algo in ensemble_algos){
   eai[[1]]$Overview_Description <- vector("list",2)
   names(eai[[1]]$Overview_Description) <- c("Entity_and_Attribute_Overview", "Entity_and_Attribute_Detail_Citation")
   eai[[1]]$Overview_Description$Entity_and_Attribute_Overview <- paste0(
-    "This is a raster dataset with a single attribute, the value of each raster cell. ",
-    "This value represents habitat suitability for the species being represented, ",
-    "based on modeling the relationship between known locations for this species ", 
-    "and environmental conditions throughout the modeling area. Values generally ",
-    "range from 0-1, where higher values represent higher suitability."
+    "This is a raster dataset with a single attribute, the value of each raster cell. "
     )
   eai[[1]]$Overview_Description$Entity_and_Attribute_Detail_Citation <- "None"
   
@@ -1480,11 +1524,20 @@ for(algo in ensemble_algos){
   
   # export the file ----
   metadataConverted <- listToXml(y, "metadata")
-  fn <- paste0(model.run.dat$model_run_name, "_", algo, ".xml")
+
+  fileNameChoices <- data.frame(
+    "ensMethod" = c("sumThresholds","meanOfContinuous"),
+    "ensText" = c(
+      paste0(model.run.dat$model_run_name, "_sum_", oneThresh, ".xml"),
+      paste0(model.run.dat$model_run_name, "_meanSuitabilities.xml")
+    )
+    , stringsAsFactors = FALSE)
+  
+  fn <- fileNameChoices[match(ensembleMethod, fileNameChoices$ensMethod),"ensText"]
   fp <- here("_data","species", spp.dat$sp_code, "outputs","metadata")
   setwd(fp)
   saveXML(metadataConverted, file = fn)
 
-} # this is the end of the algo loop
+#} # this is the end of the algo loop
 
 
