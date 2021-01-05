@@ -16,6 +16,7 @@ library(RSQLite)
 library(stringi)  #only used once, could clean up?
 #library(tables)
 
+library(raster)
 library(tmap)
 library(tmaptools)
 library(OpenStreetMap)
@@ -127,15 +128,15 @@ vuStatsList <- lapply(vuStatsList, FUN = function(x) x[,!names(x)=="algo"])
 
 for(algo in names(vuStatsList)){
   if(algo == "me"){
-    medat <- data.frame(Name = c("linear feature type used",
+    algodat <- data.frame(Name = c("linear feature type used",
                                  "product feature type used",
                                  "quadratic feature type used",
                                  "hinge feature type used"),
                value = c("yes","yes","yes","yes"))
-    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], medat)
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], algodat)
   }
   if(algo == "xgb"){
-    xgbdat <- data.frame(Name = c(
+    algodat <- data.frame(Name = c(
                                   "iterations",
                                   "eta",
                                   "max depth",
@@ -155,10 +156,10 @@ for(algo in names(vuStatsList)){
                                    xgb.full$params$objective
                                    ))
     #paste0(deparse(xgb.full$call), collapse = ""),
-    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], xgbdat)
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], algodat)
   }
   if(algo == "rf"){
-    rfdat <- data.frame(Name = c(
+    algodat <- data.frame(Name = c(
                                 "mtry",
                                 "number of trees",
                                 "type of trees"
@@ -169,10 +170,10 @@ for(algo in names(vuStatsList)){
                                 rf.full$type
                               )
     )
-    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], rfdat)
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], algodat)
   }
   if(algo == "gam"){
-    gamdat <- data.frame(Name = c(
+    algodat <- data.frame(Name = c(
       "method",
       "family",
       "validation method"
@@ -183,7 +184,37 @@ for(algo in names(vuStatsList)){
       "Leave one out by group (LGOCV)"
     )
     )
-    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], gamdat)
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], algodat)
+  }
+  if(algo == "glm"){
+    algodat <- data.frame(Name = c(
+      "method",
+      "model type",
+      "family"
+    ),
+    value = c(
+      glmFit1$method,
+      glmFit1$modelType,
+      paste0(glmFit1$finalModel$family$family,":", glmFit1$finalModel$family$link)
+    )
+    )
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], algodat)
+  }
+  if(algo == "mars"){
+    algodat <- data.frame(Name = c(
+      "method",
+      "model type",
+      "nprune",
+      "degree"
+    ),
+    value = c(
+      marsFit1$method,
+      marsFit1$modelType,
+      marsFit1$bestTune$nprune,
+      marsFit1$bestTune$degree
+    )
+    )
+    vuStatsList[[algo]] <- rbind(vuStatsList[[algo]], algodat)
   }
 }
 
@@ -194,7 +225,7 @@ attr(vuStatsList, "subheadings") <- paste0("\\textcolor{",
                                            "Algorithm = ",  names(vuStatsList),"}")
 
 # vuStatsList is what gets used in knitr file
-rm(db, sql, varsUsedStats, vuStats, medat, xgbdat, rfdat, algo)
+rm(db, sql, varsUsedStats, vuStats, algodat, algo)
 
 ##
 ## build ROC plot ----
@@ -205,8 +236,8 @@ lineColors <- brewer.pal(6, "Dark2")[1:length(ensemble_algos)]
 
 figSpecs <- data.frame(algos = ensemble_algos,
                        col = lineColors,
-                       lwd = c(3,2,1),
-                       lty = c(1,1,1),
+                       lwd = c(rep(2,length(ensemble_algos))),
+                       lty = c(rep(1,length(ensemble_algos))),
                        htmlCol = sub("#","",lineColors),
                        stringsAsFactors = FALSE)
 
@@ -292,27 +323,63 @@ impPlot <- ggplot(data = varsSorted) +
 
 ##
 ## build partial plots ----
+# find the longest of our set of algos
+# this lines are for the slim chance we have less than 9 vars total. Not likely now. 
 
+#### temporary  TODO
+if(exists("pPlots")){
+  rf.pPlots <- pPlots
+}
+
+maxVars <- 0
+for(algo in ensemble_algos){
+  objName <- paste0(algo, ".pPlots")
+  if(algo == "rf"){
+    numVars <- length(get(objName))
+  } else {
+    numVars <- length(get(objName)$fullNames)  
+  }
+  if(numVars > maxVars) {
+    maxVars <- numVars
+    mostPplots <- objName
+    mostPplotsAlgo <- algo
+  }
+}
 # create how many?
-if(length(pPlots) < 9){
-  numPPl <- length(pPlots)
+if(maxVars < 9){
+  numPPl <- maxVars
 } else {
   numPPl <- 9
 }
+rm(maxVars, objName, numVars)
+
 # get the order used in importance plot
 pplotVars <- varsSorted[order(varsSorted$impVal, decreasing = TRUE), "fullName"]
 pplotVars <- pplotVars[1:numPPl,]
+
+# using info from importance plot, which of the top 9 envars is in the most models?
+# easiest way to get the most complete legend
+topVars <- varsImp[varsImp$fullName %in% pplotVars$fullName,]
+varCount <- aggregate(topVars$fullName, list(topVars$fullName), length)
+varCount$order <- nrow(varCount):1
+maxCount <- max(varCount$x)
+varCount <- varCount[order(varCount$order),]
+plotForLeg <- min(grep(maxCount, varCount$x))
+rm(topVars, varCount, maxCount)
 
 # make a list to fill with grobs
 grobList <- vector("list",numPPl)
 names(grobList) <- 1:numPPl
 
-# get the location of each rf pplot
-rflist <- unlist(lapply(pPlots, FUN = function(x) x$fname))
+# get the location of the longest set
+if(mostPplotsAlgo == "rf"){
+  elist <- unlist(lapply(get(mostPplots), FUN = function(x) x$fname))  
+} else {
+  elist <- NA
+}
 
 for (plotpi in 1:numPPl){
   evar <- pplotVars$fullName[[plotpi]]
-  rfLoc <- match(evar, rflist)
 
   #get gridname
   grdName <- unique(varsImp.full[varsImp.full$fullName == evar, "gridName"])
@@ -323,11 +390,10 @@ for (plotpi in 1:numPPl){
 
   # pplot data
   # do rf only if there are data
-  if(!is.na(rfLoc)){
-    # rf
-    #grdName <- pPlots[[rfLoc]]$gridName
-    grdFullName <- pPlots[[rfLoc]]$fname
-    dat <- data.frame(x = pPlots[[rfLoc]]$x, y = pPlots[[rfLoc]]$y)
+  rfLoc <- match(evar, elist)
+  if(exists("rf.pPlots") & !is.na(rfLoc)){
+    grdFullName <- rf.pPlots[[rfLoc]]$fname
+    dat <- data.frame(x = rf.pPlots[[rfLoc]]$x, y = rf.pPlots[[rfLoc]]$y)
     dat <- cbind(dat, algo = "rf")
     #standardize 0-1
     dat$y <- (dat$y - min(dat$y))/(max(dat$y)-min(dat$y))    
@@ -379,6 +445,32 @@ for (plotpi in 1:numPPl){
       rm(dfPointer)
     }
   }
+  # check and use glm if there are data
+  if(exists("glm.pPlots")){
+    dfPointer <- unlist(lapply(glm.pPlots, FUN = function(x){grdName %in% names(x)}))
+    if(TRUE %in% dfPointer){
+      glmdat <- glm.pPlots[dfPointer][[1]]
+      names(glmdat) <- c("x","y")
+      glmdat <- cbind(glmdat, algo = "glm")
+      #standardize 0-1
+      glmdat$y <- (glmdat$y - min(glmdat$y))/(max(glmdat$y)-min(glmdat$y))
+      dat <- rbind(dat, glmdat)
+      rm(dfPointer)
+    }
+  }
+  # check and use mars if there are data
+  if(exists("mars.pPlots")){
+    dfPointer <- unlist(lapply(mars.pPlots, FUN = function(x){grdName %in% names(x)}))
+    if(TRUE %in% dfPointer){
+      marsdat <- mars.pPlots[dfPointer][[1]]
+      names(marsdat) <- c("x","y")
+      marsdat <- cbind(marsdat, algo = "mars")
+      #standardize 0-1
+      marsdat$y <- (marsdat$y - min(marsdat$y))/(max(marsdat$y)-min(marsdat$y))
+      dat <- rbind(dat, marsdat)
+      rm(dfPointer)
+    }
+  }
   
  pplot <- ggplot(data = dat, aes(x=x, y=y, color = algo)) + 
     geom_line(size = 1) +
@@ -423,8 +515,8 @@ for (plotpi in 1:numPPl){
   #grid.draw(gpplt)
   grobList[[plotpi]] <- gpplt
 
-  # if on first loop, extract legends
-  if(plotpi == 1){
+  # if on loop with most lines, extract legends
+  if(plotpi == plotForLeg){
     # Function to extract legend
     g_legend <- function(a.gplot){ 
       tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
@@ -436,7 +528,7 @@ for (plotpi in 1:numPPl){
     legPlot1 <- pplot + 
       labs(color = "Algorithm") +
       theme(legend.position = "bottom",
-            legend.margin=margin(t=0, r=0, b=0, l=0, unit="null"),
+            legend.margin=margin(t=0, r=0, b=0, l=0, unit="pt"),
             text = element_text(size=14))
     legend1 <- g_legend(legPlot1) 
     
@@ -445,7 +537,7 @@ for (plotpi in 1:numPPl){
       scale_x_continuous() + 
       labs(color = "Density") +
       theme(legend.position = "bottom",
-            legend.margin=margin(t=0, r=0, b=0, l=0, unit="null"),
+            legend.margin=margin(t=0, r=0, b=0, l=0, unit="pt"),
             text = element_text(size=14))
     legend2 <- g_legend(legPlot2)
   }
