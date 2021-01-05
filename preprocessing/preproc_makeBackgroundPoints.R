@@ -7,45 +7,19 @@ library(sf)
 library(here)
 library(RSQLite)
 
-# temp - tgh - make a shapefile of study area based on HUC
-# get range info from the DB (as a list of HUCs)
-# model_species <- "linuallr"
-# nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking_NM.sqlite")
-# db <- dbConnect(SQLite(),dbname=nm_db_file)
-# SQLquery <- paste0("SELECT huc10_id from lkpRange
-#                    inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
-#                    where lkpSpecies.sp_code = '", model_species, "';")
-# hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
-# dbDisconnect(db)
-# rm(db)
-# # get the huc10 layer
-# nm_HUC_pth <- here("_data","other_spatial","feature")
-# nm_HUC_file <- "HUC10.shp"
-# 
-# op <- options()
-# options(useFancyQuotes = FALSE) #need straight quotes for query
-# qry <- paste0("SELECT * FROM \"HUC10\" where HUC10 IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," )")
-# rng <- st_read(nm_HUC_pth, nm_HUC_file,
-#                query = qry)
-options(op)
-rm(op)
-
-#sa <- st_union(rng)
-# 
-
-# background points shapefile (points are generated within this boundary). 
-# this should be in the project's projection (matching the raster EVs)
+# HUC10 layer should be in the project's projection (matching the raster EVs)
 
 setwd(here("_data","other_spatial","feature"))
 # states <- st_read("US_States.shp")
-states <- st_read("HUC10_full_bkg_area.shp")
-# 
-# #study area is a dissolved representation of CONUS
-sa <- st_union(states)
+stdyAreaHucs <- st_read("HUC10_full_bkg_area.gpkg",  "HUC10_bkg")
 
-# huc12s. These polygons are used to attribute points. Must have "HUC_12" column.
-#huc12 <- "N:/rangestuff/HUC_ref/huc12_fromChris/huc12.shp"
-huc12 <- "G:/_Projects/_NM_BLM/HSM_repo/_data/other_spatial/feature/HUC12_full_bkg_area.shp"
+# continual problems with ESRI Albers. Set it here manually
+# ignore the warning
+# st_crs(stdyArea) <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+suppressWarnings(st_crs(stdyAreaHucs) <- 42303)
+
+# #study area is a dissolved representation
+sa <- st_union(stdyAreaHucs)
 
 # number of points to generate
 numpts <- 200000
@@ -58,55 +32,34 @@ pathToPts <- here("_data","env_vars","background")
 # path to output tables (a database (background.sqlite) is generated here if it doesn't exist)
 pathToTab <- here("_data","env_vars","tabular")
 
-# load layers
-#sa <- st_read(StudyAreaPoly)
-crs <- st_crs(sa)
-huc <- st_read(huc12)
-
-if (crs != st_crs(huc)){
-  huc <- st_transform(st_read(huc12), crs)  
-}
 
 # generate points
 samps1 <- st_sample(sa, size = numpts)
 samps1 <- st_sf(fid = 1:length(samps1), geometry = samps1)
-samps <- st_join(samps1, huc, join = st_intersects)[c("fid", "HUC12")]
-names(samps) <- c("fid", "huc12", "geometry")
+samps <- st_join(samps1, stdyAreaHucs, join = st_intersects)[c("fid", "HUC10")]
+names(samps) <- c("fid", "huc10", "geometry")
 
 # create DF
-sampsDF <- data.frame(fid = samps$fid, huc12 = samps$huc12, wkt = st_as_text(samps$geometry))
+sampsDF <- data.frame(fid = samps$fid, huc10 = samps$huc10, wkt = st_as_text(samps$geometry))
 
 # send to database
-#db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_conus.sqlite"))
-db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_NM.sqlite"))
+db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_AZ.sqlite"))
 tp <- as.vector("INTEGER")
 names(tp) <- "fid"
-dbWriteTable(db, table, sampsDF, overwrite = T, field.types = tp)
-
-# ### sample another 10 million, add to the first batch:
-# numpts <- 10000000
-# 
-# # generate points
-# samps1 <- st_sample(sa, size = numpts)
-# samps1 <- st_sf(fid = 1:length(samps1), geometry = samps1)
-# samps <- st_join(samps1, huc, join = st_intersects)[c("fid", "HUC_12")]
-# names(samps) <- c("fid", "huc12", "geometry")
-# 
-# # create DF
-# sampsDF <- data.frame(fid = samps$fid, huc12 = samps$huc12, wkt = st_as_text(samps$geometry))
-# 
-# dbWriteTable(db, table, sampsDF, append = TRUE)
-
+dbWriteTable(db, table, sampsDF, overwrite = TRUE, field.types = tp)
 
 # write CRS
-tcrs <- data.frame(table_name = table, proj4string = as.character(crs$proj4string))
-try(dbExecute(db, paste0("DELETE FROM lkpCRS where table_name = '", table, "';")), silent = T)
-dbWriteTable(db, "lkpCRS", tcrs, append = T)
+tcrs <- data.frame(table_name = table, 
+                   proj4string = st_crs(stdyAreaHucs)$proj4string,
+                   wkt = st_crs(stdyAreaHucs)$wkt,
+                   epsg = st_crs(stdyAreaHucs)$epsg)
+try(dbExecute(db, paste0("DELETE FROM lkpCRS where table_name = '", table, "';")), silent = TRUE)
+dbWriteTable(db, "lkpCRS", tcrs, append = TRUE)
 
-# also write to geopackage  ### still can't get to load in arcpro
-# st_write(samps, dsn = paste0(pathToPts, "/", table, "_eriogyps.gpkg"), 
-#          layer = "eriogyps_rpts", 
-#          delete_layer = TRUE)
+# also write to geopackage  
+st_write(samps, dsn = paste0(pathToPts, "/", table, ".gpkg"),
+         layer = "bkg_pts",
+         delete_layer = TRUE)
 
 dbDisconnect(db)
 rm(db)
