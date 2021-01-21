@@ -35,7 +35,8 @@ tiflist <- list.files(path = pathToRas, pattern = ".tif$", recursive = TRUE)
 ## already got some clipped? use the next few lines to check and 
 ## remove the ones already done
 donetiflist <- list.files(path = pathToClipped, pattern = ".tif$")
-finalTifList <- tiflist[!tiflist %in% donetiflist]
+
+finalTifList <- tiflist[!sub("^[_[:alnum:]]+/","",tiflist) %in% donetiflist]
 tiflist <- finalTifList
 
 # tack on the full paths and name them
@@ -47,13 +48,13 @@ bbx <- st_bbox(cs)
 extnt <- c(bbx$xmin, bbx$xmax, bbx$ymin, bbx$ymax)
 
 ## clip the rasters ----
-for (i in 109:length(gridlist)){
+for (i in 1:length(gridlist)){
   ras <- raster(gridlist[[i]])
   #strip subfolders from new name
   rasOut <- sub("^[_[:alnum:]]+/","",names(gridlist[i]))
   fn <- paste(pathToClipped, "/", rasOut, ".tif", sep="")
   a <- crop(ras,extnt)
-  writeRaster(a, filename = fn, format = "GTiff", overwrite = TRUE) # datatype = "INT4S"
+  writeRaster(a, filename = fn, format = "GTiff", overwrite = TRUE, datatype = "INT4S")
 }
 
 

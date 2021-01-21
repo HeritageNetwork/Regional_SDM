@@ -63,6 +63,7 @@ if(length(nulls) > 0){
 
 #update only one layer
 #gridlist <- gridlist[grepl("nm_gypfine",names(gridlist))]
+#gridlist <- gridlist[grepl("ntm",names(gridlist))]
 
 envStack <- stack(gridlist)
 
@@ -71,7 +72,7 @@ s.list <- unstack(envStack)
 names(s.list) <- names(envStack)
 
 ## Get random points table ----
-db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_AZ.sqlite"))
+db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_AZ_test.sqlite"))
 
 tcrs <- dbGetQuery(db, paste0("SELECT epsg e from lkpCRS where table_name = '", pts_table, "';"))$e
 
