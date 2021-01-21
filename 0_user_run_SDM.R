@@ -1,7 +1,7 @@
 # File: user_run_SDM.r
 # Purpose: Run a new, full SDM model (all steps)
 library(checkpoint)
-checkpoint("2020-04-22")
+checkpoint("2020-04-22", scanForPackages = FALSE)
 
 library(here)
 rm(list=ls())
@@ -10,26 +10,27 @@ rm(list=ls())
 # Step 1: Setting for the model run
 
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "astrgyps"
+model_species <- "chiopalaorga"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
 loc_model <- here("_data", "species")
 # Modeling database
-nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking_NM.sqlite")
+nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking_AZ.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
-nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
+#nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
+nm_presFile <- here("_data", "occurrence", paste0(model_species, ".gpkg"))
 # env vars location [Terrestrial-only variable]
-loc_envVars = here("_data","env_vars","raster","cropped")
+loc_envVars = here("_data","env_vars","rasterClipped")
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
-nm_bkgPts <- c(here("_data","env_vars","tabular", "background_NM.sqlite"), "background_pts")
+nm_bkgPts <- c(here("_data","env_vars","tabular", "background_AZ.sqlite"), "background_pts")
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
 # map reference boundaries
 nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  # background grey reference lines in map
 
 # project overview - this appears in the first paragraph of the metadata
-project_overview = "This model was developed for the U.S. Department of the Interior Bureau of Land Mangement."
+project_overview = "This model was developed for the Arizona Game and Fish Department."
 
 # model comment in database
 model_comments = ""
@@ -45,12 +46,22 @@ modeller = "Tim Howard"
 #                   "me" (maxent), 
 #                   "xgb" (extreme gradient boosting), 
 #                   [["gam" (generalized additive models) -- no not gam yet]]
-ensemble_algos = c("rf","me","xgb")
+#ensemble_algos = c("rf","me","xgb")
+ensemble_algos = c("rf", "xgb")
 
 # list non-standard variables to add to model run
 add_vars = NULL
 # list standard variables to exclude from model run
 remove_vars = NULL
+
+remove_vars = c("nlcdopn1", "nlcdopn10", "nlcdopn100", "impsur1", "impsur10", "impsur100",
+  "ntm_1_01", "ntm_1_02", "ntm_1_06", "ntm_1_08", "ntm_1_09", "ntm_2_01",
+  "ntm_2_02", "ntm_2_05", "ntm_2_06", "ntm_3_01", "ntm_3_03", "ntm_3_09",
+  "ntm_3_12", "ntm_4_01", "ntm_4_02", "ntm_4_03", "ntm_4_05", "ntm_4_06",
+  "ntm_5_01", "ntm_6_01", "ntm_6_02", "ntm_6_03", "ntm_6_04", "nlcdshb1",
+  "nlcdshb10", "nlcdshb100")
+
+
 # do you want to stop execution after each modeling step (script)?
 prompt = FALSE
 
@@ -115,7 +126,7 @@ library(here)
 rm(list=ls())
 
 # set project folder and species code for this run
-model_species <- "allimunz"
+model_species <- "anaxreti"
 loc_model <- here("_data", "species")
 
 # set wd and load function
@@ -140,9 +151,9 @@ run_SDM(
   # if starting at step 4 or later, must provide model run name to model_rdata
 run_SDM(
   begin_step = "4",
-  model_species = "geumpeck",
+  model_species = "anaxreti",
   loc_model = loc_model,
-  model_rdata = "geumpeck_20190409_155720"
+  model_rdata = model_rdata
 )
 
 
@@ -173,7 +184,7 @@ rm(list=ls())
 
 # for scripts 1-3, run just the following 3 lines
 
-model_species <- "eriogyps"
+model_species <- "anaxreti"
 
 load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
 # if you want an earlier run, enter it and load it here:

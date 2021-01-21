@@ -3,45 +3,58 @@
 #  If we find ourselves creating models within subsets of the range, this 
 #  script should be able to create our subsets.
 
+library(checkpoint)
+checkpoint("2020-04-22", scanForPackages = FALSE)
+
+library(here)
 library(raster)
-library(rgdal)
+library(sf)
+#library(rgdal)
 
 ## set paths ----
 # set this path to the folder where the environmental rasters reside
-pathToTifs <- "D:/SDM/Tobacco/env_vars/Tobacco"
+pathToRas <- here("_data","env_vars","raster")
 
 # the path to write out the tiffs to
-pathToClipped <- "D:/SDM/Tobacco/env_vars/Tobacco/newVars_masked"
-
+pathToClipped <- here("_data","env_vars","rasterClipped")
 
 # path to the shape to use for clipping
-pathToClipShape <- "D:/SDM/Tobacco/other_spatial/shp"
-clipShapeName <- "StatesVA"
+pathToClipShape <- here("_data","other_spatial","feature","HUC10_full_bkg_area.gpkg")
+clipShapeName <- "HUC10_bkg"
 
-clpShp <- readOGR(dsn = pathToClipShape, layer = clipShapeName)
+clpShp <- st_read(pathToClipShape, clipShapeName)
+# continual problems with ESRI Albers. Set it here manually
+# ignore the warning
+suppressWarnings(st_crs(clpShp) <- 42303)
+# dissolve it
+cs <- st_union(clpShp)
 
 # get a list of the grids
-tiflist <- list.files(path = pathToTifs, pattern = ".tif$")
+tiflist <- list.files(path = pathToRas, pattern = ".tif$", recursive = TRUE)
 
 ## already got some clipped? use the next few lines to check and 
 ## remove the ones already done
 donetiflist <- list.files(path = pathToClipped, pattern = ".tif$")
-finalTifList <- tiflist[!tiflist %in% donetiflist]
+
+finalTifList <- tiflist[!sub("^[_[:alnum:]]+/","",tiflist) %in% donetiflist]
 tiflist <- finalTifList
 
-
 # tack on the full paths and name them
-gridlist<-as.list(paste(pathToTifs,tiflist,sep = "/"))
+gridlist<-as.list(paste(pathToRas,tiflist,sep = "/"))
 nm <- substr(tiflist,1,nchar(tiflist) - 4)
 names(gridlist)<-nm
 
+bbx <- st_bbox(cs)
+extnt <- c(bbx$xmin, bbx$xmax, bbx$ymin, bbx$ymax)
 
 ## clip the rasters ----
 for (i in 1:length(gridlist)){
   ras <- raster(gridlist[[i]])
-  fn <- paste(pathToClipped, "/", names(gridlist[i]), ".tif", sep="")
-  a <- crop(ras,clpShp)
-  writeRaster(a, filename = fn, format = "GTiff", overwrite = TRUE) # datatype = "INT4S"
+  #strip subfolders from new name
+  rasOut <- sub("^[_[:alnum:]]+/","",names(gridlist[i]))
+  fn <- paste(pathToClipped, "/", rasOut, ".tif", sep="")
+  a <- crop(ras,extnt)
+  writeRaster(a, filename = fn, format = "GTiff", overwrite = TRUE, datatype = "INT4S")
 }
 
 

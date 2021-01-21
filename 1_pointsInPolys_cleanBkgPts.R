@@ -28,7 +28,13 @@ dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = FALSE)
 # changing to this WD temporarily allows for presence file to be either in presence folder or specified with full path name
 
 # load data, QC ----
-presPolys <- st_zm(st_read(nm_presFile, quiet = TRUE))
+# if geopackage is there, open that one
+if(grepl("gpkg", nm_presFile)){
+  presPolys <- st_zm(st_read(nm_presFile, model_species, quiet = TRUE))  
+} else {
+  presPolys <- st_zm(st_read(nm_presFile, quiet = TRUE))
+}
+
 
 #check for proper column names. If no error from next code block, then good to go
 #presPolys$RA <- presPolys$SFRACalc
@@ -88,12 +94,23 @@ for (d in 1:length(presPolys$OBSDATE)) {
 }
 desiredCols <- c(desiredCols, "date")
 
+# What's the name of the geometry column? Change it to geometry if needed
+# presPolys <- backu
+# backu <- presPolys
+
+if(!attr(presPolys, "sf_column") == "geometry"){
+  oldName <- attr(presPolys, "sf_column")
+  #add new col
+  names(presPolys)[names(presPolys) == oldName] <- "geometry"
+  attr(presPolys, "sf_column") = "geometry"
+}
+
 # explode multi-part polys ----
 suppressWarnings(shp_expl <- st_cast(presPolys, "POLYGON"))
 
 #add some columns (explode id and area)
 shp_expl <- cbind(shp_expl, 
-                       EXPL_ID = 1:length(shp_expl$geometry), 
+                       EXPL_ID = 1:nrow(shp_expl), 
                        AREAM2 = st_area(shp_expl))
 names(shp_expl$geometry) <- NULL # temp fix until sf patches error
 
@@ -213,7 +230,8 @@ op <- options()
 options(useFancyQuotes = FALSE) #need straight quotes for query
 # get the background data from the DB
 db <- dbConnect(SQLite(), nm_bkgPts[1])
-qry <- paste0("SELECT * from ", nm_bkgPts[2], " where substr(huc12,1,10) IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," );")
+#qry <- paste0("SELECT * from ", nm_bkgPts[2], " where substr(huc12,1,10) IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," );")
+qry <- paste0("SELECT * from ", nm_bkgPts[2], " where huc10 IN (", paste(sQuote(hucList), collapse = ", ", sep = "")," );")
 bkgd <- dbGetQuery(db, qry)
 tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", nm_bkgPts[2], "';"))$p
 samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
@@ -242,8 +260,11 @@ tmpTableName <- paste0(nm_bkgPts[2], "_", baseName)
 dbWriteTable(db, tmpTableName, backgSubset, overwrite = TRUE)
 
 # do the join, get all the data back down
-qry <- paste0("SELECT ", tmpTableName, ".huc12, ", tmpTableName, ".wkt, ", nm_bkgPts[2], "_att.*", 
-           " from ", tmpTableName, " INNER JOIN ", nm_bkgPts[2], "_att on ",
+# qry <- paste0("SELECT ", tmpTableName, ".huc12, ", tmpTableName, ".wkt, ", nm_bkgPts[2], "_att.*", 
+#            " from ", tmpTableName, " INNER JOIN ", nm_bkgPts[2], "_att on ",
+#               tmpTableName,".fid = ", nm_bkgPts[2], "_att.fid;")
+qry <- paste0("SELECT ", tmpTableName, ".huc10, ", tmpTableName, ".wkt, ", nm_bkgPts[2], "_att.*", 
+              " from ", tmpTableName, " INNER JOIN ", nm_bkgPts[2], "_att on ",
               tmpTableName,".fid = ", nm_bkgPts[2], "_att.fid;")
 bgSubsAtt <- dbGetQuery(db, qry)
 # delete the table on the db

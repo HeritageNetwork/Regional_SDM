@@ -23,8 +23,10 @@ and then check out the wiki for software and customizations
    shifted to the SQLite DB. 
  - Collate and/or create links to environmental variable data sets (see
    https://github.com/HeritageNetwork/Regional_SDM/wiki/User-Customizations)
- - 
-
+ - Ensure you've got layers for "HUC10" and "US_States" in the `other_spatial/feature` folder. 
+ - Make a set of background points by running `preproc_makeBackgroundPoints.r`
+ - Attribute the background points by running `preproc_attributeBackgroundPoints.r`
+ 
 
 License
 =======

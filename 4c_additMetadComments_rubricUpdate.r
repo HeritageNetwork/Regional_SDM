@@ -43,7 +43,7 @@ if (dat.in.db$metadata_comments != newText) {
                     model_run_name, "';", sep = "")
   dbExecute(db, SQLquery)
 }
-
+dbDisconnect(db)
 ## update Model Evaluation and Use data (rubric table) ----
 # get most recent data from the tracking DB for two of the rubric table fields that may vary
 # get tracking DB data from SQL Server tables 
@@ -76,6 +76,7 @@ dqMatrix <- data.frame("dataQuality" = c(1,2,3),
                                         "Heritage Network (and possibly outside) data are vetted for accuracy and weighted for spatial representation."))
 dqUpdate <- dqMatrix[match(evalAndReviewStatus$locality_data_eval_rubric, dqMatrix$dataQuality),]
 #push it up to sqlite DB
+db <- dbConnect(SQLite(),dbname=nm_db_file)
 sql <- paste0("update lkpSpeciesRubric set spdata_dataqual = '", dqUpdate$dqAttribute, 
               "', spdata_dataqualNotes = '", dqUpdate$dqComments, 
               "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
@@ -83,7 +84,6 @@ dbExecute(db, statement = sql)
 
 ## performance ----
 # get performance data
-db <- dbConnect(SQLite(),dbname=nm_db_file)
 sql <- paste0("SELECT * from tblModelResultsValidationStats where model_run_name = '", 
               model_run_name, "';")
 vstats <- dbGetQuery(db, statement = sql)

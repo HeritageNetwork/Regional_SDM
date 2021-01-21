@@ -3,6 +3,10 @@
 
 ## start with a fresh workspace with no objects loaded
 rm(list=ls())
+
+library(checkpoint)
+checkpoint("2020-04-22", scanForPackages = FALSE)
+
 library(raster)
 library(sf)
 library(here)
@@ -10,13 +14,13 @@ library(RSQLite)
 library(snowfall)
 
 # path where .tif env. var rasters are stored
-pathToRas <- here("_data","env_vars","raster","cropped")
-# path to output tables (a database is generated here if it doesn't exist)
+pathToRas <- here("_data","env_vars","rasterClipped")
+# path to output tables
 pathToTab <- here("_data","env_vars","tabular")
 # background points table name (this should be already created with preproc_makeBackgroundPoints.R)
 pts_table <- "background_pts"
 # lkpEnvVars database
-dbLookup <- dbConnect(SQLite(), here("_data","databases","SDM_lookupAndTracking_NM.sqlite"))
+dbLookup <- dbConnect(SQLite(), here("_data","databases","SDM_lookupAndTracking_AZ.sqlite"))
 
 ## create a stack from all envvars ----
 setwd(pathToRas)
@@ -57,14 +61,9 @@ if(length(nulls) > 0){
   stop("Some grids are not in DB.")
 }
 
-#stack only half of it (54 layers)
-#gl <- gridlist[1:35]
-
 #update only one layer
-gridlist <- gridlist[grepl("nm_gypfine",names(gridlist))]
-
-
-
+#gridlist <- gridlist[grepl("nm_gypfine",names(gridlist))]
+#gridlist <- gridlist[grepl("ntm",names(gridlist))]
 
 envStack <- stack(gridlist)
 
@@ -73,19 +72,15 @@ s.list <- unstack(envStack)
 names(s.list) <- names(envStack)
 
 ## Get random points table ----
-db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_NM.sqlite"))
+db <- dbConnect(SQLite(), paste0(pathToTab, "/", "background_AZ_test.sqlite"))
 
-tcrs <- dbGetQuery(db, paste0("SELECT proj4string p from lkpCRS where table_name = '", pts_table, "';"))$p
+tcrs <- dbGetQuery(db, paste0("SELECT epsg e from lkpCRS where table_name = '", pts_table, "';"))$e
 
 # get all the points
 bkgd <- dbReadTable(db, pts_table)
 nrow(bkgd)
 bkgd <- bkgd[complete.cases(bkgd),]
 nrow(bkgd)
-## export to shp
-#samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
-#st_write(samps, dsn = "N:/_TerrestrialModels/_data/env_vars/background/california_bkgd.shp")
-##
 
 ## somewhere over 1 million points is problematic 
 ## there are three different ways of attributing below. 
@@ -100,7 +95,6 @@ sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), att))
 tp <- as.vector("INTEGER")
 names(tp) <- "fid"
 dbWriteTable(db, paste0(pts_table, "_att"), sampsAtt, overwrite = TRUE, field.types = tp)
-#dbWriteTable(db, paste0(pts_table, "_att"), sampsAtt, overwrite = FALSE, append = TRUE)
 
 # now loop through the rest
 bkgd <- bkgd[-c(1:2),]
@@ -112,7 +106,7 @@ for(i in 1:length(brkgrps)){
   samps <- st_sf(bg, geometry = st_as_sfc(bg$wkt, crs = tcrs))
 
   # create an R cluster using all the machine cores minus two
-  sfInit(parallel=TRUE, cpus=parallel:::detectCores()-4)
+  sfInit(parallel=TRUE, cpus=parallel:::detectCores()-20)
   # Load the required packages inside the cluster
   sfLibrary(raster)
   sfLibrary(sf)
@@ -127,9 +121,9 @@ for(i in 1:length(brkgrps)){
 }
 
 
-# method #2, looping through subsetes, no parallel ----
+# method #2, looping through subsets, no parallel ----
 # this uses all of setup in #1, except for the loop.
-#  RAM isn't a problem here, it just takes a very long time
+#  RAM isn't a problem here, it just takes a very long time (like, weeks)
 for(i in 1:length(brkgrps)){
   bg <- bkgd[brks == brkgrps[i],]
   samps <- st_sf(bg, geometry = st_as_sfc(bg$wkt, crs = tcrs))
@@ -155,7 +149,7 @@ samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 s.list <- unstack(envStack)
 names(s.list) <- names(envStack)
 # create a R cluster using all the machine cores minus one
-sfInit(parallel=TRUE, cpus=parallel:::detectCores()-1)
+sfInit(parallel=TRUE, cpus=parallel:::detectCores()-20)
 # Load the required packages inside the cluster
 sfLibrary(raster)
 sfLibrary(sf)
@@ -169,10 +163,10 @@ sampsAtt <- as.data.frame(cbind(fid = as.integer(samps$fid), DF))
 # write to DB
 tp <- as.vector("INTEGER")
 names(tp) <- "fid"
-dbWriteTable(db, paste0(pts_table, "_att"), sampsAtt, overwrite = T, field.types = tp)
+dbWriteTable(db, paste0(pts_table, "_att"), sampsAtt, overwrite = TRUE, field.types = tp)
 # not writing shapefile, since base shapefile already exists
 
-### method #4 no looping, no parallel (built for updating just one col in existing att table)
+### method #4 no looping, no parallel (built for updating just one col in existing att table) ----
 #get bkg tbl
 bkgd <- dbReadTable(db, pts_table)
 #remove any huc12 nulls
