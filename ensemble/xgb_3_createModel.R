@@ -54,7 +54,6 @@ if(nrow(corrdEVs) > 0 ){
 
 # set the percentile, here choosing above 25% percentile
 envarPctile <- 0.25
-#envarPctile <- 0.90
 y <- quantile(xgb.impvals$Gain, probs = envarPctile)
 impEnvVars <- xgb.impvals[xgb.impvals$Gain > y,]
 subsetNumberofEnvars <- nrow(impEnvVars)
