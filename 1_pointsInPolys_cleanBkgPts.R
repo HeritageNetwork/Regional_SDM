@@ -238,13 +238,6 @@ samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 options(op)
 rm(op)
 
-# reduce the number of bkg points if huge
-# use the greater of 20 * pres points or 50,000
-bkgTarg <- max(nrow(ranPts.joined) * 20, 50000)
-if(nrow(samps) > bkgTarg){
-  samps <- samps[sample(nrow(samps), bkgTarg),]
-}
-
 # find coincident points ----
 polybuff <- st_transform(shp_expl, st_crs(samps))
 polybuff <- st_buffer(polybuff, dist = 30)
@@ -252,9 +245,97 @@ polybuff <- st_buffer(polybuff, dist = 30)
 coincidentPts <- unlist(st_contains(polybuff, samps, sparse = TRUE))
 
 # remove them (if any)
-if (length(coincidentPts) > 0) backgSubset <- samps[-coincidentPts,] else backgSubset <- samps
+if (length(coincidentPts) > 0) {
+    backgSubset <- samps[-coincidentPts,] 
+  } else {
+    backgSubset <- samps
+  } 
 
-#write it up and do join in sqlite (faster than downloading entire att set)
+
+###
+### clear background pts from unsampled areas (for AZ: native lands) ----
+###
+
+if(NA %in% nm_bkgExclAreas){
+  
+  # load exclusion areas
+  exclA <- st_read(nm_bkgExclAreas[[1]], nm_bkgExclAreas[[2]])
+  exclA <- st_transform(exclA, tcrs)
+  
+  
+  exclPts <- unlist(st_contains(exclA, backgSubset, sparse = TRUE))
+  # remove them (if any)
+  if (length(exclPts) > 0){
+    backgSubset <- backgSubset[-exclPts,]
+  } else {
+    backgSubset <- backgSubset
+  }
+
+}
+
+
+###
+### randomly draw from points, weighted by distance, if requested ---
+###
+#library(spatialEco)
+# either use rthin from spatstat or sample from base
+#find distribution of presence points as it relates to roads
+# get roads distance layer
+library(raster)
+distRas <- raster(here("_data","other_spatial","raster","eucDist_AZ_roads.tif"))
+
+presPtsDistVals <- extract(distRas, ranPts.joined, method="simple")
+#plot(density(presPtsDistVals))
+#plot(ecdf(presPtsDistVals))
+
+# get the CDF
+#presPtsCdf <- ecdf(presPtsDistVals)
+
+# get distance of background pts
+bkgPtsDist <- extract(distRas, backgSubset, method="simple")
+#plot(density(bkgPtsDist))
+#plot(ecdf(bkgPtsDist))
+
+# attempt using density
+presDensFun <- approxfun(density(presPtsDistVals))
+
+
+## try using rejection sampling
+## https://theoreticalecology.wordpress.com/2015/04/22/a-simple-explanation-of-rejection-sampling-in-r/
+## https://web.mit.edu/urban_or_book/www/book/chapter7/7.1.3.html
+
+# rejection sampling:
+# each bkg point is 'proposed'
+# the proposal is compared to the target density (estimated with presDensFun)
+
+targetDensity <- presDensFun(bkgPtsDist)
+# presDensFun creates NA when out of bounds, convert to zero
+targetDensity[is.na(targetDensity)] <- 0
+accepted <- ifelse(runif(length(targetDensity),0,1) < targetDensity/max(targetDensity), TRUE, FALSE)
+backgSubset2 <- backgSubset[accepted,]
+
+
+# library(spatstat)
+# bg.ppp <- as.ppp(backgSubset[,"fid"])
+# bkgThinned.ppp <- rthin(bg.ppp, thinProbShifted)
+# bkgThinned <- st_as_sf(bkgThinned.ppp)
+# bkgThinned <- bkgThinned[!bkgThinned$label == "window",]
+# names(bkgThinned) <- c("label","fid",attr(bkgThinned, "sf_column"))
+
+# test distribution ... full circle
+testExtr <- extract(distRas, backgSubset2, method="simple")
+plot(ecdf(testExtr))
+
+
+### reduce the number of bkg points if huge ----
+
+# use the greater of 20 * pres points or 50,000
+bkgTarg <- max(nrow(backgSubset) * 20, 50000)
+if(nrow(backgSubset) > bkgTarg){
+  backgSubset <- backgSubset[sample(nrow(backgSubset), bkgTarg),]
+}
+
+#write it up and do join in sqlite (faster than downloading entire att set) ----
 st_geometry(backgSubset) <- NULL
 tmpTableName <- paste0(nm_bkgPts[2], "_", baseName)
 dbWriteTable(db, tmpTableName, backgSubset, overwrite = TRUE)

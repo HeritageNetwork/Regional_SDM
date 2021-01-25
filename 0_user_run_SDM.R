@@ -27,7 +27,16 @@ nm_bkgPts <- c(here("_data","env_vars","tabular", "background_AZ.sqlite"), "back
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
 # map reference boundaries
-nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  # background grey reference lines in map
+# used as background grey reference lines in map in pdf
+nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  
+# background exclusion file (areas where you know presence points weren't collected [such as Tribal lands],
+# and thus where background points should be exluded)
+#   set up as geopackage, set as NA if there are no exclusion areas
+nm_bkgExclAreas <- c(here("_data","other_spatial","feature","az_tribal.gpkg"),"az_tribal")
+# background bias file (if presence points clearly show sampling bias, such as only near roads,
+# defining a distance-to raster here that defines the bias (e.g. distance to roads), will
+# subsample background points weighted by this bias)
+#  set to NA if you don't want to define a bias file
 
 # project overview - this appears in the first paragraph of the metadata
 project_overview = "This model was developed for the Arizona Game and Fish Department."
@@ -54,12 +63,12 @@ add_vars = NULL
 # list standard variables to exclude from model run
 remove_vars = NULL
 
-remove_vars = c("nlcdopn1", "nlcdopn10", "nlcdopn100", "impsur1", "impsur10", "impsur100",
-  "ntm_1_01", "ntm_1_02", "ntm_1_06", "ntm_1_08", "ntm_1_09", "ntm_2_01",
-  "ntm_2_02", "ntm_2_05", "ntm_2_06", "ntm_3_01", "ntm_3_03", "ntm_3_09",
-  "ntm_3_12", "ntm_4_01", "ntm_4_02", "ntm_4_03", "ntm_4_05", "ntm_4_06",
-  "ntm_5_01", "ntm_6_01", "ntm_6_02", "ntm_6_03", "ntm_6_04", "nlcdshb1",
-  "nlcdshb10", "nlcdshb100")
+# remove_vars = c("nlcdopn1", "nlcdopn10", "nlcdopn100", "impsur1", "impsur10", "impsur100",
+#   "ntm_1_01", "ntm_1_02", "ntm_1_06", "ntm_1_08", "ntm_1_09", "ntm_2_01",
+#   "ntm_2_02", "ntm_2_05", "ntm_2_06", "ntm_3_01", "ntm_3_03", "ntm_3_09",
+#   "ntm_3_12", "ntm_4_01", "ntm_4_02", "ntm_4_03", "ntm_4_05", "ntm_4_06",
+#   "ntm_5_01", "ntm_6_01", "ntm_6_02", "ntm_6_03", "ntm_6_04", "nlcdshb1",
+#   "nlcdshb10", "nlcdshb100")
 
 
 # do you want to stop execution after each modeling step (script)?
@@ -174,7 +183,7 @@ run_SDM(
 
 # TESTING / DEBUGGING ONLY
 library(checkpoint)
-checkpoint("2020-04-22")
+checkpoint("2020-04-22", scanForPackages = FALSE)
 
 library(here)
 rm(list=ls())
@@ -184,7 +193,7 @@ rm(list=ls())
 
 # for scripts 1-3, run just the following 3 lines
 
-model_species <- "anaxreti"
+model_species <- "chiopalaorga"
 
 load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
 # if you want an earlier run, enter it and load it here:
