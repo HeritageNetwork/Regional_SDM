@@ -222,8 +222,11 @@ if(length(group$vals)>1){
 		  evSet[[i]] <- rbind(evSet[[i]], evSetBG)
 		  
 		  ssVec <- sampSizeVec[!names(sampSizeVec) == group$vals[[i]]]
-		  # re-calc pseudo-absence samples to match input training samples
-		  ssVec["pseu-a"] <- sum(ssVec[!names(ssVec) %in% "pseu-a"])
+		  # re-calc pseudo-absence samples to match input training samples if you can
+		  tot_pseua <- ifelse(sum(ssVec[!names(ssVec) %in% "pseu-a"]) > nrow(trSetBG),
+		                      nrow(trSetBG), 
+		                      sum(ssVec[!names(ssVec) %in% "pseu-a"]))
+		  ssVec["pseu-a"] <- tot_pseua
 		  
 		  rm(trSelStr, evSelStr, trSetBG, evSetBG, TrBGsamps, BGsampSz )
 
