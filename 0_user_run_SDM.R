@@ -31,12 +31,15 @@ nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
 nm_refBoundaries = here("_data","other_spatial","feature", "US_States.shp")  
 # background exclusion file (areas where you know presence points weren't collected [such as Tribal lands],
 # and thus where background points should be exluded)
-#   set up as geopackage, set as NA if there are no exclusion areas
-nm_bkgExclAreas <- c(here("_data","other_spatial","feature","az_tribal.gpkg"),"az_tribal")
+#   set up as geopackage, set as NULL if there are no exclusion areas
+#nm_bkgExclAreas <- c(here("_data","other_spatial","feature","az_tribal.gpkg"),"az_tribal")
+nm_bkgExclAreas <- NULL
 # background bias file (if presence points clearly show sampling bias, such as only near roads,
 # defining a distance-to raster here that defines the bias (e.g. distance to roads), will
 # subsample background points weighted by this bias)
-#  set to NA if you don't want to define a bias file
+#  set to NULL if you don't want to define a bias file
+#nm_biasDistRas <- here("_data","other_spatial","raster","eucDist_AZ_roads.tif")
+nm_biasDistRas <- NULL
 
 # project overview - this appears in the first paragraph of the metadata
 project_overview = "This model was developed for the Arizona Game and Fish Department."
@@ -56,19 +59,19 @@ modeller = "Tim Howard"
 #                   "xgb" (extreme gradient boosting), 
 #                   [["gam" (generalized additive models) -- no not gam yet]]
 #ensemble_algos = c("rf","me","xgb")
-ensemble_algos = c("rf", "xgb")
+ensemble_algos = c("rf", "xgb", "me")
 
 # list non-standard variables to add to model run
 add_vars = NULL
 # list standard variables to exclude from model run
-remove_vars = NULL
-
-# remove_vars = c("nlcdopn1", "nlcdopn10", "nlcdopn100", "impsur1", "impsur10", "impsur100",
-#   "ntm_1_01", "ntm_1_02", "ntm_1_06", "ntm_1_08", "ntm_1_09", "ntm_2_01",
-#   "ntm_2_02", "ntm_2_05", "ntm_2_06", "ntm_3_01", "ntm_3_03", "ntm_3_09",
-#   "ntm_3_12", "ntm_4_01", "ntm_4_02", "ntm_4_03", "ntm_4_05", "ntm_4_06",
-#   "ntm_5_01", "ntm_6_01", "ntm_6_02", "ntm_6_03", "ntm_6_04", "nlcdshb1",
-#   "nlcdshb10", "nlcdshb100")
+#remove_vars = NULL
+# vars with road signatures
+remove_vars = c("nlcdopn1", "nlcdopn10", "nlcdopn100", "impsur1", "impsur10", "impsur100",
+  "ntm_1_01", "ntm_1_02", "ntm_1_06", "ntm_1_08", "ntm_1_09", "ntm_2_01",
+  "ntm_2_02", "ntm_2_05", "ntm_2_06", "ntm_3_01", "ntm_3_03", "ntm_3_09",
+  "ntm_3_12", "ntm_4_01", "ntm_4_02", "ntm_4_03", "ntm_4_05", "ntm_4_06",
+  "ntm_5_01", "ntm_6_01", "ntm_6_02", "ntm_6_03", "ntm_6_04", "nlcdshb1",
+  "nlcdshb10", "nlcdshb100")
 
 
 # do you want to stop execution after each modeling step (script)?
@@ -98,6 +101,8 @@ run_SDM(
   nm_bkgPts = nm_bkgPts,
   nm_HUC_file = nm_HUC_file,
   nm_refBoundaries = nm_refBoundaries, # background grey refernce lines in map
+  nm_bkgExclAreas = nm_bkgExclAreas,
+  nm_biasDistRas = nm_biasDistRas, 
   project_overview = project_overview,
   model_comments = model_comments,
   metaData_comments = metaData_comments,
