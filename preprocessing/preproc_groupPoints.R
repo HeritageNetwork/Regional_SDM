@@ -27,26 +27,46 @@ crs_aea <- st_crs(x)
 path <- paste0(loc_scripts,"/_data/occurrence")
 setwd(path)
 
-cutecode <- "linuallr"
+cutecode <- "gophagas"
 desiredCols <- c("species_cd","obsdate", "accuracy")
 desiredPolyCols <- c("species_cd","obsdate","group_id","uid","ra")
 
 # initialize in case repeatedly running
 havePolyData <- FALSE
 havePointData <- FALSE
+dataInGpkg <- FALSE
 
+## set up for geopackage
+## assumptions: geopackage is named with cutecode
+# inside geopackage, points layer is cutecode_pt; poly layer is cutecode
+# this is the same assumption as shapefiles (cutecode_pt.shp and cutecode.shp)
+
+if(file.exists(paste0(cutecode,".gpkg"))){
+  pol_lyr <- c(paste0(cutecode,".gpkg"), cutecode)
+  pt_lyr <- c(paste0(cutecode,".gpkg"), paste0(cutecode, "_pt"))
+  dataInGpkg <- TRUE  
+} else {
+  pol_lyr <- c(NA,paste0(cutecode, ".shp"))
+  pt_lyr <- c(NA,paste0(cutecode, "_pt.shp"))
+}
 
 # check for poly data
-pol_name <- paste0(cutecode, ".shp")
+#pol_name <- paste0(cutecode, ".shp")
 
-if(file.exists(pol_name)){
-  pol <- st_read(pol_name, stringsAsFactors = FALSE)
+if(file.exists(pol_lyr[[2]]) | pol_lyr[[2]] %in% st_layers(pol_lyr[[1]])$name){
+  if(dataInGpkg){
+    pol <- st_read(pol_lyr[[1]], pol_lyr[[2]], stringsAsFactors = FALSE)
+  } else {
+    pol <- st_read(pol_lyr[[2]], stringsAsFactors = FALSE)    
+  }
+
   pol_dat <- st_transform(pol, crs_aea)
   if(nrow(pol_dat) > 0 ){
     havePolyData <- TRUE  
   }
-  names(pol_dat) <- tolower(names(pol_dat))
-  geomName <- names(pol_dat)[length(names(pol_dat))]
+  
+  geomName <- attr(pol_dat, "sf_column")
+  names(pol_dat)[!names(pol_dat) == geomName] <- tolower(names(pol_dat)[!names(pol_dat) == geomName])
   pol_dat <- pol_dat[,c(desiredPolyCols,geomName)]
   # check for bad polys
   if(FALSE %in% st_is_valid(pol_dat)){
@@ -57,18 +77,22 @@ if(file.exists(pol_name)){
 }
 
 # check for point data
-pt_name <- paste0(cutecode, "_pt.shp")
+#pt_name <- paste0(cutecode, "_pt.shp")
 
-if(file.exists(pt_name)){
-  pt <- st_read(pt_name, stringsAsFactors = FALSE)
+if(file.exists(pt_lyr[[2]]) | pt_lyr[[2]] %in% st_layers(pt_lyr[[1]])$name){
+  if(dataInGpkg){
+    pt <- st_read(pt_lyr[[1]], pt_lyr[[2]], stringsAsFactors = FALSE)
+  } else {
+    pt <- st_read(pt_lyr[[2]], stringsAsFactors = FALSE)    
+  }
   pt_dat <- st_transform(pt, crs_aea)
-  names(pt_dat) <- tolower(names(pt_dat))
-  #names(pt_dat)[grepl("species_cd", names(pt_dat))] <- "SPECIES_CD"
+  geomName <- attr(pt_dat, "sf_column")
+  names(pt_dat)[!names(pt_dat) == geomName] <- tolower(names(pt_dat)[!names(pt_dat) == geomName])
+  pt_dat <- pt_dat[,c(desiredCols,geomName)]
   if(nrow(pt_dat) > 0 ){
     havePointData <- TRUE  
   }
   # reduce to desired cols
-  geomName <- names(pt_dat)[length(names(pt_dat))]
   pt_dat <- pt_dat[,c(desiredCols,geomName)]
 }
 
@@ -93,7 +117,7 @@ if(havePointData){
   # get back date (using the most recent obs date for each polygon)
   ptp_j <- st_join(ptd_pol_m, ptd_pol[,c("obsdate","species_cd")], join = st_intersects, left = TRUE)
   ptp_a <- aggregate(ptp_j, by = list(ptp_j$pol_id), FUN = function(x){ max(x)})
-  geomName <- names(ptp_a)[length(names(ptp_a))]
+  geomName <- attr(ptp_a, "sf_column")
   ptp <- ptp_a[,c("pol_id","obsdate","species_cd",geomName)]
   ptp <- cbind(ptp, RA = "very high")
   
@@ -109,9 +133,9 @@ if(havePointData){
   
   # attribute points with group ID
   ptd_grps <- suppressWarnings(st_intersection(ptp, pt_grps))
-  table(ptd_grps$GROUP_ID)
+  table(ptd_grps$group_id)
 
-  geomName <- names(ptd_grps)[length(names(ptd_grps))]
+  geomName <- attr(ptd_grps, "sf_column")
   names(ptd_grps) <- c("UID","OBSDATE","SPECIES_CD","RA", "GROUP_ID",geomName)
   
   if(havePolyData){
@@ -126,7 +150,12 @@ if(havePointData){
     pol_dat$group_id <- pol_dat$group_id + max_gpid
 
     names(pol_dat)[1:(ncol(pol_dat)-1)] <- toupper(names(pol_dat)[1:(ncol(pol_dat)-1)])
+    
     # merge the pt and poly data sets
+    # it's possible the geometry columns are named differently. Ensure they are the same
+    pol_dat = st_sf(st_set_geometry(pol_dat, NULL), geometry = st_geometry(pol_dat))
+    ptd_grps = st_sf(st_set_geometry(ptd_grps, NULL), geometry = st_geometry(ptd_grps))
+
     dat_all <- rbind(pol_dat, ptd_grps)
 
     # st_is_valid(dat_all)
@@ -167,9 +196,13 @@ if(havePointData){
     filesToMove <- list.files(pattern = cutecode)
     file.rename(from = filesToMove, to = paste0("pre-processed/",filesToMove))
     
-    # write out the merged, all-poly shapefile
-    fullnm <- paste0(cutecode,".shp")
-    st_write(pyp, fullnm)
+    # write out the merged, all-poly layer
+    dsnNm <- paste0(cutecode,".gpkg")
+    lyrNm <- cutecode
+    st_write(pyp, dsn = dsnNm, layer = lyrNm, driver = "GPKG")
+    # shapefile version
+    #fullnm <- paste0(cutecode,".shp")
+    #st_write(pyp, fullnm)
     
   } else {
     ## have point data only
@@ -177,9 +210,14 @@ if(havePointData){
     filesToMove <- list.files(pattern = cutecode)
     file.rename(from = filesToMove, to = paste0("pre-processed/",filesToMove))
     
+    # write out the layer
+    dsnNm <- paste0(cutecode,".gpkg")
+    lyrNm <- cutecode
+    st_write(ptd_grps, dsn = dsnNm, layer = lyrNm, driver = "GPKG")
+    
     # write out the merged, all-poly shapefile
-    fullnm <- paste0(cutecode,".shp")
-    st_write(ptd_grps, fullnm)
+    # fullnm <- paste0(cutecode,".shp")
+    # st_write(ptd_grps, fullnm)
   }
 } else {
   ## have poly data only 
