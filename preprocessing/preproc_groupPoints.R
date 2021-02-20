@@ -28,7 +28,7 @@ loc_scripts <- here()
 crs_aea <- "EPSG:42303"
  
 # observation data
-path <- paste0(loc_scripts,"/_data/occurrence/test")
+path <- paste0(loc_scripts,"/_data/occurrence")
 setwd(path)
 
 cutecode <- "anaxreti"
