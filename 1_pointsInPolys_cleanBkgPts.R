@@ -30,7 +30,7 @@ dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = FALSE)
 # load data, QC ----
 # if geopackage is there, open that one
 if(grepl("gpkg", nm_presFile)){
-  presPolys <- st_zm(st_read(nm_presFile, model_species, quiet = TRUE))  
+  presPolys <- st_zm(st_read(nm_presFile, sub("-","_",model_species), quiet = TRUE))  
 } else {
   presPolys <- st_zm(st_read(nm_presFile, quiet = TRUE))
 }
