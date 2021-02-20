@@ -20,14 +20,18 @@ library(here)
 loc_scripts <- here()
 
 ### get a correct crs, to apply to get correct projections
-x <- st_read(paste0(loc_scripts,"/_data/other_spatial/feature/US_States.shp"))
-crs_aea <- st_crs(x)
+#x <- st_read(paste0(loc_scripts,"/_data/other_spatial/feature/US_States.shp"))
+#crs_aea <- st_crs(x)
+#st_crs(x) <- "EPSG:42303" 
 
+# this is the standard NAD83 Albers projection we are using
+crs_aea <- "EPSG:42303"
+ 
 # observation data
-path <- paste0(loc_scripts,"/_data/occurrence")
+path <- paste0(loc_scripts,"/_data/occurrence/test")
 setwd(path)
 
-cutecode <- "gophagas"
+cutecode <- "anaxreti"
 desiredCols <- c("species_cd","obsdate", "accuracy")
 desiredPolyCols <- c("species_cd","obsdate","group_id","uid","ra")
 
@@ -35,6 +39,8 @@ desiredPolyCols <- c("species_cd","obsdate","group_id","uid","ra")
 havePolyData <- FALSE
 havePointData <- FALSE
 dataInGpkg <- FALSE
+gpkg_havePol <- FALSE
+gpkg_havePt <- FALSE
 
 ## set up for geopackage
 ## assumptions: geopackage is named with cutecode
@@ -44,16 +50,16 @@ dataInGpkg <- FALSE
 if(file.exists(paste0(cutecode,".gpkg"))){
   pol_lyr <- c(paste0(cutecode,".gpkg"), cutecode)
   pt_lyr <- c(paste0(cutecode,".gpkg"), paste0(cutecode, "_pt"))
-  dataInGpkg <- TRUE  
+  dataInGpkg <- TRUE
+  gpkg_havePol <- pol_lyr[[2]] %in% st_layers(pol_lyr[[1]])$name
+  gpkg_havePt <- pt_lyr[[2]] %in% st_layers(pt_lyr[[1]])$name
 } else {
   pol_lyr <- c(NA,paste0(cutecode, ".shp"))
   pt_lyr <- c(NA,paste0(cutecode, "_pt.shp"))
 }
 
 # check for poly data
-#pol_name <- paste0(cutecode, ".shp")
-
-if(file.exists(pol_lyr[[2]]) | pol_lyr[[2]] %in% st_layers(pol_lyr[[1]])$name){
+if(file.exists(pol_lyr[[2]]) | gpkg_havePol){
   if(dataInGpkg){
     pol <- st_read(pol_lyr[[1]], pol_lyr[[2]], stringsAsFactors = FALSE)
   } else {
@@ -77,9 +83,7 @@ if(file.exists(pol_lyr[[2]]) | pol_lyr[[2]] %in% st_layers(pol_lyr[[1]])$name){
 }
 
 # check for point data
-#pt_name <- paste0(cutecode, "_pt.shp")
-
-if(file.exists(pt_lyr[[2]]) | pt_lyr[[2]] %in% st_layers(pt_lyr[[1]])$name){
+if(file.exists(pt_lyr[[2]]) | gpkg_havePt){
   if(dataInGpkg){
     pt <- st_read(pt_lyr[[1]], pt_lyr[[2]], stringsAsFactors = FALSE)
   } else {
@@ -88,6 +92,7 @@ if(file.exists(pt_lyr[[2]]) | pt_lyr[[2]] %in% st_layers(pt_lyr[[1]])$name){
   pt_dat <- st_transform(pt, crs_aea)
   geomName <- attr(pt_dat, "sf_column")
   names(pt_dat)[!names(pt_dat) == geomName] <- tolower(names(pt_dat)[!names(pt_dat) == geomName])
+  #pt_dat$accuracy <- pt_dat$loc_accuracy
   pt_dat <- pt_dat[,c(desiredCols,geomName)]
   if(nrow(pt_dat) > 0 ){
     havePointData <- TRUE  
@@ -140,7 +145,7 @@ if(havePointData){
   
   if(havePolyData){
     ## have point and poly data
-    #join it with the polys shpfile
+    # join it with the polys shpfile
     # get the max value for group ID; UID
     max_gpid <- max(ptd_grps$GROUP_ID)
     max_uid <- max(ptd_grps$UID)
@@ -191,19 +196,18 @@ if(havePointData){
     geomName <- names(pyp_a)[length(names(pyp_a))]
     pyp <- pyp_a[,c("UID","GROUP_ID", "OBSDATE","SPECIES_CD","RA",geomName)]
 
-
     # move the existing (point and poly) files to the pre-processed folder
     filesToMove <- list.files(pattern = cutecode)
     file.rename(from = filesToMove, to = paste0("pre-processed/",filesToMove))
     
     # write out the merged, all-poly layer
+    # this doesn't necessarily open in arcgis
     dsnNm <- paste0(cutecode,".gpkg")
     lyrNm <- cutecode
     st_write(pyp, dsn = dsnNm, layer = lyrNm, driver = "GPKG")
     # shapefile version
     #fullnm <- paste0(cutecode,".shp")
     #st_write(pyp, fullnm)
-    
   } else {
     ## have point data only
     # move the existing (point and poly) files to the pre-processed folder
