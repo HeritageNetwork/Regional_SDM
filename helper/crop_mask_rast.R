@@ -22,12 +22,26 @@ if(file.exists(allRanges_fn)) {
 
 # get the range the long way if rangeClipped didn't get created, above
 if(!exists("rangeClipped")){
-  # get range info from the DB (as a list of HUCs)
-  db <- dbConnect(SQLite(),dbname=nm_db_file)
-  SQLquery <- paste0("SELECT huc10_id from lkpRange
-                     inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
+  # first see if there's a location use class for this cutecode
+  db <- dbConnect(SQLite(),dbname=nm_db_file)  
+  SQLquery <- paste0("SELECT sp_code, location_use_class from lkpSpecies
                      where lkpSpecies.sp_code = '", model_species, "';")
-  hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+  luc_info <- dbGetQuery(db, statement = SQLquery)
+  # if there is LUC info, use it in the query
+  if(!is.na(luc_info$location_use_class)){
+    SQLquery <- paste0("SELECT huc10_id from lkpRange ",
+                     "WHERE lkpRange.EGT_ID = ", ElementNames$EGT_ID, 
+                    " AND lkpRange.location_use_class = '", luc_info$location_use_class, 
+                       "';")
+    hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+  } else {
+    # get range info from the DB (as a list of HUCs)
+    SQLquery <- paste0("SELECT huc10_id from lkpRange
+                       inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
+                       where lkpSpecies.sp_code = '", model_species, "';")
+    hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
+    
+  }
   dbDisconnect(db)
   rm(db)
   
