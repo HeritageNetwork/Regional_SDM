@@ -60,7 +60,7 @@ not_yet_exported ##These are the final set of models that will be packaged up
 length(not_yet_exported)
 
 ####For manual use- to run one at a time UNCOMMENT this line and add cutecode(s) of the species interested ####
-#not_yet_exported<-c("eriogyps")
+#not_yet_exported<-c("coluinca-br","corvcryp-br")
 
 ###Final step sends the finals to the model_review_staging folder
 ##Assumes the model_review_staging folder is in the parent directory Lines 204 +206
@@ -199,14 +199,14 @@ for (j in 1:length(not_yet_exported)){
       # }  
     } else if (modType=="T"){
       # make a folder, copy tiff
-      fldrNm <- paste0(ElementNames$Code, "-",algo)
+      fldrNm <- gsub("-","_",paste0(ElementNames$Code, "-",algo))
       outpathAlgo <- file.path(outpath, fldrNm)
       dir.create(outpathAlgo, showWarnings = FALSE)
       outpathRasFolder <- file.path(outpathAlgo, "rasterToUpload")
       dir.create(outpathRasFolder, showWarnings = FALSE)
       rasToCopy <- paste0(model_run_name, "_", algo, ".tif")
       sourceFile <- file.path(rootPath, "outputs","model_predictions",rasToCopy)
-      destinationFile <- file.path(outpathRasFolder, rasToCopy)
+      destinationFile <- file.path(outpathRasFolder, gsub("-","_",rasToCopy))
       file.copy(sourceFile, destinationFile, overwrite = TRUE)
     }
   
@@ -231,7 +231,7 @@ for (j in 1:length(not_yet_exported)){
     hucList.df <- data.frame("HUC_10" = hucList)
     write.csv(hucList.df, file = file.path(outpathAlgo,"modeling-extent.csv"), row.names = FALSE)
   
-    ## move and rename pdf ---
+    ## move pdf ---
     pdfPath <- here("_data","species", model_species, "outputs","metadata")
     mdOutFiles <- list.files(path = pdfPath, pattern = ".pdf")
     # get most recent in case multiple runs
