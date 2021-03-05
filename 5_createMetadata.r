@@ -407,14 +407,18 @@ for (plotpi in 1:numPPl){
       xgbdat <- data.frame(xgb.pPlots$data)
       xgbresp <- data.frame(xgb.pPlots$shap_contrib)
       xgbdat.b <- data.frame(x = xgbdat[,grdName], y = xgbresp[,grdName], algo = "xgb")
-      #standardize 0-1
-      xgbdat.b$y <- (xgbdat.b$y - min(xgbdat.b$y))/(max(xgbdat.b$y)-min(xgbdat.b$y))
-      #order, ascending
-      xgbdat.b <- xgbdat.b[order(xgbdat.b$x),]
-      #smooth it
-      #dat <- rbind(dat, xgbdat.b)
-      dat <- rbind(dat, data.frame(supsmu(xgbdat.b$x, xgbdat.b$y), algo = "xgb"))
-      #rm(xgbdat, xgbresp, xgbdat.b)
+      # all zeros means xgb dropped it in final model; skip for partial plot
+      # so if all responses don't equal zero, get the data
+      if(all(xgbdat.b$y != 0)){
+        #standardize 0-1
+        xgbdat.b$y <- (xgbdat.b$y - min(xgbdat.b$y))/(max(xgbdat.b$y)-min(xgbdat.b$y))
+        #order, ascending
+        xgbdat.b <- xgbdat.b[order(xgbdat.b$x),]
+        #smooth it
+        #dat <- rbind(dat, xgbdat.b)
+        dat <- rbind(dat, data.frame(supsmu(xgbdat.b$x, xgbdat.b$y), algo = "xgb"))
+        #rm(xgbdat, xgbresp, xgbdat.b)
+      }
     }
   }
   

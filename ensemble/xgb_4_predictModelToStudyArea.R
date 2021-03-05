@@ -11,6 +11,7 @@ library(raster)
 
 #library(dismo)
 library(caret)
+library(xgboost)
 
 # removeTmpFiles(48) # clean old (>2days) Raster temporary files
 # 

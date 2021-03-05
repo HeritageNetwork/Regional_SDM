@@ -30,7 +30,7 @@ dir.create(paste0(model_species,"/inputs/model_input"), showWarnings = FALSE)
 # load data, QC ----
 # if geopackage is there, open that one
 if(grepl("gpkg", nm_presFile)){
-  presPolys <- st_zm(st_read(nm_presFile, model_species, quiet = TRUE))  
+  presPolys <- st_zm(st_read(nm_presFile, sub("-","_",model_species), quiet = TRUE))  
 } else {
   presPolys <- st_zm(st_read(nm_presFile, quiet = TRUE))
 }
@@ -238,13 +238,6 @@ samps <- st_sf(bkgd, geometry = st_as_sfc(bkgd$wkt, crs = tcrs))
 options(op)
 rm(op)
 
-# reduce the number of bkg points if huge
-# use the greater of 20 * pres points or 50,000
-bkgTarg <- max(nrow(ranPts.joined) * 20, 50000)
-if(nrow(samps) > bkgTarg){
-  samps <- samps[sample(nrow(samps), bkgTarg),]
-}
-
 # find coincident points ----
 polybuff <- st_transform(shp_expl, st_crs(samps))
 polybuff <- st_buffer(polybuff, dist = 30)
@@ -252,9 +245,147 @@ polybuff <- st_buffer(polybuff, dist = 30)
 coincidentPts <- unlist(st_contains(polybuff, samps, sparse = TRUE))
 
 # remove them (if any)
-if (length(coincidentPts) > 0) backgSubset <- samps[-coincidentPts,] else backgSubset <- samps
+if (length(coincidentPts) > 0) {
+    backgSubset <- samps[-coincidentPts,] 
+  } else {
+    backgSubset <- samps
+  } 
 
-#write it up and do join in sqlite (faster than downloading entire att set)
+
+###
+### clear background pts from unsampled areas (for AZ: native lands) ----
+###
+if(!is.null(nm_bkgExclAreas)){
+  
+  # load exclusion areas
+  exclA <- st_read(nm_bkgExclAreas[[1]], nm_bkgExclAreas[[2]])
+  exclA <- st_transform(exclA, tcrs)
+  
+  
+  exclPts <- unlist(st_contains(exclA, backgSubset, sparse = TRUE))
+  # remove them (if any)
+  if (length(exclPts) > 0){
+    backgSubset <- backgSubset[-exclPts,]
+  } else {
+    backgSubset <- backgSubset
+  }
+  # clean up
+  rm(exclA, exclPts)
+}
+
+
+###
+### give background points same road bias as presence points if requested ----
+###
+if(!is.null(nm_biasDistRas)){
+  library(raster)
+  # get roads distance layer
+  distRas <- raster(nm_biasDistRas)
+  # get distribution of bias from pres points
+  presPtsDistVals <- raster::extract(distRas, ranPts.joined, method="simple")
+  #plot(density(presPtsDistVals))
+  #plot(ecdf(presPtsDistVals))
+  
+  # get distribution of background pts
+  bkgPtsDist <- raster::extract(distRas, backgSubset, method="simple")
+  #plot(density(bkgPtsDist))
+  #plot(ecdf(bkgPtsDist))
+  
+  # estimate shape of density (estimate the PDF)
+  presDensFun <- approxfun(density(presPtsDistVals))
+
+  ## use rejection sampling
+  ## https://theoreticalecology.wordpress.com/2015/04/22/a-simple-explanation-of-rejection-sampling-in-r/
+  ## https://web.mit.edu/urban_or_book/www/book/chapter7/7.1.3.html
+  
+  # rejection sampling:
+  # create a target density based on approxfun of the density
+  targetDensity <- presDensFun(bkgPtsDist)
+  # presDensFun creates NA when out of bounds, convert to zero
+  targetDensity[is.na(targetDensity)] <- 0
+  # each point is compared to a random draw, if random draw is within target curve (below the value),
+  # that point is accepted
+  accepted1 <- ifelse(runif(length(targetDensity),0,1) < targetDensity/max(targetDensity), TRUE, FALSE)
+  #backgSubset2 <- backgSubset[accepted,]
+  #try repeating to gain a few more -- this will mess up the density somewhat
+  accepted2 <- ifelse(runif(length(targetDensity),0,1) < targetDensity/max(targetDensity), TRUE, FALSE)
+  accepted3 <- ifelse(runif(length(targetDensity),0,1) < targetDensity/max(targetDensity), TRUE, FALSE)
+  accepted4 <- ifelse(runif(length(targetDensity),0,1) < targetDensity/max(targetDensity), TRUE, FALSE)
+  accepted5 <- ifelse(runif(length(targetDensity),0,1) < targetDensity/max(targetDensity), TRUE, FALSE)
+  accepted6 <- ifelse(runif(length(targetDensity),0,1) < targetDensity/max(targetDensity), TRUE, FALSE)
+
+  accepted <- accepted1 | accepted2 | accepted3 | accepted4 | accepted5 | accepted6
+  #backgSubset2 <- backgSubset[accepted,]
+  backgSubset <- backgSubset[accepted,]
+
+  # full circle test
+  # circleTest <- extract(distRas, backgSubset2, method="simple")
+  # plot(ecdf(circleTest))
+    
+  # Metropolis-hastings sampler increase acceptance
+  # http://rstudio-pubs-static.s3.amazonaws.com/221320_ae6274302f884f95ac2820b2c6bfc6ef.html
+
+#this seems close but does not create a correct distribution   
+  # MHSampling <- function(target_density, R) {
+  #   ## Initialize a vector (all 0's)
+  #   v <- numeric(length = R)
+  #   ## Acceptance indicator (all FALSE)
+  #   a <- logical(length = R)
+  #   v[1] <- bkgPtsDist[1]
+  #   a[1] <- TRUE
+  # 
+  #   for (r in seq_len(R)[-1]) {
+  #     ## Obtain a proposed value (here the proposal distribution is symmetric)
+  #     proposal <- bkgPtsDist[r]
+  #     ## Evaluate both densities at the proposed value
+  #     #target_density_at_proposal <- target_density(proposal)
+  #     target_density_at_proposal <- ifelse(is.na(target_density(proposal)),
+  #                                          0,
+  #                                          target_density(proposal))
+  #     target_density_at_previous <- ifelse(is.na(target_density(bkgPtsDist[r-1])),
+  #                                         0,
+  #                                         target_density(bkgPtsDist[r-1]))
+  #     
+  #     acceptance_ratio <- ifelse(target_density_at_previous == 0, 
+  #                                0, 
+  #                                 min(target_density_at_proposal / target_density_at_previous, 1))
+  #     if (runif(n = 1) <= acceptance_ratio) {
+  #       ## If U(0,1) is less than or equal to acceptance ratio
+  #       ## Make a move
+  #       v[r] <- proposal
+  #       a[r] <- TRUE
+  #     } else {
+  #       ## Otherwise, don't move
+  #       v[r] <- v[r-1]
+  #     }
+  #   }
+  #   
+  #   data.frame(v = v,
+  #              a = a)
+  # }
+  # 
+  # out1 <- MHSampling(target_density = presDensFun,
+  #                                         R = length(bkgPtsDist))
+  # out2 <- out1[out1$a == TRUE,]
+  # plot(ecdf(out2$v))
+
+
+  # clean up
+  rm(distRas, presPtsDisVals, bkgPtsDist, presDensFun, targetDensity, accepted)
+  
+}
+
+### reduce the number of bkg points if huge ----
+
+# use the greater of 20 * pres points or 50,000
+bkgTarg <- max(nrow(backgSubset) * 20, 50000)
+if(nrow(backgSubset) > bkgTarg){
+  backgSubset <- backgSubset[sample(nrow(backgSubset), bkgTarg),]
+}
+
+print(paste0("number of background pts: ", nrow(backgSubset)))
+
+#write it up and do join in sqlite (faster than downloading entire att set) ----
 st_geometry(backgSubset) <- NULL
 tmpTableName <- paste0(nm_bkgPts[2], "_", baseName)
 dbWriteTable(db, tmpTableName, backgSubset, overwrite = TRUE)
@@ -278,17 +409,6 @@ if(length(fidlocs) > 1){
   bgSubsAtt <- bgSubsAtt[,-fidlocs[2:length(fidlocs)]]  
 }
 
-# # remove NAs #### convert this to removing columns instead?
-# bgSubsAtt$bulkDens <- as.numeric(bgSubsAtt$bulkDens)
-# bgSubsAtt$clay <- as.numeric(bgSubsAtt$clay) 
-# bgSubsAtt$soil_pH <- as.numeric(bgSubsAtt$soil_pH) 
-# bgSubsAtt$flowacc <- as.numeric(bgSubsAtt$flowacc) 
-# 
-
-# temp!  gypfine is all NA right now. REMOVE IT
-#bgSubsAtt <- bgSubsAtt[,!grepl("nm_gypfine",names(bgSubsAtt))]
-#x <- bgSubsAtt[complete.cases(bgSubsAtt),]
-#nrow(x)
 
 bgSubsAtt <- bgSubsAtt[complete.cases(bgSubsAtt),]
 nrow(bgSubsAtt)
