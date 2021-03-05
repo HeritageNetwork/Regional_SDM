@@ -51,14 +51,27 @@ dbDisconnect(db)
 fn <- here("_data","databases", "hsm_tracker_connection_string_short.dsn")
 cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
 
-sql <- paste0("SELECT ModelCycle.EGT_ID, ModelCycle.model_cycle, ",
-              "Workflows.locality_data_eval_rubric, Workflows.model_reviewed ",
-              "FROM ModelCycle ",
-              "INNER JOIN Workflows ON ModelCycle.ID = Workflows.model_cycle_ID ",
-              "WHERE ModelCycle.EGT_ID= ", ElementNames$EGT_ID, ";")
+# sql <- paste0("SELECT v2_ModelCycle.EGT_ID, v2_ModelCycle.model_cycle, ",
+#               "v2_Workflows.locality_data_eval_rubric, v2_Workflows.model_reviewed ",
+#               "FROM v2_ModelCycle ",
+#               "INNER JOIN v2_Workflows ON v2_ModelCycle.ID = v2_Workflows.model_cycle_ID ",
+#               "WHERE v2_ModelCycle.EGT_ID= ", ElementNames$EGT_ID, ";")
+
+#accomodate LUC, use code instead of egt-id
+sql <- paste0("SELECT v2_Elements.ID, ",
+              "v2_Cutecodes.Elements_ID, ",
+              "v2_Cutecodes.cutecode, ",
+              "v2_ModelCycle.model_cycle, ",
+              "v2_Workflows.locality_data_eval_rubric, ",
+              "v2_Workflows.model_reviewed ", 
+              "FROM ((v2_Elements INNER JOIN v2_Cutecodes ON v2_Elements.ID = v2_Cutecodes.Elements_ID) ", 
+              "INNER JOIN v2_ModelCycle ON v2_Elements.ID = v2_ModelCycle.Elements_ID) ",
+              "INNER JOIN v2_Workflows ON v2_ModelCycle.ID = v2_Workflows.model_cycle_ID ",
+              "WHERE (((v2_Cutecodes.cutecode)='", ElementNames$Code, "'));")
 
 evalAndReviewStatus <- dbGetQuery(cn, sql)
-modelCycleData <- evalAndReviewStatus[,c("EGT_ID","model_cycle")]
+
+modelCycleData <- evalAndReviewStatus[,c("cutecode","model_cycle")]
 # if more than one cycle, get the most recent cycle
 if(nrow(evalAndReviewStatus) > 1){
   evalAndReviewStatus <- evalAndReviewStatus[order(evalAndReviewStatus$model_cycle, decreasing = TRUE),]
@@ -79,7 +92,7 @@ dqUpdate <- dqMatrix[match(evalAndReviewStatus$locality_data_eval_rubric, dqMatr
 db <- dbConnect(SQLite(),dbname=nm_db_file)
 sql <- paste0("update lkpSpeciesRubric set spdata_dataqual = '", dqUpdate$dqAttribute, 
               "', spdata_dataqualNotes = '", dqUpdate$dqComments, 
-              "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
+              "' where sp_code = '", ElementNames$Code, "' ;")
 dbExecute(db, statement = sql)
 
 ## performance ----
@@ -97,7 +110,7 @@ prfmAtt <- ifelse(summaryTSS<=0.6, "C", "A")
 prfmUpdate <- prfmcMatrix[match(prfmAtt, prfmcMatrix$pAttribute),]
 sql <- paste0("update lkpSpeciesRubric set process_perform = '", prfmUpdate$pAttribute, 
               "', process_performNotes = '", prfmUpdate$pComments, 
-              "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
+              "' where sp_code = '", ElementNames$Code, "' ;")
 dbExecute(db, statement = sql)
 
 ## model review ----
@@ -108,7 +121,7 @@ revAtt <- ifelse(!is.na(evalAndReviewStatus$model_reviewed) , "A", "C")
 revUpdate <- revMatrix[match(revAtt, revMatrix$rAttribute),]
 sql <- paste0("update lkpSpeciesRubric set process_review = '", revUpdate$rAttribute, 
               "', process_reviewNotes = '", revUpdate$rComments, 
-              "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
+              "' where sp_code = '", ElementNames$Code, "' ;")
 dbExecute(db, statement = sql)
 
 ## iterative ----
@@ -132,7 +145,7 @@ if(nCycles > 1){
 iterUpdate <- iterMatrix[match(iterAtt, iterMatrix$iAttribute),]
 sql <- paste0("update lkpSpeciesRubric set iterative = '", iterUpdate$iAttribute, 
               "', iterativeNotes = '", iterUpdate$iComments, 
-              "' where EGT_ID = ", ElementNames$EGT_ID, " ;")
+              "' where sp_code = '", ElementNames$Code, "' ;")
 dbExecute(db, statement = sql)
 
 ## clean up ----
