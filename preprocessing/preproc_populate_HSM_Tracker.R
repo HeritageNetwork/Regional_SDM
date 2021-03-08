@@ -20,6 +20,10 @@ dbDisconnect(db)
 rm(db)
 # 
 
+## TODO. Queries not set up for new table relationship design yet
+## Need to switch to using new primary keys ("ID") instead of EGT_ID
+
+
 # connect up to the tracking db
 fn <- here("_data","databases", "hsm_tracker_connection_string_short.dsn")
 cn <- dbConnect(odbc::odbc(), .connection_string = readChar(fn, file.info(fn)$size))
