@@ -9,21 +9,23 @@ rm(list=ls())
 
 # Step 1: Setting for the model run
 
+## NOTE: set up as template for github. Note general defaults and "<< >>" where text would be expected
+
 # species code (from lkpSpecies in modelling database. This will be the new folder name containing inputs/ouptuts)
-model_species <- "leoppard"
+model_species <- "<<model species cutecode here>>"
 # loc_scripts is your repository. Make sure your git repository is set to correct branch
 loc_scripts <- here()
 # The main modelling folder for inputs/outputs. All sub-folders are created during the model run (when starting with step 1)
 loc_model <- here("_data", "species")
 # Modeling database
-nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking_AZ_phase1spp.sqlite")
+nm_db_file <- here("_data", "databases", "SDM_lookupAndTracking.sqlite")
 # locations file (presence reaches). Provide full path; File is copied to modeling folder and timestamped.
 nm_presFile <- here("_data", "occurrence", paste0(model_species, ".shp"))
 #nm_presFile <- here("_data", "occurrence", paste0(sub("-","_",model_species), ".gpkg"))
 # env vars location [Terrestrial-only variable]
 loc_envVars = here("_data","env_vars","rasterClipped")
 # Name of background/envvars sqlite geodatabase, and base table name (2 length vector)
-nm_bkgPts <- c(here("_data","env_vars","tabular", "background_AZ.sqlite"), "background_pts")
+nm_bkgPts <- c(here("_data","env_vars","tabular", "background.sqlite"), "background_pts")
 # HUC spatial data set (shapefile) that is subsetted and used to define modeling area//range
 nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
 # map reference boundaries
@@ -38,11 +40,11 @@ nm_bkgExclAreas <- NULL
 # defining a distance-to raster here that defines the bias (e.g. distance to roads), will
 # subsample background points weighted by this bias)
 #  set to NULL if you don't want to define a bias file
-#nm_biasDistRas <- here("_data","other_spatial","raster","eucDist_AZ_roads.tif")
+#nm_biasDistRas <- here("_data","other_spatial","raster","eucDist_roads.tif")
 nm_biasDistRas <- NULL
 
 # project overview - this appears in the first paragraph of the metadata
-project_overview = "This model was developed for the Arizona Game and Fish Department."
+project_overview = "This model was developed for <<some text here>>."
 
 # model comment in database
 model_comments = ""
@@ -51,7 +53,7 @@ model_comments = ""
 metaData_comments = ""
 
 # your name
-modeller = "Tim Howard"
+modeller = "<<modeler name>>"
 
 # list the algorithms to apply in an ensemble model
 # options currently: "rf" (random forest), 
