@@ -27,6 +27,8 @@ library(gtable)
 library(grid)
 library(gridExtra)
 
+library(DBI)
+
 ### find and load model data ----
 #setwd(loc_model)
 dir.create(file.path(loc_model, model_species, "outputs","metadata"), recursive = TRUE, showWarnings = FALSE)
@@ -798,6 +800,71 @@ knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model
 #   }
 # }
 
+## write up output info to tracking DB  ---
+## If metadata pdf creation successful, then full model run complete,
+## so this is an appropriate time to populate Tracking DB
+# get tracking DB connection info
+trackerDsnInfo <- here("_data","databases", "hsm_tracker_connection_string_short.dsn")
+
+
+## get model cycle info from the tracking db
+cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
+# get model cycle we are on
+sql <- paste0("SELECT v2_Elements.ID, v2_Elements.Taxonomic_Group, V2_Elements.Location_Use_Class, ",
+              "v2_Cutecodes.cutecode, ",
+              "v2_ModelCycle.ID, v2_ModelCycle.model_cycle ",
+              "FROM (v2_Elements INNER JOIN v2_Cutecodes ON v2_Elements.ID = v2_Cutecodes.Elements_ID) ",
+              "INNER JOIN v2_ModelCycle ON v2_Elements.ID = v2_ModelCycle.Elements_ID ",
+              "WHERE (((v2_Cutecodes.cutecode)= '", ElementNames$Code, "'));")
+
+model_cycle <- dbGetQuery(cn, sql)
+names(model_cycle) <- c("Elements_ID","taxonomic_group","luc","cutecode","model_cycle_ID", "model_cycle")
+dbDisconnect(cn)
+
+
+# get most recent cycle (last row after sorting)
+model_cycle <- model_cycle[order(model_cycle$model_cycle),]
+model_cycle <- model_cycle[nrow(model_cycle),]
+
+outputsDat <- model_cycle[,c("model_cycle_ID"), drop = FALSE]
+names(outputsDat) <- "model_cycle_id"
+outputsDat$model_run_name <- model_run_name
+outputsDat$path_to_output <- file.path(loc_model, model_species,"outputs","model_predictions")
+outputsDat$modeling_machine <- model_comp_name
+outputsDat$comment <- NA
+outputsDat$ensemble_code <- NA
+
+# duplicate rows based on number of algorithms
+repTimes <- length(ensemble_algos)
+outputsDat <- outputsDat[rep(1, repTimes),]
+
+outputsDat$algorithm_code <- ensemble_algos
+outputsDat$output_file_name <- paste0(model_run_name,"_",ensemble_algos,".tif")  
+# decision: don't put up info about the mean suitabilities ensemble. Only use it for the metadata map
+
+outputsDat <- outputsDat[,c("model_cycle_id","model_run_name","algorithm_code","output_file_name",
+                            "path_to_output","modeling_machine","comment")]
+
+# push up the data
+cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
+
+# are these data already up there? if so, delete and re-upload
+# base it on file name
+sql <- paste0("SELECT * from v2_Outputs where output_file_name IN (",
+              toString(sQuote(outputsDat$output_file_name, q = FALSE)), ");")
+
+datUpThere <- dbGetQuery(cn, sql)
+
+if(nrow(datUpThere) > 0){
+  sql <- paste0("DELETE from v2_Outputs where ID IN (",
+                toString(datUpThere$ID), ");")
+  dbExecute(cn, sql)
+}
+
+# now upload the rows
+dbAppendTable(cn, "v2_Outputs", outputsDat)
+dbDisconnect(cn)
+rm(cn)
 
 ## clean up ----
 #dbDisconnect(db)
