@@ -243,16 +243,15 @@ for (j in 1:length(not_yet_exported)){
     ## get model cycle info from the tracking db
     cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
     # get model cycle we are on
-    sql <- paste0("SELECT v2_Elements.ID, v2_Elements.Scientific_Name, v2_Cutecodes.cutecode, ",
-                  "v2_ModelCycle.ID, v2_ModelCycle.model_cycle ",
+    sql <- paste0("SELECT v2_Elements.ID, v2_Elements.Taxonomic_Group, V2_Elements.Location_Use_Class, ",
+                  "v2_Cutecodes.cutecode, ",
+                  "v2_ModelCycle.ID, v2_ModelCycle.model_cycle, v2_ModelCycle.comment ",
                   "FROM (v2_Elements INNER JOIN v2_Cutecodes ON v2_Elements.ID = v2_Cutecodes.Elements_ID) ",
                   "INNER JOIN v2_ModelCycle ON v2_Elements.ID = v2_ModelCycle.Elements_ID ",
                   "WHERE (((v2_Cutecodes.cutecode)= '", ElementNames$Code, "'));")
-    
-    
-    
+
     model_cycle <- dbGetQuery(cn, sql)
-    names(model_cycle) <- c("Elements_ID","sciname","cutecode","model_cycle_ID", "model_cycle")
+    names(model_cycle) <- c("Elements_ID","taxonomic_group","luc","cutecode","model_cycle_ID", "model_cycle", "comment")
     dbDisconnect(cn)
     rm(cn)
     # get most recent cycle (last row after sorting)
@@ -269,21 +268,31 @@ for (j in 1:length(not_yet_exported)){
     #                     )
     # write_json(jsDat, "modelRunInfo2.json", pretty = TRUE)
   
+    ## current hack is include algo and LUC in sci name and cutecode, and flip dash to underscore
+    ccd <- sub("-","_", ElementNames$Code)
+    ccd <- paste(ccd, algo, sep = "_")
+    
     ## option that doesn't include square brackets
     jsDat2 <- RJSONIO::toJSON(
         list("modelVersion" = model_run_name,
           "iteration" = model_cycle$model_cycle,
-          "iterationNote" = "",
-          "thresholdLow"=cutval,
-          "thresholdMid"=thresh_LtoM,
-          "thresholdHigh"=thresh_MtoH),
+          "iterationNote" = model_cycle$comment,
+          "thresholdLow" = cutval,
+          "thresholdMid" = thresh_LtoM,
+          "thresholdHigh" = thresh_MtoH,
+          "elementGlobalId" = ElementNames$EGT_ID,
+          "cuteCode" = ccd,
+          "scientificName" = ElementNames$SciName,
+          "commonName" = ElementNames$CommName,
+          "taxonomicGroup" = model_cycle$taxonomic_group,
+          "algorithm" = algo,
+          "locationUseClass" = ifelse(is.na(model_cycle$luc), "",model_cycle$luc)
+          ),
         pretty = TRUE)
     write(jsDat2, file.path(outpathAlgo,"modelRunInfo.json"))
     
   }
-  
 
-  
   # define the staging area use substr to get the root drive letter (F: or N:, etc)
   if (modType=="A"){
     staging_path <- file.path(substr(here(), 1, 2),"model_review_staging","upload_staging_2021","aquatic")
