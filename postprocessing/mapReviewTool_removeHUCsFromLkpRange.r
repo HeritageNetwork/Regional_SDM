@@ -13,7 +13,7 @@ library(odbc)
 library(DBI)
 
 ## get set up  ----
-ccd <- "chiopalaorga"
+ccd <- "thamequemega"
 modelCycle <- 1
 nm_db_file <- here("_data","databases","SDM_lookupAndTracking_AZ_phase1spp.sqlite")
 
@@ -41,7 +41,7 @@ rm(cn)
 
 # get the hucs we want removed
 # get cutecode by stripping model tail because cutecodes may have hyphens or underscores in them now
-allHucActions$ccode <- sub("_[0-9]{8}_[0-9]{6}","", hucActions$model_version)
+allHucActions$ccode <- sub("_[0-9]{8}_[0-9]{6}","", allHucActions$model_version)
 
 oneSppHucActions <- allHucActions[allHucActions$ccode == ccd & allHucActions$model_cycle == 1,]
 
@@ -80,9 +80,33 @@ hucDat <- dbGetQuery(db, statement = sql)
 sql <- paste0("DELETE FROM lkpRange WHERE range_id IN (",
               toString(shQuote(hucDat$range_id)), ");"
               )
-
 dbExecute(db, statement = sql)
 
+
+# get remaining range (to check in arc) ----
+sql <- paste0("SELECT range_id, EGT_ID, huc10_id, location_use_class ",
+              "FROM lkpRange WHERE EGT_ID = ", sppDat$EGT_ID[[1]], 
+              " AND location_use_class = '", sppDat$location_use_class, "'; ")
+# convert any NA to is null
+sql <- gsub("= 'NA'","IS NULL",sql)
+
+hucDat <- dbGetQuery(db, statement = sql)  
+
+fp <- file.path("G:","_Projects","AZGFD","Regional_SDM","_data","other_spatial","feature")
+library(sf)
+allHucs <- st_read(file.path(fp, "HUC10.shp"))
+
+hucSubS <- allHucs[allHucs$HUC10 %in% hucDat$huc10_id,]
+
+nrow(hucSubS)
+nrow(hucDat)
+
+fp <- file.path("G:","_Projects","AZGFD","Users","tim","HUC_checks")
+st_write(hucSubS, file.path(fp, paste0(ccd,"_hucs.shp")))
+
+
+
+#clean up ----
 dbDisconnect(db)
 rm(db)
 
