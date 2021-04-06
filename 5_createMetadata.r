@@ -331,6 +331,7 @@ impPlot <- ggplot(data = varsSorted) +
 #### temporary  TODO
 if(exists("pPlots")){
   rf.pPlots <- pPlots
+  rf.elist <- unlist(lapply(rf.pPlots, FUN = function(x) x$fname))
 }
 
 maxVars <- 0
@@ -392,7 +393,7 @@ for (plotpi in 1:numPPl){
 
   # pplot data
   # do rf only if there are data
-  rfLoc <- match(evar, elist)
+  rfLoc <- match(evar, rf.elist)
   if(exists("rf.pPlots") & !is.na(rfLoc)){
     grdFullName <- rf.pPlots[[rfLoc]]$fname
     dat <- data.frame(x = rf.pPlots[[rfLoc]]$x, y = rf.pPlots[[rfLoc]]$y)
@@ -494,9 +495,10 @@ for (plotpi in 1:numPPl){
   # create the density plot
   densplot <- ggplot(data = densdat, aes(x = x, color = factor(pres, labels = c("background","presence")))) + 
     geom_density(size = 0.5, show.legend = FALSE) + 
-    scale_x_continuous(limits = c(min(densdat$x), max(densdat$x)), 
-                       expand = expansion(mult = c(0.05)),
-                       breaks = NULL) +
+    # scale_x_continuous(limits = c(min(densdat$x), max(densdat$x)),
+    #                    expand = expansion(mult = c(0.05)),
+    #                    breaks = NULL) +
+    scale_x_continuous(breaks = NULL) +
     scale_y_continuous(breaks = NULL) + 
     theme_classic() + 
     theme(axis.title.y = element_blank(), legend.position = "none",
@@ -540,7 +542,7 @@ for (plotpi in 1:numPPl){
     
     legPlot2 <- densplot + 
       geom_freqpoly(binwidth = 1000) + # hack to get lines instead of squares in legend
-      scale_x_continuous() + 
+      #scale_x_continuous() + 
       labs(color = "Density") +
       theme(legend.position = "bottom",
             legend.margin=margin(t=0, r=0, b=0, l=0, unit="pt"),
