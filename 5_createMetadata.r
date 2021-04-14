@@ -328,12 +328,6 @@ impPlot <- ggplot(data = varsSorted) +
 # find the longest of our set of algos
 # this lines are for the slim chance we have less than 9 vars total. Not likely now. 
 
-#### temporary  TODO
-if(exists("pPlots")){
-  rf.pPlots <- pPlots
-  rf.elist <- unlist(lapply(rf.pPlots, FUN = function(x) x$fname))
-}
-
 maxVars <- 0
 for(algo in ensemble_algos){
   objName <- paste0(algo, ".pPlots")
@@ -393,7 +387,12 @@ for (plotpi in 1:numPPl){
 
   # pplot data
   # do rf only if there are data
-  rfLoc <- match(evar, rf.elist)
+  if(exists("rf.pPlots")){
+    rf.elist <- unlist(lapply(rf.pPlots, FUN = function(x) x$fname))
+    rfLoc <- match(evar, rf.elist)
+  } else {
+    rfLoc <- NA
+  }
   if(exists("rf.pPlots") & !is.na(rfLoc)){
     grdFullName <- rf.pPlots[[rfLoc]]$fname
     dat <- data.frame(x = rf.pPlots[[rfLoc]]$x, y = rf.pPlots[[rfLoc]]$y)
@@ -864,7 +863,7 @@ if(nrow(datUpThere) > 0){
 }
 
 # now upload the rows
-dbAppendTable(cn, "v2_Outputs", outputsDat)
+dbWriteTable(cn,"v2_Outputs", outputsDat, append = TRUE, row.names = FALSE)
 dbDisconnect(cn)
 rm(cn)
 
