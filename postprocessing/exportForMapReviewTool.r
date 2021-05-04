@@ -5,12 +5,10 @@
 # It needs to have a folder name equal to a cutecode. Inside, the folder are 3 files:
 #  1. modeling-extent.csv
 #   a. it only has one field “HUC_10”.
-#  2. predictedhabitat-{line or poly}.gdb.zip
-#   a. this should be a zipped fgdb
-#   b. It should have one feature class
-#    i. The feature class should have one field “cutecode”
-#    ii. It should already have only data that should show for predicted habitat results.
-#  3. {cutecode}.pdf  (the metadata file)
+#  2. rasterToUpload/{cutecode_plus_run_name}.tif
+#   a. this should be a GeoTiff file, a continuous raster prediction surface
+#   b. habitat suitability values should range within 0-1
+#  3. {cutecode_plus_run_name}.pdf  (the metadata file)
 #  4. a JSON file with extra, accessible info for the model review tool
 
 ## NOTE: 4-11-2019 For multi species processing, the script first scans for models 
@@ -18,25 +16,27 @@
 ## NOTE: Edit the vector "exclude_these" in line 46 to exclude models that are complete but unready for export
 ## NOTE: To run a single model manually, enter the species CuteCode on line 69 below and uncomment it
 
-## NOTE: using only rf model (see row 99) so not accounting for ensemble yet!
-
-library(checkpoint)
-checkpoint("2020-04-22", scanForPackages = FALSE)
-
 library(here)
 library(RSQLite)
 library(rgdal)
-library(RSQLite)
 library(sf)
 library(RJSONIO)
-library(geojsonio)
+#library(geojsonio)
+
+# RStudio trys to autoload some or all of these packages
+# when the saved data (model_rdata) are loaded. It fails miserably. 
+# Load them manually here
+library(dismo)
+library(raster)
+library(ROCR)
+library(xgboost)
+library(randomForest)
 
 # load in the data from the species run
 rm(list=ls())
 
 # get tracking DB connection info
 trackerDsnInfo <- here("_data","databases", "hsm_tracker_connection_string_short.dsn")
-
 
 #####Scan the directories to detect species that have not been packaged for upload and package them all#####
 
@@ -60,7 +60,7 @@ not_yet_exported ##These are the final set of models that will be packaged up
 length(not_yet_exported)
 
 ####For manual use- to run one at a time UNCOMMENT this line and add cutecode(s) of the species interested ####
-#not_yet_exported<-c("coluinca-br","corvcryp-br")
+#not_yet_exported<-c("pyrgbacc", "pyrgconi", "pyrgglan", "tryogila")
 
 ###Final step sends the finals to the model_review_staging folder
 ##Assumes the model_review_staging folder is in the parent directory Lines 204 +206
@@ -94,16 +94,9 @@ for (j in 1:length(not_yet_exported)){
   
   if (modType=="A"){ # Aquatic Option 
     # load the shapefile from the latest model run
+    # TODO: this doesn't accomodate ensembles ...
     shpPath <- file.path(rootPath, "outputs","model_predictions",paste0(model_run_name,"_results.shp"))
     shp <- st_read(shpPath, quiet = T)  
-  } else if (modType=="T"){ # Terrestrial Option 
-    # load the raster from the latest model run
-    rasPath <- file.path(rootPath, "outputs","model_predictions",paste0(model_run_name,"_rf.tif"))
-    #ras <- raster(rasPath)
-    #ras <- read_stars(rasPath)
-    #st_crs(ras) <- "EPSG:42303"
-  } else {
-    print("Model is not of the Terrestrial or Aquatic Type")
   }
   
   # get threshold information
@@ -112,14 +105,34 @@ for (j in 1:length(not_yet_exported)){
                 model_run_name, "';")
   threshInfo <- dbGetQuery(db, statement = sql)
   
+  # use first algo to get a count
+  alg <- ensemble_algos[[1]]
   sql <- paste0("select obs_count from tblModelInputs where model_run_name = '",
-                model_run_name, "' and algorithm = 'rf';")
+                model_run_name, "' and algorithm = '",alg,"';")
   inputPts <- dbGetQuery(db, statement = sql)
   inPts <- max(inputPts$obs_count)
   
   dbDisconnect(db)
-  rm(db, sql, inputPts)
+  rm(db, sql, inputPts, alg)
 
+  ## get model cycle info from the tracking db
+  cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
+  # get model cycle we are on
+  sql <- paste0("SELECT v2_Elements.ID, v2_Elements.Taxonomic_Group, V2_Elements.Location_Use_Class, ",
+                "v2_Cutecodes.cutecode, ",
+                "v2_ModelCycle.ID, v2_ModelCycle.model_cycle, v2_ModelCycle.comment ",
+                "FROM (v2_Elements INNER JOIN v2_Cutecodes ON v2_Elements.ID = v2_Cutecodes.Elements_ID) ",
+                "INNER JOIN v2_ModelCycle ON v2_Elements.ID = v2_ModelCycle.Elements_ID ",
+                "WHERE (((v2_Cutecodes.cutecode)= '", ElementNames$Code, "'));")
+  
+  model_cycle <- dbGetQuery(cn, sql)
+  names(model_cycle) <- c("Elements_ID","taxonomic_group","luc","cutecode","model_cycle_ID", "model_cycle", "comment")
+  dbDisconnect(cn)
+  rm(cn)
+  # get most recent cycle (last row after sorting)
+  model_cycle <- model_cycle[order(model_cycle$model_cycle),]
+  model_cycle <- model_cycle[nrow(model_cycle),]
+  
   for(algo in ensemble_algos){
     threshInfoAlgo <- threshInfo[threshInfo$algorithm == algo,]
     if (modType=="A"){ # Aquatic Option -
@@ -199,7 +212,7 @@ for (j in 1:length(not_yet_exported)){
       # }  
     } else if (modType=="T"){
       # make a folder, copy tiff
-      fldrNm <- gsub("-","_",paste0(ElementNames$Code, "-",algo))
+      fldrNm <- gsub("-","_",paste0(ElementNames$Code, "-",algo,"_iter_",model_cycle$model_cycle))
       outpathAlgo <- file.path(outpath, fldrNm)
       dir.create(outpathAlgo, showWarnings = FALSE)
       outpathRasFolder <- file.path(outpathAlgo, "rasterToUpload")
@@ -240,24 +253,7 @@ for (j in 1:length(not_yet_exported)){
     file.copy(from = file.path(pdfPath,mdOutF), to = file.path(outpathAlgo, mdOutF))
   
     ## create json file ----
-    ## get model cycle info from the tracking db
-    cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
-    # get model cycle we are on
-    sql <- paste0("SELECT v2_Elements.ID, v2_Elements.Taxonomic_Group, V2_Elements.Location_Use_Class, ",
-                  "v2_Cutecodes.cutecode, ",
-                  "v2_ModelCycle.ID, v2_ModelCycle.model_cycle, v2_ModelCycle.comment ",
-                  "FROM (v2_Elements INNER JOIN v2_Cutecodes ON v2_Elements.ID = v2_Cutecodes.Elements_ID) ",
-                  "INNER JOIN v2_ModelCycle ON v2_Elements.ID = v2_ModelCycle.Elements_ID ",
-                  "WHERE (((v2_Cutecodes.cutecode)= '", ElementNames$Code, "'));")
 
-    model_cycle <- dbGetQuery(cn, sql)
-    names(model_cycle) <- c("Elements_ID","taxonomic_group","luc","cutecode","model_cycle_ID", "model_cycle", "comment")
-    dbDisconnect(cn)
-    rm(cn)
-    # get most recent cycle (last row after sorting)
-    model_cycle <- model_cycle[order(model_cycle$model_cycle),]
-    model_cycle <- model_cycle[nrow(model_cycle),]
-    
     # uses jsonlite (and adds square brackets around)
     # library(jsonlite)
     # jsDat <- data.frame("modelVersion" = model_run_name,
@@ -300,15 +296,20 @@ for (j in 1:length(not_yet_exported)){
     staging_path <- file.path(substr(here(), 1, 2),"model_review_staging","upload_staging_2021")
   }
 
-  dirsToMake <- list.dirs(outpath, recursive = TRUE, full.names = FALSE)[-1]
+  allDirs <- list.dirs(path = outpath, recursive = TRUE, full.names = FALSE)[-1]
+  # get only the iteration we are on
+  sourceDirs <- allDirs[grepl(paste0("_iter_",model_cycle$model_cycle), allDirs)]
+  # now strip iteration from the folder names in the staging area
+  dirsToMake <- sub(paste0("_iter_",model_cycle$model_cycle),"",sourceDirs)
   lapply(file.path(staging_path, dirsToMake), function(x) dir.create(x))
     
   # get all the data just created
-  filesToMove <- list.files(outpath, recursive = TRUE, full.names = FALSE)
+  allFiles <- list.files(outpath, recursive = TRUE, full.names = FALSE)
+  # get only the iteration we are on
+  sourceFiles <- allFiles[grepl(paste0("_iter_",model_cycle$model_cycle), allFiles)]
+  destFiles <- sub(paste0("_iter_",model_cycle$model_cycle),"",sourceFiles)  
   # copy them
-  file.copy(file.path(outpath, filesToMove), file.path(staging_path, filesToMove))
-  
-
+  file.copy(file.path(outpath, sourceFiles), file.path(staging_path, destFiles))
   
   ## update the mobi tracking db in two places
   cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
