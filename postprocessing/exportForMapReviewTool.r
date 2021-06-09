@@ -233,9 +233,11 @@ for (j in 1:length(not_yet_exported)){
       #dbpath <- here("_data","databases", "SDM_lookupAndTracking_AZ.sqlite")
       db <- dbConnect(SQLite(),dbname=nm_db_file)
       #db <- dbConnect(SQLite(),dbname=dbpath)
-      SQLquery <- paste0("SELECT huc10_id from lkpRange
-                       inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
-                       where lkpSpecies.sp_code = '", model_species, "';")
+      SQLquery <- paste0("SELECT huc10_id from lkpRange ",
+                         "inner join lkpSpecies on ", 
+                         "(lkpRange.EGT_ID = lkpSpecies.EGT_ID and ", 
+                         "nullif(lkpRange.location_use_class,'') IS nullif(lkpSpecies.location_use_class,'')) ", 
+                         "where lkpSpecies.sp_code = '", model_species, "';")
       hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
       dbDisconnect(db)
       rm(db)
