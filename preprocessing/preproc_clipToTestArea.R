@@ -3,9 +3,6 @@
 #  If we find ourselves creating models within subsets of the range, this 
 #  script should be able to create our subsets.
 
-library(checkpoint)
-checkpoint("2020-04-22", scanForPackages = FALSE)
-
 library(here)
 library(raster)
 library(sf)
