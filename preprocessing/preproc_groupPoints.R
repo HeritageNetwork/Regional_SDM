@@ -22,10 +22,10 @@ loc_scripts <- here()
 ### get a correct crs, to apply to get correct projections
 #x <- st_read(paste0(loc_scripts,"/_data/other_spatial/feature/US_States.shp"))
 #crs_aea <- st_crs(x)
-#st_crs(x) <- "EPSG:42303" 
+#st_crs(x) <- "EPSG:5070" 
 
 # this is the standard NAD83 Albers projection we are using
-crs_aea <- "EPSG:42303"
+crs_aea <- "EPSG:5070"
  
 # observation data
 path <- paste0(loc_scripts,"/_data/occurrence")
