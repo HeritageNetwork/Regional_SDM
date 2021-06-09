@@ -16,5 +16,5 @@ fileNm <- paste0(model_run_name,"_",algo,".tif")
 
 cat("... predicting throughout study area \n")
 
-pd <- predict(me.out.fin, envStack_ss, filename = fileNm)
+pd <- predict(me.out.fin, envStack_ss, filename = fileNm, silent = "TRUE")
 

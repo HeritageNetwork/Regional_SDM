@@ -13,7 +13,7 @@ if(file.exists(allRanges_fn)) {
   allRanges <- st_read(allRanges_fn)
   targRange <- allRanges[allRanges$EGT_ID == ElementNames$EGT_ID,]
   #make sure a range actually got extracted above
-  if(!is.na(st_dimension(targRange))){
+  if(length(st_dimension(targRange)) > 0){
     # rangeClipped <- targRange
     # fill holes/slivers
     rangeClipped <- fill_holes(targRange, threshold = units::set_units(10, km^2))
@@ -22,26 +22,14 @@ if(file.exists(allRanges_fn)) {
 
 # get the range the long way if rangeClipped didn't get created, above
 if(!exists("rangeClipped")){
-  # first see if there's a location use class for this cutecode
-  db <- dbConnect(SQLite(),dbname=nm_db_file)  
-  SQLquery <- paste0("SELECT sp_code, location_use_class from lkpSpecies
-                     where lkpSpecies.sp_code = '", model_species, "';")
-  luc_info <- dbGetQuery(db, statement = SQLquery)
-  # if there is LUC info, use it in the query
-  if(!is.na(luc_info$location_use_class)){
-    SQLquery <- paste0("SELECT huc10_id from lkpRange ",
-                     "WHERE lkpRange.EGT_ID = ", ElementNames$EGT_ID, 
-                    " AND lkpRange.location_use_class = '", luc_info$location_use_class, 
-                       "';")
-    hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
-  } else {
-    # get range info from the DB (as a list of HUCs)
-    SQLquery <- paste0("SELECT huc10_id from lkpRange
-                       inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
-                       where lkpSpecies.sp_code = '", model_species, "';")
-    hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
-    
-  }
+  db <- dbConnect(SQLite(),dbname=nm_db_file)   
+  # The IS operator allows nulls to be equal (https://www.sqlite.org/lang_expr.html#isisnot)
+  SQLquery <- paste0("SELECT huc10_id from lkpRange ",
+                     "inner join lkpSpecies on ", 
+                     "(lkpRange.EGT_ID = lkpSpecies.EGT_ID and ", 
+                     "nullif(lkpRange.location_use_class,'') IS nullif(lkpSpecies.location_use_class,'')) ", 
+                     "where lkpSpecies.sp_code = '", model_species, "';")
+  hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
   dbDisconnect(db)
   rm(db)
   

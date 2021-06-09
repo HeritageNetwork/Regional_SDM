@@ -219,9 +219,12 @@ st_write(ranPts_joined_wgs84, dsn = nm.gpkg, layer = nm.pylyr, delete_layer = TR
 
 # get range info from the DB (as a list of HUCs)
 db <- dbConnect(SQLite(),dbname=nm_db_file)
-SQLquery <- paste0("SELECT huc10_id from lkpRange
-                   inner join lkpSpecies on lkpRange.EGT_ID = lkpSpecies.EGT_ID
-                   where lkpSpecies.sp_code = '", model_species, "';")
+# The IS operator allows nulls to be equal (https://www.sqlite.org/lang_expr.html#isisnot)
+SQLquery <- paste0("SELECT huc10_id from lkpRange ",
+  "inner join lkpSpecies on ", 
+  "(lkpRange.EGT_ID = lkpSpecies.EGT_ID and ", 
+  "nullif(lkpRange.location_use_class,'') IS nullif(lkpSpecies.location_use_class,'')) ", 
+  "where lkpSpecies.sp_code = '", model_species, "';")
 hucList <- dbGetQuery(db, statement = SQLquery)$huc10_id
 dbDisconnect(db)
 rm(db)
