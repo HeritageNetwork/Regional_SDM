@@ -128,19 +128,40 @@ rm(fullL, gridlistSub, modType, branches, activeBranch)
 # First, convert raster stack to list of single raster layers
 s.list <- unstack(envStack)
 names(s.list) <- names(envStack)
-# Now, create a R cluster using all the machine cores minus one
-sfInit(parallel=TRUE, cpus=parallel:::detectCores()-3)
-# Load the required packages inside the cluster
+
+# with contributions from PJM
+# if more than 10k points, split into groups approx 5k each
+if(nrow(shpf) > 10000){
+  shpRows <- 1:nrow(shpf)
+  numBrks <- ceiling(nrow(shpf)/5000)
+  brks <- cut(shpRows, breaks = numBrks)
+  brkgrps<- unique(brks)  
+} else {
+  brks <- rep(1, nrow(shpf))
+  brkgrps <- 1
+}
+
+#debug/checking
+print(paste0("num gps for attribute: ", length(brkgrps)))
+
+e.df_list<-list()
+# start cluster
+sfInit(parallel=TRUE, cpus=parallel:::detectCores()-1)
 sfLibrary(raster)
 sfLibrary(sf)
-# Run parallelized 'extract' function and stop cluster
-e.df <- sfSapply(s.list, extract, y=shpf, method = "simple")
+# extract by subsets to keep RAM from maxing out
+for(i in 1:length(brkgrps)){
+  shpf_sub<-shpf[brks==brkgrps[i],]
+  # Run parallelized 'extract' function
+  e.df_list[[i]] <- sfSapply(s.list, extract, y=shpf_sub, method = "simple")
+}
+# stop cluster
 sfStop()
+
+e.df<-do.call(rbind, e.df_list)
 
 points_attributed <- st_sf(cbind(data.frame(shpf), data.frame(e.df)))
 
-# method without using snowfall
-#points_attributed <- extract(envStack, shpf, method="simple", sp=TRUE)
 
 # temporal variables data handling
 pa <- points_attributed
@@ -174,11 +195,6 @@ if (length(tv) > 0) {
   points_attributed <- pa[-grep(".", names(pa), fixed = TRUE)]
 }
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
-
-
-# temp!  gypfine is all NA right now. REMOVE IT
-points_attributed <- points_attributed[,!grepl("nm_gypfine",names(points_attributed))]
-
 
 # write it out to the att db
 dbName <- paste(baseName, "_att.sqlite", sep="")
