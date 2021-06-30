@@ -1,4 +1,3 @@
-
 # File: 2_attributePoints.r
 # Purpose: attribute environmental data to presence points
 
@@ -6,7 +5,6 @@ library(raster)
 library(sf)
 library(RSQLite)
 library(snowfall)
-library(stars)
 
 # load data, QC ----
 setwd(loc_envVars)
@@ -103,8 +101,6 @@ if (!is.null(remove_vars)) {
 gridlistSub <- gridlistSub[!duplicated(gridlistSub),]
 fullL <- gridlist[names(gridlist) %in% tolower(gridlistSub$gridName)]
 
-
-
 # Could use this script here crop/mask rasters
 #source(paste0(loc_scripts, "/helper/crop_mask_rast.R"), local = TRUE)
 #envStack <- stack(newL)
@@ -123,88 +119,29 @@ fullL <- gridlist[names(gridlist) %in% tolower(gridlistSub$gridName)]
 # }
 
 # make grid stack with subset
-#with stars, may not need envStack 
 envStack <- stack(fullL)
-
-#PJM: grabbingpaths and  names of rasters with their paths from fullL, used with stars_read in loop
-#to create stars_proxy objects further down
-#names could be updated to more appropriate convention- such as grid_paths, grid_names
-raster_paths<-unlist(fullL, use.names=F)
-raster_names<-names(fullL)
-
-#Notes on trouble shooting stars from PJM
-#temp_stars<-read_stars(raster_paths[1:38]) #works
-#temp_stars<-read_stars(raster_paths[1:40]) #beersx1000 & crvslpx100 are exmples that won't read in with others
-#temp_stars<-read_stars(raster_paths[39:40])
-#stars_1<-read_stars(raster_paths[1]) #clim_bio1
-#stars_39<-read_stars(raster_paths[39]) #beersx1000
-#combine_1_39<-c(stars_1, stars_39, along=1)
-#combine_1_39  #results printed to screen sugest possibly different CRS for some rasters?
- 
 rm(fullL, gridlistSub, modType, branches, activeBranch)
 
 # extract raster data to points ----
 
 # Extract values to a data frame - multicore approach using snowfall
 # First, convert raster stack to list of single raster layers
-#PJM: slist not utilized in current script, nor is envStack
 s.list <- unstack(envStack)
 names(s.list) <- names(envStack)
+# Now, create a R cluster using all the machine cores minus one
+sfInit(parallel=TRUE, cpus=parallel:::detectCores()-3)
+# Load the required packages inside the cluster
+sfLibrary(raster)
+sfLibrary(sf)
+# Run parallelized 'extract' function and stop cluster
+e.df <- sfSapply(s.list, extract, y=shpf, method = "simple")
+sfStop()
 
-
-# PJM: commented this bit about break out to try looping through rasters with stars package
-# # with contributions from PJM
-# # if more than 10k points, split into groups approx 5k each
-# if(nrow(shpf) > 10000){
-#   shpRows <- 1:nrow(shpf)
-#   numBrks <- ceiling(nrow(shpf)/5000)
-#   brks <- cut(shpRows, breaks = numBrks)
-#   brkgrps<- unique(brks)  
-# } else {
-#   brks <- rep(1, nrow(shpf))
-#   brkgrps <- 1
-# }
-
-#debug/checking
-#print(paste0("num gps for attribute: ", length(brkgrps)))
-
-#PJM: tempory fix for large ranges using stars below
-# loops through rasters individually because of problems found combining some rasters into a single stars object
-#  Would be better to combine rasters into a cube or single stars proxy object and 
-# handle together. Commented out parallel portion- seems incredibly speedy without
-# once rasters are combined into a cube with stars, should approach in parallel
-
-
-# start cluster
-#sfInit(parallel=TRUE, cpus=parallel:::detectCores()-31)
-#sfLibrary(raster)
-#sfLibrary(sf)
-#sfLibrary(stars)
-# extract by subsets to keep RAM from maxing out #No longer relevant 
-e.df_list<-list()
-for(i in 1:length(raster_paths)){
-  stars_rast<-read_stars(raster_paths[i])  #reads in rasters individually as stars object or stars_proxy depending on size.  
-  # Run parallelized 'extract' function
-  #e.df_list[[i]] <- sfSapply(s.list, extract, y=shpf_sub, method = "simple")
-  #e.df_list[[i]] <- sfSapply(temp_stars, st_extract, y=shpf) #tried this on a group of stars_objects
- 
-  e.df_extract <- st_extract(stars_rast,shpf)  #uses st_extract function to extract raster data to points
-  e.df_extract<-as.data.frame(e.df_extract)   #this bit was to get rid of the geometry  stuck on the end 
-  e.df_extract<-subset(e.df_extract, select=-geometry)  #this bit was to get rid of the geometry object stuch on the end 
-  e.df_list[[i]]<-as.data.frame(e.df_extract)   #
-  
-}
-# stop cluster
-#sfStop()
-
-e.df<-(do.call(cbind, e.df_list))
-names(e.df)
-names(e.df)<-names(envStack)
 points_attributed <- st_sf(cbind(data.frame(shpf), data.frame(e.df)))
 
-#seemed to be throwing an error due to geometry field at end arising from st_extract, so removing geometry 
+# method without using snowfall
+#points_attributed <- extract(envStack, shpf, method="simple", sp=TRUE)
 
-points_attributed<-subset(points_attributed, select=-geometry)  
 # temporal variables data handling
 pa <- points_attributed
 tv <- names(pa)[grep(".",names(pa), fixed = TRUE)]
@@ -238,6 +175,11 @@ if (length(tv) > 0) {
 }
 suppressWarnings(rm(tv,tvDataYear,tvDataYear.s, yrs, closestYear, vals, pa))
 
+
+# temp!  gypfine is all NA right now. REMOVE IT
+points_attributed <- points_attributed[,!grepl("nm_gypfine",names(points_attributed))]
+
+
 # write it out to the att db
 dbName <- paste(baseName, "_att.sqlite", sep="")
 db <- dbConnect(SQLite(), paste0("model_input/",dbName))
@@ -247,3 +189,4 @@ st_geometry(att_dat) <- NULL
 dbWriteTable(db, paste0(baseName, "_att"), att_dat, overwrite = TRUE)
 dbDisconnect(db)
 rm(db, SQLQuery)
+
