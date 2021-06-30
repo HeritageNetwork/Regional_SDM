@@ -27,6 +27,8 @@ library(gtable)
 library(grid)
 library(gridExtra)
 
+library(DBI)
+
 ### find and load model data ----
 #setwd(loc_model)
 dir.create(file.path(loc_model, model_species, "outputs","metadata"), recursive = TRUE, showWarnings = FALSE)
@@ -326,11 +328,6 @@ impPlot <- ggplot(data = varsSorted) +
 # find the longest of our set of algos
 # this lines are for the slim chance we have less than 9 vars total. Not likely now. 
 
-#### temporary  TODO
-if(exists("pPlots")){
-  rf.pPlots <- pPlots
-}
-
 maxVars <- 0
 for(algo in ensemble_algos){
   objName <- paste0(algo, ".pPlots")
@@ -390,7 +387,12 @@ for (plotpi in 1:numPPl){
 
   # pplot data
   # do rf only if there are data
-  rfLoc <- match(evar, elist)
+  if(exists("rf.pPlots")){
+    rf.elist <- unlist(lapply(rf.pPlots, FUN = function(x) x$fname))
+    rfLoc <- match(evar, rf.elist)
+  } else {
+    rfLoc <- NA
+  }
   if(exists("rf.pPlots") & !is.na(rfLoc)){
     grdFullName <- rf.pPlots[[rfLoc]]$fname
     dat <- data.frame(x = rf.pPlots[[rfLoc]]$x, y = rf.pPlots[[rfLoc]]$y)
@@ -492,9 +494,10 @@ for (plotpi in 1:numPPl){
   # create the density plot
   densplot <- ggplot(data = densdat, aes(x = x, color = factor(pres, labels = c("background","presence")))) + 
     geom_density(size = 0.5, show.legend = FALSE) + 
-    scale_x_continuous(limits = c(min(densdat$x), max(densdat$x)), 
-                       expand = expansion(mult = c(0.05)),
-                       breaks = NULL) +
+    # scale_x_continuous(limits = c(min(densdat$x), max(densdat$x)),
+    #                    expand = expansion(mult = c(0.05)),
+    #                    breaks = NULL) +
+    scale_x_continuous(breaks = NULL) +
     scale_y_continuous(breaks = NULL) + 
     theme_classic() + 
     theme(axis.title.y = element_blank(), legend.position = "none",
@@ -538,7 +541,7 @@ for (plotpi in 1:numPPl){
     
     legPlot2 <- densplot + 
       geom_freqpoly(binwidth = 1000) + # hack to get lines instead of squares in legend
-      scale_x_continuous() + 
+      #scale_x_continuous() + 
       labs(color = "Density") +
       theme(legend.position = "bottom",
             legend.margin=margin(t=0, r=0, b=0, l=0, unit="pt"),
@@ -798,6 +801,71 @@ knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model
 #   }
 # }
 
+## write up output info to tracking DB  ---
+## If metadata pdf creation successful, then full model run complete,
+## so this is an appropriate time to populate Tracking DB
+# get tracking DB connection info
+trackerDsnInfo <- here("_data","databases", "hsm_tracker_connection_string_short.dsn")
+
+
+## get model cycle info from the tracking db
+cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
+# get model cycle we are on
+sql <- paste0("SELECT v2_Elements.ID, v2_Elements.Taxonomic_Group, V2_Elements.Location_Use_Class, ",
+              "v2_Cutecodes.cutecode, ",
+              "v2_ModelCycle.ID, v2_ModelCycle.model_cycle ",
+              "FROM (v2_Elements INNER JOIN v2_Cutecodes ON v2_Elements.ID = v2_Cutecodes.Elements_ID) ",
+              "INNER JOIN v2_ModelCycle ON v2_Elements.ID = v2_ModelCycle.Elements_ID ",
+              "WHERE (((v2_Cutecodes.cutecode)= '", ElementNames$Code, "'));")
+
+model_cycle <- dbGetQuery(cn, sql)
+names(model_cycle) <- c("Elements_ID","taxonomic_group","luc","cutecode","model_cycle_ID", "model_cycle")
+dbDisconnect(cn)
+
+
+# get most recent cycle (last row after sorting)
+model_cycle <- model_cycle[order(model_cycle$model_cycle),]
+model_cycle <- model_cycle[nrow(model_cycle),]
+
+outputsDat <- model_cycle[,c("model_cycle_ID"), drop = FALSE]
+names(outputsDat) <- "model_cycle_id"
+outputsDat$model_run_name <- model_run_name
+outputsDat$path_to_output <- file.path(loc_model, model_species,"outputs","model_predictions")
+outputsDat$modeling_machine <- model_comp_name
+outputsDat$comment <- NA
+outputsDat$ensemble_code <- NA
+
+# duplicate rows based on number of algorithms
+repTimes <- length(ensemble_algos)
+outputsDat <- outputsDat[rep(1, repTimes),]
+
+outputsDat$algorithm_code <- ensemble_algos
+outputsDat$output_file_name <- paste0(model_run_name,"_",ensemble_algos,".tif")  
+# decision: don't put up info about the mean suitabilities ensemble. Only use it for the metadata map
+
+outputsDat <- outputsDat[,c("model_cycle_id","model_run_name","algorithm_code","output_file_name",
+                            "path_to_output","modeling_machine","comment")]
+
+# push up the data
+cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
+
+# are these data already up there? if so, delete and re-upload
+# base it on file name
+sql <- paste0("SELECT * from v2_Outputs where output_file_name IN (",
+              toString(sQuote(outputsDat$output_file_name, q = FALSE)), ");")
+
+datUpThere <- dbGetQuery(cn, sql)
+
+if(nrow(datUpThere) > 0){
+  sql <- paste0("DELETE from v2_Outputs where ID IN (",
+                toString(datUpThere$ID), ");")
+  dbExecute(cn, sql)
+}
+
+# now upload the rows
+dbWriteTable(cn,"v2_Outputs", outputsDat, append = TRUE, row.names = FALSE)
+dbDisconnect(cn)
+rm(cn)
 
 ## clean up ----
 #dbDisconnect(db)

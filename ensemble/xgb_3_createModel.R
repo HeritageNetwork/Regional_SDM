@@ -325,7 +325,7 @@ if(length(ord) > 9){
 
 xgb.pPlots <- xgb.plot.shap(data = as.matrix(xgb.df.full.s[,indVarCols]), 
                      model = xgb.full, 
-                     features = xgb.EnvVars$gridName[1:pPlotListLen],
+                     features = as.character(xgb.EnvVars$gridName[1:pPlotListLen]),
                      target_class = 1,
                      plot = FALSE)
 

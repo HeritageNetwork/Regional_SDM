@@ -78,7 +78,7 @@ registerDoParallel(cl)
 # pass libPath to workers
 x <- clusterCall(cl, function(x) .libPaths(x), .libPaths())
 
-treeSubs <- ntrees/numCores
+treeSubs <- ceiling(ntrees/numCores)
 
 rf.find.envars <- foreach(ntree = rep(treeSubs,numCores), .combine = randomForest::combine, 
                     .packages = 'randomForest', .multicombine = TRUE) %dopar% {
@@ -198,7 +198,7 @@ v.rocr.pred <- vector("list",length(group$vals))
 #######
 
 # calculate the number of trees to send to each core
-treeSubs <- ntrees/numCores
+treeSubs <- ceiling(ntrees/numCores)
 
 if(length(group$vals)>1){
   for(i in 1:length(group$vals)){
@@ -417,7 +417,7 @@ if(length(group$vals)>1){
 
 # increase the number of trees for the full model
 ntrees <- 2000
-treeSubs <- ntrees/numCores
+treeSubs <- ceiling(ntrees/numCores)
 
 ####
 #   run the full model ----

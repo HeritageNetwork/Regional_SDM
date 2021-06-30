@@ -4,9 +4,6 @@
 ## start with a fresh workspace with no objects loaded
 rm(list=ls())
 
-library(checkpoint)
-checkpoint("2020-04-22", scanForPackages = FALSE)
-
 library(raster)
 library(sf)
 library(here)

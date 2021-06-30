@@ -15,7 +15,7 @@ outPth <- file.path(loc_model, ElementNames$Code,"outputs","ensemble_varFilterin
 dir.create(outPth, showWarnings = FALSE)
 
 me.out <- maxent(df.full[,indVarCols], df.full[,depVarCol],
-                 path = outPth)
+                 path = outPth, silent = "TRUE")
 
 ###
 # Remove the least important env vars ----
@@ -182,10 +182,10 @@ if(length(group$vals)>1){
     trSet.s <- rbind(trSet.s, trSet[trSet$pres == 0,])
     
     # create the model!
-    me.trRes[[i]] <- maxent(trSet.s[,indVarCols], trSet.s[,depVarCol])
+    me.trRes[[i]] <- maxent(trSet.s[,indVarCols], trSet.s[,depVarCol], silent = "TRUE")
     
     # run a maxent predict on the validation data
-    me.evRes[[i]] <- predict(me.trRes[[i]], me.evSet[[i]], type="prob")
+    me.evRes[[i]] <- predict(me.trRes[[i]], me.evSet[[i]], type="prob", silent = "TRUE")
     # use ROCR to structure the data. Get pres col of me.evRes (= named "1")
     me.v.rocr.pred[[i]] <- prediction(me.evRes[[i]],me.evSet[[i]]$pres)
     # extract the auc for metadata reporting
@@ -272,7 +272,7 @@ if(length(group$vals)>1){
     }
     
     #apply the cutoff to the validation data
-    v.me.pred.cut <- ifelse(predict(me.trRes[[i]], me.evSet[[i]]) > me.cutval,1,0)
+    v.me.pred.cut <- ifelse(predict(me.trRes[[i]], me.evSet[[i]], silent = "TRUE") > me.cutval,1,0)
     v.me.pred.cut <- factor(v.me.pred.cut,levels = c("1","0"))
     #make the confusion matrix
     me.v.y[[i]] <- table(observed = me.evSet[[i]][,"pres"],
@@ -363,7 +363,7 @@ dir.create(outPth, showWarnings = FALSE)
 
 me.out.fin <- maxent(me.df.full.s[,indVarCols], me.df.full.s[,depVarCol],
                  path = outPth,
-                 args=c("-J", "-P"))
+                 args=c("-J", "-P"), silent = "TRUE")
 # args: (boolean flags toggle the default, and p,q,l are already 'true')
 # J = Jackknife. Measure importance of each environmental variable by training with each environmental variable first omitted, then used in isolation
 # P = responsecurves. Create graphs showing how predicted relative probability of occurrence depends on the value of each environmental variable
