@@ -185,7 +185,7 @@ for(i in 1:length(raster_paths)){
 
 
 
-e.df<-do.call(rbind, e.df_list)
+e.df<-do.call(cbind, e.df_list)
 names(e.df)<-names(envStack)
 points_attributed <- st_sf(cbind(data.frame(shpf), data.frame(e.df)))
 
