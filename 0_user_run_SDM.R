@@ -140,7 +140,7 @@ library(here)
 rm(list=ls())
 
 # set project folder and species code for this run
-model_species <- "anaxreti"
+model_species <- "<<model species cutecode here>>"
 loc_model <- here("_data", "species")
 
 # set wd and load function
