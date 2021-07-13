@@ -201,7 +201,7 @@ rm(list=ls())
 
 # for scripts 1-3, run just the following 3 lines
 
-model_species <- "leoppard"
+model_species <- "<<model species cutecode here>>"
 
 load(here("_data","species",model_species,"runSDM_paths_most_recent.Rdata"))
 # if you want an earlier run, enter it and load it here:
