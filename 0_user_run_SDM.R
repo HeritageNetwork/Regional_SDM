@@ -190,8 +190,8 @@ run_SDM(
 ##########
 
 # TESTING / DEBUGGING ONLY
-library(checkpoint)
-checkpoint("2020-04-22", scanForPackages = FALSE)
+#library(checkpoint)
+#checkpoint("2020-04-22", scanForPackages = FALSE)
 
 library(here)
 rm(list=ls())
