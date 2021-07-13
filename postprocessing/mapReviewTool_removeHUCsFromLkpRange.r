@@ -5,8 +5,6 @@
 # if the model needs to be re-run, these HUCs need to be removed from the
 # range table. This script does that. 
 
-# library(checkpoint)
-# checkpoint("2020-04-22", scanForPackages = FALSE)
 library(here)
 library(RSQLite)
 library(odbc)
