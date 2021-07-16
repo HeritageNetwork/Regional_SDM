@@ -61,9 +61,8 @@ if(FALSE %in% st_is_valid(rangeClipped)){
 }
 
 st_write(rangeClipped, delete_dsn = TRUE,
-         here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
+         file.path(loc_model, model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")))
 
-  
 ## crop/mask rasters to a temp directory ----
 
 # delete temp rasts folder, create new
