@@ -581,7 +581,7 @@ dbDisconnect(db)
 
 ras <- raster(paste0("model_predictions/", rasName))
 
-studyAreaExtent <- st_read(here("_data","species",model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = TRUE)
+studyAreaExtent <- st_read(file.path(loc_model,model_species,"inputs","model_input",paste0(model_run_name, "_studyArea.gpkg")), quiet = TRUE)
 referenceBoundaries <- st_read(nm_refBoundaries, quiet = TRUE) # name of state boundaries file
 
 # project to match raster, just in case

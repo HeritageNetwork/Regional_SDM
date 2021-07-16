@@ -1,7 +1,7 @@
 # modelrun_meta_data
 # sources at beginning of 3rd script.
 
-repo <- git2r::repository()
+repo <- git2r::repository(path = loc_scripts)
 repo_head <- git2r::last_commit(repo)$sha
 rm(repo)
 model_start_time <- as.character(Sys.time())
