@@ -50,15 +50,20 @@ SQLQuery <- paste0("SELECT MODTYPE m FROM lkpSpecies WHERE sp_code = '", model_s
 modType <- dbGetQuery(db, SQLQuery)$m
 
 # if modtype is both (B), flip it to A or T
-# what git branch are we on?
-branches <- system("git branch", intern = TRUE)
-activeBranch <- branches[grep("\\*", branches)]
-activeBranch <- sub("\\*", "", activeBranch)
-activeBranch <- gsub(" ", "", activeBranch)
+# huc_level is an aquatic only var
+# loc_envars is a terrestrial only var
+# use these to distinguish what type of model we are doing
 
 if(modType == "B"){
-  if(activeBranch == "terrestrial") modType <- "T"
-  if(activeBranch == "aquatic") modType <- "A"
+  if(exists("huc_level")){
+    if(exists("loc_envars")){
+      stop("modtype is 'Both' and both aq and terrestrial vars defined. Don't know how to continue.")
+    } else {
+      modType <- "A"
+    } 
+  } else if(exists("loc_envars")){
+    modType <- "T"
+  }
 }
 
 # gridlistSub is a running list of variables to use. Uses fileName from lkpEnvVars
@@ -139,7 +144,7 @@ raster_names<-names(fullL)
 #combine_1_39  #results printed to screen sugest possibly different CRS for some rasters?
 # extract raster data to points ----
 
-rm(fullL, gridlistSub, modType, branches, activeBranch)
+rm(fullL, gridlistSub, modType)
 
 # Extract values to a data frame - multicore approach using snowfall
 # First, convert raster stack to list of single raster layers
