@@ -46,8 +46,7 @@ Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\text
   \normalsize Habitat Suitability Model (HSM) assessment metrics and metadata \\
   Common name: \href{\Sexpr{as.character(NSurl)}}{\Sexpr{as.character(ElementNames[[2]])}}  \\
   Grank: \Sexpr{ paste(as.character(ElementNames[[6]])," - ",as.character(grank_desc[[2]]), sep="")}\\
-  Date: \Sexpr{format(Sys.Date(), "%d %b %Y")} \\  
-  Code: \Sexpr{as.character(ElementNames$Code)} (EGT_ID: \Sexpr{as.character(ElementNames$EGT_ID)})
+  Date: \Sexpr{format(Sys.Date(), "%d %b %Y")}; Code: \Sexpr{as.character(ElementNames$Code)} (EGT_ID: \Sexpr{as.character(ElementNames$EGT_ID)})
 \end{minipage}  \hfill   
 \begin{minipage}[b]{2in}   %minipage for thermometer  
 <<thermometer1, fig.height=1, fig.width=1, include=FALSE, echo=FALSE>>=
@@ -85,36 +84,44 @@ Habitat Suitability Model for \Sexpr{as.character(ElementNames$CommName)} (\text
 \smallskip
 \noindent 
 \Sexpr{as.character(project_overview)}
-This HSM was modeled using the algorithms in Table 1 in the R statistical environment, 
-incorporating the number of known and background locations indicated in Table 2 We validated the model by jackknifing (also called leave-one-out {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper}) by \Sexpr{tolower(as.character(group$JackknType))} and testing \Sexpr{length(group$vals)} groups. The statistics in Table 3 report the validation statistics for these jackknifing runs.\\
+This HSM was modeled using the algorithms in Table 1 using R{\protect\NoHyper\cite{r}\protect\endNoHyper}, 
+incorporating the number of known and background locations indicated in Table 2. We validated the model by jackknifing {\protect\NoHyper\cite{fielding1997, fielding2002, pearson2007}\protect\endNoHyper} by \Sexpr{tolower(as.character(group$JackknType))} and testing \Sexpr{length(group$vals)} groups. Table 3 reports the validation statistics for these jackknifing runs.\\
 \smallskip
 \small
 \nopagebreak[4]
 \begin{minipage}[t]{3in}
 \smallskip
-Table 1. Ensemble details. These algorithms were used to create an ensemble model for this 
-species. The specific implementations are listed in the package column. Details in this document are attributed using the codes listed here.
+Expert reviewers indicated \Sexpr{ifelse(length(final_Alg_List)>1,"these algorithms","this algorithm")} performed the best: \Sexpr{paste(final_Alg_List,sep=" ", collapse = ", ")}. The reported TSS (above and Table 3b) is based on the reviewer-defined threshold for \Sexpr{ifelse(length(final_Alg_List)>1,"these models","this model")}. Some data are provided for all models run, but the focus of this metadata report will be on \Sexpr{ifelse(length(final_Alg_List)>1,"these models","this model")} chosen by expert review.
+
+\smallskip
+Table 1. These algorithms were created for review. If multiple passed review, those were ensembled. The specific implementations are listed in the package column.
 \begin{center}
 <<tableOne, results="asis", echo = FALSE>>=
   print(xtable(ensemble_details),
              floating = FALSE, include.rownames=FALSE)
 @
 \end{center}
-Table 2. Input statistics. Presence locations (= known locations) may be based on point observations (buffered based on their spatial accuracy) and polygon representations. Nearby locations are grouped together. Environmental conditions are randomly sampled within each of these groups the number of times noted (subsamples) to generate the total number of presence inputs (by tree for rf; for entire model for all others). Background points are placed throughout model area excluding presence locations. Algorithms incorporate background points differently, as noted. 
+Table 2. Input statistics. Presence locations may be based on point observations buffered by their spatial accuracy and polygons with nearby locations grouped together. Environmental conditions are randomly subsampled within each of these groups as noted to generate the number of presence inputs (by tree for rf; for entire model for others). Background points are placed throughout model except for presence locations. 
 \begin{center}
 <<tableTwo, results="asis", echo = FALSE>>=
   print(xtable(summ.table),
              floating = FALSE, include.rownames=FALSE)
 @
 \end{center}
-Table 3. Validation statistics for jackknife trials, with the mean and standard deviation reported. AUC = area under the ROC curve, Sens = sensitivity, Spec = specificity, TSS = True Skill Statistic {\protect\NoHyper\cite{allouche2006, vaughan2005, fielding2002}\protect\endNoHyper}.
+Table 3. Mean validation statistics for jackknife trials (+/- standard deviation). AUC = area under the ROC curve, Sens = sensitivity, Spec = specificity, TSS = True Skill Statistic {\protect\NoHyper\cite{allouche2006, vaughan2005, fielding2002}\protect\endNoHyper}.
 \begin{center}
 <<tableThree, results="asis", echo = FALSE>>=
   print(xtable(vstats.w), 
         floating=FALSE, include.rownames=FALSE)
 @
 \end{center}
-
+Table 3b. Validation statistics for expert-chosen \Sexpr{ifelse(length(final_Alg_List)>1,"algorithms and thresholds","algorithm and threshold")}. TSS = True Skill Statistic {\protect\NoHyper\cite{allouche2006}\protect\endNoHyper}.
+\begin{center}
+<<tableThreeBee, results="asis", echo = FALSE>>=
+  print(xtable(expertTSS), 
+        floating=FALSE, include.rownames=FALSE)
+@
+\end{center}
 \end{minipage}%
 \hfill \begin{minipage}[t]{3.3in}
 \smallskip
@@ -148,7 +155,7 @@ plot(0.5,0.5,lwd=0, col = "white", xlim = c(0,1), ylim = c(0,1),
      xlab="Avg. false positive rate", ylab="Avg. true positive rate")
 # now add each that was run  
 #if no validation, then this will fail. Used to use if(exists("rf.perf"))...
-for(algo in ensemble_algos){
+for(algo in final_Alg_List){
   if(algo == "rf" & exists("rf.perf")){
     specs <- figSpecs[match(algo,figSpecs$algos),]
     plot(rf.perf,
@@ -178,10 +185,10 @@ for(algo in ensemble_algos){
 }
 #possible else if no models were validated: text(0.5,0.5, "No evaluation")
 
-legend("bottomright", ensemble_algos, 
-       col = figSpecs[match(ensemble_algos,figSpecs$algos),"col"],
-       lwd = figSpecs[match(ensemble_algos,figSpecs$algos),"lwd"],
-       lty = figSpecs[match(ensemble_algos,figSpecs$algos),"lty"],
+legend("bottomright", final_Alg_List, 
+       col = figSpecs[match(final_Alg_List,figSpecs$algos),"col"],
+       lwd = figSpecs[match(final_Alg_List,figSpecs$algos),"lwd"],
+       lty = figSpecs[match(final_Alg_List,figSpecs$algos),"lty"],
        text.col = "black", 
        merge = TRUE, bg = "gray95")
   
@@ -438,13 +445,23 @@ Appendix 2. Model details for reproducibility
   \item{Random seed for each model: \Sexpr{modelrun_meta_data$seed}}
 \end{itemize}
 
-Algorithm-specific details. 
+Table 1. Algorithm-specific details. 
 
 
 <<tableAppendixTwoTableOne, results="asis", echo = FALSE>>=
   print(xtableList(vuStatsList),
                 floating=FALSE, include.rownames=FALSE)
 @
+
+\begin{minipage}[t]{4in}
+Table 2. Reviewer star ratings for all model outputs of the accepted model version. More than one row for an algorithm indicates more than one reviewer. Average star ratings of 3 or more triggered the use of that algorithm in the final output. 
+
+
+<<tableAppendixTwoTableTwo, results="asis", echo = FALSE>>=
+  print(xtable(reviewer_rankings),
+                floating=FALSE, include.rownames=FALSE)
+@
+\end{minipage}
 
 \end{document}
 
