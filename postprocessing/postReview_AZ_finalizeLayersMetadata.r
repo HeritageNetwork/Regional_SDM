@@ -56,9 +56,9 @@ library(gridExtra)
 # what project?
  prjct <- "AZ_SWG"
 # what sqlite db
- sqliteDB <- here("_data","databases","SDM_lookupAndTracking_AZ_phase12spp.sqlite")
+# sqliteDB <- here("_data","databases","SDM_lookupAndTracking_AZ_phase12spp.sqlite")
 # HUC layer
- nm_HUC_file <- here("_data","other_spatial","feature","HUC10.shp")
+ nm_HUC_file_new <- here("_data","other_spatial","feature","HUC10.shp")
  
 # get species that are ready for export ----
 
@@ -69,13 +69,13 @@ sql <- paste0("SELECT v2_Elements.ID as elements_id, v2_Elements.Taxonomic_Group
               "v2_Cutecodes.cutecode, ",
               "v2_Projects.project, ",
               "v2_ModelCycle.ID as model_cycle_ID, v2_ModelCycle.model_cycle, ",
-              "v2_Workflows.modeled, v2_Workflows.model_reviewed_com ",
+              "v2_Workflows.modeled, v2_Workflows.model_reviewed_com, v2_workflows.tag_as_final ",
               "FROM (((v2_Elements INNER JOIN v2_Projects ON v2_Elements.ID = v2_Projects.Elements_ID) ",
               "INNER JOIN v2_ModelCycle ON v2_Elements.ID = v2_ModelCycle.Elements_ID) ",
               "INNER JOIN v2_Workflows ON v2_ModelCycle.ID = v2_Workflows.model_cycle_ID) ",
               "INNER JOIN v2_Cutecodes ON v2_Elements.ID = v2_Cutecodes.Elements_ID ",
               "WHERE (((v2_Projects.project)='", prjct, "') ", 
-              "AND ((v2_Workflows.model_reviewed_com) Like '%usethis%')) ",
+              "AND ((v2_Workflows.tag_as_final) = 'TRUE')) ",
               "ORDER BY v2_Elements.Taxonomic_Group, v2_Elements.Scientific_Name;")
 
 spp_ready <- dbGetQuery(cn, sql)
@@ -86,12 +86,32 @@ sql <- paste0("SELECT MRTOverallFeedback.model_cycle_ID, ",
               "MRTOverallFeedback.mrt_UserID, MRTOverallFeedback.user_rating, ",
               "MRTOverallFeedback.user_thresh_low, MRTOverallFeedback.thresh_note_low, ",
               "MRTOverallFeedback.user_thresh_mid, MRTOverallFeedback.thresh_note_mid, ",
-              "MRTOverallFeedback.user_thresh_high, MRTOverallFeedback.thresh_note_high ",
+              "MRTOverallFeedback.user_thresh_high, MRTOverallFeedback.thresh_note_high, ",
+              "MRTOverallFeedback.use_low_thresh_in_final, ",
+              "MRTOverallFeedback.use_med_thresh_in_final, ",
+              "MRTOverallFeedback.use_high_thresh_in_final ",
               "FROM MRTOverallFeedback ",
               "WHERE (((MRTOverallFeedback.model_cycle_ID) In (", paste(spp_ready$model_cycle_ID, collapse = ","), ")) ",
-              "AND ((MRTOverallFeedback.thresh_note_low) Like '%usethis%'));")
+              "AND ((MRTOverallFeedback.use_low_thresh_in_final = 'TRUE') ",
+              "OR (MRTOverallFeedback.use_med_thresh_in_final = 'TRUE') ", 
+              "OR (MRTOverallFeedback.use_high_thresh_in_final = 'TRUE')));")
 
 threshInfo <- dbGetQuery(cn, sql)
+
+sql <- paste0("SELECT MRTOverallFeedback.model_cycle_ID, ",
+              "MRTOverallFeedback.model_version, ",
+              "MRTOverallFeedback.mrt_cutecode, ",
+              "MRTOverallFeedback.mrt_UserID, MRTOverallFeedback.user_rating, ",
+              "MRTOverallFeedback.user_thresh_low, MRTOverallFeedback.thresh_note_low, ",
+              "MRTOverallFeedback.user_thresh_mid, MRTOverallFeedback.thresh_note_mid, ",
+              "MRTOverallFeedback.user_thresh_high, MRTOverallFeedback.thresh_note_high, ",
+              "MRTOverallFeedback.use_low_thresh_in_final, ",
+              "MRTOverallFeedback.use_med_thresh_in_final, ",
+              "MRTOverallFeedback.use_high_thresh_in_final ",
+              "FROM MRTOverallFeedback ",
+              "WHERE ((MRTOverallFeedback.model_cycle_ID) In (", paste(spp_ready$model_cycle_ID, collapse = ","), ")); ")
+userRatingInfo <- dbGetQuery(cn, sql)
+
 
 dbDisconnect(cn)
 rm(cn)
@@ -102,22 +122,94 @@ fp <- file.path("P:", "Regional_SDM","_data","species")
 allFiles <- list.files(path = fp, recursive = TRUE, include.dirs = TRUE)
 # look for a pdf in the final products folder.
 filesDone <- grep("final_products.*.pdf$", allFiles, value = TRUE)
-# model runs done
-sppDone <- data.frame(fullPath = filesDone,
-                cutecode = sapply(filesDone, function(x) strsplit(x,"/")[[1]][[1]], USE.NAMES = FALSE),
-                pdf = sapply(filesDone, function(x) strsplit(x,"/")[[1]][[length(strsplit(x,"/")[[1]])]], USE.NAMES = FALSE)
-  )
-sppDone$model_run <- sub(".pdf","",sppDone$pdf)
+# models exported for review
+sppExported <- grep("model_review_output.*.pdf$", allFiles, value = TRUE)
+sppExported_df <- data.frame(fullPath = sppExported,
+                                cutecode = sapply(sppExported, function(x) strsplit(x,"/")[[1]][[1]], USE.NAMES = FALSE),
+                                pdf = sapply(sppExported, function(x) strsplit(x,"/")[[1]][[length(strsplit(x,"/")[[1]])]], USE.NAMES = FALSE),
+                                pthRoot = fp,
+                                sqlitedb = file.path("P:/", "Regional_SDM", "_data","databases","SDM_lookupAndTracking_AZ_phase12spp.sqlite")
+                             )
+sppExported_df$model_run <- sub(".pdf","",sppExported_df$pdf)
 
+
+# model runs done
+if(length(filesDone) > 0){
+  sppDone <- data.frame(fullPath = filesDone,
+                  cutecode = sapply(filesDone, function(x) strsplit(x,"/")[[1]][[1]], USE.NAMES = FALSE),
+                  pdf = sapply(filesDone, function(x) strsplit(x,"/")[[1]][[length(strsplit(x,"/")[[1]])]], USE.NAMES = FALSE),
+                  pthRoot = fp
+    )
+  sppDone$model_run <- sub(".pdf","",sppDone$pdf)
+} else {
+  sppDone <- data.frame(fullPath = character(0),
+                           cutecode = character(0),
+                           pdf = character(0), 
+                           pthRoot = character(0),
+                           model_run = character(0)
+  )
+}
+
+# get data from second repo
+fp_r2 <- file.path("P:", "Regional_SDM_2","_data","species")
+allFiles_r2 <- list.files(path = fp_r2, recursive = TRUE, include.dirs = TRUE)
+# look for a pdf in the final products folder.
+filesDone_r2 <- grep("final_products.*.pdf$", allFiles_r2, value = TRUE)
+# models exported for review
+sppExported_r2 <- grep("model_review_output.*.pdf$", allFiles_r2, value = TRUE)
+sppExported_df_r2 <- data.frame(fullPath = sppExported_r2,
+                                cutecode = sapply(sppExported_r2, function(x) strsplit(x,"/")[[1]][[1]], USE.NAMES = FALSE),
+                                pdf = sapply(sppExported_r2, function(x) strsplit(x,"/")[[1]][[length(strsplit(x,"/")[[1]])]], USE.NAMES = FALSE),
+                                pthRoot = fp_r2,
+                                sqlitedb = file.path("P:/", "Regional_SDM_2", "_data","databases","SDM_lookupAndTracking_AZ.sqlite")
+                                )
+sppExported_df_r2$model_run <- sub(".pdf","",sppExported_df_r2$pdf)
+
+sppExported_df <- rbind(sppExported_df, sppExported_df_r2)
+
+# model runs done
+if(length(filesDone_r2) > 0){
+  sppDone_r2 <- data.frame(fullPath = filesDone_r2,
+                           cutecode = sapply(filesDone_r2, function(x) strsplit(x,"/")[[1]][[1]], USE.NAMES = FALSE),
+                           pdf = sapply(filesDone_r2, function(x) strsplit(x,"/")[[1]][[length(strsplit(x,"/")[[1]])]], USE.NAMES = FALSE),
+                           pthRoot = fp_r2
+                           )
+  sppDone_r2$model_run <- sub(".pdf","",sppDone_r2$pdf)
+} else {
+  sppDone_r2 <- data.frame(fullPath = character(0),
+                           cutecode = character(0),
+                           pdf = character(0), 
+                           pthRoot = character(0),
+                           model_run = character(0)
+  )
+}
+
+sppDone <- rbind(sppDone, sppDone_r2)
 
 # subset the ready list
 spp_ready <- spp_ready[!spp_ready$cutecode %in% sppDone$cutecode,]
+
+#spp_ready <- spp_ready[grepl("Birds",spp_ready$Taxonomic_Group),]
+# spp_ready <- spp_ready[-1,]
+
+# final deliverables location
+delivFolder <- file.path("P:", "deliverables", "birds_group2")
 
 ## Loop through all species ----
 for(cc in spp_ready$cutecode){
   print(paste0("working on ", cc))
   # make the output folder
-  dir.create(file.path(fp, cc, "outputs","final_products"), showWarnings = FALSE)
+  modelLocation <- sppExported_df[sppExported_df$cutecode == cc,]
+  modelLocation <- modelLocation[order(modelLocation$model_run, decreasing = TRUE),]
+  #these path objects are used in the final copy, end of script
+  finalProdsFolder <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","final_products")
+  dir.create(finalProdsFolder, showWarnings = FALSE)
+  delivFolderFull <- file.path(delivFolder, cc)
+  dir.create(delivFolderFull)
+  sqliteDB <- modelLocation$sqlitedb[[1]]
+  # extract user rating data for this cc
+  URInf <- userRatingInfo[grepl(cc,userRatingInfo$model_version),]
+  
   # what algorithms were accepted and what are their thresholds
   tInf <- threshInfo[grepl(cc,threshInfo$model_version),]
   algs <- unique(tInf$mrt_cutecode)
@@ -142,7 +234,7 @@ for(cc in spp_ready$cutecode){
   cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
   sql <- paste0("SELECT model_version, mrt_cutecode, huc_status_type, huc_id ", 
                 "FROM MRTDetailedFeedback ", 
-                "WHERE model_version = '", tInf$model_version, "';")
+                "WHERE model_version = '", tInf$model_version[[1]], "';")
   hucMods <- dbGetQuery(cn, sql)
   dbDisconnect(cn)
   rm(cn)
@@ -159,7 +251,7 @@ for(cc in spp_ready$cutecode){
   hucList <- unique(hucList)
   # make it spatial (sf)
   qry <- paste("SELECT * from HUC10 where HUC10 IN ('", paste(hucList, collapse = "', '"), "')", sep = "")
-  hucRange <- st_zm(st_read(nm_HUC_file, query = qry))
+  hucRange <- st_zm(st_read(nm_HUC_file_new, query = qry))
   # dissolve it
   rangeDissolved <- st_union(hucRange)
   # fill holes/slivers
@@ -172,7 +264,7 @@ for(cc in spp_ready$cutecode){
   # to make mask outside of the following loop
   mv <- tInf[tInf$mrt_cutecode == threshByAlg[1,"mrt_cutecode"],"model_version"]
   alg <- threshByAlg[1,"alg"]
-  fp_tif_alg <- file.path(fp, cc, "outputs","model_predictions",paste0(mv,"_",alg,".tif"))
+  fp_tif_alg <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","model_predictions",paste0(mv,"_",alg,".tif"))
   templRas <- terra::rast(fp_tif_alg)
   
   #to spatVect and spatRast
@@ -181,10 +273,10 @@ for(cc in spp_ready$cutecode){
 
   # for each alg, create a thresholded raster
   for(i in 1:nrow(threshByAlg)){
-    mv <- tInf[tInf$mrt_cutecode == threshByAlg[i,"mrt_cutecode"],"model_version"]
+    mv <- tInf[tInf$mrt_cutecode == threshByAlg[i,"mrt_cutecode"],"model_version"][[1]]
     alg <- threshByAlg[i,"alg"]
-    fp_tif_alg <- file.path(fp, cc, "outputs","model_predictions",paste0(mv,"_",alg,".tif"))
-    fp_out_tif <- file.path(fp, cc, "outputs","final_products",paste0(mv,"_",alg,"_thresh.tif"))
+    fp_tif_alg <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","model_predictions",paste0(mv,"_",alg,".tif"))
+    fp_out_tif <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","final_products",paste0(mv,"_",alg,"_thresh.tif"))
     inRas <- rast(fp_tif_alg)
     # classify 
     thresh <- threshByAlg[i,"user_thresh_low"]
@@ -196,23 +288,23 @@ for(cc in spp_ready$cutecode){
     #                 filename = fp_out_tif, overwrite=TRUE, datatype = "INT2S", 
     #                 gdal=c("TFW=YES", "TILED=YES", "COMPRESS=LZW"))
     rc1 <- terra::classify(inRas, rclmat, include.lowest=TRUE)
-    #fp_out_tif_crop <- file.path(fp, cc, "outputs","final_products",paste0(mv,"_",alg,"_thresh_crop.tif"))
+    #fp_out_tif_crop <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","final_products",paste0(mv,"_",alg,"_thresh_crop.tif"))
     # mask it
     maskedRas <- terra::mask(rc1, cropR, filetype = "GTiff", filename=fp_out_tif, datatype = "INT2S", 
                              overwrite=TRUE, gdal=c("TFW=YES", "TILED=YES", "COMPRESS=LZW"))
     # also write out continuous raster as a deliverable
-    outRas <- file.path(fp, cc, "outputs","final_products",paste0(mv,"_",alg,".tif"))
+    outRas <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","final_products",paste0(mv,"_",alg,".tif"))
     maskedContinuousRas <- terra::mask(inRas, cropR, filetype = "GTiff", filename=outRas,
                                        overwrite=TRUE, gdal=c("TFW=YES", "TILED=YES", "COMPRESS=LZW"))
   }
   # if more than one alg, create an 'agreement' raster, summing the 0/1
   if(nrow(threshByAlg)>1){
-    stop("untested code for an agreement raster")
+    #stop("untested code for an agreement raster")
     algs <- sapply(threshByAlg[,"mrt_cutecode"], function(x) strsplit(x,"_")[[1]][[length(strsplit(x,"_")[[1]])]], USE.NAMES = FALSE)
     mv <- unique(tInf[,"model_version"])
     if(length(mv) > 1){stop("model version mismatch")}
-    inRasVec <- file.path(fp, cc, "outputs","final_products",paste0(mv,"_",algs,"_thresh.tif"))
-    outRas <- file.path(fp, cc, "outputs","final_products",paste0(mv,"_sum_thresh.tif"))
+    inRasVec <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","final_products",paste0(mv,"_",algs,"_thresh.tif"))
+    outRas <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","final_products",paste0(mv,"_sum_thresh.tif"))
     rStack <- rast(inRasVec)
     rOut <- sum(rStack, filename = outRas, overwrite = TRUE)
     #writeRaster(y, outRas)
@@ -221,11 +313,11 @@ for(cc in spp_ready$cutecode){
   #### most cribbed from script 4c
 
   # load Rdata files ----
-  runSDM_dat <- file.path(fp, cc,paste0("runSDM_paths_",mv,".RData"))
+  runSDM_dat <- file.path(modelLocation$pthRoot[[1]], cc,paste0("runSDM_paths_",mv,".RData"))
   load(runSDM_dat)
   for(i in 1:length(fn_args)) assign(names(fn_args)[i], fn_args[[i]])
 
-  rdataFile <- file.path(fp, cc, "outputs","rdata",paste0(mv,".RData"))
+  rdataFile <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","rdata",paste0(mv,".RData"))
   load(rdataFile)
   
   ## Additional Metadata Comments: get any current documentation ----
@@ -303,7 +395,7 @@ for(cc in spp_ready$cutecode){
       presPredAbs <- xgb.predicted[xgb.predicted$pres ==1 & xgb.predicted$pred < thresh,]
       absPredAbs <- xgb.predicted[xgb.predicted$pres ==0 & xgb.predicted$pred < thresh,]
       absPredPres <- xgb.predicted[xgb.predicted$pres ==0 & xgb.predicted$pred >= thresh,]
-      Sens <- (nrow(presPredpres) + nrow(absPredAbs))/nrow(allVotes)
+      Sens <- (nrow(presPredpres) + nrow(absPredAbs))/nrow(xgb.df.full.s)
       Spec <- nrow(absPredAbs)/((nrow(absPredPres) + nrow(absPredAbs)))
       threshByAlg[i,"TSS"] <- Sens + Spec - 1
     }
@@ -314,7 +406,7 @@ for(cc in spp_ready$cutecode){
       presPredAbs <- me.predicted[me.predicted$pres ==1 & me.predicted$pred < thresh,]
       absPredAbs <- me.predicted[me.predicted$pres ==0 & me.predicted$pred < thresh,]
       absPredPres <- me.predicted[me.predicted$pres ==0 & me.predicted$pred >= thresh,]
-      Sens <- (nrow(presPredpres) + nrow(absPredAbs))/nrow(allVotes)
+      Sens <- (nrow(presPredpres) + nrow(absPredAbs))/nrow(me.df.full.s)
       Spec <- nrow(absPredAbs)/((nrow(absPredPres) + nrow(absPredAbs)))
       threshByAlg[i,"TSS"] <- Sens + Spec - 1
     }
@@ -366,7 +458,7 @@ for(cc in spp_ready$cutecode){
   #### now the pdf ----
   # Mostly cribbed from 5_createMetadata.r
 
-  setwd(file.path(fp, cc, "outputs","final_products"))
+  setwd(file.path(modelLocation$pthRoot[[1]], cc, "outputs","final_products"))
   nm_db_file <- sqliteDB
 
   ## get grank definition for header ----
@@ -384,7 +476,7 @@ for(cc in spp_ready$cutecode){
   ensemble_details <- dbGetQuery(db, statement = sql)
   dbDisconnect(db)
   
-  ensemble_details <- ensemble_details[ensemble_details$shortCode %in% threshByAlg$alg,
+  ensemble_details <- ensemble_details[ensemble_details$shortCode %in% ensemble_algos,
                                        c("fullName","shortCode","rPackage")]
   names(ensemble_details) <- c("Name", "Code","R package")
   # ensemble_details is used in knitr file
@@ -436,15 +528,15 @@ for(cc in spp_ready$cutecode){
   vstats.w <- spread(vstats.s, metric, evalOut)
   names(vstats.w) <- c("alg","AUC","Sens","Spec","TSS")
   
-  # add expert revew TSS
-  expertTSS <- threshByAlg[,c("alg","TSS")]
-  names(expertTSS) <- c("alg","expertThreshTSS")
-  expertTSS$expertThreshTSS <- round(expertTSS$expertThreshTSS, 2)
-  vstats.w <- merge(vstats.w, expertTSS, all.x = TRUE)
-  
   # vstats.w is what gets used in knitr file
   rm(db, sql, metricsToGet, colsToGet, vstats.s, vstats)
   
+  ##
+  ## create new table, expert review TSS ----
+  expertTSS <- threshByAlg[,c("alg","user_thresh_low", "TSS")]
+  names(expertTSS) <- c("alg","thresh", "TSS")
+  expertTSS$TSS <- round(expertTSS$TSS, 2)
+
   ## use TSS calc from expert review for thermometer figure ----
   summaryTSS <- meanTSS
   
@@ -627,8 +719,8 @@ for(cc in spp_ready$cutecode){
   varsImp <- varsImp[order(as.integer(varsImp$fullName)),]
   
   #use same colors as ROC plot
-  scaleVec <- figSpecs$col
-  names(scaleVec) <- figSpecs$algos
+  scaleVec <- figSpecs[figSpecs$algos %in% final_Alg_List, "col"]
+  names(scaleVec) <- figSpecs[figSpecs$algos %in% final_Alg_List, "algos"]
   
   # with mean as thick grey line, need to plot it first so its on the bottom
   impPlot <- ggplot(data = varsSorted) + 
@@ -657,8 +749,10 @@ for(cc in spp_ready$cutecode){
     objName <- paste0(algo, ".pPlots")
     if(algo == "rf"){
       numVars <- length(get(objName))
+    } else if (algo == "me"){
+      numVars <- length(get(objName)) 
     } else {
-      numVars <- length(get(objName)$fullNames)  
+      numVars <- length(get(objName)$fullNames)
     }
     if(numVars > maxVars) {
       maxVars <- numVars
@@ -711,13 +805,13 @@ for(cc in spp_ready$cutecode){
     
     # pplot data
     # do rf only if there are data
-    if(exists("rf.pPlots")){
+    if(exists("rf.pPlots") & "rf" %in% final_Alg_List){
       rf.elist <- unlist(lapply(rf.pPlots, FUN = function(x) x$fname))
       rfLoc <- match(evar, rf.elist)
     } else {
       rfLoc <- NA
     }
-    if(exists("rf.pPlots") & !is.na(rfLoc)){
+    if(exists("rf.pPlots") & !is.na(rfLoc) & "rf" %in% final_Alg_List){
       grdFullName <- rf.pPlots[[rfLoc]]$fname
       dat <- data.frame(x = rf.pPlots[[rfLoc]]$x, y = rf.pPlots[[rfLoc]]$y)
       dat <- cbind(dat, algo = "rf")
@@ -728,7 +822,7 @@ for(cc in spp_ready$cutecode){
     }
     
     # check and use xgb if there are data
-    if(exists("xgb.pPlots")){
+    if(exists("xgb.pPlots") & "xgb" %in% final_Alg_List){
       if(grdName %in% dimnames(xgb.pPlots$data)[[2]]){
         xgbdat <- data.frame(xgb.pPlots$data)
         xgbresp <- data.frame(xgb.pPlots$shap_contrib)
@@ -749,7 +843,7 @@ for(cc in spp_ready$cutecode){
     }
     
     # check and use me if there are data
-    if(exists("me.pPlots")){
+    if(exists("me.pPlots") & "me" %in% final_Alg_List){
       melist <- unlist(lapply(me.pPlots, FUN = function(x) x$gridName))
       if(grdName %in% melist){
         grdLoc <- match(grdName, melist)
@@ -763,7 +857,7 @@ for(cc in spp_ready$cutecode){
     }
     
     # check and use gam if there are data
-    if(exists("gam.pPlots")){
+    if(exists("gam.pPlots") & "gam" %in% final_Alg_List){
       dfPointer <- unlist(lapply(gam.pPlots, FUN = function(x){grdName %in% names(x)}))
       if(TRUE %in% dfPointer){
         gamdat <- gam.pPlots[dfPointer][[1]]
@@ -776,7 +870,7 @@ for(cc in spp_ready$cutecode){
       }
     }
     # check and use glm if there are data
-    if(exists("glm.pPlots")){
+    if(exists("glm.pPlots") & "glm" %in% final_Alg_List){
       dfPointer <- unlist(lapply(glm.pPlots, FUN = function(x){grdName %in% names(x)}))
       if(TRUE %in% dfPointer){
         glmdat <- glm.pPlots[dfPointer][[1]]
@@ -789,7 +883,7 @@ for(cc in spp_ready$cutecode){
       }
     }
     # check and use mars if there are data
-    if(exists("mars.pPlots")){
+    if(exists("mars.pPlots") & "mars" %in% final_Alg_List){
       dfPointer <- unlist(lapply(mars.pPlots, FUN = function(x){grdName %in% names(x)}))
       if(TRUE %in% dfPointer){
         marsdat <- mars.pPlots[dfPointer][[1]]
@@ -896,8 +990,8 @@ for(cc in spp_ready$cutecode){
   
   # get the name of the raster we'll be using based on work above
   # if there's a summed thresh raster, use that, otherwise use the singleton continuous ras
-  sumThreshRas <- file.path(fp, cc, "outputs","final_products",paste0(mv,"_sum_thresh.tif"))
-  continuousRas <- file.path(fp, cc, "outputs","final_products",paste0(mv,"_",final_Alg_List[[1]],".tif"))
+  sumThreshRas <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","final_products",paste0(mv,"_sum_thresh.tif"))
+  continuousRas <- file.path(modelLocation$pthRoot[[1]], cc, "outputs","final_products",paste0(mv,"_",final_Alg_List[[1]],".tif"))
   
   if (file.exists(sumThreshRas)){
     rasName <- sumThreshRas
@@ -1100,96 +1194,42 @@ for(cc in spp_ready$cutecode){
   sdm.modeluse$process_performNotes <- gsub(">=","$\\\\geq$", sdm.modeluse$process_performNotes)
   sdm.modeluse$process_performNotes <- gsub("<","$<$ ", sdm.modeluse$process_performNotes)
   
+  ## create a table to report model reviewer rankings
+  
+  URInf$alg <- apply(URInf, MARGIN = 1, 
+                           FUN = function(y) strsplit(y[["mrt_cutecode"]], "_")[[1]][[length(strsplit(y[["mrt_cutecode"]], "_")[[1]])]])
+
+  reviewer_rankings <- URInf[,c("model_version","alg","user_rating")]
+  names(reviewer_rankings) <- c("model version","algorithm","star rating")
+  reviewer_rankings <- reviewer_rankings[order(reviewer_rankings$algorithm),]
   
   ## Run knitr and create metadata ----
-  loc_scripts <- sub("G:/_Projects/AZGFD/","P:/",loc_scripts)
+  #loc_scripts <- sub("G:/_Projects/AZGFD/","P:/",loc_scripts)
+  loc_scripts <- here()
   
-  knit2pdf(paste(loc_scripts,"MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
+  knit2pdf(paste(loc_scripts,"postprocessing","postReview_AZ_MetadataEval_knitr.rnw",sep="/"), output=paste(model_run_name, ".tex",sep=""))
   
-  # delete .txt, .log etc if pdf is created successfully.
-  # fn_ext <- c(".log",".aux",".out")
-  # if (file.exists(paste(model_run_name, ".pdf",sep=""))){
-  #   #setInternet2(TRUE)
-  #   #download.file(fileURL ,destfile,method="auto")
-  #   for(i in 1:NROW(fn_ext)){
-  #     fn <- paste(model_run_name, fn_ext[i],sep="")
-  #     if (file.exists(fn)){ 
-  #       file.remove(fn)
-  #     }
-  #   }
-  # }
-  
-  ## write up output info to tracking DB  ---
-  ## If metadata pdf creation successful, then full model run complete,
-  ## so this is an appropriate time to populate Tracking DB
-  # get tracking DB connection info
-  trackerDsnInfo <- here("_data","databases", "hsm_tracker_connection_string_short.dsn")
-  
-  
-  ## get model cycle info from the tracking db
-  cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
-  # get model cycle we are on
-  sql <- paste0("SELECT v2_Elements.ID, v2_Elements.Taxonomic_Group, V2_Elements.Location_Use_Class, ",
-                "v2_Cutecodes.cutecode, ",
-                "v2_ModelCycle.ID, v2_ModelCycle.model_cycle ",
-                "FROM (v2_Elements INNER JOIN v2_Cutecodes ON v2_Elements.ID = v2_Cutecodes.Elements_ID) ",
-                "INNER JOIN v2_ModelCycle ON v2_Elements.ID = v2_ModelCycle.Elements_ID ",
-                "WHERE (((v2_Cutecodes.cutecode)= '", ElementNames$Code, "'));")
-  
-  model_cycle <- dbGetQuery(cn, sql)
-  names(model_cycle) <- c("Elements_ID","taxonomic_group","luc","cutecode","model_cycle_ID", "model_cycle")
-  dbDisconnect(cn)
-  
-  
-  # get most recent cycle (last row after sorting)
-  model_cycle <- model_cycle[order(model_cycle$model_cycle),]
-  model_cycle <- model_cycle[nrow(model_cycle),]
-  
-  outputsDat <- model_cycle[,c("model_cycle_ID"), drop = FALSE]
-  names(outputsDat) <- "model_cycle_id"
-  outputsDat$model_run_name <- model_run_name
-  outputsDat$path_to_output <- file.path(loc_model, model_species,"outputs","model_predictions")
-  outputsDat$modeling_machine <- model_comp_name
-  outputsDat$comment <- NA
-  outputsDat$ensemble_code <- NA
-  
-  # duplicate rows based on number of algorithms
-  repTimes <- length(final_Alg_List)
-  outputsDat <- outputsDat[rep(1, repTimes),]
-  
-  outputsDat$algorithm_code <- final_Alg_List
-  outputsDat$output_file_name <- paste0(model_run_name,"_",final_Alg_List,".tif")  
-  # decision: don't put up info about the mean suitabilities ensemble. Only use it for the metadata map
-  
-  outputsDat <- outputsDat[,c("model_cycle_id","model_run_name","algorithm_code","output_file_name",
-                              "path_to_output","modeling_machine","comment")]
-  
-  # push up the data
-  cn <- dbConnect(odbc::odbc(), .connection_string = readChar(trackerDsnInfo, file.info(trackerDsnInfo)$size))
-  
-  # are these data already up there? if so, delete and re-upload
-  # base it on file name
-  sql <- paste0("SELECT * from v2_Outputs where output_file_name IN (",
-                toString(sQuote(outputsDat$output_file_name, q = FALSE)), ");")
-  
-  datUpThere <- dbGetQuery(cn, sql)
-  
-  if(nrow(datUpThere) > 0){
-    sql <- paste0("DELETE from v2_Outputs where ID IN (",
-                  toString(datUpThere$ID), ");")
-    dbExecute(cn, sql)
+  #delete .txt, .log etc if pdf is created successfully.
+  fn_ext <- c(".tex")
+  if (file.exists(paste(model_run_name, ".pdf",sep=""))){
+    for(i in 1:NROW(fn_ext)){
+      fn <- paste(model_run_name, fn_ext[i],sep="")
+      if (file.exists(fn)){
+        file.remove(fn)
+      }
+    }
+  # delete the figure folder
+  unlink("figure", recursive = TRUE)
   }
   
-  # now upload the rows
-  dbWriteTable(cn,"v2_Outputs", outputsDat, append = TRUE, row.names = FALSE)
-  dbDisconnect(cn)
-  rm(cn)
-  
+  #copy entire folder to deliverables folder
+  filesToCopy <- list.files(finalProdsFolder)
+  file.copy(file.path(finalProdsFolder, filesToCopy), delivFolderFull)
+
   ## clean up ----
   #dbDisconnect(db)
   options(op)
-  
-  
+
 }
 
 
